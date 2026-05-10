@@ -2,28 +2,56 @@
 
 [English README](README.en.md)
 
-Yui VRM AI Studio は、Unity製のアバター表示アプリとローカルPythonバックエンドを組み合わせた、Windows向けのローカルAIアバタースタジオです。
+**あなたのお気に入りのVRMキャラクターを、話し、見て、覚えて、翻訳するAIエージェントへ。**
 
-UnityChanまたは自分のVRMモデルを表示しながら、テキスト会話、音声入力、VOICEVOXによる日本語音声再生、画像入力、画面を見る実験機能、リアルタイム会話や翻訳の実験ができます。
+Yui VRM AI Studioは、Unity製のVRMアバター表示アプリとローカルPythonバックエンドを組み合わせた、Windows向けのローカルAIアバタースタジオです。
+
+UnityChanまたは自分の `.vrm` モデルを表示しながら、テキスト会話、音声入力、VOICEVOX Engineによる日本語音声再生、画像入力、画面コンテキスト、会話メモリ、リアルタイム会話モードを試せます。
 
 このalpha版はBYOK方式です。利用者が自分のOpenAI APIキーを用意し、バックエンドを自分のPC上で起動します。
 
-## 特徴
+## 30秒でわかること
 
-- UnityChan Default またはローカルの `.vrm` アバターを表示できます。
-- VRM 1.0 と VRM 0.x のインポートに対応しています。
-- テキストチャットができます。
-- OpenAIの音声認識を使った音声入力ができます。
-- VOICEVOX Engineを使って日本語音声を再生できます。
-- 画像入力と、画面を見る実験機能を使えます。
-- 実験的なリアルタイム機能があります。
-  - リアルタイム会話
-  - VOICEVOX版リアルタイム会話
-  - リアルタイム翻訳
-  - 画像/画面コンテキストを使った会話実験
-- キャラクター名を設定できます。
+- お気に入りのVRMキャラクターを読み込んで、AIエージェントとして会話できます。
+- テキスト・音声・画像・画面コンテキストを使ってやり取りできます。
+- 日本語音声はVOICEVOX Engineで再生します。
+- OpenAI APIキーを自分で用意するBYOK方式です。
+- まだalpha版なので、セットアップや一部機能は実験的です。
 
-現時点の音声出力はVOICEVOXの都合上、日本語音声が中心です。UIやテキスト会話は英語でも使えますが、まずは日本語利用を主な想定にしています。
+## 現在できること
+
+- UnityChan Default avatarの表示
+- VRM 1.0 / VRM 0.x の読み込み
+- テキストチャット
+- キャラクター名・性格・口調・プロンプト設定
+- OpenAIによる音声入力
+- VOICEVOX Engineによる日本語読み上げ
+- 画像入力・画面コンテキスト
+- 会話履歴・メモリ
+- `.env` によるローカルBYOK backend
+
+## 実験機能
+
+- OpenAI Realtime APIによる低遅延音声会話モード
+- OpenAI Realtimeのテキスト出力をVOICEVOXに渡す日本語キャラ声会話モード
+- リアルタイム翻訳モード
+
+## Provider Status
+
+### 現在の主なprovider
+
+- OpenAI: chat / STT / vision / realtime / translation
+- VOICEVOX Engine: local Japanese TTS
+
+### 実装済み・検証中
+
+- Gemini Vision provider はbackend上に実装済みですが、このalpha版では十分に検証できていません。
+
+### 今後対応予定
+
+- Grok / xAI API
+- Ollama / LM Studio
+- provider選択UI
 
 ## 現在のalpha版
 
@@ -58,11 +86,9 @@ builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1\YuiFilePickerHelper.exe
   - Engine単体: https://github.com/VOICEVOX/voicevox_engine/releases
 - PowerShell
 
-`.env.example` に入っているモデル名は、このalpha版の初期値です。自分のアカウントや地域で使えないモデルがある場合は、OpenAIの現在のドキュメントを確認して `.env` のモデル名を変更してください。
-
 API利用量は、実験的なリアルタイム機能を常時使わなければかなり軽めです。通常のチャット、音声入力、画像入力、翻訳などを機能確認として試す程度なら、5ドル分のAPIクレジットでも十分遊べます。長時間のリアルタイム会話、画像や音声の大量利用では費用が増えるため、OpenAIのUsageページで確認しながら使ってください。
 
-## クイックスタート
+## Quick Start
 
 1. GitHubからこのリポジトリを取得します。
    - `Code` -> `Download ZIP` でZIPをダウンロードして展開します。
@@ -138,6 +164,60 @@ VRChat用のUnityプロジェクトで管理しているアバターを使いた
 読み込みに成功すると、アプリはすぐに `Custom VRM` へ切り替え、選択したパスをローカルに保存します。次回起動時にも同じVRMを復元しようとします。
 
 高度なマテリアル、表情、特殊なリグは、このalpha版では完全に再現されない場合があります。VRChat固有のExpression Menu、FX Controller、PhysBone、Contact、Constraint、Avatar DescriptorなどはVRChat用のデータとして扱ってください。
+
+## Privacy / Data Flow
+
+Yui VRM AI StudioはBYOK方式です。APIキーはユーザー自身のPC上の `.env` に保存されます。
+
+有効にした機能によって、以下の情報が設定済みの外部AI providerへ送信される可能性があります。
+
+- チャット本文
+- 音声入力
+- アップロード画像
+- スクリーンショット / 画面コンテキスト
+- 翻訳対象の音声・テキスト
+
+以下はローカルに保存されます。
+
+- `.env`
+- SQLiteの会話DB
+- VOICEVOX生成音声キャッシュ
+- ログ
+
+画面コンテキストやリアルタイム翻訳を使う場合は、画面上・音声経路上の機密情報に注意してください。
+
+## Roadmap
+
+### Public Alpha 0.1
+
+- VRM表示・制御
+- ローカルFastAPI backend
+- OpenAI chat / STT / vision
+- VOICEVOX TTS
+- 会話履歴・メモリ
+- 画像/画面コンテキスト
+- Realtime系の実験機能
+
+### Next
+
+- 外部アプリ音声ブリッジ
+- YouTube / ゲーム / 配信 / 通話音声のリアルタイム翻訳
+- provider選択UI
+- Gemini Vision providerの検証
+- Grok / xAI API provider
+- Ollama / LM Studio local LLM provider
+
+### Future
+
+- モバイルアプリ展開
+- フィジカルAI / 外部デバイス連携
+- より豊かなUnityシーン、アニメーション、インタラクション
+
+## Yui Physical AIとの関係
+
+このリポジトリは、Yui Physical AI構想に向けた最初のUnity版コアランタイムとして始まりました。
+
+現在はWindows上でVRMキャラクターをAIエージェントとして動かすことに集中しています。長期的には、外部アプリ連携、モバイルアプリ展開、フィジカルAI / 外部デバイス連携へ広げていく予定です。
 
 ## 詳細ドキュメント
 
