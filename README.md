@@ -162,19 +162,19 @@ VRChat用のUnityプロジェクトで管理しているアバターを使いた
 
 よくある初回トラブル:
 
-- Backend does not start:
+- バックエンドが起動しない:
   - `.\scripts\setup_backend_byok.ps1` をもう一度実行してください。
-- VOICEVOX is not found:
+- VOICEVOX Engineが見つからない:
   - 通常のVOICEVOXアプリ、またはVOICEVOX Engine単体をインストールしてください。
   - このアプリが必要とするのは `vv-engine\run.exe` です。
   - または `VOICEVOX_ENGINE_EXE` に `vv-engine\run.exe` のフルパスを設定してください。
-- Chat does not respond:
+- チャットが反応しない:
   - `.env` があるか確認してください。
   - `OPENAI_API_KEY` が空でないか確認してください。
-- Voice does not play:
+- 音声が再生されない:
   - VOICEVOXが起動しているか確認してください。
   - http://127.0.0.1:50021/version をブラウザで開けるか確認してください。
-- File picker does not open:
+- ファイル選択画面が開かない:
   - `YuiFilePickerHelper.exe` が `Yui VRM AI Studio.exe` と同じフォルダにあるか確認してください。
 - 終了できない:
   - 通常は `Start_Yui_Backend_And_VOICEVOX.bat` のウィンドウで Enter を押します。

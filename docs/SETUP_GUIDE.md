@@ -222,7 +222,7 @@ import that exported `.vrm` into Yui VRM AI Studio.
 
 ## Troubleshooting
 
-Backend is not running:
+Backendが起動していない:
 
 ```powershell
 .\scripts\check_backend.ps1
@@ -234,29 +234,29 @@ Or open:
 http://127.0.0.1:8000/health
 ```
 
-VOICEVOX is not found:
+VOICEVOX Engineが見つからない:
 
 - Install the normal VOICEVOX app or standalone VOICEVOX Engine.
 - Confirm `vv-engine\run.exe` exists.
 - Or set `VOICEVOX_ENGINE_EXE` to the full path of `vv-engine\run.exe`.
 
-`.env` is hard to open:
+`.env` が開きにくい:
 
 - Run `notepad .env` from the repository folder.
 - Make sure the file is named `.env`, not `.env.txt`.
 
-Chat does not respond:
+チャットが反応しない:
 
 - Confirm `.env` exists.
 - Confirm `OPENAI_API_KEY` is not empty.
 - Confirm your OpenAI account can use the configured model names.
 
-Voice does not play:
+音声が再生されない:
 
 - Confirm VOICEVOX is running.
 - Open `http://127.0.0.1:50021/version` in a browser.
 
-File picker does not open:
+ファイル選択画面が開かない:
 
 - Keep `YuiFilePickerHelper.exe` beside `Yui VRM AI Studio.exe`.
 

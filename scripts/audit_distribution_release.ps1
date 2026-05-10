@@ -143,6 +143,11 @@ Test-ForbiddenText "unity\Assets" @(
     "demo_kikyo"
 ) "public Unity assets must not reference private Yui/Kikyo startup avatars"
 
+Test-ForbiddenText "unity\ProjectSettings" @(
+    "oga211070111",
+    "gmail-com"
+) "public Unity project settings must not expose personal account identifiers"
+
 Test-SecretPattern @(
     "sk-[A-Za-z0-9_-]{20,}",
     "sk-proj-[A-Za-z0-9_-]{20,}",
