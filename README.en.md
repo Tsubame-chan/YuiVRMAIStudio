@@ -52,7 +52,9 @@ builds/YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1/YuiFilePickerHelper.exe
 - Windows 10 or Windows 11
 - Python 3.12+ from https://www.python.org/downloads/windows/
 - An OpenAI API key from https://platform.openai.com/api-keys
-- VOICEVOX Engine from https://voicevox.hiroshiba.jp/
+- VOICEVOX Engine, or the `vv-engine\run.exe` bundled with VOICEVOX:
+  - https://voicevox.hiroshiba.jp/
+  - Standalone Engine releases: https://github.com/VOICEVOX/voicevox_engine/releases
 - PowerShell
 
 The default model names in `.env.example` are starting points for this alpha.
@@ -72,7 +74,9 @@ cost, so keep an eye on your OpenAI usage page.
    - Or run `git clone <repository-url>` if you use Git.
 2. Put the extracted folder somewhere simple, such as `C:\YuiVRMAIStudio`.
 3. Install Python 3.12+. In the installer, enable `Add python.exe to PATH`.
-4. Install VOICEVOX.
+4. Prepare VOICEVOX Engine.
+   - Installing the normal VOICEVOX app is also OK if it includes `vv-engine\run.exe`.
+   - Advanced users can download the standalone Windows VOICEVOX Engine release.
 5. From this repository folder, run:
 
 ```powershell
@@ -97,9 +101,11 @@ OPENAI_API_KEY=your_api_key_here
 Start_Yui_Backend_And_VOICEVOX.bat
 ```
 
-This starts both the local backend and VOICEVOX Engine. Keep the launcher
-window open while using the app. Press Enter in that window when finished; it
-normally stops both services.
+This starts both the local backend and VOICEVOX Engine. It does not automate the
+VOICEVOX GUI; it launches `vv-engine\run.exe` directly and uses it as a local
+API server at `http://127.0.0.1:50021`. Keep the launcher window open while
+using the app. Press Enter in that window when finished; it normally stops both
+services.
 
 `Stop_Yui_Backend_And_VOICEVOX.bat` is a force-stop helper for cases where the
 launcher window was closed by mistake or a process remains stuck.
@@ -159,7 +165,8 @@ Useful local URLs while the backend is running:
 Common first-run issues:
 
 - Backend does not start: run `.\scripts\setup_backend_byok.ps1` again.
-- VOICEVOX is not found: install VOICEVOX in the default location or set
+- VOICEVOX is not found: install the normal VOICEVOX app or standalone
+  VOICEVOX Engine, then make sure `vv-engine\run.exe` exists. If needed, set
   `VOICEVOX_ENGINE_EXE` to the full path of `vv-engine\run.exe`.
 - Chat does not respond: confirm `OPENAI_API_KEY` is set in `.env`.
 - File picker does not open: keep `YuiFilePickerHelper.exe` beside the app exe.
@@ -173,7 +180,8 @@ Project code is released under the MIT License. See `LICENSE`.
 Third-party assets and libraries keep their own licenses. In particular:
 
 - UnityChan assets are distributed under the Unity-Chan License Terms.
-- VOICEVOX is not bundled. Install it separately and follow the VOICEVOX terms.
+- VOICEVOX/VOICEVOX Engine is not bundled. Install it separately and follow the
+  VOICEVOX terms.
 - If you publish generated speech, include the required VOICEVOX credit for the
   selected voice. The default alpha voice is VOICEVOX:冥鳴ひまり.
 - ChatdollKit, lilToon, UniVRM, and other Unity packages remain under their

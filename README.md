@@ -53,8 +53,9 @@ builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1\YuiFilePickerHelper.exe
   - https://www.python.org/downloads/windows/
 - OpenAI APIキー
   - https://platform.openai.com/api-keys
-- VOICEVOX Engine
+- VOICEVOX Engine / VOICEVOXに含まれる `vv-engine\run.exe`
   - https://voicevox.hiroshiba.jp/
+  - Engine単体: https://github.com/VOICEVOX/voicevox_engine/releases
 - PowerShell
 
 `.env.example` に入っているモデル名は、このalpha版の初期値です。自分のアカウントや地域で使えないモデルがある場合は、OpenAIの現在のドキュメントを確認して `.env` のモデル名を変更してください。
@@ -73,7 +74,9 @@ C:\YuiVRMAIStudio
 ```
 
 3. Python 3.12+ をインストールします。インストール時に `Add python.exe to PATH` を有効にしてください。
-4. VOICEVOXをインストールします。
+4. VOICEVOX Engineを用意します。
+   - 通常のVOICEVOXアプリをインストールした場合でも、内部の `vv-engine\run.exe` を使います。
+   - Engine単体を使う場合は、VOICEVOX EngineのReleasesからWindows版を取得してください。
 5. リポジトリのフォルダでPowerShellを開き、バックエンドの初期セットアップを実行します。
 
 ```powershell
@@ -104,7 +107,7 @@ notepad .env
 Start_Yui_Backend_And_VOICEVOX.bat
 ```
 
-このファイル1つで、ローカルバックエンドとVOICEVOX Engineの起動をまとめて行います。アプリを使っている間は、この起動ウィンドウを開いたままにしてください。
+このファイル1つで、ローカルバックエンドとVOICEVOX Engineの起動をまとめて行います。VOICEVOXのGUIを操作するのではなく、`vv-engine\run.exe` を直接起動して `http://127.0.0.1:50021` のローカルAPIサーバーとして使います。アプリを使っている間は、この起動ウィンドウを開いたままにしてください。
 
 終了するときは、その起動ウィンドウで Enter を押してください。通常はこれだけでバックエンドとVOICEVOX Engineを終了できます。
 
@@ -162,7 +165,8 @@ VRChat用のUnityプロジェクトで管理しているアバターを使いた
 - Backend does not start:
   - `.\scripts\setup_backend_byok.ps1` をもう一度実行してください。
 - VOICEVOX is not found:
-  - VOICEVOXを通常の場所にインストールしてください。
+  - 通常のVOICEVOXアプリ、またはVOICEVOX Engine単体をインストールしてください。
+  - このアプリが必要とするのは `vv-engine\run.exe` です。
   - または `VOICEVOX_ENGINE_EXE` に `vv-engine\run.exe` のフルパスを設定してください。
 - Chat does not respond:
   - `.env` があるか確認してください。
@@ -183,6 +187,6 @@ VRChat用のUnityプロジェクトで管理しているアバターを使いた
 サードパーティのアセットやライブラリは、それぞれのライセンスに従います。
 
 - UnityChan assets are distributed under the Unity-Chan License Terms.
-- VOICEVOXは同梱していません。別途インストールし、VOICEVOXの利用規約とクレジット表記に従ってください。
+- VOICEVOX/VOICEVOX Engineは同梱していません。別途インストールし、VOICEVOXの利用規約とクレジット表記に従ってください。
 - 生成音声を公開する場合は、選択したVOICEVOX話者に必要なクレジットを記載してください。alpha版のデフォルト音声は `VOICEVOX:冥鳴ひまり` です。
 - ChatdollKit, lilToon, UniVRM, and other Unity packages remain under their respective licenses.

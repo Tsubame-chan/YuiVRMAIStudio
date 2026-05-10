@@ -46,12 +46,20 @@ py -3.12 --version
 If you use Anaconda or Miniconda, prefer `py -3.12` for this project so the
 backend virtual environment is created with python.org Python.
 
-## 3. Install VOICEVOX
+## 3. Prepare VOICEVOX Engine
 
-Install VOICEVOX from:
+Yui VRM AI Studio needs VOICEVOX Engine, specifically `vv-engine\run.exe`.
+The normal VOICEVOX app usually includes this engine, so installing VOICEVOX
+from the official site is the easiest path for most users:
 
 ```text
 https://voicevox.hiroshiba.jp/
+```
+
+Advanced users can also download the standalone VOICEVOX Engine package:
+
+```text
+https://github.com/VOICEVOX/voicevox_engine/releases
 ```
 
 The start script automatically checks the common install locations:
@@ -61,15 +69,17 @@ The start script automatically checks the common install locations:
 %ProgramFiles%\VOICEVOX\vv-engine\run.exe
 ```
 
-If VOICEVOX is somewhere else, set `VOICEVOX_ENGINE_EXE` to the full path of
+If VOICEVOX Engine is somewhere else, set `VOICEVOX_ENGINE_EXE` to the full path of
 `vv-engine\run.exe`.
 
-VOICEVOX is not bundled with this project. Install it separately and follow the
-VOICEVOX terms and credit requirements.
+VOICEVOX/VOICEVOX Engine is not bundled with this project. Install it separately
+and follow the VOICEVOX terms and credit requirements.
 
-On first launch, VOICEVOX may spend a short time loading voices or preparing
-its local engine. If it looks quiet for a moment, wait until the launcher says
-the service is ready.
+The launcher does not automate the VOICEVOX GUI. It launches `vv-engine\run.exe`
+directly and uses it as a local API server at `http://127.0.0.1:50021`. On first
+launch, VOICEVOX Engine may spend a short time loading voices or preparing its
+local engine. If it looks quiet for a moment, wait until the launcher says the
+service is ready.
 
 ## 4. Create An OpenAI API Key
 
@@ -226,7 +236,8 @@ http://127.0.0.1:8000/health
 
 VOICEVOX is not found:
 
-- Install VOICEVOX in the default location.
+- Install the normal VOICEVOX app or standalone VOICEVOX Engine.
+- Confirm `vv-engine\run.exe` exists.
 - Or set `VOICEVOX_ENGINE_EXE` to the full path of `vv-engine\run.exe`.
 
 `.env` is hard to open:
