@@ -118,7 +118,7 @@ builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1\Yui VRM AI Studio.exe
 
 WindowsがSmartScreen警告を出すことがあります。署名なしのalpha版exeなので、信頼して実行する場合は `詳細情報` -> `実行` を選んでください。VOICEVOX起動時にUACが出る場合もあります。
 
-## 自分のVRMを使う
+## 自分のVRMキャラクターを使う
 
 このalpha版が直接読み込めるのは `.vrm` ファイルです。VRChat SDKのアバター、Unityシーン、Unity prefab、`.unitypackage`、VRChatにアップロード済みのアバターそのものは直接読み込めません。
 
