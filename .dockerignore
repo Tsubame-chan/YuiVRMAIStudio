@@ -1,0 +1,14 @@
+.git
+.env
+backend/.venv
+backend/__pycache__
+backend/app/**/__pycache__
+backend/data
+logs
+unity/Library
+unity/Temp
+unity/Obj
+unity/Build
+unity/Builds
+unity/Logs
+unity/UserSettings

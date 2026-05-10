@@ -1,0 +1,1158 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Yui VRM AI Studio Backend",
+    "description": "Local BYOK backend for Yui VRM AI Studio.",
+    "version": "0.1.0-alpha.1"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/config": {
+      "get": {
+        "summary": "Config",
+        "operationId": "config_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat": {
+      "post": {
+        "summary": "Chat",
+        "operationId": "chat_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conversations/recent": {
+      "get": {
+        "summary": "Recent Conversations",
+        "operationId": "recent_conversations_conversations_recent_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "local_user",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentConversationsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tts": {
+      "post": {
+        "summary": "Tts",
+        "operationId": "tts_tts_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TTSRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TTSResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/audio/{filename}": {
+      "get": {
+        "summary": "Audio",
+        "operationId": "audio_audio__filename__get",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/stt": {
+      "post": {
+        "summary": "Stt",
+        "operationId": "stt_stt_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_stt_stt_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/STTResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/vision": {
+      "post": {
+        "summary": "Vision",
+        "operationId": "vision_vision_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_vision_vision_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/memory/save": {
+      "post": {
+        "summary": "Memory Save",
+        "operationId": "memory_save_memory_save_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemorySaveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/memory/search": {
+      "post": {
+        "summary": "Memory Search",
+        "operationId": "memory_search_memory_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemorySearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemorySearchResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/usage": {
+      "get": {
+        "summary": "Usage",
+        "operationId": "usage_usage_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_stt_stt_post": {
+        "properties": {
+          "audio": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Audio"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "audio"
+        ],
+        "title": "Body_stt_stt_post"
+      },
+      "Body_vision_vision_post": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Image"
+          },
+          "prompt_type": {
+            "type": "string",
+            "title": "Prompt Type",
+            "default": "screen"
+          }
+        },
+        "type": "object",
+        "required": [
+          "image"
+        ],
+        "title": "Body_vision_vision_post"
+      },
+      "ChatRequest": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "title": "Request Id",
+            "description": "Idempotency key supplied by the client."
+          },
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "default": "local_user"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "context": {
+            "$ref": "#/components/schemas/RequestContext"
+          },
+          "mode": {
+            "type": "string",
+            "const": "standard",
+            "title": "Mode",
+            "default": "standard"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request_id",
+          "message"
+        ],
+        "title": "ChatRequest"
+      },
+      "ChatResponse": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "face": {
+            "type": "string",
+            "title": "Face",
+            "default": "Neutral"
+          },
+          "animation": {
+            "type": "string",
+            "title": "Animation",
+            "default": "idle_normal"
+          },
+          "voice_style": {
+            "type": "string",
+            "title": "Voice Style",
+            "default": "normal"
+          },
+          "should_use_vision": {
+            "type": "boolean",
+            "title": "Should Use Vision",
+            "default": false
+          },
+          "memory_action": {
+            "type": "string",
+            "enum": [
+              "none",
+              "save",
+              "update"
+            ],
+            "title": "Memory Action",
+            "default": "none"
+          },
+          "should_tts": {
+            "type": "boolean",
+            "title": "Should Tts",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "ChatResponse"
+      },
+      "ConfigResponse": {
+        "properties": {
+          "character_name": {
+            "type": "string",
+            "title": "Character Name"
+          },
+          "chat_provider": {
+            "type": "string",
+            "title": "Chat Provider"
+          },
+          "vision_provider": {
+            "type": "string",
+            "title": "Vision Provider"
+          },
+          "tts_provider": {
+            "type": "string",
+            "title": "Tts Provider"
+          },
+          "stt_provider": {
+            "type": "string",
+            "title": "Stt Provider"
+          },
+          "default_user_id": {
+            "type": "string",
+            "title": "Default User Id"
+          },
+          "limits": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Limits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "character_name",
+          "chat_provider",
+          "vision_provider",
+          "tts_provider",
+          "stt_provider",
+          "default_user_id",
+          "limits"
+        ],
+        "title": "ConfigResponse"
+      },
+      "ConversationItem": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "message",
+          "created_at"
+        ],
+        "title": "ConversationItem"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "database": {
+            "type": "string",
+            "title": "Database"
+          },
+          "providers": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Providers"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "version",
+          "database",
+          "providers"
+        ],
+        "title": "HealthResponse"
+      },
+      "MemoryItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "importance": {
+            "type": "integer",
+            "title": "Importance"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "content",
+          "importance"
+        ],
+        "title": "MemoryItem"
+      },
+      "MemorySaveRequest": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "default": "local_user"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "importance": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Importance",
+            "default": 3
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content"
+        ],
+        "title": "MemorySaveRequest"
+      },
+      "MemorySearchRequest": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "default": "local_user"
+          },
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 5
+          }
+        },
+        "type": "object",
+        "required": [
+          "query"
+        ],
+        "title": "MemorySearchRequest"
+      },
+      "MemorySearchResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MemoryItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "title": "MemorySearchResponse"
+      },
+      "RecentConversationsResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "RecentConversationsResponse"
+      },
+      "RequestContext": {
+        "properties": {
+          "vision_result_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vision Result Id"
+          },
+          "screen_context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Screen Context"
+          },
+          "extra": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Extra"
+          }
+        },
+        "type": "object",
+        "title": "RequestContext"
+      },
+      "STTResponse": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "STTResponse"
+      },
+      "TTSRequest": {
+        "properties": {
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "speaker_id": {
+            "type": "integer",
+            "title": "Speaker Id",
+            "default": 14
+          },
+          "speed_scale": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 2.0,
+                "minimum": 0.5
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Speed Scale",
+            "default": 1.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "TTSRequest"
+      },
+      "TTSResponse": {
+        "properties": {
+          "audio_url": {
+            "type": "string",
+            "title": "Audio Url"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format",
+            "default": "wav"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          }
+        },
+        "type": "object",
+        "required": [
+          "audio_url"
+        ],
+        "title": "TTSResponse"
+      },
+      "UsageLimits": {
+        "properties": {
+          "chat_count": {
+            "type": "integer",
+            "title": "Chat Count"
+          },
+          "vision_count": {
+            "type": "integer",
+            "title": "Vision Count"
+          },
+          "stt_minutes": {
+            "type": "integer",
+            "title": "Stt Minutes"
+          },
+          "tts_count": {
+            "type": "integer",
+            "title": "Tts Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "chat_count",
+          "vision_count",
+          "stt_minutes",
+          "tts_count"
+        ],
+        "title": "UsageLimits"
+      },
+      "UsageResponse": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "chat_count": {
+            "type": "integer",
+            "title": "Chat Count"
+          },
+          "vision_count": {
+            "type": "integer",
+            "title": "Vision Count"
+          },
+          "stt_minutes": {
+            "type": "number",
+            "title": "Stt Minutes"
+          },
+          "tts_count": {
+            "type": "integer",
+            "title": "Tts Count"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/UsageLimits"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "chat_count",
+          "vision_count",
+          "stt_minutes",
+          "tts_count",
+          "limits"
+        ],
+        "title": "UsageResponse"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VisionObject": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "brand_or_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand Or Type"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "shape": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shape"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Position"
+          },
+          "visible_details": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Visible Details"
+          },
+          "estimated_total_volume_ml": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Total Volume Ml"
+          },
+          "estimated_remaining_ratio": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Remaining Ratio"
+          },
+          "estimated_consumed_ml": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Consumed Ml"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "VisionObject"
+      },
+      "VisionResponse": {
+        "properties": {
+          "vision_result_id": {
+            "type": "string",
+            "title": "Vision Result Id"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "structured": {
+            "$ref": "#/components/schemas/VisionStructured"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "vision_result_id",
+          "summary",
+          "created_at"
+        ],
+        "title": "VisionResponse"
+      },
+      "VisionStructured": {
+        "properties": {
+          "objects": {
+            "items": {
+              "$ref": "#/components/schemas/VisionObject"
+            },
+            "type": "array",
+            "title": "Objects"
+          },
+          "extra": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Extra"
+          }
+        },
+        "type": "object",
+        "title": "VisionStructured"
+      }
+    }
+  }
+}

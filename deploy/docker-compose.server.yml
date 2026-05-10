@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_URL: sqlite:////data/yui.db
+      VOICEVOX_BASE_URL: http://voicevox:50021
+    volumes:
+      - yui-backend-data:/data
+    ports:
+      - "8000:8000"
+    depends_on:
+      - voicevox
+
+  voicevox:
+    image: voicevox/voicevox_engine:cpu-ubuntu20.04-latest
+    restart: unless-stopped
+    ports:
+      - "50021:50021"
+
+volumes:
+  yui-backend-data:

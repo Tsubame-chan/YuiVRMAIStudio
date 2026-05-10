@@ -1,0 +1,23 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+backend/data/*.db
+backend/data/*.db-*
+backend/data/audio/*.wav
+
+# Unity generated files
+unity/**/Library/
+unity/**/Temp/
+unity/**/Obj/
+unity/**/Build/
+unity/**/Builds/
+unity/**/Logs/
+unity/**/UserSettings/
+*.csproj
+*.sln
+*.user
+logs/
+downloads/*.unitypackage
+installer/windows/output/

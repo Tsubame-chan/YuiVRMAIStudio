@@ -1,0 +1,26 @@
+{
+  "faces": [
+    "Neutral",
+    "Joy",
+    "Fun",
+    "Angry",
+    "Sorrow",
+    "Surprised"
+  ],
+  "animations": [
+    "idle_normal",
+    "idle_relaxed",
+    "nod_small",
+    "nod_big",
+    "wave_small",
+    "wave_big",
+    "thinking",
+    "surprised_body",
+    "happy_body",
+    "troubled_body",
+    "proud_pose",
+    "tsukkomi_point",
+    "look_away",
+    "talk_gesture_small"
+  ]
+}
