@@ -17,7 +17,7 @@ from the private development tree.
    - User installs VOICEVOX separately, then sets `OPENAI_API_KEY`.
 
 The first public target is Windows. Unity source may be portable later, but the
-documented path should stay Windows-first until macOS is tested.
+documented path should stay Windows-only until other platforms are tested.
 
 ## Do Not Publish
 
@@ -76,7 +76,7 @@ The start script searches for VOICEVOX Engine in this order:
 The public README should lead with:
 
 - what this is
-- Windows-first status
+- current Windows alpha status
 - prerequisites
 - quick setup
 - API key setup

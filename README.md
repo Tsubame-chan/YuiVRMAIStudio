@@ -1,12 +1,31 @@
 # Yui VRM AI Studio
 
-Yui VRM AI Studio is a Windows-first local AI avatar studio. It pairs a Unity
-avatar viewer with a local Python backend so you can chat, speak, analyze
-images, and experiment with a bundled UnityChan avatar or your own VRM model.
+[English README](README.en.md)
 
-This alpha is BYOK: you run the backend locally and provide your own API key.
+Yui VRM AI Studio は、Unity製のアバター表示アプリとローカルPythonバックエンドを組み合わせた、Windows向けのローカルAIアバタースタジオです。
 
-## Current Alpha
+UnityChanまたは自分のVRMモデルを表示しながら、テキスト会話、音声入力、VOICEVOXによる日本語音声再生、画像入力、画面を見る実験機能、リアルタイム会話や翻訳の実験ができます。
+
+このalpha版はBYOK方式です。利用者が自分のOpenAI APIキーを用意し、バックエンドを自分のPC上で起動します。
+
+## 特徴
+
+- UnityChan Default またはローカルの `.vrm` アバターを表示できます。
+- VRM 1.0 と VRM 0.x のインポートに対応しています。
+- テキストチャットができます。
+- OpenAIの音声認識を使った音声入力ができます。
+- VOICEVOX Engineを使って日本語音声を再生できます。
+- 画像入力と、画面を見る実験機能を使えます。
+- 実験的なリアルタイム機能があります。
+  - リアルタイム会話
+  - VOICEVOX版リアルタイム会話
+  - リアルタイム翻訳
+  - 画像/画面コンテキストを使った会話実験
+- キャラクター名を設定できます。
+
+現時点の音声出力はVOICEVOXの都合上、日本語音声が中心です。UIやテキスト会話は英語でも使えますが、まずは日本語利用を主な想定にしています。
+
+## 現在のalpha版
 
 - Version: `0.1.0-alpha.1`
 - Platform: Windows 10/11
@@ -15,150 +34,155 @@ This alpha is BYOK: you run the backend locally and provide your own API key.
 - Speech: local VOICEVOX Engine, installed separately
 - Backend: FastAPI on `127.0.0.1:8000`
 
-Current Windows app build:
-
-```text
-builds/YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1/Yui VRM AI Studio.exe
-```
-
-Keep this helper next to the app exe so Windows standalone file selection works:
-
-```text
-builds/YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1/YuiFilePickerHelper.exe
-```
-
-## Requirements
-
-- Windows 10 or Windows 11
-- Python 3.12+ from https://www.python.org/downloads/windows/
-- An OpenAI API key from https://platform.openai.com/api-keys
-- VOICEVOX Engine from https://voicevox.hiroshiba.jp/
-- PowerShell
-
-The default model names in `.env.example` are starting points for this alpha.
-If a model is unavailable for your account or region, check the current OpenAI
-documentation and replace the model name in `.env`.
-
-Normal alpha use is usually light on API usage if experimental realtime modes
-are left off. Longer realtime sessions, image-heavy use, or repeated audio
-tests can increase cost, so keep an eye on your OpenAI usage page.
-
-## Quick Start
-
-1. Download this repository from GitHub:
-   - Click `Code` -> `Download ZIP`, then extract it.
-   - Or run `git clone <repository-url>` if you use Git.
-2. Put the extracted folder somewhere simple, such as `C:\YuiVRMAIStudio`.
-3. Install Python 3.12+. In the installer, enable `Add python.exe to PATH`.
-4. Install VOICEVOX.
-5. From this repository folder, run:
-
-```powershell
-.\scripts\setup_backend_byok.ps1
-```
-
-If PowerShell says scripts are disabled, run this once:
-
-```powershell
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-6. Edit `.env` and set:
-
-```text
-OPENAI_API_KEY=your_api_key_here
-```
-
-7. Double-click:
-
-```text
-Start_Yui_Backend_And_VOICEVOX.bat
-```
-
-8. Launch:
+Windowsアプリ本体:
 
 ```text
 builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1\Yui VRM AI Studio.exe
 ```
 
-Keep the launcher window open while using the app. Press Enter in that window
-when finished; it stops both the backend and VOICEVOX Engine. If the launcher
-window was closed by mistake, double-click `Stop_Yui_Backend_And_VOICEVOX.bat`.
+ファイル選択用ヘルパーも同じフォルダに置いてください:
 
-Windows may show SmartScreen for the unsigned alpha exe. Click `More info`,
-then `Run anyway` if you trust this local build. Windows may also show a UAC
-prompt when VOICEVOX starts. Allow it if needed; on some Windows configurations
-the local VOICEVOX Engine needs elevated access to its user dictionary folder.
+```text
+builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1\YuiFilePickerHelper.exe
+```
 
-## Use Your Own VRM
+## 必要なもの
 
-This alpha imports `.vrm` files only. It cannot directly load a VRChat SDK
-avatar, Unity scene, Unity prefab, `.unitypackage`, or an avatar that only
-exists as an uploaded VRChat avatar. If your avatar is managed as a VRChat
-Unity project, export or convert a separate VRM copy first.
+- Windows 10 または Windows 11
+- Python 3.12+
+  - https://www.python.org/downloads/windows/
+- OpenAI APIキー
+  - https://platform.openai.com/api-keys
+- VOICEVOX Engine
+  - https://voicevox.hiroshiba.jp/
+- PowerShell
 
-1. Start the backend and VOICEVOX.
-2. Launch `Yui VRM AI Studio.exe`.
-3. Open Settings.
-4. Click the `Custom VRM` import button.
-5. Select your `.vrm` file.
+`.env.example` に入っているモデル名は、このalpha版の初期値です。自分のアカウントや地域で使えないモデルがある場合は、OpenAIの現在のドキュメントを確認して `.env` のモデル名を変更してください。
 
-The app loads VRM 1.0 and VRM 0.x files through UniVRM. After a successful
-import, it immediately switches the active avatar to `Custom VRM`, saves the
-file path locally, and tries to restore it on the next launch. Very custom
-materials, expressions, or rigs may need follow-up tuning.
+API利用量は、実験的なリアルタイム機能を常時使わなければかなり軽めです。通常のチャット、音声入力、画像入力、翻訳などを機能確認として試す程度なら、5ドル分のAPIクレジットでも十分遊べます。長時間のリアルタイム会話、画像や音声の大量利用では費用が増えるため、OpenAIのUsageページで確認しながら使ってください。
 
-The public build should show only `UnityChan Default` and `Custom VRM` unless
-you add your own local avatars.
+## クイックスタート
 
-## Features
+1. GitHubからこのリポジトリを取得します。
+   - `Code` -> `Download ZIP` でZIPをダウンロードして展開します。
+   - Gitを使う場合は `git clone <repository-url>` でもOKです。
+2. 展開したフォルダを、できればシンプルな場所に置きます。
 
-- Text chat with a local FastAPI backend.
-- Voice input through OpenAI transcription.
-- Japanese speech playback through local VOICEVOX Engine.
-- Image import and screen-look experiments for vision-enabled chat.
-- Realtime experimental modes in the Unity UI.
-- Character name customization.
-- UnityChan default avatar plus local custom VRM import.
+```text
+C:\YuiVRMAIStudio
+```
 
-Full setup notes are in `docs/SETUP_GUIDE.md`. API details are in
-`docs/api.md`. Release readiness checks are in
-`docs/ALPHA_RELEASE_CHECKLIST.md`.
+3. Python 3.12+ をインストールします。インストール時に `Add python.exe to PATH` を有効にしてください。
+4. VOICEVOXをインストールします。
+5. リポジトリのフォルダでPowerShellを開き、バックエンドの初期セットアップを実行します。
 
-## Troubleshooting
+```powershell
+.\scripts\setup_backend_byok.ps1
+```
 
-Check whether the backend is listening:
+PowerShellでスクリプト実行が無効と言われた場合は、一度だけこれを実行してから、もう一度セットアップしてください。
+
+```powershell
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+6. `.env` を開き、OpenAI APIキーを設定します。
+
+```text
+OPENAI_API_KEY=your_api_key_here
+```
+
+`.env` が開きにくい場合は、リポジトリのフォルダで以下を実行するとメモ帳で開けます。
+
+```powershell
+notepad .env
+```
+
+7. 次のバッチファイルをダブルクリックします。
+
+```text
+Start_Yui_Backend_And_VOICEVOX.bat
+```
+
+このファイル1つで、ローカルバックエンドとVOICEVOX Engineの起動をまとめて行います。アプリを使っている間は、この起動ウィンドウを開いたままにしてください。
+
+終了するときは、その起動ウィンドウで Enter を押してください。通常はこれだけでバックエンドとVOICEVOX Engineを終了できます。
+
+`Stop_Yui_Backend_And_VOICEVOX.bat` は、起動ウィンドウを閉じてしまった場合や、プロセスが残って終了できない場合の強制終了用です。普段は使わなくて大丈夫です。
+
+8. アプリを起動します。
+
+```text
+builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1\Yui VRM AI Studio.exe
+```
+
+WindowsがSmartScreen警告を出すことがあります。署名なしのalpha版exeなので、信頼して実行する場合は `詳細情報` -> `実行` を選んでください。VOICEVOX起動時にUACが出る場合もあります。
+
+## 自分のVRMを使う
+
+このalpha版が直接読み込めるのは `.vrm` ファイルです。VRChat SDKのアバター、Unityシーン、Unity prefab、`.unitypackage`、VRChatにアップロード済みのアバターそのものは直接読み込めません。
+
+VRChat用のUnityプロジェクトで管理しているアバターを使いたい場合は、元のBOOTH/配布パッケージに `.vrm` が含まれていないか確認してください。ない場合は、Unity/UniVRMやBlender/VRMのワークフローで別途VRMとして書き出してから読み込んでください。
+
+手順:
+
+1. `Start_Yui_Backend_And_VOICEVOX.bat` を起動します。
+2. `Yui VRM AI Studio.exe` を起動します。
+3. Settingsを開きます。
+4. `Custom VRM` のインポートボタンを押します。
+5. 自分の `.vrm` ファイルを選びます。
+
+読み込みに成功すると、アプリはすぐに `Custom VRM` へ切り替え、選択したパスをローカルに保存します。次回起動時にも同じVRMを復元しようとします。
+
+高度なマテリアル、表情、特殊なリグは、このalpha版では完全に再現されない場合があります。VRChat固有のExpression Menu、FX Controller、PhysBone、Contact、Constraint、Avatar DescriptorなどはVRChat用のデータとして扱ってください。
+
+## 詳細ドキュメント
+
+- セットアップ詳細: `docs/SETUP_GUIDE.md`
+- API仕様: `docs/api.md`
+- リリース確認項目: `docs/ALPHA_RELEASE_CHECKLIST.md`
+
+## トラブルシューティング
+
+バックエンドが起動しているか確認:
 
 ```powershell
 .\scripts\check_backend.ps1
 ```
 
-Useful local URLs while the backend is running:
+バックエンド起動中に使えるローカルURL:
 
 - http://127.0.0.1:8000/health
 - http://127.0.0.1:8000/config
 - http://127.0.0.1:8000/usage
 - http://127.0.0.1:8000/docs
 
-Common first-run issues:
+よくある初回トラブル:
 
-- Backend does not start: run `.\scripts\setup_backend_byok.ps1` again.
-- VOICEVOX is not found: install VOICEVOX in the default location or set
-  `VOICEVOX_ENGINE_EXE` to the full path of `vv-engine\run.exe`.
-- Chat does not respond: confirm `OPENAI_API_KEY` is set in `.env`.
-- File picker does not open: keep `YuiFilePickerHelper.exe` beside the app exe.
+- Backend does not start:
+  - `.\scripts\setup_backend_byok.ps1` をもう一度実行してください。
+- VOICEVOX is not found:
+  - VOICEVOXを通常の場所にインストールしてください。
+  - または `VOICEVOX_ENGINE_EXE` に `vv-engine\run.exe` のフルパスを設定してください。
+- Chat does not respond:
+  - `.env` があるか確認してください。
+  - `OPENAI_API_KEY` が空でないか確認してください。
+- Voice does not play:
+  - VOICEVOXが起動しているか確認してください。
+  - http://127.0.0.1:50021/version をブラウザで開けるか確認してください。
+- File picker does not open:
+  - `YuiFilePickerHelper.exe` が `Yui VRM AI Studio.exe` と同じフォルダにあるか確認してください。
+- 終了できない:
+  - 通常は `Start_Yui_Backend_And_VOICEVOX.bat` のウィンドウで Enter を押します。
+  - それでも残る場合だけ `Stop_Yui_Backend_And_VOICEVOX.bat` を使ってください。
 
-## License And Credits
+## ライセンスとクレジット
 
-Project code is released under the MIT License. See `LICENSE`.
+プロジェクトコードはMIT Licenseです。詳細は `LICENSE` を見てください。
 
-Third-party assets and libraries keep their own licenses. In particular:
+サードパーティのアセットやライブラリは、それぞれのライセンスに従います。
 
 - UnityChan assets are distributed under the Unity-Chan License Terms.
-- VOICEVOX is not bundled. Install it separately and follow the VOICEVOX terms.
-- If you publish generated speech, include the required VOICEVOX credit for the
-  selected voice. The default alpha voice is VOICEVOX:冥鳴ひまり.
-- ChatdollKit, lilToon, UniVRM, and other Unity packages remain under their
-  respective licenses.
-
-
+- VOICEVOXは同梱していません。別途インストールし、VOICEVOXの利用規約とクレジット表記に従ってください。
+- 生成音声を公開する場合は、選択したVOICEVOX話者に必要なクレジットを記載してください。alpha版のデフォルト音声は `VOICEVOX:冥鳴ひまり` です。
+- ChatdollKit, lilToon, UniVRM, and other Unity packages remain under their respective licenses.

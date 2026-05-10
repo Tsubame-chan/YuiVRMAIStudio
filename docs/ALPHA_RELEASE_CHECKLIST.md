@@ -16,7 +16,7 @@ Use this checklist for `v0.1.0-alpha.1` before publishing the public GitHub page
 - `logs/` is not included.
 - Private Yui/Kikyo avatar assets and scene objects are not included.
 - Handoff notes, investigation prompts, local machine paths, and private workflow notes are not included.
-- README and setup docs describe the release as Windows-first and BYOK.
+- README and setup docs describe the release as a current Windows alpha and BYOK.
 
 ## Custom VRM Support
 

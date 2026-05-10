@@ -84,9 +84,10 @@ your OpenAI account. Keep the key private. Do not paste it into GitHub, chats,
 screenshots, or issue reports.
 
 Typical alpha use is light if you leave experimental realtime features off.
-For normal chat, voice input, image checks, and translation tests, a small
-prepaid balance can go a long way. Heavy realtime experiments, long sessions,
-or high-volume image/audio use will cost more.
+If you only want to try the main features, 5 USD of API credit is usually
+enough to play with normal chat, voice input, image checks, and translation
+tests. Heavy realtime experiments, long sessions, or high-volume image/audio
+use will cost more.
 
 ## 5. Run Backend Setup
 
@@ -146,12 +147,16 @@ Keep the launcher window open while using the app. It starts both:
 Startup may take a little while on the first run. When the log stops at the
 ready state and no new error appears, you can launch the app.
 
-When finished, press Enter in that launcher window. If the window was closed by
-mistake, double-click:
+When finished, press Enter in that launcher window. This is the normal way to
+stop both the backend and VOICEVOX Engine. If the window was closed by mistake
+or a process remains stuck, double-click:
 
 ```text
 Stop_Yui_Backend_And_VOICEVOX.bat
 ```
+
+Treat the stop batch as a force-stop helper. In normal use, the start batch is
+enough for both startup and shutdown.
 
 The VOICEVOX launcher chooses CPU threads automatically from your PC's logical
 processor count. It is not fixed to the developer's machine.
@@ -263,7 +268,7 @@ OpenAI API setup.
 
 Does it support macOS or Linux?
 
-Not yet. This alpha is Windows-first.
+Not yet. This alpha currently targets Windows.
 
 Can I change the character name?
 
