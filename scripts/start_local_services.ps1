@@ -156,6 +156,7 @@ else {
 
 if (Test-HttpOk -Url "$backendBaseUrl/health") {
     Write-Step "Backend is already running: $backendBaseUrl"
+    Write-Warning "This launcher will reuse the existing backend on this port. If you are testing a freshly extracted copy and old conversations appear, stop the old service first with Stop_Yui_Backend_And_VOICEVOX.bat, then start again from the new folder."
 }
 else {
     if (-not (Test-Path -LiteralPath $backendPython)) {

@@ -123,6 +123,8 @@ Test-ReleaseBlocker "backend\data\yui.db-wal" "local conversation database WAL m
 Test-ReleaseBlocker "backend\data\yui.db-shm" "local conversation database SHM must not ship"
 Test-ReleaseBlocker "backend\data\yui_test.db" "local test database must not ship"
 Test-ReleaseBlocker "backend\data\audio" "local generated audio cache must not ship"
+Test-ReleaseBlocker "logs" "local runtime logs must not ship"
+Test-ReleaseBlocker "runtime" "local runtime state must not ship"
 
 Test-RequiredPath ".env.example" "first-time contributors need a safe environment template"
 Test-RequiredPath "LICENSE" "public repositories need a project license"

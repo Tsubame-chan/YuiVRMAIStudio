@@ -154,6 +154,11 @@ Keep the launcher window open while using the app. It starts both:
 - the local backend at `http://127.0.0.1:8000`
 - VOICEVOX Engine at `http://127.0.0.1:50021`
 
+If another Yui backend is already running on `127.0.0.1:8000`, the launcher may
+reuse it. When testing a freshly extracted copy, stop the old service first with
+`Stop_Yui_Backend_And_VOICEVOX.bat`, then start again from the new folder. This
+prevents old local conversation history from appearing in the fresh copy.
+
 Startup may take a little while on the first run. When the log stops at the
 ready state and no new error appears, you can launch the app.
 
@@ -250,6 +255,16 @@ VOICEVOX Engineが見つからない:
 - Confirm `.env` exists.
 - Confirm `OPENAI_API_KEY` is not empty.
 - Confirm your OpenAI account can use the configured model names.
+
+以前の会話履歴が表示される:
+
+- Stop any existing Yui backend with `Stop_Yui_Backend_And_VOICEVOX.bat`.
+- Start again from the newly extracted folder.
+- Conversation history is stored in the local backend SQLite DB, not in GitHub,
+  but an already-running backend on `127.0.0.1:8000` can be reused by another
+  copy of the app.
+- Some app settings, such as VRM paths and voice settings, may persist for the
+  same Windows user.
 
 音声が再生されない:
 
