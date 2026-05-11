@@ -37,6 +37,7 @@ namespace YuiPhysicalAI.UI
         private const string CustomInstructionKey = YuiPrefsKeys.CustomInstruction;
         private const string CharacterNameKey = YuiPrefsKeys.CharacterName;
         private const string AvatarSlotKey = YuiPrefsKeys.AvatarSlot;
+        private const string DemoAvatarSlotMigrationKey = "Yui.Migrations.DemoAvatarSlot.20260512";
         private const string ClientSchemaVersion = "2026-05-10";
         private const bool EnableDormantAppAwarenessPrototype = false;
         private const bool EnableBackendDiagnosticsLog = false;
@@ -321,8 +322,16 @@ namespace YuiPhysicalAI.UI
             secretMode = PlayerPrefs.GetInt(SecretModeKey, 0) == 1;
             characterName = PlayerPrefs.GetString(CharacterNameKey, characterName);
             customInstruction = PlayerPrefs.GetString(CustomInstructionKey, customInstruction);
-            var savedAvatarSlot = PlayerPrefs.GetString(AvatarSlotPrefsKey, avatarSlot);
+            var defaultAvatarSlot = GetDefaultAvatarSlot();
+            var savedAvatarSlot = PlayerPrefs.GetString(AvatarSlotPrefsKey, defaultAvatarSlot);
             avatarSlot = NormalizeAvatarSlot(savedAvatarSlot);
+            if (ShouldRestorePrivateDemoAvatarDefault(savedAvatarSlot, avatarSlot))
+            {
+                avatarSlot = YuiAvatarSlots.DemoKikyo;
+                PlayerPrefs.SetInt(DemoAvatarSlotMigrationPrefsKey, 1);
+                PlayerPrefs.SetString(AvatarSlotPrefsKey, avatarSlot);
+                PlayerPrefs.Save();
+            }
             if (!string.Equals(savedAvatarSlot, avatarSlot, StringComparison.OrdinalIgnoreCase))
             {
                 PlayerPrefs.SetString(AvatarSlotPrefsKey, avatarSlot);
@@ -2640,10 +2649,25 @@ namespace YuiPhysicalAI.UI
 
         private string GetDefaultAvatarSlot()
         {
+            if (avatarSwitcher != null && avatarSwitcher.HasDemoAvatar)
+            {
+                return YuiAvatarSlots.DemoKikyo;
+            }
+
             return YuiAvatarSlots.UnityChanDefault;
         }
 
         private static string AvatarSlotPrefsKey => $"{AvatarSlotKey}.{GetLocalPrefsScope()}";
+        private static string DemoAvatarSlotMigrationPrefsKey => $"{DemoAvatarSlotMigrationKey}.{GetLocalPrefsScope()}";
+
+        private bool ShouldRestorePrivateDemoAvatarDefault(string savedAvatarSlot, string normalizedSlot)
+        {
+            return avatarSwitcher != null
+                && avatarSwitcher.HasDemoAvatar
+                && PlayerPrefs.GetInt(DemoAvatarSlotMigrationPrefsKey, 0) != 1
+                && string.Equals(normalizedSlot, YuiAvatarSlots.UnityChanDefault, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(savedAvatarSlot, YuiAvatarSlots.UnityChanDefault, StringComparison.OrdinalIgnoreCase);
+        }
 
         private static string GetLocalPrefsScope()
         {

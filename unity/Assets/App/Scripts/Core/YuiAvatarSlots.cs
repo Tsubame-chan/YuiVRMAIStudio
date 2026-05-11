@@ -19,6 +19,11 @@ namespace YuiPhysicalAI.Core
 
         public static string Normalize(string value)
         {
+            if (string.Equals(value, DemoKikyo, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return DemoKikyo;
+            }
+
             if (string.Equals(value, UnityChanDefault, System.StringComparison.OrdinalIgnoreCase)
                 || string.Equals(value, LegacyDistributionDefault, System.StringComparison.OrdinalIgnoreCase))
             {
