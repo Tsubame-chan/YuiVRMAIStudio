@@ -60,6 +60,10 @@ namespace YuiPhysicalAI.UI
         private Vector3 defaultCameraPosition;
         private Quaternion defaultCameraRotation;
         private float defaultCameraFieldOfView;
+        private bool hasSceneCameraDefault;
+        private Vector3 sceneCameraPosition;
+        private Quaternion sceneCameraRotation;
+        private float sceneCameraFieldOfView;
         private float defaultYaw;
         private float defaultPitch;
         private float defaultOrbitDistance;
@@ -175,6 +179,26 @@ namespace YuiPhysicalAI.UI
                 CaptureCameraDefaults();
                 ResetOrbitToDefault();
             }
+        }
+
+        public void SetAvatarRootUsingSceneDefault(Transform avatar)
+        {
+            avatarRoot = avatar;
+            InvalidatePivotCache();
+            if (targetCamera == null)
+            {
+                targetCamera = Camera.main;
+            }
+
+            if (targetCamera != null && hasSceneCameraDefault)
+            {
+                targetCamera.transform.position = sceneCameraPosition;
+                targetCamera.transform.rotation = sceneCameraRotation;
+                targetCamera.fieldOfView = sceneCameraFieldOfView;
+            }
+
+            CaptureCameraDefaults();
+            ResetOrbitToDefault();
         }
 
         public void FrameAvatarAsDefault()
@@ -605,6 +629,13 @@ namespace YuiPhysicalAI.UI
             defaultCameraPosition = targetCamera.transform.position;
             defaultCameraRotation = targetCamera.transform.rotation;
             defaultCameraFieldOfView = targetCamera.fieldOfView;
+            if (!hasSceneCameraDefault)
+            {
+                sceneCameraPosition = defaultCameraPosition;
+                sceneCameraRotation = defaultCameraRotation;
+                sceneCameraFieldOfView = defaultCameraFieldOfView;
+                hasSceneCameraDefault = true;
+            }
             hasCameraDefault = true;
             ResetOrbitToDefault();
         }
@@ -653,9 +684,12 @@ namespace YuiPhysicalAI.UI
                 targetCamera.transform.rotation,
                 defaultCameraRotation,
                 Time.deltaTime * returnSpeed);
+            var targetFieldOfView = defaultCameraFieldOfView > 0f
+                ? defaultCameraFieldOfView
+                : shownFieldOfView > 0f ? shownFieldOfView : targetCamera.fieldOfView;
             targetCamera.fieldOfView = Mathf.Lerp(
                 targetCamera.fieldOfView,
-                shownFieldOfView > 0f ? shownFieldOfView : defaultCameraFieldOfView,
+                targetFieldOfView,
                 Time.deltaTime * 5f);
         }
 

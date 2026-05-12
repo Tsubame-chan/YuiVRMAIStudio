@@ -19,7 +19,9 @@ namespace YuiPhysicalAI.UI
         private void Start()
         {
 #if UNITY_STANDALONE && !UNITY_EDITOR
-            if (GetComponent<YuiWindowResolutionController>() == null)
+            if (GetComponent<YuiWindowResolutionController>() == null
+                && GetComponentInParent<YuiWindowResolutionController>() == null
+                && GetComponentInChildren<YuiWindowResolutionController>() == null)
             {
                 Screen.SetResolution(windowWidth, windowHeight, FullScreenMode.Windowed);
             }

@@ -67,6 +67,7 @@ namespace YuiPhysicalAI.UI
         private bool advancedVisible;
         private bool isPreviewingVoice;
         private bool previewVoiceStartedThisOpen;
+        private int resolutionPresetOnOpen = -1;
 
         private static readonly VoiceOption[] VoiceOptions =
         {
@@ -271,11 +272,11 @@ namespace YuiPhysicalAI.UI
 
         private void Apply()
         {
-            ApplyFieldsToRuntime();
+            ApplyFieldsToRuntime(true);
             Hide();
         }
 
-        private void ApplyFieldsToRuntime()
+        private void ApplyFieldsToRuntime(bool allowResolutionChange)
         {
             var backendUrl = backendUrlInput != null ? backendUrlInput.text : null;
             var speakerId = chatPanel != null ? chatPanel.SpeakerId : 14;
@@ -290,7 +291,11 @@ namespace YuiPhysicalAI.UI
                 SaveCustomVrmDisplayNameFromInput();
                 chatPanel.SetCharacterName(characterNameInput != null ? characterNameInput.text : chatPanel.CharacterName);
                 chatPanel.SetCustomInstruction(customInstructionInput != null ? customInstructionInput.text : chatPanel.CustomInstruction);
-                chatPanel.SetAvatarSlot(AvatarSlotValue());
+                var nextAvatarSlot = AvatarSlotValue();
+                if (!string.Equals(nextAvatarSlot, chatPanel.AvatarSlot, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    chatPanel.SetAvatarSlot(nextAvatarSlot);
+                }
                 chatPanel.ApplyRuntimeSettings(
                     backendUrl,
                     speakerId,
@@ -312,9 +317,13 @@ namespace YuiPhysicalAI.UI
                 backgroundManager.SetPreset(backgroundDropdown.value);
             }
 
-            if (windowResolutionController != null && resolutionDropdown != null)
+            if (allowResolutionChange
+                && windowResolutionController != null
+                && resolutionDropdown != null
+                && resolutionDropdown.value != resolutionPresetOnOpen)
             {
                 windowResolutionController.SetPreset(resolutionDropdown.value);
+                resolutionPresetOnOpen = windowResolutionController.PresetIndex;
             }
         }
 
@@ -330,7 +339,7 @@ namespace YuiPhysicalAI.UI
                 return;
             }
 
-            ApplyFieldsToRuntime();
+            ApplyFieldsToRuntime(false);
             if (chatPanel != null)
             {
                 isPreviewingVoice = true;
@@ -342,7 +351,7 @@ namespace YuiPhysicalAI.UI
 
         private void TestMicrophone()
         {
-            ApplyFieldsToRuntime();
+            ApplyFieldsToRuntime(false);
             StartMicrophoneMonitor();
         }
 
@@ -1104,6 +1113,7 @@ namespace YuiPhysicalAI.UI
             {
                 resolutionDropdown.value = windowResolutionController.PresetIndex;
                 resolutionDropdown.RefreshShownValue();
+                resolutionPresetOnOpen = windowResolutionController.PresetIndex;
             }
 
             if (cameraPresetDropdown != null)

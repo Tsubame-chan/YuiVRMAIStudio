@@ -194,9 +194,16 @@ namespace YuiPhysicalAI.Avatar
 
             if (consoleVisibilityController != null)
             {
-                var shouldFrameCamera = ActiveSlot == YuiAvatarSlots.UnityChanDefault
-                    || YuiAvatarSlots.IsCustomVrm(ActiveSlot);
-                consoleVisibilityController.SetAvatarRoot(activeAvatar.transform, shouldFrameCamera);
+                if (ActiveSlot == YuiAvatarSlots.DemoKikyo)
+                {
+                    consoleVisibilityController.SetAvatarRootUsingSceneDefault(activeAvatar.transform);
+                }
+                else
+                {
+                    var shouldFrameCamera = ActiveSlot == YuiAvatarSlots.UnityChanDefault
+                        || YuiAvatarSlots.IsCustomVrm(ActiveSlot);
+                    consoleVisibilityController.SetAvatarRoot(activeAvatar.transform, shouldFrameCamera);
+                }
             }
 
             if (modelController != null)

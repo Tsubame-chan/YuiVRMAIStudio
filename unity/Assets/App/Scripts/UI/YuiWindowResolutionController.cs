@@ -31,7 +31,7 @@ namespace YuiPhysicalAI.UI
 
         public int PresetIndex => Mathf.Clamp(presetIndex, 0, Options.Length - 1);
 
-        private void Start()
+        private void Awake()
         {
             presetIndex = Mathf.Clamp(PlayerPrefs.GetInt(YuiPrefsKeys.WindowResolutionPreset, presetIndex), 0, Options.Length - 1);
             ApplyPreset(presetIndex, false);

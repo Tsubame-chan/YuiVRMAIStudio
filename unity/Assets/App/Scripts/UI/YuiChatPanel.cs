@@ -357,7 +357,16 @@ namespace YuiPhysicalAI.UI
 
         public void SetAvatarSlot(string value)
         {
-            avatarSlot = NormalizeAvatarSlot(value);
+            var nextAvatarSlot = NormalizeAvatarSlot(value);
+            if (string.Equals(avatarSlot, nextAvatarSlot, StringComparison.OrdinalIgnoreCase)
+                && avatarSwitcher != null
+                && string.Equals(avatarSwitcher.ActiveSlot, nextAvatarSlot, StringComparison.OrdinalIgnoreCase)
+                && avatarSwitcher.ActiveAvatar != null)
+            {
+                return;
+            }
+
+            avatarSlot = nextAvatarSlot;
             PlayerPrefs.SetString(AvatarSlotPrefsKey, avatarSlot);
             PlayerPrefs.Save();
             ApplyAvatarSlot(true);
