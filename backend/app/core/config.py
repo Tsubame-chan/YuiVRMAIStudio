@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     openai_realtime_translate_model: str = "gpt-realtime-translate"
     openai_realtime_transcribe_model: str = "gpt-realtime-whisper"
     openai_realtime_voice: str = "coral"
-    openai_max_output_tokens: int = 420
+    openai_max_output_tokens: int = 600
     openai_vision_max_output_tokens: int = 1200
 
     gemini_api_key: str = ""
