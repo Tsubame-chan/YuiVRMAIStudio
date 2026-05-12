@@ -19,5 +19,6 @@ unity/**/UserSettings/
 *.sln
 *.user
 logs/
+builds/old/
 downloads/*.unitypackage
 installer/windows/output/
