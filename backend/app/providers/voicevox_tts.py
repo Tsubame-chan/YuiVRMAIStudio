@@ -66,17 +66,14 @@ class VoiceVoxProvider(TTSProvider):
                 audio_query["postPhonemeLength"] = request.post_phoneme_length
 
             synthesis_started_at = time.perf_counter()
-            synthesis_response = await self._client.post(
-                "/synthesis",
-                params={"speaker": request.speaker_id},
-                json=audio_query,
-            )
+            synthesis_response, synthesis_endpoint = await self._post_synthesis(request.speaker_id, audio_query)
             synthesis_response.raise_for_status()
             synthesis_ms = int((time.perf_counter() - synthesis_started_at) * 1000)
             logger.info(
-                "VOICEVOX synthesis chars=%s speaker=%s audio_query_ms=%s synthesis_ms=%s bytes=%s",
+                "VOICEVOX synthesis chars=%s speaker=%s endpoint=%s audio_query_ms=%s synthesis_ms=%s bytes=%s",
                 len(request.text),
                 request.speaker_id,
+                synthesis_endpoint,
                 audio_query_ms,
                 synthesis_ms,
                 len(synthesis_response.content),
@@ -99,6 +96,26 @@ class VoiceVoxProvider(TTSProvider):
             format="wav",
             duration_ms=None,
         )
+
+    async def _post_synthesis(self, speaker_id: int, audio_query: dict) -> tuple[httpx.Response, str]:
+        """Use cancellable synthesis when the local VOICEVOX Engine supports it."""
+        try:
+            response = await self._client.post(
+                "/cancellable_synthesis",
+                params={"speaker": speaker_id},
+                json=audio_query,
+            )
+            if response.status_code != 404:
+                return response, "/cancellable_synthesis"
+        except httpx.ConnectError as exc:
+            logger.warning("VOICEVOX cancellable_synthesis failed, falling back: %s", exc)
+
+        response = await self._client.post(
+            "/synthesis",
+            params={"speaker": speaker_id},
+            json=audio_query,
+        )
+        return response, "/synthesis"
 
     def _enforce_cache_limit(self) -> None:
         """Keep at most _AUDIO_CACHE_LIMIT .wav files in the audio cache."""

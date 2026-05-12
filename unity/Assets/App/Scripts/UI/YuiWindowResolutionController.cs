@@ -33,7 +33,16 @@ namespace YuiPhysicalAI.UI
 
         private void Awake()
         {
-            presetIndex = Mathf.Clamp(PlayerPrefs.GetInt(YuiPrefsKeys.WindowResolutionPreset, presetIndex), 0, Options.Length - 1);
+            var savedPresetIndex = Mathf.Clamp(PlayerPrefs.GetInt(YuiPrefsKeys.WindowResolutionPreset, presetIndex), 0, Options.Length - 1);
+            presetIndex = ResolvePresetForCurrentDisplay(savedPresetIndex);
+            if (presetIndex != savedPresetIndex)
+            {
+                Debug.LogWarning(
+                    $"Yui window resolution preset {savedPresetIndex} does not fit this display; using preset {presetIndex}.");
+                PlayerPrefs.SetInt(YuiPrefsKeys.WindowResolutionPreset, presetIndex);
+                PlayerPrefs.Save();
+            }
+
             ApplyPreset(presetIndex, false);
         }
 
@@ -44,7 +53,7 @@ namespace YuiPhysicalAI.UI
 
         private void ApplyPreset(int index, bool save)
         {
-            presetIndex = Mathf.Clamp(index, 0, Options.Length - 1);
+            presetIndex = ResolvePresetForCurrentDisplay(index);
             var option = Options[presetIndex];
 #if UNITY_STANDALONE
             Screen.SetResolution(option.Width, option.Height, FullScreenMode.Windowed);
@@ -54,6 +63,44 @@ namespace YuiPhysicalAI.UI
                 PlayerPrefs.SetInt(YuiPrefsKeys.WindowResolutionPreset, presetIndex);
                 PlayerPrefs.Save();
             }
+        }
+
+        private static int ResolvePresetForCurrentDisplay(int requestedIndex)
+        {
+            var index = Mathf.Clamp(requestedIndex, 0, Options.Length - 1);
+            var maxWidth = Mathf.Max(360, GetDisplayWidth() - 80);
+            var maxHeight = Mathf.Max(640, GetDisplayHeight() - 120);
+
+            for (var i = index; i >= 0; i--)
+            {
+                var option = Options[i];
+                if (option.Width <= maxWidth && option.Height <= maxHeight)
+                {
+                    return i;
+                }
+            }
+
+            return 0;
+        }
+
+        private static int GetDisplayWidth()
+        {
+            if (Display.main != null && Display.main.systemWidth > 0)
+            {
+                return Display.main.systemWidth;
+            }
+
+            return Screen.currentResolution.width > 0 ? Screen.currentResolution.width : Screen.width;
+        }
+
+        private static int GetDisplayHeight()
+        {
+            if (Display.main != null && Display.main.systemHeight > 0)
+            {
+                return Display.main.systemHeight;
+            }
+
+            return Screen.currentResolution.height > 0 ? Screen.currentResolution.height : Screen.height;
         }
     }
 }

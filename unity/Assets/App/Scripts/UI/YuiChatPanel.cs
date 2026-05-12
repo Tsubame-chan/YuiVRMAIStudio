@@ -1016,7 +1016,7 @@ namespace YuiPhysicalAI.UI
 
             foreach (var item in recent.Items)
             {
-                var speaker = item.Role == "assistant" ? "Yui" : "You";
+                var speaker = item.Role == "assistant" ? CharacterName : "You";
                 AppendLog(speaker, item.Message);
             }
         }
@@ -1797,7 +1797,18 @@ namespace YuiPhysicalAI.UI
                     while (!result.EndOfMessage);
 
                     var json = Encoding.UTF8.GetString(stream.ToArray());
-                    HandleRealtimeMessage(JObject.Parse(json));
+                    JObject msg;
+                    try
+                    {
+                        msg = JObject.Parse(json);
+                    }
+                    catch (JsonReaderException ex)
+                    {
+                        Debug.LogWarning($"[Realtime] Malformed JSON frame, skipping. {ex.Message}");
+                        continue;
+                    }
+
+                    HandleRealtimeMessage(msg);
                 }
             }
             catch (OperationCanceledException)
@@ -2508,7 +2519,9 @@ namespace YuiPhysicalAI.UI
             }
 
             return !client.BaseUrl.Contains("127.0.0.1")
-                && !client.BaseUrl.Contains("localhost");
+                && !client.BaseUrl.Contains("localhost")
+                && !client.BaseUrl.Contains("[::1]")
+                && !client.BaseUrl.Contains("::1");
         }
 
         private void ConfigureChatdollKitVoicevoxTts()
@@ -2731,7 +2744,7 @@ namespace YuiPhysicalAI.UI
 
         private void AppendLog(string speaker, string text)
         {
-            var displayText = speaker == "Yui" ? YuiSpeechTextUtility.CleanDisplayText(text) : text;
+            var displayText = speaker == CharacterName ? YuiSpeechTextUtility.CleanDisplayText(text) : text;
             Debug.Log($"{speaker}: {displayText}");
             chatLogView?.AppendLog(speaker, displayText);
         }
