@@ -4,6 +4,9 @@
 
 **あなたのお気に入りのVRMキャラクターを、話し、見て、覚えて、翻訳するAIエージェントへ。**
 
+<img width="578" height="1056" alt="image" src="https://github.com/user-attachments/assets/d7576086-bb33-4752-a940-a5ed06f12781" />
+
+
 Yui VRM AI Studioは、Unity製のVRMアバター表示アプリとローカルPythonバックエンドを組み合わせた、Windows向けのローカルAIアバタースタジオです。
 
 UnityChanまたは自分の `.vrm` モデルを表示しながら、テキスト会話、音声入力、VOICEVOX Engineによる日本語音声再生、画像入力、画面コンテキスト、会話メモリ、リアルタイム会話モードを試せます。
