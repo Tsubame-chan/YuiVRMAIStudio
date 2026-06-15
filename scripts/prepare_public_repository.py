@@ -108,13 +108,14 @@ def load_local_private_paths(source_root: Path) -> list[str]:
 
 def private_unity_asset_roots(private_paths: list[str]) -> set[str]:
     roots: set[str] = set()
+    keep_shared_roots = {"App", "Resources", "Scenes", "Tests"}
     prefix = "unity/Assets/"
     for relative in private_paths:
         if not relative.startswith(prefix):
             continue
         remainder = relative[len(prefix):]
         first_segment = remainder.split("/", 1)[0]
-        if first_segment and "." not in first_segment:
+        if first_segment and first_segment not in keep_shared_roots and "." not in first_segment:
             roots.add(first_segment)
     return roots
 

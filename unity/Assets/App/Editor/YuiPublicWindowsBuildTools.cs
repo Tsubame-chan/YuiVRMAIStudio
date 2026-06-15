@@ -14,8 +14,10 @@ namespace YuiPhysicalAI.Editor
         private const string IconPath = "Assets/App/Art/Yui_icon.png";
         private const string PublicBuildDirectory = "../../builds/YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1";
         private const string PersonalBuildDirectory = "../../builds/YuiVRMAIStudio_PersonalAlpha_v0.1.0-alpha.1";
+        private const string MacPublicBuildDirectory = "../../builds/YuiVRMAIStudio_MacOSAlpha_v0.1.0-alpha.1";
         private const string PublicExeName = "Yui VRM AI Studio.exe";
         private const string PersonalExeName = "Yui VRM AI Studio Personal.exe";
+        private const string MacPublicAppName = "Yui VRM AI Studio.app";
         private const string Version = "0.1.0-alpha.1";
 
         [MenuItem("Yui/Build/Build Windows Public Alpha", false, 501)]
@@ -30,7 +32,33 @@ namespace YuiPhysicalAI.Editor
             BuildWindowsAlpha(PersonalBuildDirectory, PersonalExeName, "Yui VRM AI Studio Personal");
         }
 
+        [MenuItem("Yui/Build/Build macOS Public Alpha", false, 503)]
+        public static void BuildMacOSPublicAlpha()
+        {
+            BuildStandaloneAlpha(
+                MacPublicBuildDirectory,
+                MacPublicAppName,
+                "Yui VRM AI Studio",
+                BuildTarget.StandaloneOSX,
+                "macOS public alpha");
+        }
+
         private static void BuildWindowsAlpha(string buildDirectory, string exeName, string productName)
+        {
+            BuildStandaloneAlpha(
+                buildDirectory,
+                exeName,
+                productName,
+                BuildTarget.StandaloneWindows64,
+                "Windows alpha");
+        }
+
+        private static void BuildStandaloneAlpha(
+            string buildDirectory,
+            string fileName,
+            string productName,
+            BuildTarget target,
+            string label)
         {
             ConfigureStandalonePlayer(productName);
             EditorSceneManager.OpenScene(ScenePath);
@@ -39,13 +67,13 @@ namespace YuiPhysicalAI.Editor
 
             var outputDirectory = Path.GetFullPath(Path.Combine(Application.dataPath, buildDirectory));
             Directory.CreateDirectory(outputDirectory);
-            var outputPath = Path.Combine(outputDirectory, exeName);
+            var outputPath = Path.Combine(outputDirectory, fileName);
 
             var options = new BuildPlayerOptions
             {
                 scenes = new[] { ScenePath },
                 locationPathName = outputPath,
-                target = BuildTarget.StandaloneWindows64,
+                target = target,
                 options = BuildOptions.None
             };
 
@@ -54,11 +82,11 @@ namespace YuiPhysicalAI.Editor
             if (summary.result == BuildResult.Succeeded)
             {
                 RemoveBurstDebugInformation(outputDirectory);
-                Debug.Log($"Yui build: Windows alpha succeeded: {outputPath} ({summary.totalSize} bytes)");
+                Debug.Log($"Yui build: {label} succeeded: {outputPath} ({summary.totalSize} bytes)");
             }
             else
             {
-                Debug.LogError($"Yui build: Windows alpha failed: {summary.result}");
+                Debug.LogError($"Yui build: {label} failed: {summary.result}");
                 EditorApplication.Exit(1);
             }
         }
@@ -97,5 +125,4 @@ namespace YuiPhysicalAI.Editor
         }
     }
 }
-
 

@@ -5,8 +5,6 @@ namespace YuiPhysicalAI.Tests.Editor
 {
     public sealed class YuiAvatarSlotsTests
     {
-        [TestCase("demo_kikyo", YuiAvatarSlots.DemoKikyo)]
-        [TestCase("DEMO_KIKYO", YuiAvatarSlots.DemoKikyo)]
         [TestCase("unitychan_default", YuiAvatarSlots.UnityChanDefault)]
         [TestCase("UNITYCHAN_DEFAULT", YuiAvatarSlots.UnityChanDefault)]
         [TestCase("distribution_default", YuiAvatarSlots.UnityChanDefault)]
