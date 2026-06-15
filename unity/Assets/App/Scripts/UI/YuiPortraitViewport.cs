@@ -6,6 +6,7 @@ namespace YuiPhysicalAI.UI
     public sealed class YuiPortraitViewport : MonoBehaviour
     {
         [SerializeField] private float targetAspect = 9f / 16f;
+        [SerializeField] private bool renderFullViewport = true;
         [SerializeField] private bool pillarboxLandscapePreview = true;
         [SerializeField] private bool clearOutsideViewport = true;
         [SerializeField] private bool useCameraBackgroundForOutsideViewport = true;
@@ -50,6 +51,13 @@ namespace YuiPhysicalAI.UI
 
             lastWidth = Mathf.Max(1, Screen.width);
             lastHeight = Mathf.Max(1, Screen.height);
+
+            if (renderFullViewport)
+            {
+                targetCamera.rect = new Rect(0f, 0f, 1f, 1f);
+                UpdateClearCamera(false);
+                return;
+            }
 
             if (!pillarboxLandscapePreview)
             {
