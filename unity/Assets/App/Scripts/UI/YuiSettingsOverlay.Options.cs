@@ -338,7 +338,20 @@ namespace YuiPhysicalAI.UI
             var options = YuiWindowResolutionController.Options;
             if (resolutionDropdown.options.Count == options.Length)
             {
-                return;
+                var labelsMatch = true;
+                for (var i = 0; i < options.Length; i++)
+                {
+                    if (resolutionDropdown.options[i].text != options[i].Label)
+                    {
+                        labelsMatch = false;
+                        break;
+                    }
+                }
+
+                if (labelsMatch)
+                {
+                    return;
+                }
             }
 
             resolutionDropdown.options.Clear();

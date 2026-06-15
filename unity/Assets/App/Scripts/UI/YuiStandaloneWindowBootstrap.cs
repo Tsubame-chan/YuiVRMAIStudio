@@ -4,8 +4,8 @@ namespace YuiPhysicalAI.UI
 {
     public sealed class YuiStandaloneWindowBootstrap : MonoBehaviour
     {
-        public const int DefaultWindowWidth = 1080;
-        public const int DefaultWindowHeight = 1920;
+        public const int DefaultWindowWidth = 1440;
+        public const int DefaultWindowHeight = 2560;
 
         [SerializeField] private int windowWidth = DefaultWindowWidth;
         [SerializeField] private int windowHeight = DefaultWindowHeight;

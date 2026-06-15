@@ -49,6 +49,7 @@ namespace YuiPhysicalAI.Core
         // Window / display
         public const string WindowResolutionPreset = "Yui.Settings.WindowResolutionPreset";
         public const string WindowResolutionPresetDefaultUpgraded = "Yui.Settings.WindowResolutionPresetDefaultUpgraded";
+        public const string WindowResolutionPresetListVersion = "Yui.Settings.WindowResolutionPresetListVersion";
 
         // Camera
         public const string CameraPresetPrefix = "Yui.Settings.CameraPreset";
