@@ -1,0 +1,24 @@
+{
+    "name": "ChatdollKit",
+    "rootNamespace": "",
+    "references": [
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:d444a9c79d21fec4181e6e12dc2e9706",
+        "GUID:04376767bc1f3b428aefa3d20743e819"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.endel.nativewebsocket",
+            "expression": "",
+            "define": "NATIVEWEBSOCKET"
+        }
+    ],
+    "noEngineReferences": false
+}

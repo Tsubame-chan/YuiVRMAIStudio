@@ -1,0 +1,63 @@
+.env
+.DS_Store
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+runtime/
+handoff_prompt_*.md
+Info.plist.Unity-*.codex-backup-*
+_private_migration/
+backend/data/*.db
+backend/data/*.db-*
+backend/data/audio/*.wav
+
+# Unity generated files
+unity/**/Library/
+unity/**/Temp/
+unity/**/Obj/
+unity/**/Build/
+unity/**/Builds/
+unity/**/Logs/
+unity/**/UserSettings/
+*.csproj
+*.sln
+*.user
+logs/
+downloads/*.unitypackage
+scripts/audit_private_patterns.txt
+installer/windows/output/
+
+# Local-only private avatar assets
+unity/Assets/Kikyo/
+unity/Assets/Kikyo.meta
+unity/Assets/YuiBakedKikyo/
+unity/Assets/YuiBakedKikyo.meta
+unity/Assets/Kikyo_Neon.unity
+unity/Assets/Kikyo_Neon.unity.meta
+unity/Assets/ZZZ_GeneratedAssets/
+unity/Assets/ZZZ_GeneratedAssets.meta
+unity/Assets/Zaelah/Kikyo_MilkMaid/
+unity/Assets/Zaelah.meta
+unity/Assets/Zaelah/Kikyo_MilkMaid.meta
+unity/Assets/Pampoa/JKSchoolUniform/
+unity/Assets/Pampoa.meta
+unity/Assets/Pampoa/JKSchoolUniform.meta
+unity/Assets/Three Dots And a Dash/Kikyo_Casual/
+unity/Assets/Three Dots And a Dash.meta
+unity/Assets/Three Dots And a Dash/Kikyo_Casual.meta
+unity/Assets/BERO/Open back sweater for Kikyo/
+unity/Assets/BERO.meta
+unity/Assets/BERO/Open back sweater for Kikyo.meta
+unity/Assets/funwari_twosideup.ver1.01/
+unity/Assets/funwari_twosideup.ver1.01.meta
+unity/Assets/Monya/
+unity/Assets/Monya.meta
+unity/Assets/Reさいくるしょっぷ/
+unity/Assets/Reさいくるしょっぷ.meta
+unity/Assets/App/Animator/YuiKikyoRuntime.controller
+unity/Assets/App/Animator/YuiKikyoRuntime.controller.meta
+unity/Assets/App/Scripts/Avatar/YuiKikyoAvatarDefaults.cs
+unity/Assets/App/Scripts/Avatar/YuiKikyoAvatarDefaults.cs.meta
+unity/Assets/Resources/Faces-YuiKikyo.asset
+unity/Assets/Resources/Faces-YuiKikyo.asset.meta
