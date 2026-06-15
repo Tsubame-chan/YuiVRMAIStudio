@@ -8,7 +8,8 @@ namespace YuiPhysicalAI.UI
         [SerializeField] private float targetAspect = 9f / 16f;
         [SerializeField] private bool pillarboxLandscapePreview = true;
         [SerializeField] private bool clearOutsideViewport = true;
-        [SerializeField] private Color outsideViewportColor = Color.black;
+        [SerializeField] private bool useCameraBackgroundForOutsideViewport = true;
+        [SerializeField] private Color outsideViewportColor = new Color(0.16f, 0.18f, 0.19f);
 
         private Camera targetCamera;
         private Camera clearCamera;
@@ -33,6 +34,7 @@ namespace YuiPhysicalAI.UI
         {
             if (Screen.width == lastWidth && Screen.height == lastHeight)
             {
+                SyncClearCameraColor();
                 return;
             }
 
@@ -95,13 +97,25 @@ namespace YuiPhysicalAI.UI
             clearCamera.rect = new Rect(0f, 0f, 1f, 1f);
             clearCamera.depth = targetCamera.depth - 100f;
             clearCamera.clearFlags = CameraClearFlags.SolidColor;
-            clearCamera.backgroundColor = outsideViewportColor;
+            SyncClearCameraColor();
             clearCamera.cullingMask = 0;
             clearCamera.orthographic = true;
             clearCamera.allowHDR = targetCamera.allowHDR;
             clearCamera.allowMSAA = targetCamera.allowMSAA;
             clearCamera.targetDisplay = targetCamera.targetDisplay;
             clearCamera.targetTexture = targetCamera.targetTexture;
+        }
+
+        private void SyncClearCameraColor()
+        {
+            if (clearCamera == null || !clearCamera.enabled)
+            {
+                return;
+            }
+
+            clearCamera.backgroundColor = useCameraBackgroundForOutsideViewport && targetCamera != null
+                ? targetCamera.backgroundColor
+                : outsideViewportColor;
         }
 
         private Camera FindExistingClearCamera()
