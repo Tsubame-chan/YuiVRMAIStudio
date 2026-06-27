@@ -93,3 +93,45 @@ def test_foreground_app_context_text() -> None:
     context = provider._foreground_app_context_text(request)
 
     assert context == "category=Browser, app=Chrome, process=chrome"
+
+
+def test_instructions_require_concrete_search_results_without_raw_urls() -> None:
+    instructions = make_provider()._instructions()
+
+    assert "concrete results" in instructions
+    assert "3 to 6 useful candidates" in instructions
+    assert "Do not include raw URLs" in instructions
+
+
+def test_web_search_tools_disabled_by_default_when_message_is_general() -> None:
+    provider = make_provider()
+    request = ChatRequest(request_id="test", message="こんにちは")
+
+    assert provider._web_search_tools(request) == []
+
+
+def test_web_search_tools_enabled_for_weather_question() -> None:
+    provider = make_provider()
+    request = ChatRequest(request_id="test", message="今日の東京の天気は？")
+
+    tools = provider._web_search_tools(request)
+
+    assert tools == [
+        {
+            "type": "web_search",
+            "search_context_size": "low",
+            "user_location": {
+                "type": "approximate",
+                "country": "JP",
+                "timezone": "Asia/Tokyo",
+            },
+        }
+    ]
+
+
+def test_web_search_tools_can_be_disabled_by_settings() -> None:
+    provider = OpenAIChatProvider.__new__(OpenAIChatProvider)
+    provider.settings = Settings(openai_api_key="test-key", openai_web_search_enabled=False)
+    request = ChatRequest(request_id="test", message="今日のニュースを調べて")
+
+    assert provider._web_search_tools(request) == []

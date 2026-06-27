@@ -31,6 +31,8 @@ namespace YuiPhysicalAI.UI
             float nextPostPhonemeLength,
             string nextConversationMode = null,
             string nextTtsMode = null,
+            string nextIrodoriVoiceGender = null,
+            string nextIrodoriVoiceInstruct = null,
             string nextMicrophoneDevice = null,
             string nextLookCameraDevice = null)
         {
@@ -60,6 +62,8 @@ namespace YuiPhysicalAI.UI
             conversationMode = NormalizeConversationMode(nextConversationMode ?? conversationMode);
             var conversationModeChanged = !string.Equals(previousConversationMode, conversationMode, StringComparison.OrdinalIgnoreCase);
             ttsMode = NormalizeTtsMode(nextTtsMode ?? ttsMode);
+            irodoriVoiceGender = NormalizeIrodoriVoiceGender(nextIrodoriVoiceGender ?? irodoriVoiceGender);
+            irodoriVoiceInstruct = NormalizeIrodoriVoiceInstruct(nextIrodoriVoiceInstruct ?? irodoriVoiceInstruct);
             preferredMicrophoneDevice = nextMicrophoneDevice ?? preferredMicrophoneDevice;
             if (preferredMicrophoneDevice == "Default")
             {
@@ -75,6 +79,8 @@ namespace YuiPhysicalAI.UI
             PlayerPrefs.SetFloat(VoicePostPhonemeLengthKey, postPhonemeLength);
             PlayerPrefs.SetString(ConversationModeKey, conversationMode);
             PlayerPrefs.SetString(TtsModeKey, ttsMode);
+            PlayerPrefs.SetString(IrodoriVoiceGenderKey, irodoriVoiceGender);
+            PlayerPrefs.SetString(IrodoriVoiceInstructKey, irodoriVoiceInstruct);
             PlayerPrefs.SetString(MicrophoneDeviceKey, preferredMicrophoneDevice);
             PlayerPrefs.SetString(LookCameraDeviceKey, preferredLookCameraDevice);
 
@@ -125,13 +131,16 @@ namespace YuiPhysicalAI.UI
             conversationMode = NormalizeConversationMode(PlayerPrefs.GetString(ConversationModeKey, conversationMode));
             SyncRealtimeActiveBackendModeWithConversation();
             ttsMode = NormalizeTtsMode(PlayerPrefs.GetString(TtsModeKey, ttsMode));
+            irodoriVoiceGender = NormalizeIrodoriVoiceGender(PlayerPrefs.GetString(IrodoriVoiceGenderKey, irodoriVoiceGender));
+            irodoriVoiceInstruct = NormalizeIrodoriVoiceInstruct(PlayerPrefs.GetString(IrodoriVoiceInstructKey, irodoriVoiceInstruct));
             preferredMicrophoneDevice = PlayerPrefs.GetString(MicrophoneDeviceKey, preferredMicrophoneDevice);
             preferredLookCameraDevice = NormalizeLookCameraDevice(PlayerPrefs.GetString(LookCameraDeviceKey, preferredLookCameraDevice));
             secretMode = PlayerPrefs.GetInt(SecretModeKey, 0) == 1;
             characterName = PlayerPrefs.GetString(CharacterNameKey, characterName);
             customInstruction = PlayerPrefs.GetString(CustomInstructionKey, customInstruction);
-            var savedAvatarSlot = PlayerPrefs.GetString(AvatarSlotPrefsKey, avatarSlot);
-            savedAvatarSlot = UpgradeDefaultAvatarSlot(savedAvatarSlot);
+            var defaultAvatarSlot = GetDefaultAvatarSlot();
+            var savedAvatarSlot = PlayerPrefs.GetString(AvatarSlotPrefsKey, defaultAvatarSlot);
+            savedAvatarSlot = UpgradeDefaultAvatarSlot(savedAvatarSlot, defaultAvatarSlot);
             avatarSlot = NormalizeAvatarSlot(savedAvatarSlot);
             if (!string.Equals(savedAvatarSlot, avatarSlot, StringComparison.OrdinalIgnoreCase))
             {
@@ -209,7 +218,7 @@ namespace YuiPhysicalAI.UI
             runtimeVrmImporter?.ClearCustomVrmSlot(slot);
             if (string.Equals(avatarSlot, slot, StringComparison.OrdinalIgnoreCase))
             {
-                avatarSlot = YuiAvatarSlots.UnityChanDefault;
+                avatarSlot = GetDefaultAvatarSlot();
                 PlayerPrefs.SetString(AvatarSlotPrefsKey, avatarSlot);
                 PlayerPrefs.Save();
                 ApplyAvatarSlot(false);
@@ -220,8 +229,22 @@ namespace YuiPhysicalAI.UI
 
         public string[] GetAvatarSlotOptions()
         {
+            var hasDemoAvatar = avatarSwitcher != null && avatarSwitcher.HasDemoAvatar;
+            if (!hasDemoAvatar)
+            {
+                return new[]
+                {
+                    "UnityChan Default",
+                    GetCustomVrmDisplayName(YuiAvatarSlots.CustomVrm1),
+                    GetCustomVrmDisplayName(YuiAvatarSlots.CustomVrm2),
+                    GetCustomVrmDisplayName(YuiAvatarSlots.CustomVrm3),
+                    GetCustomVrmDisplayName(YuiAvatarSlots.CustomVrm4)
+                };
+            }
+
             return new[]
             {
+                "Demo Avatar",
                 "UnityChan Default",
                 GetCustomVrmDisplayName(YuiAvatarSlots.CustomVrm1),
                 GetCustomVrmDisplayName(YuiAvatarSlots.CustomVrm2),
@@ -236,6 +259,22 @@ namespace YuiPhysicalAI.UI
             if (index < 0 || index >= options.Length)
             {
                 return GetDefaultAvatarSlot();
+            }
+
+            var hasDemoAvatar = avatarSwitcher != null && avatarSwitcher.HasDemoAvatar;
+            if (hasDemoAvatar)
+            {
+                if (index == 0)
+                {
+                    return YuiAvatarSlots.DemoKikyo;
+                }
+
+                if (index == 1)
+                {
+                    return YuiAvatarSlots.UnityChanDefault;
+                }
+
+                return YuiAvatarSlots.CustomVrmSlot(index - 1);
             }
 
             if (index == 0)
@@ -404,12 +443,27 @@ namespace YuiPhysicalAI.UI
         private static string NormalizeTtsMode(string mode)
         {
             if (string.Equals(mode, "server", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "server-http", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(mode, "silent", StringComparison.OrdinalIgnoreCase))
             {
                 return mode.ToLowerInvariant();
             }
 
             return "local";
+        }
+
+        private static string NormalizeIrodoriVoiceInstruct(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? "若い女性の、明るく可愛いアニメ調の声で話してください。"
+                : value.Trim();
+        }
+
+        private static string NormalizeIrodoriVoiceGender(string value)
+        {
+            return string.Equals(value, "male", StringComparison.OrdinalIgnoreCase)
+                ? "male"
+                : "female";
         }
 
         private static string NormalizeConversationMode(string mode)

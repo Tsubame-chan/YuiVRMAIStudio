@@ -107,6 +107,41 @@ namespace YuiPhysicalAI.UI
             return clip;
         }
 
+        private static void NormalizeRealtimePlaybackClip(
+            AudioClip clip,
+            out float sourcePeak,
+            out float appliedGain)
+        {
+            sourcePeak = 0f;
+            appliedGain = 1f;
+            if (clip == null || clip.samples <= 0 || clip.channels <= 0)
+            {
+                return;
+            }
+
+            var samples = new float[clip.samples * clip.channels];
+            clip.GetData(samples, 0);
+            for (var i = 0; i < samples.Length; i++)
+            {
+                sourcePeak = Mathf.Max(sourcePeak, Mathf.Abs(samples[i]));
+            }
+
+            if (sourcePeak <= 0.0001f || sourcePeak >= YuiRealtimeTuning.AudioTargetPeak)
+            {
+                return;
+            }
+
+            appliedGain = Mathf.Min(
+                YuiRealtimeTuning.AudioMaxAutoGain,
+                YuiRealtimeTuning.AudioTargetPeak / sourcePeak);
+            for (var i = 0; i < samples.Length; i++)
+            {
+                samples[i] = Mathf.Clamp(samples[i] * appliedGain, -1f, 1f);
+            }
+
+            clip.SetData(samples, 0);
+        }
+
         private static byte[] Pcm16BytesToWav(byte[] pcm, int sampleRate)
         {
             if (pcm == null || pcm.Length == 0)

@@ -54,6 +54,13 @@ namespace YuiPhysicalAI.UI
 
         private async Task<bool> TryCaptureCameraAndAnalyzeAsync()
         {
+            if (!await EnsureWebCamAuthorizationAsync())
+            {
+                AppendLog("System", "カメラ権限が許可されていないため、Lookを使えません。iOS設定でカメラ権限を確認してください。");
+                SetStatus("Camera permission denied");
+                return true;
+            }
+
             var devices = WebCamTexture.devices;
             if (devices == null || devices.Length == 0)
             {
@@ -133,6 +140,22 @@ namespace YuiPhysicalAI.UI
             }
         }
 
+        private async Task<bool> EnsureWebCamAuthorizationAsync()
+        {
+            if (Application.HasUserAuthorization(UserAuthorization.WebCam))
+            {
+                return true;
+            }
+
+            var authorization = Application.RequestUserAuthorization(UserAuthorization.WebCam);
+            while (!authorization.isDone)
+            {
+                await Task.Delay(100, cancellationTokenSource.Token);
+            }
+
+            return Application.HasUserAuthorization(UserAuthorization.WebCam);
+        }
+
         private async Task<Texture2D> CaptureCameraFrameAsync(string selectedDevice, bool useRequestedSize)
         {
             WebCamTexture webcam = null;
@@ -148,10 +171,16 @@ namespace YuiPhysicalAI.UI
                 webcam.Play();
 
                 var startedAt = Time.realtimeSinceStartup;
+                var readyAt = -1f;
                 Color32[] pixels = null;
+                Color32[] bestPixels = null;
+                var bestWidth = 0;
+                var bestHeight = 0;
+                var bestScore = float.MinValue;
+                var candidateFrames = 0;
                 while (Time.realtimeSinceStartup - startedAt < 6f)
                 {
-                    await Task.Delay(120, cancellationTokenSource.Token);
+                    await Task.Delay(140, cancellationTokenSource.Token);
                     if (webcam.width <= 16 || webcam.height <= 16 || !webcam.didUpdateThisFrame)
                     {
                         continue;
@@ -163,10 +192,35 @@ namespace YuiPhysicalAI.UI
                         continue;
                     }
 
-                    var frame = new Texture2D(webcam.width, webcam.height, TextureFormat.RGB24, false);
-                    frame.SetPixels32(pixels);
+                    if (readyAt < 0f)
+                    {
+                        readyAt = Time.realtimeSinceStartup;
+                    }
+
+                    var score = ScoreLookCameraFrame(pixels, webcam.width, webcam.height);
+                    candidateFrames++;
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        bestWidth = webcam.width;
+                        bestHeight = webcam.height;
+                        bestPixels = pixels;
+                    }
+
+                    var warmedUp = Time.realtimeSinceStartup - readyAt >= Mathf.Max(0.2f, lookCameraWarmupSeconds);
+                    var enoughSamples = candidateFrames >= Mathf.Max(1, lookCameraMaxCandidateFrames);
+                    if (warmedUp || enoughSamples)
+                    {
+                        break;
+                    }
+                }
+
+                if (bestPixels != null && bestWidth > 16 && bestHeight > 16)
+                {
+                    var frame = new Texture2D(bestWidth, bestHeight, TextureFormat.RGB24, false);
+                    frame.SetPixels32(bestPixels);
                     frame.Apply(false, false);
-                    Debug.Log($"Yui Look camera frame captured: device={selectedDevice}, size={webcam.width}x{webcam.height}, requested={useRequestedSize}");
+                    Debug.Log($"Yui Look camera frame captured: device={selectedDevice}, size={bestWidth}x{bestHeight}, requested={useRequestedSize}, candidates={candidateFrames}, score={bestScore:0.00}");
                     return frame;
                 }
 
@@ -185,6 +239,54 @@ namespace YuiPhysicalAI.UI
                     Destroy(webcam);
                 }
             }
+        }
+
+        private static float ScoreLookCameraFrame(Color32[] pixels, int width, int height)
+        {
+            if (pixels == null || pixels.Length == 0 || width <= 2 || height <= 2)
+            {
+                return float.MinValue;
+            }
+
+            var strideX = Mathf.Max(1, width / 48);
+            var strideY = Mathf.Max(1, height / 36);
+            var samples = 0;
+            var edgeTotal = 0f;
+            var brightnessTotal = 0f;
+            var saturationTotal = 0f;
+
+            for (var y = strideY; y < height - strideY; y += strideY)
+            {
+                var row = y * width;
+                for (var x = strideX; x < width - strideX; x += strideX)
+                {
+                    var current = pixels[row + x];
+                    var right = pixels[row + x + strideX];
+                    var down = pixels[(y + strideY) * width + x];
+
+                    var currentLuma = Luma(current);
+                    var rightLuma = Luma(right);
+                    var downLuma = Luma(down);
+                    edgeTotal += Mathf.Abs(currentLuma - rightLuma) + Mathf.Abs(currentLuma - downLuma);
+                    brightnessTotal += currentLuma;
+                    saturationTotal += Math.Max(current.r, Math.Max(current.g, current.b)) - Math.Min(current.r, Math.Min(current.g, current.b));
+                    samples++;
+                }
+            }
+
+            if (samples == 0)
+            {
+                return float.MinValue;
+            }
+
+            var brightness = brightnessTotal / samples;
+            var brightnessPenalty = brightness < 24f ? (24f - brightness) * 3f : 0f;
+            return (edgeTotal / samples) + (saturationTotal / samples * 0.05f) - brightnessPenalty;
+        }
+
+        private static float Luma(Color32 pixel)
+        {
+            return (pixel.r * 0.2126f) + (pixel.g * 0.7152f) + (pixel.b * 0.0722f);
         }
 
         private static bool IsProbablyBlackFrame(Color32[] pixels)
@@ -224,21 +326,32 @@ namespace YuiPhysicalAI.UI
         private string SelectLookCameraDevice(WebCamDevice[] devices)
         {
             preferredLookCameraDevice = NormalizeLookCameraDevice(preferredLookCameraDevice);
-            if (string.IsNullOrWhiteSpace(preferredLookCameraDevice))
+            if (!string.IsNullOrWhiteSpace(preferredLookCameraDevice))
             {
-                return null;
+                foreach (var device in devices)
+                {
+                    if (device.name == preferredLookCameraDevice)
+                    {
+                        return device.name;
+                    }
+                }
+
+                AppendLog("System", $"選択中のLook用カメラが見つかりません: {preferredLookCameraDevice}");
             }
 
             foreach (var device in devices)
             {
-                if (device.name == preferredLookCameraDevice)
+                if (!device.isFrontFacing)
                 {
+                    preferredLookCameraDevice = device.name;
+                    AppendLog("System", $"Look用カメラを自動選択しました: {preferredLookCameraDevice}");
                     return device.name;
                 }
             }
 
-            AppendLog("System", $"選択中のLook用カメラが見つかりません: {preferredLookCameraDevice}");
-            return null;
+            preferredLookCameraDevice = devices[0].name;
+            AppendLog("System", $"Look用カメラを自動選択しました: {preferredLookCameraDevice}");
+            return preferredLookCameraDevice;
         }
 
         private async Task ImportImageAndAnalyzeAsync(string path)

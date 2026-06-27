@@ -145,3 +145,40 @@ def test_realtime_beta_shape_error_is_user_facing() -> None:
     assert "Realtime API" in message
     assert "通常の音声入力" in message
     assert "invalid_request_error" not in message
+
+
+def test_realtime_voice_text_response_uses_web_search_tools_for_current_questions() -> None:
+    provider = RealtimeProvider(Settings(openai_api_key="sk-test"))
+    captured: dict[str, object] = {}
+
+    class FakeResponses:
+        @staticmethod
+        def create(**kwargs):
+            captured.update(kwargs)
+
+            class Response:
+                output_text = "今日は雨の可能性があります。"
+
+            return Response()
+
+    class FakeClient:
+        responses = FakeResponses()
+
+    response = provider._generate_voice_text_reply(
+        client=FakeClient(),
+        text="今日の東京の天気は？",
+        instructions=provider._default_stream_instructions("voice_text"),
+    )
+
+    assert response == "今日は雨の可能性があります。"
+    assert captured["tools"] == [
+        {
+            "type": "web_search",
+            "search_context_size": "low",
+            "user_location": {
+                "type": "approximate",
+                "country": "JP",
+                "timezone": "Asia/Tokyo",
+            },
+        }
+    ]

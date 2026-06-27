@@ -5,11 +5,13 @@ namespace YuiPhysicalAI.Tests.Editor
 {
     public sealed class YuiAvatarSlotsTests
     {
+        [TestCase("demo_kikyo", YuiAvatarSlots.DemoKikyo)]
+        [TestCase("DEMO_KIKYO", YuiAvatarSlots.DemoKikyo)]
         [TestCase("unitychan_default", YuiAvatarSlots.UnityChanDefault)]
         [TestCase("UNITYCHAN_DEFAULT", YuiAvatarSlots.UnityChanDefault)]
         [TestCase("distribution_default", YuiAvatarSlots.UnityChanDefault)]
-        [TestCase("custom_vrm", YuiAvatarSlots.CustomVrm)]
-        [TestCase("CUSTOM_VRM", YuiAvatarSlots.CustomVrm)]
+        [TestCase("custom_vrm", YuiAvatarSlots.CustomVrm1)]
+        [TestCase("CUSTOM_VRM", YuiAvatarSlots.CustomVrm1)]
         [TestCase("", YuiAvatarSlots.UnityChanDefault)]
         [TestCase("unknown", YuiAvatarSlots.UnityChanDefault)]
         public void Normalize_ReturnsCanonicalSlot(string input, string expected)

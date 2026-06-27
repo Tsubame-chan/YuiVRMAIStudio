@@ -8,11 +8,11 @@ namespace YuiPhysicalAI.UI
     {
         private void Apply()
         {
-            ApplyFieldsToRuntime();
+            ApplyFieldsToRuntime(true);
             Hide();
         }
 
-        private void ApplyFieldsToRuntime()
+        private void ApplyFieldsToRuntime(bool applyDisplaySettings)
         {
             var backendUrl = backendUrlInput != null ? backendUrlInput.text : null;
             var speakerId = chatPanel != null ? chatPanel.SpeakerId : 14;
@@ -40,16 +40,18 @@ namespace YuiPhysicalAI.UI
                     postPhonemeSlider != null ? postPhonemeSlider.value : 0.1f,
                     ConversationModeValue(),
                     TtsModeValue(),
+                    IrodoriVoiceGenderValue(),
+                    irodoriVoiceInstructInput != null ? irodoriVoiceInstructInput.text : chatPanel.IrodoriVoiceInstruct,
                     MicrophoneValue(),
                     LookCameraValue());
             }
 
-            if (backgroundManager != null && backgroundDropdown != null)
+            if (applyDisplaySettings && backgroundManager != null && backgroundDropdown != null)
             {
                 backgroundManager.SetPreset(backgroundDropdown.value);
             }
 
-            if (windowResolutionController != null && resolutionDropdown != null)
+            if (applyDisplaySettings && windowResolutionController != null && resolutionDropdown != null)
             {
                 windowResolutionController.SetPreset(resolutionDropdown.value);
             }
@@ -62,16 +64,10 @@ namespace YuiPhysicalAI.UI
                 return;
             }
 
-            if (previewVoiceStartedThisOpen)
-            {
-                return;
-            }
-
-            ApplyFieldsToRuntime();
+            ApplyFieldsToRuntime(false);
             if (chatPanel != null)
             {
                 isPreviewingVoice = true;
-                previewVoiceStartedThisOpen = true;
                 SetVoicePreviewInteractable(false);
                 chatPanel.PreviewVoice(OnVoicePreviewFinished);
             }
@@ -79,7 +75,7 @@ namespace YuiPhysicalAI.UI
 
         private void TestMicrophone()
         {
-            ApplyFieldsToRuntime();
+            ApplyFieldsToRuntime(false);
             StartMicrophoneMonitor();
         }
 
@@ -154,6 +150,22 @@ namespace YuiPhysicalAI.UI
             if (voicePreviewButton != null)
             {
                 voicePreviewButton.onClick.AddListener(PreviewVoice);
+            }
+            if (voicePresetDropdown != null)
+            {
+                voicePresetDropdown.onValueChanged.AddListener(OnVoicePresetDropdownChanged);
+            }
+            if (voicePresetSaveButton != null)
+            {
+                voicePresetSaveButton.onClick.AddListener(SaveVoicePreset);
+            }
+            if (voicePresetDeleteButton != null)
+            {
+                voicePresetDeleteButton.onClick.AddListener(DeleteVoicePreset);
+            }
+            if (ttsModeDropdown != null)
+            {
+                ttsModeDropdown.onValueChanged.AddListener(OnTtsModeDropdownChanged);
             }
             if (microphoneTestButton != null)
             {
@@ -258,6 +270,22 @@ namespace YuiPhysicalAI.UI
             if (voicePreviewButton != null)
             {
                 voicePreviewButton.onClick.RemoveListener(PreviewVoice);
+            }
+            if (voicePresetDropdown != null)
+            {
+                voicePresetDropdown.onValueChanged.RemoveListener(OnVoicePresetDropdownChanged);
+            }
+            if (voicePresetSaveButton != null)
+            {
+                voicePresetSaveButton.onClick.RemoveListener(SaveVoicePreset);
+            }
+            if (voicePresetDeleteButton != null)
+            {
+                voicePresetDeleteButton.onClick.RemoveListener(DeleteVoicePreset);
+            }
+            if (ttsModeDropdown != null)
+            {
+                ttsModeDropdown.onValueChanged.RemoveListener(OnTtsModeDropdownChanged);
             }
             if (microphoneTestButton != null)
             {
@@ -381,6 +409,141 @@ namespace YuiPhysicalAI.UI
         private void UpdatePostPhonemeLabel(float value)
         {
             SetText(postPhonemeValueText, value.ToString("0.00") + "s");
+        }
+
+        private void OnVoicePresetDropdownChanged(int index)
+        {
+            var preset = VoicePresetAt(index);
+            if (preset == null)
+            {
+                return;
+            }
+
+            ApplyVoicePresetToFields(preset);
+        }
+
+        private void OnTtsModeDropdownChanged(int _)
+        {
+            ConfigureVoiceSliderRanges();
+            UpdatePitchLabel(pitchSlider != null ? pitchSlider.value : 0f);
+            RefreshTtsSpecificVoiceControls();
+        }
+
+        private void SaveVoicePreset()
+        {
+            var preset = CollectVoicePresetFromFields();
+            YuiVoicePresetStore.Upsert(preset);
+            RefreshVoicePresetOptions();
+            if (voicePresetDropdown != null)
+            {
+                for (var index = 0; index < voicePresetDropdown.options.Count; index++)
+                {
+                    if (voicePresetDropdown.options[index].text == preset.Name)
+                    {
+                        voicePresetDropdown.SetValueWithoutNotify(index);
+                        voicePresetDropdown.RefreshShownValue();
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void DeleteVoicePreset()
+        {
+            if (voicePresetDropdown == null || voicePresetDropdown.value <= 0)
+            {
+                return;
+            }
+
+            var preset = VoicePresetAt(voicePresetDropdown.value);
+            if (preset == null)
+            {
+                return;
+            }
+
+            YuiVoicePresetStore.Delete(preset.Name);
+            voicePresetDropdown.SetValueWithoutNotify(0);
+            RefreshVoicePresetOptions();
+        }
+
+        private YuiVoicePreset CollectVoicePresetFromFields()
+        {
+            var fallbackName = chatPanel != null && !string.IsNullOrWhiteSpace(chatPanel.CharacterName)
+                ? chatPanel.CharacterName + " Voice"
+                : "Voice Preset";
+            var name = voicePresetNameInput != null && !string.IsNullOrWhiteSpace(voicePresetNameInput.text)
+                ? voicePresetNameInput.text.Trim()
+                : fallbackName;
+
+            return new YuiVoicePreset
+            {
+                Name = name,
+                TtsMode = TtsModeValue(),
+                SpeakerId = VoiceIdAt(speakerDropdown != null ? speakerDropdown.value : 0, chatPanel != null ? chatPanel.SpeakerId : 14),
+                VoiceVolume = volumeSlider != null ? volumeSlider.value : 1.0f,
+                SpeedScale = speedSlider != null ? speedSlider.value : 1.0f,
+                PitchScale = pitchSlider != null ? pitchSlider.value : 0.0f,
+                IntonationScale = intonationSlider != null ? intonationSlider.value : 1.0f,
+                SynthesisVolumeScale = synthesisVolumeSlider != null ? synthesisVolumeSlider.value : 1.0f,
+                PrePhonemeLength = prePhonemeSlider != null ? prePhonemeSlider.value : 0.1f,
+                PostPhonemeLength = postPhonemeSlider != null ? postPhonemeSlider.value : 0.1f,
+                IrodoriVoiceGender = IrodoriVoiceGenderValue(),
+                IrodoriVoiceInstruct = irodoriVoiceInstructInput != null ? irodoriVoiceInstructInput.text : string.Empty
+            };
+        }
+
+        private void ApplyVoicePresetToFields(YuiVoicePreset preset)
+        {
+            if (voicePresetNameInput != null)
+            {
+                voicePresetNameInput.text = preset.Name;
+            }
+            if (ttsModeDropdown != null)
+            {
+                RefreshTtsModeOptions();
+                ttsModeDropdown.SetValueWithoutNotify(TtsModeIndex(preset.TtsMode));
+                ttsModeDropdown.RefreshShownValue();
+            }
+            if (speakerDropdown != null)
+            {
+                EnsureVoiceOptions();
+                speakerDropdown.SetValueWithoutNotify(VoiceIndexForId(preset.SpeakerId));
+                speakerDropdown.RefreshShownValue();
+            }
+            SetSliderValue(volumeSlider, preset.VoiceVolume <= 0f ? 1f : preset.VoiceVolume);
+            SetSliderValue(speedSlider, preset.SpeedScale);
+            SetSliderValue(pitchSlider, preset.PitchScale);
+            SetSliderValue(intonationSlider, preset.IntonationScale);
+            SetSliderValue(synthesisVolumeSlider, preset.SynthesisVolumeScale);
+            SetSliderValue(prePhonemeSlider, preset.PrePhonemeLength);
+            SetSliderValue(postPhonemeSlider, preset.PostPhonemeLength);
+            if (irodoriVoiceGenderDropdown != null)
+            {
+                RefreshIrodoriVoiceGenderOptions();
+                irodoriVoiceGenderDropdown.SetValueWithoutNotify(IrodoriVoiceGenderIndex(preset.IrodoriVoiceGender));
+                irodoriVoiceGenderDropdown.RefreshShownValue();
+            }
+            if (irodoriVoiceInstructInput != null)
+            {
+                irodoriVoiceInstructInput.text = preset.IrodoriVoiceInstruct;
+            }
+
+            UpdateSpeedLabel(speedSlider != null ? speedSlider.value : 1f);
+            UpdateVolumeLabel(volumeSlider != null ? volumeSlider.value : 1f);
+            UpdatePitchLabel(pitchSlider != null ? pitchSlider.value : 0f);
+            UpdateIntonationLabel(intonationSlider != null ? intonationSlider.value : 1f);
+            UpdateSynthesisVolumeLabel(synthesisVolumeSlider != null ? synthesisVolumeSlider.value : 1f);
+            UpdatePrePhonemeLabel(prePhonemeSlider != null ? prePhonemeSlider.value : 0.1f);
+            UpdatePostPhonemeLabel(postPhonemeSlider != null ? postPhonemeSlider.value : 0.1f);
+            RefreshTtsSpecificVoiceControls();
+        }
+
+        private static void SetSliderValue(Slider slider, float value)
+        {
+            if (slider != null)
+            {
+                slider.SetValueWithoutNotify(Mathf.Clamp(value, slider.minValue, slider.maxValue));
+            }
         }
 
         private void ApplyAutoCamera()

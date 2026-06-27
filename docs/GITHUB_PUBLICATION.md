@@ -28,6 +28,33 @@ documented path should stay Windows-only until other platforms are tested.
 - Unity generated folders: `Library`, `Temp`, `Logs`, `UserSettings`
 - old handoff/session docs containing local paths or private workflow notes
 - API keys, service tokens, cookies, or personal machine paths
+- branch names, commit metadata, or copied text from AI coding sessions that
+  makes the public repository look like a raw generated dump
+
+## Mandatory Publication Guard
+
+Install the local hooks once in every clone used for publication:
+
+```bash
+./scripts/install_publication_guards.sh
+```
+
+The hooks run `scripts/publication_guard.py` before commit/push and then run
+the distribution audit before push. GitHub Actions runs the same checks after
+push and on pull requests, so the repository is still checked if a change is
+made from another session or through the GitHub UI.
+
+Keep exact local-only identifiers in:
+
+```text
+scripts/publication_guard.local.txt
+```
+
+That file is gitignored. Do not hard-code private needles in tracked audit
+scripts.
+
+For the reasoning and manual commands, see
+[`docs/PUBLICATION_GUARDRAILS.md`](PUBLICATION_GUARDRAILS.md).
 
 ## Build the Public Repository Folder
 
@@ -81,6 +108,12 @@ PowerShell has the same optional build check:
 
 ```powershell
 .\scripts\audit_distribution_release.ps1 -ProjectRoot . -RequireBuilds
+```
+
+Also run the publication guard in the public copy:
+
+```bash
+python3 scripts/publication_guard.py --scope tracked --check-git-metadata --maintainer-mode
 ```
 
 If the private development tree contains local-only avatar or scene assets, keep

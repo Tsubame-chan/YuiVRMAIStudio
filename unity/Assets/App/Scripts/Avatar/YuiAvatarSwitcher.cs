@@ -36,7 +36,7 @@ namespace YuiPhysicalAI.Avatar
         private AvatarPoseSnapshot demoInitialPose;
         private AvatarPoseSnapshot distributionInitialPose;
 
-        public string ActiveSlot { get; private set; } = YuiAvatarSlots.UnityChanDefault;
+        public string ActiveSlot { get; private set; } = YuiBuildProfile.DefaultAvatarSlot;
         public GameObject ActiveAvatar { get; private set; }
         public GameObject CustomAvatar => customAvatar;
         public bool HasDemoAvatar => demoAvatar != null;
@@ -103,12 +103,23 @@ namespace YuiPhysicalAI.Avatar
                     return null;
                 }
 
-                if (distributionAvatar != null)
+                var fallbackSlot = YuiBuildProfile.DefaultAvatarSlot;
+                var fallbackAvatar = ResolveAvatar(fallbackSlot);
+                if (fallbackAvatar != null)
+                {
+                    ActiveSlot = fallbackSlot;
+                    activeAvatar = fallbackAvatar;
+                }
+                else if (distributionAvatar != null)
                 {
                     ActiveSlot = YuiAvatarSlots.UnityChanDefault;
                     activeAvatar = distributionAvatar;
                 }
-                activeAvatar = demoAvatar;
+                else
+                {
+                    ActiveSlot = YuiAvatarSlots.DemoKikyo;
+                    activeAvatar = demoAvatar;
+                }
             }
 
             SetActiveIfPresent(demoAvatar, activeAvatar == demoAvatar);
@@ -136,7 +147,7 @@ namespace YuiPhysicalAI.Avatar
 
             if (YuiAvatarSlots.IsCustomVrm(ActiveSlot))
             {
-                SetAvatarSlot(YuiAvatarSlots.UnityChanDefault);
+                SetAvatarSlot(YuiBuildProfile.DefaultAvatarSlot);
             }
         }
 
@@ -214,7 +225,12 @@ namespace YuiPhysicalAI.Avatar
                 return customAvatar;
             }
 
-            return demoAvatar;
+            if (slot == YuiAvatarSlots.DemoKikyo)
+            {
+                return demoAvatar;
+            }
+
+            return null;
         }
 
         private void CaptureInitialPoses()
@@ -475,6 +491,5 @@ namespace YuiPhysicalAI.Avatar
         }
     }
 }
-
 
 

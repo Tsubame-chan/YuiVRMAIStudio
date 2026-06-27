@@ -9,6 +9,7 @@ from openai import OpenAI, OpenAIError
 from app.core.config import Settings
 from app.models.chat import ChatRequest, ChatResponse, OpenAIChatOutput
 from app.providers.interfaces import ChatProvider
+from app.providers.openai_tools import build_web_search_tools
 
 
 class ProviderConfigurationError(RuntimeError):
@@ -46,16 +47,21 @@ class OpenAIChatProvider(ChatProvider):
         request: ChatRequest,
         history: list[dict[str, str]],
     ) -> OpenAIChatOutput:
-        response = self.client.responses.parse(
-            model=self.settings.openai_chat_model,
-            instructions=self._instructions(request),
-            input=[
+        tools = self._web_search_tools(request)
+        request_params: dict[str, Any] = {
+            "model": self.settings.openai_chat_model,
+            "instructions": self._instructions(request),
+            "input": [
                 *self._history_as_input(history),
                 self._current_user_input(request),
             ],
-            text_format=OpenAIChatOutput,
-            max_output_tokens=self.settings.openai_max_output_tokens,
-        )
+            "text_format": OpenAIChatOutput,
+            "max_output_tokens": self.settings.openai_max_output_tokens,
+        }
+        if tools:
+            request_params["tools"] = tools
+
+        response = self.client.responses.parse(**request_params)
 
         if response.output_parsed is not None:
             return response.output_parsed
@@ -92,6 +98,11 @@ class OpenAIChatProvider(ChatProvider):
             "For comparison or calculation questions, give the short answer first and mention that details can follow. "
             "When exact game data, measurements, release facts, or other niche facts are uncertain, do not invent details; "
             "answer conditionally or say what needs checking. "
+            "When web search is available and the user asks about current information such as weather, news, maps, recent prices, schedules, releases, or live facts, use it before answering. "
+            "When the user asks you to search, find, list, compare, or recommend events, places, shops, schedules, products, or other options, do the search and provide concrete results in the same reply; do not merely say that searching is possible or ask the user to confirm again. "
+            "For search-style answers, give 3 to 6 useful candidates when available, with the name, date/time or area, and one short reason it matches. "
+            "If search results are used, mention the information is based on currently available search results in natural Japanese. "
+            "Do not include raw URLs in spoken replies unless the user explicitly asks for links; say that links can be provided if needed. "
             "Give longer explanations only when the user explicitly asks for detail, lists, or step-by-step calculation. "
             "Because the reply will be spoken aloud, avoid Markdown, bold markers, code fences, and decorative bullets. "
             "Return only the structured output requested by the schema. "
@@ -112,6 +123,10 @@ class OpenAIChatProvider(ChatProvider):
             "Do not claim to have seen an image unless vision context was explicitly provided. "
             "Set should_tts=true for normal assistant replies that contain spoken text."
         )
+
+    def _web_search_tools(self, request: ChatRequest) -> list[dict[str, Any]]:
+        text = f"{request.message}\n{request.context.screen_context or ''}".lower()
+        return build_web_search_tools(self.settings, text)
 
     def _current_user_input(self, request: ChatRequest) -> dict[str, Any]:
         content_text = request.message

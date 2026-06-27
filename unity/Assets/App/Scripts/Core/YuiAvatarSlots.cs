@@ -6,6 +6,7 @@ namespace YuiPhysicalAI.Core
     /// </summary>
     public static class YuiAvatarSlots
     {
+        public const string DemoKikyo = "demo_kikyo";
         public const string UnityChanDefault = "unitychan_default";
         public const string CustomVrm = "custom_vrm";
         public const string CustomVrm1 = "custom_vrm_1";
@@ -18,6 +19,11 @@ namespace YuiPhysicalAI.Core
 
         public static string Normalize(string value)
         {
+            if (string.Equals(value, DemoKikyo, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return DemoKikyo;
+            }
+
             if (string.Equals(value, UnityChanDefault, System.StringComparison.OrdinalIgnoreCase)
                 || string.Equals(value, LegacyDistributionDefault, System.StringComparison.OrdinalIgnoreCase))
             {

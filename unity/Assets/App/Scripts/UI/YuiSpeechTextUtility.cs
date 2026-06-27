@@ -10,19 +10,30 @@ namespace YuiPhysicalAI.UI
     {
         public static string[] SplitSpeechText(string text, int maxCharacters)
         {
+            return SplitSpeechText(text, maxCharacters, 12, 24);
+        }
+
+        public static string[] SplitSpeechText(
+            string text,
+            int maxCharacters,
+            int firstBoundaryMinCharacters,
+            int nextBoundaryMinCharacters)
+        {
             if (string.IsNullOrWhiteSpace(text))
             {
                 return Array.Empty<string>();
             }
 
             maxCharacters = Mathf.Max(30, maxCharacters);
+            firstBoundaryMinCharacters = Mathf.Clamp(firstBoundaryMinCharacters, 1, maxCharacters);
+            nextBoundaryMinCharacters = Mathf.Clamp(nextBoundaryMinCharacters, 1, maxCharacters);
             var normalized = Regex.Replace(text.Trim(), @"\s+", " ");
             var chunks = new List<string>();
             var builder = new StringBuilder();
             foreach (var character in normalized)
             {
                 builder.Append(character);
-                var minBoundaryLength = chunks.Count == 0 ? 12 : 24;
+                var minBoundaryLength = chunks.Count == 0 ? firstBoundaryMinCharacters : nextBoundaryMinCharacters;
                 var shouldBreak = IsSpeechBoundary(character) && builder.Length >= minBoundaryLength;
                 if (builder.Length >= maxCharacters || shouldBreak)
                 {
@@ -57,7 +68,27 @@ namespace YuiPhysicalAI.UI
                 return string.Empty;
             }
 
-            var cleaned = CleanMarkup(text);
+            var cleaned = Regex.Replace(
+                text,
+                @"\[([^\]]+)\]\((?:https?://|www\.)[^\s)]+\)",
+                "$1",
+                RegexOptions.IgnoreCase);
+            cleaned = Regex.Replace(
+                cleaned,
+                @"(?:https?://|www\.)[^\s　)）】」』]+",
+                "",
+                RegexOptions.IgnoreCase);
+            cleaned = Regex.Replace(
+                cleaned,
+                @"\(\s*\[?\s*(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}(?:/[^\]\s)）]*)?\s*\]?\s*\)",
+                "",
+                RegexOptions.IgnoreCase);
+            cleaned = Regex.Replace(
+                cleaned,
+                @"\[?\s*(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}(?:/[^\]\s)）]*)?\s*\]?",
+                "",
+                RegexOptions.IgnoreCase);
+            cleaned = CleanMarkup(cleaned);
             cleaned = Regex.Replace(cleaned, @"^[\s\-・*]+", "", RegexOptions.Multiline);
             cleaned = Regex.Replace(cleaned, @"[【】「」『』（）()]", " ");
             cleaned = Regex.Replace(cleaned, @"\s+", " ");

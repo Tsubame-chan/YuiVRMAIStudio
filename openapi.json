@@ -480,6 +480,45 @@
         }
       }
     },
+    "/external/weather/current": {
+      "get": {
+        "summary": "External Current Weather",
+        "operationId": "external_current_weather_external_weather_current_get",
+        "parameters": [
+          {
+            "name": "location",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Location"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherCurrentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/memory/save": {
       "post": {
         "summary": "Memory Save",
@@ -779,17 +818,52 @@
             "type": "string",
             "title": "Chat Provider"
           },
+          "chat_providers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Chat Providers"
+          },
           "vision_provider": {
             "type": "string",
             "title": "Vision Provider"
+          },
+          "vision_providers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Vision Providers"
           },
           "tts_provider": {
             "type": "string",
             "title": "Tts Provider"
           },
+          "tts_providers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tts Providers"
+          },
+          "tts_recommendation": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Tts Recommendation"
+          },
           "stt_provider": {
             "type": "string",
             "title": "Stt Provider"
+          },
+          "stt_providers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Stt Providers"
           },
           "default_user_id": {
             "type": "string",
@@ -807,9 +881,14 @@
         "required": [
           "character_name",
           "chat_provider",
+          "chat_providers",
           "vision_provider",
+          "vision_providers",
           "tts_provider",
+          "tts_providers",
+          "tts_recommendation",
           "stt_provider",
+          "stt_providers",
           "default_user_id",
           "limits"
         ],
@@ -1072,6 +1151,16 @@
               }
             ],
             "title": "Speakers"
+          },
+          "engine": {
+            "type": "string",
+            "title": "Engine",
+            "default": ""
+          },
+          "recommendation": {
+            "type": "string",
+            "title": "Recommendation",
+            "default": ""
           }
         },
         "type": "object",
@@ -1113,6 +1202,11 @@
           "text": {
             "type": "string",
             "title": "Text",
+            "default": ""
+          },
+          "input_text": {
+            "type": "string",
+            "title": "Input Text",
             "default": ""
           },
           "audio_base64": {
@@ -1374,6 +1468,17 @@
             ],
             "title": "Request Id"
           },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
           "text": {
             "type": "string",
             "title": "Text"
@@ -1401,8 +1506,8 @@
             "anyOf": [
               {
                 "type": "number",
-                "maximum": 0.15,
-                "minimum": -0.15
+                "maximum": 0.5,
+                "minimum": -0.5
               },
               {
                 "type": "null"
@@ -1466,6 +1571,39 @@
             ],
             "title": "Post Phoneme Length",
             "default": 0.1
+          },
+          "voice_gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Gender"
+          },
+          "voice_instruct": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Instruct"
+          },
+          "voice_lang_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voice Lang Code"
           }
         },
         "type": "object",
@@ -1759,6 +1897,169 @@
         },
         "type": "object",
         "title": "VisionStructured"
+      },
+      "WeatherCurrent": {
+        "properties": {
+          "time": {
+            "type": "string",
+            "title": "Time"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          },
+          "temperature_unit": {
+            "type": "string",
+            "title": "Temperature Unit",
+            "default": ""
+          },
+          "relative_humidity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relative Humidity"
+          },
+          "relative_humidity_unit": {
+            "type": "string",
+            "title": "Relative Humidity Unit",
+            "default": ""
+          },
+          "apparent_temperature": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Apparent Temperature"
+          },
+          "apparent_temperature_unit": {
+            "type": "string",
+            "title": "Apparent Temperature Unit",
+            "default": ""
+          },
+          "precipitation": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Precipitation"
+          },
+          "precipitation_unit": {
+            "type": "string",
+            "title": "Precipitation Unit",
+            "default": ""
+          },
+          "weather_code": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weather Code"
+          },
+          "wind_speed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wind Speed"
+          },
+          "wind_speed_unit": {
+            "type": "string",
+            "title": "Wind Speed Unit",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "time"
+        ],
+        "title": "WeatherCurrent"
+      },
+      "WeatherCurrentResponse": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "location": {
+            "$ref": "#/components/schemas/WeatherLocation"
+          },
+          "current": {
+            "$ref": "#/components/schemas/WeatherCurrent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "location",
+          "current"
+        ],
+        "title": "WeatherCurrentResponse"
+      },
+      "WeatherLocation": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "country": {
+            "type": "string",
+            "title": "Country",
+            "default": ""
+          },
+          "admin1": {
+            "type": "string",
+            "title": "Admin1",
+            "default": ""
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude"
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "default": ""
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "latitude",
+          "longitude"
+        ],
+        "title": "WeatherLocation"
       }
     }
   }

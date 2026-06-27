@@ -13,8 +13,9 @@ namespace YuiPhysicalAI.UI
         // Viewer-mode invariants:
         // - consoleVisible=true means the chat UI is interactable and the camera
         //   should lerp back to the saved default framing.
-        // - consoleVisible=false means orbit/pan/zoom owns the camera; default
-        //   camera fields are treated as the return target and must stay stable.
+        // - consoleVisible=false means orbit/pan/zoom owns the camera. The last
+        //   adjusted view is held until the user taps/clicks without dragging,
+        //   which returns to consoleVisible=true and restores the default camera.
         // - cachedPivot is only an optimization for the hidden/orbit state. Clear
         //   it whenever the active avatar changes or visibility toggles.
         // - Speech playback is independent from console visibility; hiding the UI
@@ -32,7 +33,7 @@ namespace YuiPhysicalAI.UI
         [SerializeField] private float minOrbitDistance = 0.35f;
         [SerializeField] private float maxOrbitDistance = 8.0f;
         [SerializeField] private float hiddenDefaultDistanceMultiplier = 1.35f;
-        [SerializeField] private float pinchDistanceSensitivity = 0.01f;
+        [SerializeField] private float pinchDistanceSensitivity = 0.006f;
         [SerializeField] private float mouseWheelDistanceSensitivity = 0.35f;
         [SerializeField] private float panSensitivity = 0.0022f;
         [SerializeField] private float orbitPivotHeightOffset = 0.1f;
@@ -120,14 +121,7 @@ namespace YuiPhysicalAI.UI
 
             if (!pointerDown && !cameraEditMode)
             {
-                currentYaw = Mathf.LerpAngle(currentYaw, defaultYaw, Time.deltaTime * returnSpeed);
-                currentPitch = Mathf.LerpAngle(currentPitch, defaultPitch, Time.deltaTime * returnSpeed);
-                currentOrbitDistance = Mathf.Lerp(currentOrbitDistance, defaultOrbitDistance, Time.deltaTime * returnSpeed);
-                currentPanOffset = Vector3.Lerp(currentPanOffset, Vector3.zero, Time.deltaTime * returnSpeed);
-                currentHiddenFieldOfView = Mathf.Lerp(
-                    currentHiddenFieldOfView,
-                    hiddenFieldOfView,
-                    Time.deltaTime * returnSpeed);
+                UpdateIdleViewerState(returnToDefault: false);
             }
 
             UpdateOrbitCamera();
@@ -334,6 +328,11 @@ namespace YuiPhysicalAI.UI
             pointerDown = false;
             dragged = false;
             pointerMode = PointerMode.None;
+            if (visible)
+            {
+                SnapOrbitToShownDefault();
+            }
+
             if (consoleRoot != null)
             {
                 SetConsoleRootVisible(visible);
@@ -347,6 +346,26 @@ namespace YuiPhysicalAI.UI
                 ResetOrbitToDefault();
                 currentHiddenFieldOfView = hiddenFieldOfView;
             }
+        }
+
+        private void SnapOrbitToShownDefault()
+        {
+            var state = YuiViewerCameraState.Create(
+                defaultYaw,
+                defaultPitch,
+                defaultOrbitDistance,
+                currentYaw,
+                currentPitch,
+                currentOrbitDistance,
+                currentHiddenFieldOfView,
+                currentPanOffset);
+
+            state.SnapToDefault(shownFieldOfView > 0f ? shownFieldOfView : defaultCameraFieldOfView);
+            currentYaw = state.Yaw;
+            currentPitch = state.Pitch;
+            currentOrbitDistance = state.Distance;
+            currentHiddenFieldOfView = state.FieldOfView;
+            currentPanOffset = state.PanOffset;
         }
 
         private void SetConsoleRootVisible(bool visible)
@@ -593,6 +612,31 @@ namespace YuiPhysicalAI.UI
             var right = targetCamera.transform.right;
             var up = targetCamera.transform.up;
             currentPanOffset += (-right * screenDelta.x + -up * screenDelta.y) * scale;
+        }
+
+        private void UpdateIdleViewerState(bool returnToDefault)
+        {
+            var state = YuiViewerCameraState.Create(
+                defaultYaw,
+                defaultPitch,
+                defaultOrbitDistance,
+                currentYaw,
+                currentPitch,
+                currentOrbitDistance,
+                currentHiddenFieldOfView,
+                currentPanOffset);
+
+            state.UpdateIdle(
+                returnToDefault,
+                Time.deltaTime,
+                returnSpeed,
+                hiddenFieldOfView);
+
+            currentYaw = state.Yaw;
+            currentPitch = state.Pitch;
+            currentOrbitDistance = state.Distance;
+            currentHiddenFieldOfView = state.FieldOfView;
+            currentPanOffset = state.PanOffset;
         }
 
         private void CaptureCameraDefaults()

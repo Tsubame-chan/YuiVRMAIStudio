@@ -21,6 +21,9 @@ namespace YuiPhysicalAI.Core
         public const string VoicePrePhonemeLength = "Yui.Settings.VoicePrePhonemeLength";
         public const string VoicePostPhonemeLength = "Yui.Settings.VoicePostPhonemeLength";
         public const string TtsMode = "Yui.Settings.TtsMode";
+        public const string IrodoriVoiceGender = "Yui.Settings.IrodoriVoiceGender";
+        public const string IrodoriVoiceInstruct = "Yui.Settings.IrodoriVoiceInstruct";
+        public const string VoicePresetLibrary = "Yui.Settings.VoicePresetLibrary";
 
         // Microphone
         public const string MicrophoneDevice = "Yui.Settings.MicrophoneDevice";

@@ -73,7 +73,128 @@ namespace YuiPhysicalAI.UI
             SetTopRectRuntime(conversationModeDropdown.transform, 176f, 426f, 22f, 54f);
             RefreshConversationModeOptions();
             EnsureCustomVrmNameInput(content);
+            EnsureVoicePresetControls(content);
+            EnsureIrodoriVoiceInstructInput(content);
             Debug.Log("Yui settings UI repaired: ensured Experimental / Mode dropdown.");
+        }
+
+        private void EnsureVoicePresetControls(Transform content)
+        {
+            if (voicePresetDropdown == null)
+            {
+                var existingDropdown = UiTreeUtility.FindDeepChild(settingsRoot.transform, "VoicePresetDropdown");
+                voicePresetDropdown = existingDropdown != null ? existingDropdown.GetComponent<Dropdown>() : null;
+            }
+
+            CreateOrMoveRuntimeLabel(content, "VoicePresetLabel", "Voice Preset", 1029f);
+            if (voicePresetDropdown == null && ttsModeDropdown != null)
+            {
+                var clone = Instantiate(ttsModeDropdown.gameObject, content, false);
+                clone.name = "VoicePresetDropdown";
+                voicePresetDropdown = clone.GetComponent<Dropdown>();
+            }
+            if (voicePresetDropdown != null)
+            {
+                voicePresetDropdown.transform.SetParent(content, false);
+                SetTopRectRuntime(voicePresetDropdown.transform, 176f, 1019f, 22f, 54f);
+                RefreshVoicePresetOptions();
+                voicePresetDropdown.onValueChanged.RemoveListener(OnVoicePresetDropdownChanged);
+                voicePresetDropdown.onValueChanged.AddListener(OnVoicePresetDropdownChanged);
+            }
+
+            if (voicePresetNameInput == null)
+            {
+                var existingInput = UiTreeUtility.FindDeepChild(settingsRoot.transform, "VoicePresetNameInput");
+                voicePresetNameInput = existingInput != null ? existingInput.GetComponent<InputField>() : null;
+            }
+            CreateOrMoveRuntimeLabel(content, "VoicePresetNameLabel", "Preset Name", 1099f);
+            if (voicePresetNameInput == null)
+            {
+                voicePresetNameInput = CreateRuntimeInputField(content, "VoicePresetNameInput");
+            }
+            voicePresetNameInput.transform.SetParent(content, false);
+            SetTopRectRuntime(voicePresetNameInput.transform, 176f, 1089f, 22f, 42f);
+
+            CreateOrMoveRuntimeLabel(content, "VoicePresetActionLabel", "Preset Action", 1159f);
+            voicePresetSaveButton = EnsureRuntimeButton(content, voicePresetSaveButton, "VoicePresetSaveButton", "Save", true);
+            voicePresetDeleteButton = EnsureRuntimeButton(content, voicePresetDeleteButton, "VoicePresetDeleteButton", "Delete", false);
+            SetTopRectColumnRuntime(voicePresetSaveButton.transform, 176f, 22f, 1149f, 42f, 0f, 0.50f, 8f);
+            SetTopRectColumnRuntime(voicePresetDeleteButton.transform, 176f, 22f, 1149f, 42f, 0.50f, 1f, 8f);
+            voicePresetSaveButton.onClick.RemoveListener(SaveVoicePreset);
+            voicePresetSaveButton.onClick.AddListener(SaveVoicePreset);
+            voicePresetDeleteButton.onClick.RemoveListener(DeleteVoicePreset);
+            voicePresetDeleteButton.onClick.AddListener(DeleteVoicePreset);
+        }
+
+        private Button EnsureRuntimeButton(Transform content, Button current, string name, string labelText, bool saveStyle)
+        {
+            if (current == null)
+            {
+                var existing = UiTreeUtility.FindDeepChild(settingsRoot.transform, name);
+                current = existing != null ? existing.GetComponent<Button>() : null;
+            }
+            if (current == null)
+            {
+                var source = saveStyle ? cameraSaveButton : cameraDeleteButton;
+                if (source == null)
+                {
+                    source = applyButton;
+                }
+                var clone = Instantiate(source.gameObject, content, false);
+                clone.name = name;
+                current = clone.GetComponent<Button>();
+            }
+
+            current.transform.SetParent(content, false);
+            var label = current.GetComponentInChildren<Text>(true);
+            if (label != null)
+            {
+                label.text = labelText;
+            }
+            return current;
+        }
+
+        private void EnsureIrodoriVoiceInstructInput(Transform content)
+        {
+            var existingDropdown = UiTreeUtility.FindDeepChild(settingsRoot.transform, "IrodoriVoiceGenderDropdown");
+            if (irodoriVoiceGenderDropdown == null)
+            {
+                irodoriVoiceGenderDropdown = existingDropdown != null ? existingDropdown.GetComponent<Dropdown>() : null;
+            }
+
+            CreateOrMoveRuntimeLabel(content, "IrodoriVoiceGenderLabel", "Irodori Base", 1454f);
+            if (irodoriVoiceGenderDropdown == null)
+            {
+                if (ttsModeDropdown != null)
+                {
+                    var clone = Instantiate(ttsModeDropdown.gameObject, content, false);
+                    clone.name = "IrodoriVoiceGenderDropdown";
+                    irodoriVoiceGenderDropdown = clone.GetComponent<Dropdown>();
+                }
+            }
+
+            if (irodoriVoiceGenderDropdown != null)
+            {
+                irodoriVoiceGenderDropdown.transform.SetParent(content, false);
+                SetTopRectRuntime(irodoriVoiceGenderDropdown.transform, 176f, 1444f, 22f, 54f);
+                RefreshIrodoriVoiceGenderOptions();
+            }
+
+            var existingInput = UiTreeUtility.FindDeepChild(settingsRoot.transform, "IrodoriVoiceInstructInput");
+            if (irodoriVoiceInstructInput == null)
+            {
+                irodoriVoiceInstructInput = existingInput != null ? existingInput.GetComponent<InputField>() : null;
+            }
+
+            CreateOrMoveRuntimeLabel(content, "IrodoriVoiceInstructLabel", "Irodori Voice", 1524f);
+            if (irodoriVoiceInstructInput == null)
+            {
+                irodoriVoiceInstructInput = CreateRuntimeInputField(content, "IrodoriVoiceInstructInput");
+            }
+
+            irodoriVoiceInstructInput.transform.SetParent(content, false);
+            irodoriVoiceInstructInput.lineType = InputField.LineType.MultiLineSubmit;
+            SetTopRectRuntime(irodoriVoiceInstructInput.transform, 176f, 1514f, 22f, 72f);
         }
 
         private void EnsureCustomVrmNameInput(Transform content)

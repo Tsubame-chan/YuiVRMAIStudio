@@ -156,8 +156,8 @@ namespace YuiPhysicalAI.UI
                 "VRM", "AvatarでUnityChanまたはCustom VRMを選びます。",
                 "Load VRMはVRM 1.0/0.xの.vrmファイル向けです。VRChat SDKのprefabやunitypackageは直接読み込めません。");
             ReflowCard(panel, "SettingsCard", new Vector2(0.06f, 0.045f), new Vector2(0.94f, 0.16f),
-                "設定", "Xで会話パネルを隠すと表示調整できます。Voice、Window、CharacterはSettingsで変更します。",
-                "Applyで反映。うまく動かない時は接続状態カードの赤い項目から確認してください。");
+                "声の設定", "Speed=速さ / Pitch=高さ / Intonation=抑揚 / Synthesis Vol=生成音量。",
+                "Pre/Post Pauseは発話前後の無音です。Irodoriは声の方向性を文章で指定し、Speed/Pitchは対応バックエンドで連続調整します。他者の声真似やなりすましは禁止です。");
             var oldFooter = panel.Find("Footer");
             if (oldFooter != null)
             {
@@ -204,8 +204,11 @@ namespace YuiPhysicalAI.UI
             var backend = StatusIcon(status.Backend?.Status) + " Backend";
             var database = StatusIcon(status.Database?.Status) + " DB";
             var openai = StatusIcon(ProviderStatus(status, "openai")) + " OpenAI";
-            var voicevox = StatusIcon(ProviderStatus(status, "voicevox")) + " VOICEVOX";
-            return $"{backend}  {database}  {openai}  {voicevox}";
+            var xai = StatusIcon(ProviderStatus(status, "xai")) + " xAI";
+            var lmstudio = StatusIcon(ProviderStatus(status, "lmstudio")) + " LM Studio";
+            var voicevox = StatusIcon(ProviderStatus(status, "voicevox")) + " Backend VOICEVOX";
+            var httpTts = StatusIcon(ProviderStatus(status, "http_tts")) + " Irodori TTS";
+            return $"{backend}  {database}  {openai}  {xai}  {lmstudio}  {voicevox}  {httpTts}";
         }
 
         private static string FormatProviderStatusDetail(ProviderStatusResponse status)
@@ -227,6 +230,12 @@ namespace YuiPhysicalAI.UI
                 return "VOICEVOX Engineが起動していません。テキスト会話は可能ですが、音声再生にはVOICEVOXが必要です。";
             }
 
+            var httpTtsStatus = ProviderStatus(status, "http_tts");
+            if (httpTtsStatus == "configured")
+            {
+                return "Irodori TTS adapterが設定されています。SettingsでIrodori TTSを選ぶと、VOICEVOXとは別providerとして試せます。";
+            }
+
             if (status.Database != null && status.Database.Status != "ok")
             {
                 return "SQLite DBの確認に失敗しています。Backendログを確認してください。";
@@ -245,8 +254,9 @@ namespace YuiPhysicalAI.UI
             var backend = StatusIcon(health.Status) + " Backend";
             var database = StatusIcon(health.Database) + " DB";
             var openai = HealthBool(health, "openai_configured") ? "OK OpenAI" : "NG OpenAI";
-            var voicevox = HealthFeature(health, "local_voicevox_tts") ? "-- VOICEVOX" : "NG VOICEVOX";
-            return $"{backend}  {database}  {openai}  {voicevox}";
+            var voicevox = HealthFeature(health, "local_voicevox_tts") ? "-- Backend VOICEVOX" : "NG Backend VOICEVOX";
+            var httpTts = HealthFeature(health, "external_http_tts") ? "OK Irodori TTS" : "-- Irodori TTS";
+            return $"{backend}  {database}  {openai}  {voicevox}  {httpTts}";
         }
 
         private static string ProviderStatus(ProviderStatusResponse status, string key)
@@ -285,6 +295,9 @@ namespace YuiPhysicalAI.UI
                 case "offline":
                 case "error":
                     return "NG";
+                case "not_configured":
+                case "disabled":
+                    return "--";
                 case "degraded":
                     return "WARN";
                 default:

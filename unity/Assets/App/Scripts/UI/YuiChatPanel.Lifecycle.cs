@@ -151,6 +151,7 @@ namespace YuiPhysicalAI.UI
             try
             {
                 var health = await client.GetHealthAsync(cancellationToken);
+                MarkBackendSuccess();
                 if (!isSending)
                 {
                     SetStatus(FormatBackendStatus(health));
@@ -161,6 +162,8 @@ namespace YuiPhysicalAI.UI
                     LogBackendDiagnostics(health);
                 }
 
+                await RefreshBackendConfigAsync(cancellationToken);
+
                 if (chatLogView == null || chatLogView.IsEmpty)
                 {
                     await LoadRecentConversationsAsync(cancellationToken);
@@ -168,13 +171,66 @@ namespace YuiPhysicalAI.UI
             }
             catch (Exception ex)
             {
-                if (!isSending)
+                if (await TryConfirmBackendReachableAsync(cancellationToken))
+                {
+                    if (!isSending)
+                    {
+                        SetStatus("Connected");
+                    }
+                }
+                else if (!isSending && Time.realtimeSinceStartup - lastBackendSuccessAt > 20f)
                 {
                     SetStatus("Backend offline");
                 }
 
                 Debug.LogWarning($"Backend health check failed: {ex.Message}");
             }
+        }
+
+        private async Task RefreshBackendConfigAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var config = await client.GetConfigAsync(cancellationToken);
+                chatProviderOptions = config?.ChatProviders != null ? config.ChatProviders : Array.Empty<string>();
+                visionProviderOptions = config?.VisionProviders != null ? config.VisionProviders : Array.Empty<string>();
+                ttsProviderOptions = config?.TtsProviders != null ? config.TtsProviders : Array.Empty<string>();
+                sttProviderOptions = config?.SttProviders != null ? config.SttProviders : Array.Empty<string>();
+                httpTtsAvailable = config?.TtsProviders != null
+                    && config.TtsProviders.Exists(provider => string.Equals(provider, "http", StringComparison.OrdinalIgnoreCase));
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException))
+            {
+                chatProviderOptions = Array.Empty<string>();
+                visionProviderOptions = Array.Empty<string>();
+                ttsProviderOptions = Array.Empty<string>();
+                sttProviderOptions = Array.Empty<string>();
+                httpTtsAvailable = false;
+                if (EnableBackendDiagnosticsLog)
+                {
+                    Debug.LogWarning($"Yui backend config refresh failed: {ex.Message}");
+                }
+            }
+        }
+
+        private async Task<bool> TryConfirmBackendReachableAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await client.GetRecentConversationsAsync(userId, 1, cancellationToken);
+                MarkBackendSuccess();
+                return true;
+            }
+            catch (Exception confirmEx)
+            {
+                Debug.LogWarning($"Backend secondary connectivity probe failed: {confirmEx.Message}");
+                return false;
+            }
+        }
+
+        private void MarkBackendSuccess()
+        {
+            lastBackendSuccessAt = Time.realtimeSinceStartup;
         }
 
         private async Task LoadRecentConversationsAsync(CancellationToken cancellationToken)
@@ -185,6 +241,7 @@ namespace YuiPhysicalAI.UI
             }
 
             var recent = await client.GetRecentConversationsAsync(userId, 12, cancellationToken);
+            MarkBackendSuccess();
             if (recent?.Items == null || recent.Items.Count == 0)
             {
                 return;

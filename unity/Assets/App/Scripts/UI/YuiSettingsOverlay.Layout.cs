@@ -67,7 +67,7 @@ namespace YuiPhysicalAI.UI
                 contentRect.anchorMax = new Vector2(1f, 1f);
                 contentRect.pivot = new Vector2(0.5f, 1f);
                 contentRect.anchoredPosition = Vector2.zero;
-                contentRect.sizeDelta = new Vector2(0f, Mathf.Max(contentRect.sizeDelta.y, 2330f));
+                contentRect.sizeDelta = new Vector2(0f, Mathf.Max(contentRect.sizeDelta.y, 2940f));
             }
 
             if (content != null)
@@ -76,7 +76,7 @@ namespace YuiPhysicalAI.UI
             }
         }
 
-        private static void ReflowSettingsRowsRuntime(Transform content)
+        private void ReflowSettingsRowsRuntime(Transform content)
         {
             SetTopRectRuntime(content.Find("MicSection"), 18f, 18f, 22f, 34f);
             SetTopRectRuntime(content.Find("MicrophoneLabel"), 18f, 72f, 248f, 34f);
@@ -111,21 +111,112 @@ namespace YuiPhysicalAI.UI
             SetTopRectColumnRuntime(content.Find("CameraDeleteButton"), 176f, 22f, 884f, 40f, 0.72f, 1f, 8f);
 
             SetTopRectRuntime(content.Find("VoiceSection"), 18f, 972f, 22f, 34f);
-            SetTopRectRuntime(content.Find("VolumeLabel"), 18f, 1029f, 248f, 34f);
-            SetTopRectRuntime(content.Find("VolumeSlider"), 176f, 1034f, 92f, 28f);
-            SetTopRightRectRuntime(content.Find("VolumeValue"), 18f, 1028f, 70f, 34f);
-            SetTopRectRuntime(content.Find("SpeakerLabel"), 18f, 1104f, 248f, 34f);
-            SetTopRectRuntime(content.Find("SpeakerDropdown"), 176f, 1094f, 22f, 54f);
-            SetTopRectRuntime(content.Find("TtsModeLabel"), 18f, 1174f, 248f, 34f);
-            SetTopRectRuntime(content.Find("TtsModeDropdown"), 176f, 1164f, 22f, 54f);
-            SetTopRectRuntime(content.Find("VoicePreviewLabel"), 18f, 1244f, 248f, 34f);
-            SetTopRectRuntime(content.Find("VoicePreviewButton"), 176f, 1234f, 22f, 54f);
-            SetTopRectRuntime(content.Find("SpeedLabel"), 18f, 1311f, 248f, 34f);
-            SetTopRectRuntime(content.Find("SpeedSlider"), 176f, 1316f, 92f, 28f);
-            SetTopRightRectRuntime(content.Find("SpeedValue"), 18f, 1310f, 70f, 34f);
-            SetTopRectRuntime(content.Find("PitchLabel"), 18f, 1381f, 248f, 34f);
-            SetTopRectRuntime(content.Find("PitchSlider"), 176f, 1386f, 92f, 28f);
-            SetTopRightRectRuntime(content.Find("PitchValue"), 18f, 1380f, 70f, 34f);
+            SetTopRectRuntime(content.Find("VoicePresetLabel"), 18f, 1029f, 248f, 34f);
+            SetTopRectRuntime(content.Find("VoicePresetDropdown"), 176f, 1019f, 22f, 54f);
+            SetTopRectRuntime(content.Find("VoicePresetNameLabel"), 18f, 1099f, 248f, 34f);
+            SetTopRectRuntime(content.Find("VoicePresetNameInput"), 176f, 1089f, 22f, 42f);
+            SetTopRectRuntime(content.Find("VoicePresetActionLabel"), 18f, 1159f, 248f, 34f);
+            SetTopRectColumnRuntime(content.Find("VoicePresetSaveButton"), 176f, 22f, 1149f, 42f, 0f, 0.50f, 8f);
+            SetTopRectColumnRuntime(content.Find("VoicePresetDeleteButton"), 176f, 22f, 1149f, 42f, 0.50f, 1f, 8f);
+
+            SetTopRectRuntime(content.Find("VolumeLabel"), 18f, 1239f, 248f, 34f);
+            SetTopRectRuntime(content.Find("VolumeSlider"), 176f, 1244f, 92f, 28f);
+            SetTopRightRectRuntime(content.Find("VolumeValue"), 18f, 1238f, 70f, 34f);
+            var irodori = IsIrodoriTtsSelected();
+            SetVoiceControlVisible(content, "SpeakerLabel", !irodori);
+            SetVoiceControlVisible(content, "SpeakerDropdown", !irodori);
+            SetVoiceControlVisible(content, "IrodoriVoiceGenderLabel", irodori);
+            SetVoiceControlVisible(content, "IrodoriVoiceGenderDropdown", irodori);
+            SetVoiceControlVisible(content, "IrodoriVoiceInstructLabel", irodori);
+            SetVoiceControlVisible(content, "IrodoriVoiceInstructInput", irodori);
+            SetVoiceControlVisible(content, "IntonationLabel", !irodori);
+            SetVoiceControlVisible(content, "IntonationSlider", !irodori);
+            SetVoiceControlVisible(content, "IntonationValue", !irodori);
+            SetVoiceControlVisible(content, "SynthesisVolumeLabel", !irodori);
+            SetVoiceControlVisible(content, "SynthesisVolumeSlider", !irodori);
+            SetVoiceControlVisible(content, "SynthesisVolumeValue", !irodori);
+            SetVoiceControlVisible(content, "PrePauseLabel", !irodori);
+            SetVoiceControlVisible(content, "PrePauseSlider", !irodori);
+            SetVoiceControlVisible(content, "PrePauseValue", !irodori);
+            SetVoiceControlVisible(content, "PostPauseLabel", !irodori);
+            SetVoiceControlVisible(content, "PostPauseSlider", !irodori);
+            SetVoiceControlVisible(content, "PostPauseValue", !irodori);
+
+            var row = 1314f;
+            SetTopRectRuntime(content.Find("SpeakerLabel"), 18f, row, 248f, 34f);
+            SetLabelTextRuntime(content.Find("SpeakerLabel"), "VOICEVOX Voice");
+            SetTopRectRuntime(content.Find("SpeakerDropdown"), 176f, row - 10f, 22f, 54f);
+            if (!irodori)
+            {
+                row += 70f;
+            }
+
+            SetTopRectRuntime(content.Find("TtsModeLabel"), 18f, row, 248f, 34f);
+            SetTopRectRuntime(content.Find("TtsModeDropdown"), 176f, row - 10f, 22f, 54f);
+            row += 70f;
+
+            SetTopRectRuntime(content.Find("IrodoriVoiceGenderLabel"), 18f, row, 248f, 34f);
+            SetTopRectRuntime(content.Find("IrodoriVoiceGenderDropdown"), 176f, row - 10f, 22f, 54f);
+            if (irodori)
+            {
+                row += 70f;
+                SetTopRectRuntime(content.Find("IrodoriVoiceInstructLabel"), 18f, row, 248f, 34f);
+                SetTopRectRuntime(content.Find("IrodoriVoiceInstructInput"), 176f, row - 10f, 22f, 72f);
+                row += 100f;
+            }
+
+            SetTopRectRuntime(content.Find("VoicePreviewLabel"), 18f, row, 248f, 34f);
+            SetTopRectRuntime(content.Find("VoicePreviewButton"), 176f, row - 10f, 22f, 54f);
+            row += 67f;
+            SetTopRectRuntime(content.Find("SpeedLabel"), 18f, row, 248f, 34f);
+            SetTopRectRuntime(content.Find("SpeedSlider"), 176f, row + 5f, 92f, 28f);
+            SetTopRightRectRuntime(content.Find("SpeedValue"), 18f, row - 1f, 70f, 34f);
+            row += 70f;
+            SetTopRectRuntime(content.Find("PitchLabel"), 18f, row, 248f, 34f);
+            SetTopRectRuntime(content.Find("PitchSlider"), 176f, row + 5f, 92f, 28f);
+            SetTopRightRectRuntime(content.Find("PitchValue"), 18f, row - 1f, 70f, 34f);
+            row += 70f;
+
+            SetTopRectRuntime(content.Find("IntonationLabel"), 18f, row, 248f, 34f);
+            SetTopRectRuntime(content.Find("IntonationSlider"), 176f, row + 5f, 92f, 28f);
+            SetTopRightRectRuntime(content.Find("IntonationValue"), 18f, row - 1f, 70f, 34f);
+            if (!irodori)
+            {
+                row += 70f;
+                SetTopRectRuntime(content.Find("SynthesisVolumeLabel"), 18f, row, 248f, 34f);
+                SetTopRectRuntime(content.Find("SynthesisVolumeSlider"), 176f, row + 5f, 92f, 28f);
+                SetTopRightRectRuntime(content.Find("SynthesisVolumeValue"), 18f, row - 1f, 70f, 34f);
+                row += 70f;
+                SetTopRectRuntime(content.Find("PrePauseLabel"), 18f, row, 248f, 34f);
+                SetTopRectRuntime(content.Find("PrePauseSlider"), 176f, row + 5f, 92f, 28f);
+                SetTopRightRectRuntime(content.Find("PrePauseValue"), 18f, row - 1f, 70f, 34f);
+                row += 70f;
+                SetTopRectRuntime(content.Find("PostPauseLabel"), 18f, row, 248f, 34f);
+                SetTopRectRuntime(content.Find("PostPauseSlider"), 176f, row + 5f, 92f, 28f);
+                SetTopRightRectRuntime(content.Find("PostPauseValue"), 18f, row - 1f, 70f, 34f);
+                row += 110f;
+            }
+            else
+            {
+                row += 90f;
+            }
+
+            SetTopRectRuntime(content.Find("WindowSection"), 18f, row, 22f, 34f);
+            row += 54f;
+            SetTopRectRuntime(content.Find("ResolutionLabel"), 18f, row, 248f, 34f);
+            SetTopRectRuntime(content.Find("ResolutionDropdown"), 176f, row - 10f, 22f, 54f);
+            row += 70f;
+            SetTopRectRuntime(content.Find("BackgroundLabel"), 18f, row, 248f, 34f);
+            SetTopRectRuntime(content.Find("BackgroundDropdown"), 176f, row - 10f, 22f, 54f);
+            row += 100f;
+
+            SetTopRectRuntime(content.Find("CharacterSection"), 18f, row, 22f, 34f);
+            row += 54f;
+            SetTopRectRuntime(content.Find("CharacterNameLabel"), 18f, row, 248f, 34f);
+            SetTopRectRuntime(content.Find("CharacterNameInput"), 176f, row - 10f, 22f, 54f);
+            row += 70f;
+            SetTopRectRuntime(content.Find("CustomInstructionLabel"), 18f, row, 248f, 34f);
+            SetTopRectRuntime(content.Find("CustomInstructionInput"), 176f, row - 10f, 22f, 132f);
         }
 
         private static void EnsureOverlayCanvas(GameObject root, int sortingOrder)
@@ -240,6 +331,38 @@ namespace YuiPhysicalAI.UI
             label.color = Color.white;
             label.alignment = TextAnchor.MiddleLeft;
             SetTopRectRuntime(labelObject.transform, 18f, top, 248f, 34f);
+        }
+
+        private static void SetLabelTextRuntime(Transform labelTransform, string value)
+        {
+            var label = labelTransform != null ? labelTransform.GetComponent<Text>() : null;
+            if (label != null)
+            {
+                label.text = value;
+            }
+        }
+
+        private static void SetVoiceControlVisible(Transform content, string name, bool visible)
+        {
+            var target = content.Find(name);
+            if (target != null)
+            {
+                target.gameObject.SetActive(visible);
+            }
+        }
+
+        private void RefreshTtsSpecificVoiceControls()
+        {
+            if (settingsRoot == null)
+            {
+                return;
+            }
+
+            var content = UiTreeUtility.FindDeepChild(settingsRoot.transform, "Content");
+            if (content != null)
+            {
+                ReflowSettingsRowsRuntime(content);
+            }
         }
 
         private static Font BuiltinUiFont()

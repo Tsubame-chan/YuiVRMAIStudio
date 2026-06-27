@@ -14,6 +14,8 @@ class ProviderStatusItem(BaseModel):
     realtime_model: str = ""
     version: str = ""
     speakers: int | None = None
+    engine: str = ""
+    recommendation: str = ""
 
 
 class SystemStatusItem(BaseModel):

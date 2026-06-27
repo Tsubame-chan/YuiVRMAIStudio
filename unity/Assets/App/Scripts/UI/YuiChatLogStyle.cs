@@ -5,9 +5,12 @@ namespace YuiPhysicalAI.UI
 {
     public static class YuiChatLogStyle
     {
-        public const float BubbleMaxWidthRatio = 0.78f;
+        public const float BubbleMaxWidthRatio = 0.84f;
         public const float BubbleMinWidth = 180f;
         public const float BubbleFallbackWidth = 360f;
+        public const int SpeakerFontSize = 13;
+        public const int BodyFontSize = 16;
+        public const int ActionFontSize = 12;
 
         public static readonly Color SystemBackground = new Color(0.18f, 0.19f, 0.22f, 0.96f);
         public static readonly Color UserBackground = new Color(0.23f, 0.33f, 0.78f, 0.96f);

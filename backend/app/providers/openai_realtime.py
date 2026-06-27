@@ -24,6 +24,7 @@ from app.models.realtime import (
     RealtimeProbeResponse,
     RealtimeStatusResponse,
 )
+from app.providers.openai_tools import build_web_search_tools
 
 try:
     from fastapi import WebSocket
@@ -161,10 +162,11 @@ class RealtimeProvider:
                     "audio": base64.b64encode(chunk).decode("ascii"),
                 }))
             await websocket.send(json.dumps({"type": "input_audio_buffer.commit"}))
-            await websocket.send(json.dumps({
-                "type": "response.create",
-                "response": {"output_modalities": response_modalities},
-            }))
+            if mode != "voice_text":
+                await websocket.send(json.dumps({
+                    "type": "response.create",
+                    "response": {"output_modalities": response_modalities},
+                }))
 
             while True:
                 raw = await asyncio.wait_for(websocket.recv(), timeout=30)
@@ -182,6 +184,17 @@ class RealtimeProvider:
                     text_parts.append(event.get("delta", ""))
                 elif event_type == "conversation.item.input_audio_transcription.completed":
                     input_transcript = (event.get("transcript") or "").strip()
+                    if mode == "voice_text" and input_transcript:
+                        client = OpenAI(api_key=self.settings.openai_api_key)
+                        response_text = await run_in_threadpool(
+                            self._generate_voice_text_reply,
+                            client,
+                            input_transcript,
+                            system_instructions,
+                        )
+                        text_parts = [response_text]
+                        events.append("responses.voice_text.done")
+                        break
                 elif event_type in {"response.audio.delta", "response.output_audio.delta", "session.output_audio.delta"}:
                     audio_parts.append(event.get("delta", ""))
                 elif event_type in {"response.done", "session.closed", "error"}:
@@ -309,13 +322,14 @@ class RealtimeProvider:
         openai_socket = None
         mode: RealtimeMode = "voice"
         user_id = self.settings.default_user_id
+        current_instructions = self._default_stream_instructions(mode)
         last_user_text = ""
         response_text_parts: list[str] = []
         pending_response_text = ""
         response_active = False
 
         async def unity_to_openai() -> None:
-            nonlocal openai_socket, mode, user_id, response_active
+            nonlocal openai_socket, mode, user_id, current_instructions, response_active
             while True:
                 message = await unity_socket.receive_json()
                 message_type = message.get("type")
@@ -332,6 +346,7 @@ class RealtimeProvider:
                     openai_socket = await self._connect(endpoint)
                     instructions = message.get("instructions") or self._default_stream_instructions(mode)
                     instructions = self._with_realtime_context(instructions, user_id, mode)
+                    current_instructions = instructions
                     response_modalities = ["text"] if mode == "voice_text" else ["audio"]
                     session = (
                         self._realtime_session_config(
@@ -398,8 +413,7 @@ class RealtimeProvider:
                 }:
                     if event_type == "input_audio_buffer.speech_started":
                         last_user_text = ""
-                        if mode == "voice_text" and response_active and openai_socket is not None:
-                            await openai_socket.send(json.dumps({"type": "response.cancel"}))
+                        if mode == "voice_text" and response_active:
                             response_active = False
                             response_text_parts = []
                             pending_response_text = ""
@@ -436,12 +450,34 @@ class RealtimeProvider:
                             if pending_response_text:
                                 self._save_realtime_turn(user_id, last_user_text, pending_response_text, mode)
                                 pending_response_text = ""
-                            if mode == "voice_text" and openai_socket is not None and not response_active:
-                                await openai_socket.send(json.dumps({
-                                    "type": "response.create",
-                                    "response": {"output_modalities": ["text"]},
-                                }))
+                            if mode == "voice_text":
                                 response_active = True
+                                response_text_parts = []
+                                await unity_socket.send_json({"type": "event", "event": "response.created"})
+                                try:
+                                    response_text = await run_in_threadpool(
+                                        self._generate_voice_text_reply,
+                                        OpenAI(api_key=self.settings.openai_api_key),
+                                        transcript,
+                                        current_instructions,
+                                    )
+                                except RealtimeProviderError as exc:
+                                    response_active = False
+                                    await unity_socket.send_json({
+                                        "type": "error",
+                                        "message": str(exc),
+                                    })
+                                    continue
+                                response_active = False
+                                response_text_parts = [response_text]
+                                if response_text:
+                                    await unity_socket.send_json({
+                                        "type": "text_delta",
+                                        "delta": response_text,
+                                    })
+                                    self._save_realtime_turn(user_id, transcript, response_text, mode)
+                                    last_user_text = ""
+                                await unity_socket.send_json({"type": "done"})
                         elif mode == "voice_text":
                             await unity_socket.send_json({
                                 "type": "event",
@@ -671,16 +707,22 @@ class RealtimeProvider:
                 "返答は原則1〜2文、80字前後を目安にしてください。"
                 "複雑な質問では必要な要点を短くまとめ、相づちや短い質問にはさらに短く返してください。"
                 "『短くまとめると』『少し整理して』など、返答方針の前置きは言わず、答えから始めてください。"
-                "Web検索、天気、最新情報、外部アプリ操作はこのモードではできません。"
-                "求められた場合は、調べているふりをせず、このモードでは取得できないことを短く伝えてください。"
+                "検索ツールが使える場合、天気、ニュース、場所、営業時間、価格、最新情報など現在性のある質問では必要に応じて確認してから答えてください。"
+                "検索、調査、候補出し、比較、イベント探しを依頼されたら、その場で調べて具体的な候補を返してください。検索できる、絞り込める、などの説明だけで終わらないでください。"
+                "検索系の回答では、可能なら3〜6件を、名称、日付またはエリア、短い理由つきで話してください。"
+                "URLはユーザーが明示的に求めた場合以外は本文に入れず、必要ならリンクも出せると短く伝えてください。"
+                "外部アプリ操作や予約、購入、ナビ開始など実際の操作はできません。できない操作は短く伝え、代わりに調べられる情報を答えてください。"
             )
         return (
             "あなたは日本語で自然に会話するVRMアバターです。"
             "短く、会話として返してください。"
             "『短くまとめると』『少し整理して』など、返答方針の前置きは言わず、答えから始めてください。"
             "可能な範囲で、明るく若い女性らしい高めの声に寄せてください。"
-            "Web検索、天気、最新情報、外部アプリ操作はこのモードではできません。"
-            "求められた場合は、調べているふりをせず、このモードでは取得できないことを短く伝えてください。"
+            "検索ツールが使える場合、天気、ニュース、場所、営業時間、価格、最新情報など現在性のある質問では必要に応じて確認してから答えてください。"
+            "検索、調査、候補出し、比較、イベント探しを依頼されたら、その場で調べて具体的な候補を返してください。検索できる、絞り込める、などの説明だけで終わらないでください。"
+            "検索系の回答では、可能なら3〜6件を、名称、日付またはエリア、短い理由つきで話してください。"
+            "URLはユーザーが明示的に求めた場合以外は本文に入れず、必要ならリンクも出せると短く伝えてください。"
+            "外部アプリ操作や予約、購入、ナビ開始など実際の操作はできません。できない操作は短く伝え、代わりに調べられる情報を答えてください。"
         )
 
     def _model_for(self, mode: RealtimeMode) -> str:
@@ -737,6 +779,22 @@ class RealtimeProvider:
                 input=user_input,
                 max_output_tokens=160,
             )
+        except OpenAIError as exc:
+            raise RealtimeProviderError(str(exc)) from exc
+        return (getattr(response, "output_text", "") or "").strip()
+
+    def _generate_voice_text_reply(self, client: object, text: str, instructions: str) -> str:
+        tools = build_web_search_tools(self.settings, text)
+        request_params = {
+            "model": self.settings.openai_chat_model,
+            "instructions": instructions,
+            "input": text,
+            "max_output_tokens": min(self.settings.openai_max_output_tokens, 220),
+        }
+        if tools:
+            request_params["tools"] = tools
+        try:
+            response = client.responses.create(**request_params)
         except OpenAIError as exc:
             raise RealtimeProviderError(str(exc)) from exc
         return (getattr(response, "output_text", "") or "").strip()

@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BACKEND_DIR="$REPO_ROOT/backend"
 LOG_DIR="$REPO_ROOT/logs"
 RUNTIME_DIR="$REPO_ROOT/runtime"
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 load_env_file() {
   local env_file="$REPO_ROOT/.env"

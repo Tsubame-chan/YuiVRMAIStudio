@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BACKEND_DIR="$REPO_ROOT/backend"
 PYTHON_BIN="$BACKEND_DIR/.venv/bin/python"
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 if [[ ! -x "$PYTHON_BIN" ]]; then
   echo "Backend virtual environment not found: $PYTHON_BIN" >&2

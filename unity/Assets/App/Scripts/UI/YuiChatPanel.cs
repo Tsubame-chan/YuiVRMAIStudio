@@ -31,6 +31,8 @@ namespace YuiPhysicalAI.UI
         private const string VoicePostPhonemeLengthKey = YuiPrefsKeys.VoicePostPhonemeLength;
         private const string ConversationModeKey = YuiPrefsKeys.ConversationMode;
         private const string TtsModeKey = YuiPrefsKeys.TtsMode;
+        private const string IrodoriVoiceGenderKey = YuiPrefsKeys.IrodoriVoiceGender;
+        private const string IrodoriVoiceInstructKey = YuiPrefsKeys.IrodoriVoiceInstruct;
         private const string MicrophoneDeviceKey = YuiPrefsKeys.MicrophoneDevice;
         private const string LookCameraDeviceKey = YuiPrefsKeys.LookCameraDevice;
         private const string SecretModeKey = YuiPrefsKeys.SecretMode;
@@ -53,9 +55,11 @@ namespace YuiPhysicalAI.UI
         [SerializeField] private float postPhonemeLength = 0.1f;
         [SerializeField] private string conversationMode = "stable";
         [SerializeField] private string ttsMode = "local";
+        [SerializeField] private string irodoriVoiceGender = "female";
+        [SerializeField] private string irodoriVoiceInstruct = "若い女性の、明るく可愛いアニメ調の声で話してください。";
         [SerializeField] private string characterName = "Yui";
         [SerializeField] private string customInstruction = "";
-        [SerializeField] private string avatarSlot = YuiAvatarSlots.UnityChanDefault;
+        [SerializeField] private string avatarSlot = YuiBuildProfile.DefaultAvatarSlot;
 
         [Header("UI")]
         [SerializeField] private InputField inputField;
@@ -93,6 +97,8 @@ namespace YuiPhysicalAI.UI
         [SerializeField] private string preferredLookCameraDevice = "";
         [SerializeField] private int lookCameraRequestedWidth = 1280;
         [SerializeField] private int lookCameraRequestedHeight = 720;
+        [SerializeField] private float lookCameraWarmupSeconds = 1.1f;
+        [SerializeField] private int lookCameraMaxCandidateFrames = 8;
         [SerializeField] private bool appAwarenessEnabled = false;
         [SerializeField] private float appAwarenessPollInterval = 2f;
 
@@ -148,6 +154,12 @@ namespace YuiPhysicalAI.UI
         private string appContextStatus = "";
         private float nextAppAwarenessPollAt;
         private float displayedMicrophoneLevel;
+        private float lastBackendSuccessAt = -999f;
+        private bool httpTtsAvailable;
+        private IReadOnlyList<string> chatProviderOptions = Array.Empty<string>();
+        private IReadOnlyList<string> visionProviderOptions = Array.Empty<string>();
+        private IReadOnlyList<string> ttsProviderOptions = Array.Empty<string>();
+        private IReadOnlyList<string> sttProviderOptions = Array.Empty<string>();
 
         public string BackendUrl => backendUrl;
         public int SpeakerId => speakerId;
@@ -160,6 +172,13 @@ namespace YuiPhysicalAI.UI
         public float VoicePostPhonemeLength => postPhonemeLength;
         public string ConversationMode => conversationMode;
         public string TtsMode => ttsMode;
+        public string IrodoriVoiceGender => irodoriVoiceGender;
+        public string IrodoriVoiceInstruct => irodoriVoiceInstruct;
+        public bool HttpTtsAvailable => httpTtsAvailable;
+        public IReadOnlyList<string> ChatProviderOptions => chatProviderOptions;
+        public IReadOnlyList<string> VisionProviderOptions => visionProviderOptions;
+        public IReadOnlyList<string> TtsProviderOptions => ttsProviderOptions;
+        public IReadOnlyList<string> SttProviderOptions => sttProviderOptions;
         public string PreferredMicrophoneDevice => preferredMicrophoneDevice;
         public string PreferredLookCameraDevice => preferredLookCameraDevice;
         public bool SecretMode => secretMode;

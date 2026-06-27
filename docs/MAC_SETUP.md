@@ -1,5 +1,9 @@
 # Mac Setup
 
+> Current public-facing macOS setup starts at `docs/MAC_PUBLIC_ALPHA.md`.
+> This file is a historical setup log from the initial macOS migration and still contains older Unity `2022.3.6f1` notes.
+> For current Unity work, treat the canonical project as Unity `2022.3.62f3`.
+
 This guide records the macOS migration steps verified on 2026-06-08.
 
 ## Verified Environment
@@ -24,7 +28,7 @@ softwareupdate --install "Command Line Tools for Xcode 26.5-26.5"
 Install Homebrew, then add it to the shell:
 
 ```bash
-echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> /Users/kento/.zprofile
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
 eval "$(/opt/homebrew/bin/brew shellenv)"
 ```
 
@@ -51,12 +55,13 @@ unity/ProjectSettings/ProjectVersion.txt
 From the repository root:
 
 ```bash
-cd "/Users/kento/Documents/Yui VRM AI Studio"
+cd "/path/to/Yui VRM AI Studio"
 PYTHON_BIN=/opt/homebrew/bin/python3.12 ./scripts/setup_backend_byok_macos.sh
 ```
 
 All `./scripts/...` commands below assume the terminal is already in the
-repository root. If the prompt is at `~`, run the `cd` command above first.
+repository root. If the prompt is at `~`, replace the example path above with
+your local repository path and run `cd` first.
 
 Edit `.env` and set local secrets:
 
@@ -121,7 +126,7 @@ The project has been verified with:
 /Applications/Unity/Hub/Editor/2022.3.6f1/Unity.app/Contents/MacOS/Unity \
   -batchmode \
   -quit \
-  -projectPath "/Users/kento/Documents/Yui VRM AI Studio/unity" \
+  -projectPath "/path/to/Yui VRM AI Studio/unity" \
   -logFile /private/tmp/yui-unity-final-20260608.log
 ```
 

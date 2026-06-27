@@ -70,9 +70,13 @@ namespace YuiPhysicalAI.Platform
                 : "Android版の画像選択にはNativeFilePicker等のAndroidファイルピッカープラグイン導入が必要です。";
             return Task.FromResult(new Result(false, null, message));
 #elif UNITY_IOS
+            if (mode == "image")
+            {
+                return YuiIOSPhotoPicker.OpenImageAsync();
+            }
             var message = mode == "vrm"
                 ? "iOS版のVRM選択にはUIDocumentPicker連携プラグイン導入が必要です。"
-                : "iOS版の画像選択にはUIDocumentPicker/Photos連携プラグイン導入が必要です。";
+                : "iOS版の画像選択を開始できませんでした。";
             return Task.FromResult(new Result(false, null, message));
 #elif UNITY_WEBGL
             var message = mode == "vrm"

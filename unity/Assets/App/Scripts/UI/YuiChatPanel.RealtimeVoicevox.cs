@@ -108,6 +108,9 @@ namespace YuiPhysicalAI.UI
                 return;
             }
 
+            var pausedRealtimeInput = false;
+            string pausedInputDevice = null;
+            var pausedInputFrequency = 0;
             try
             {
                 var speechText = YuiSpeechTextUtility.CleanSpeechText(text);
@@ -135,6 +138,11 @@ namespace YuiPhysicalAI.UI
                     return;
                 }
 
+                pausedRealtimeInput = TryPauseRealtimeInputForAssistantPlayback(
+                    out pausedInputDevice,
+                    out pausedInputFrequency);
+                YuiPlatformAudioSession.PrepareForAssistantPlayback();
+                NormalizeRealtimePlaybackClip(clip, out var sourcePeak, out var appliedGain);
                 var previousClip = audioSource.clip;
                 audioSource.Stop();
                 audioSource.clip = clip;
@@ -142,7 +150,7 @@ namespace YuiPhysicalAI.UI
                 SetStatus("Speaking...");
                 audioSource.Play();
                 Debug.Log(
-                    $"Yui realtime VOICEVOX playback start: text_first_ms={realtimeVoicevoxFirstTextMs}, response_done_ms={realtimeVoicevoxDoneMs}, synth_ms={synthMs}, chars={speechText.Length}, audio_volume={audioSource.volume:F2}, synthesis_volume={synthesisVolumeScale:F2}");
+                    $"Yui realtime VOICEVOX playback start: text_first_ms={realtimeVoicevoxFirstTextMs}, response_done_ms={realtimeVoicevoxDoneMs}, synth_ms={synthMs}, chars={speechText.Length}, source_peak={sourcePeak:F4}, gain={appliedGain:F2}, audio_volume={audioSource.volume:F2}, synthesis_volume={synthesisVolumeScale:F2}");
                 while (audioSource != null
                     && audioSource.isPlaying
                     && !cancellationTokenSource.IsCancellationRequested)
@@ -162,7 +170,70 @@ namespace YuiPhysicalAI.UI
             {
                 realtimeVoicevoxSpeechCancellationTokenSource?.Dispose();
                 realtimeVoicevoxSpeechCancellationTokenSource = null;
+                if (pausedRealtimeInput)
+                {
+                    ResumeRealtimeInputAfterAssistantPlayback(
+                        pausedInputDevice,
+                        pausedInputFrequency);
+                }
             }
+        }
+
+        private bool TryPauseRealtimeInputForAssistantPlayback(
+            out string pausedDevice,
+            out int pausedFrequency)
+        {
+            pausedDevice = activeMicrophoneDevice;
+            pausedFrequency = activeRecordingFrequency;
+            if (!IsRealtimeVoicevoxMode()
+                || IsMacEditorRuntime()
+                || unityMicrophoneRecorder == null
+                || !unityMicrophoneRecorder.HasClip)
+            {
+                return false;
+            }
+
+            unityMicrophoneRecorder.Stop();
+            recordingClip = null;
+            realtimeLastSamplePosition = 0;
+            ResetRealtimeClientVadState();
+            Debug.Log($"Yui realtime input paused for assistant playback: device={pausedDevice}, frequency={pausedFrequency}");
+            return true;
+        }
+
+        private void ResumeRealtimeInputAfterAssistantPlayback(string device, int frequency)
+        {
+            if (!isRecording
+                || !realtimeStreamActive
+                || !IsRealtimeVoicevoxMode()
+                || IsMacEditorRuntime()
+                || string.IsNullOrEmpty(device))
+            {
+                return;
+            }
+
+            if (unityMicrophoneRecorder == null)
+            {
+                unityMicrophoneRecorder = new YuiUnityMicrophoneRecorder();
+            }
+
+            activeMicrophoneDevice = device;
+            activeRecordingFrequency = frequency > 0 ? frequency : ResolveRecordingFrequency(device);
+            if (!unityMicrophoneRecorder.Start(activeMicrophoneDevice, activeRecordingFrequency, 10, true))
+            {
+                AppendLog("System", "Realtime用マイクの再開に失敗しました。録音を一度停止して再開してください。");
+                StopRecordingAfterRealtimeError();
+                return;
+            }
+
+            recordingClip = unityMicrophoneRecorder.Clip;
+            realtimeLastSamplePosition = unityMicrophoneRecorder.GetPosition();
+            realtimeNextChunkAt = Time.realtimeSinceStartup + 0.12f;
+            realtimeWaitingForResponse = false;
+            realtimeAssistantTurnActive = false;
+            ResetRealtimeClientVadState();
+            Debug.Log($"Yui realtime input resumed after assistant playback: device={activeMicrophoneDevice}, frequency={activeRecordingFrequency}, position={realtimeLastSamplePosition}");
+            SetStatus("Realtime listening...");
         }
 
         private async Task RestartRealtimeStreamAfterPlaybackAsync()

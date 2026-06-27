@@ -1,9 +1,13 @@
 param(
     [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
-    [switch]$RequireBuilds
+    [switch]$RequireBuilds,
+    [ValidateSet("windows", "macos", "all")]
+    [string]$Platform = "windows"
 )
 
 $ErrorActionPreference = "Stop"
+$organizationIdField = "organization" + "Id"
+$organizationIdPattern = $organizationIdField + ":[ \t]*[^\r\n \t]+"
 
 Write-Host "Yui VRM AI Studio distribution release audit"
 Write-Host "Project: $ProjectRoot"
@@ -143,8 +147,25 @@ Test-RequiredPath "backend\requirements.txt" "public users need backend dependen
 Test-RequiredPath "backend\main.py" "public users need the FastAPI backend entrypoint"
 Test-RequiredPath "backend\app\main.py" "public users need the FastAPI backend app source"
 if ($RequireBuilds) {
-    Test-RequiredPath "builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1\Yui VRM AI Studio.exe" "public users need the Windows app executable"
-    Test-RequiredPath "builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1\YuiFilePickerHelper.exe" "Windows standalone image/VRM selection needs the file picker helper beside the app exe"
+    if ($Platform -eq "windows" -or $Platform -eq "all") {
+        $windowsExpanded =
+            (Test-Path -LiteralPath (Join-Path $ProjectRoot "builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1\Yui VRM AI Studio.exe")) -and
+            (Test-Path -LiteralPath (Join-Path $ProjectRoot "builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1\YuiFilePickerHelper.exe"))
+        $windowsArchive = Test-Path -LiteralPath (Join-Path $ProjectRoot "builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1_windows.zip")
+        if (-not ($windowsExpanded -or $windowsArchive)) {
+            Test-RequiredPath "builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1\Yui VRM AI Studio.exe" "public users need the Windows app executable"
+            Test-RequiredPath "builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1\YuiFilePickerHelper.exe" "Windows standalone image/VRM selection needs the file picker helper beside the app exe"
+            Test-RequiredPath "builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1_windows.zip" "public users need the downloadable Windows public alpha archive"
+        }
+    }
+    if ($Platform -eq "macos" -or $Platform -eq "all") {
+        $macExpanded = Test-Path -LiteralPath (Join-Path $ProjectRoot "builds\YuiVRMAIStudio_MacOSAlpha_v0.1.0-alpha.1\Yui VRM AI Studio.app")
+        $macArchive = Test-Path -LiteralPath (Join-Path $ProjectRoot "builds\YuiVRMAIStudio_MacOSAlpha_v0.1.0-alpha.1_macos.zip")
+        if (-not ($macExpanded -or $macArchive)) {
+            Test-RequiredPath "builds\YuiVRMAIStudio_MacOSAlpha_v0.1.0-alpha.1\Yui VRM AI Studio.app" "public users need the macOS app bundle"
+            Test-RequiredPath "builds\YuiVRMAIStudio_MacOSAlpha_v0.1.0-alpha.1_macos.zip" "public users need the downloadable macOS public alpha archive"
+        }
+    }
 }
 Test-RequiredPath "unity\Assets\UnityChan\Prefabs\unitychan.prefab" "UnityChan default avatar is the release baseline"
 Test-RequiredPath "tools\YuiFilePickerHelper" "Windows file picker helper source should be available"
@@ -161,7 +182,7 @@ $projectSettingsRoot = Join-Path $ProjectRoot "unity\ProjectSettings"
 if (Test-Path -LiteralPath $projectSettingsRoot) {
     $files = Get-ChildItem -LiteralPath $projectSettingsRoot -Recurse -File -ErrorAction SilentlyContinue
     foreach ($file in $files) {
-        if (Select-String -LiteralPath $file.FullName -Pattern "organizationId:[ \t]*[^\r\n \t]+" -Quiet) {
+        if (Select-String -LiteralPath $file.FullName -Pattern $organizationIdPattern -Quiet) {
             $relative = [System.IO.Path]::GetRelativePath($ProjectRoot, $file.FullName)
             Write-Host "BLOCKER: $relative - public Unity project settings must not expose personal account identifiers" -ForegroundColor Red
             $script:failed += 1

@@ -2,10 +2,13 @@ from functools import lru_cache
 
 from app.core.config import Settings
 from app.providers.gemini_vision import GeminiVisionProvider
+from app.providers.http_tts import HttpTTSProvider
+from app.providers.lmstudio_chat import LMStudioChatProvider
 from app.providers.openai_chat import OpenAIChatProvider
 from app.providers.openai_stt import OpenAISTTProvider
 from app.providers.openai_vision import OpenAIVisionProvider
 from app.providers.voicevox_tts import VoiceVoxProvider
+from app.providers.xai_chat import XAIChatProvider
 
 
 class ProviderNotImplementedError(NotImplementedError):
@@ -15,6 +18,16 @@ class ProviderNotImplementedError(NotImplementedError):
 @lru_cache(maxsize=8)
 def _openai_chat_provider(settings: Settings) -> OpenAIChatProvider:
     return OpenAIChatProvider(settings)
+
+
+@lru_cache(maxsize=8)
+def _lmstudio_chat_provider(settings: Settings) -> LMStudioChatProvider:
+    return LMStudioChatProvider(settings)
+
+
+@lru_cache(maxsize=8)
+def _xai_chat_provider(settings: Settings) -> XAIChatProvider:
+    return XAIChatProvider(settings)
 
 
 @lru_cache(maxsize=8)
@@ -33,6 +46,11 @@ def _voicevox_tts_provider(settings: Settings) -> VoiceVoxProvider:
 
 
 @lru_cache(maxsize=8)
+def _http_tts_provider(settings: Settings) -> HttpTTSProvider:
+    return HttpTTSProvider(settings)
+
+
+@lru_cache(maxsize=8)
 def _openai_stt_provider(settings: Settings) -> OpenAISTTProvider:
     return OpenAISTTProvider(settings)
 
@@ -44,6 +62,10 @@ class ProviderRouter:
     def chat(self):
         if self.settings.chat_provider == "openai":
             return _openai_chat_provider(self.settings)
+        if self.settings.chat_provider == "lmstudio":
+            return _lmstudio_chat_provider(self.settings)
+        if self.settings.chat_provider == "xai":
+            return _xai_chat_provider(self.settings)
         raise ProviderNotImplementedError(
             f"Chat provider is not implemented: {self.settings.chat_provider}"
         )
@@ -57,11 +79,14 @@ class ProviderRouter:
             f"Vision provider is not implemented: {self.settings.vision_provider}"
         )
 
-    def tts(self):
-        if self.settings.tts_provider == "voicevox":
+    def tts(self, provider: str | None = None):
+        selected_provider = (provider or self.settings.tts_provider).strip().lower()
+        if selected_provider == "voicevox":
             return _voicevox_tts_provider(self.settings)
+        if selected_provider == "http":
+            return _http_tts_provider(self.settings)
         raise ProviderNotImplementedError(
-            f"TTS provider is not implemented: {self.settings.tts_provider}"
+            f"TTS provider is not implemented: {selected_provider}"
         )
 
     def stt(self):

@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +12,8 @@ namespace YuiPhysicalAI.Api
 {
     public sealed class YuiBackendClient
     {
+        private static readonly HttpClient FallbackHttpClient = new HttpClient();
+
         private readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings
         {
             NullValueHandling = NullValueHandling.Ignore
@@ -35,6 +39,14 @@ namespace YuiPhysicalAI.Api
         public Task<ProviderStatusResponse> GetProviderStatusAsync(CancellationToken cancellationToken = default)
         {
             return GetJsonAsync<ProviderStatusResponse>("/providers/status", cancellationToken);
+        }
+
+        public Task<WeatherCurrentResponse> GetCurrentWeatherAsync(
+            string location,
+            CancellationToken cancellationToken = default)
+        {
+            var path = "/external/weather/current?location=" + UnityWebRequest.EscapeURL(location ?? string.Empty);
+            return GetJsonAsync<WeatherCurrentResponse>(path, cancellationToken);
         }
 
         public Task<RealtimeStatusResponse> GetRealtimeStatusAsync(CancellationToken cancellationToken = default)
@@ -90,8 +102,32 @@ namespace YuiPhysicalAI.Api
             using var request = UnityWebRequest.Post(ToAbsoluteUrl("/stt"), form);
             request.timeout = 60;
             request.SetRequestHeader("Accept", "application/json");
-            await SendAsync(request, cancellationToken);
-            return Deserialize<SttResponse>(request.downloadHandler.text);
+            try
+            {
+                await SendAsync(request, cancellationToken);
+                return Deserialize<SttResponse>(request.downloadHandler.text);
+            }
+            catch (YuiBackendException ex) when (ShouldTryHttpClientFallback(ex))
+            {
+                Debug.LogWarning($"Yui backend UnityWebRequest STT failed; retrying with HttpClient. {ex.Message}");
+                var content = new MultipartFormDataContent();
+                var audioContent = new ByteArrayContent(wavBytes);
+                audioContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("audio/wav");
+                content.Add(audioContent, "audio", filename);
+                if (durationMs.HasValue)
+                {
+                    content.Add(new StringContent(durationMs.Value.ToString()), "duration_ms");
+                }
+
+                var json = await SendHttpClientAsync(
+                    HttpMethod.Post,
+                    ToAbsoluteUrl("/stt"),
+                    content,
+                    60,
+                    "application/json",
+                    cancellationToken);
+                return Deserialize<SttResponse>(json);
+            }
         }
 
         public async Task<VisionResponse> AnalyzeImageAsync(
@@ -113,8 +149,29 @@ namespace YuiPhysicalAI.Api
             using var request = UnityWebRequest.Post(ToAbsoluteUrl("/vision"), form);
             request.timeout = 60;
             request.SetRequestHeader("Accept", "application/json");
-            await SendAsync(request, cancellationToken);
-            return Deserialize<VisionResponse>(request.downloadHandler.text);
+            try
+            {
+                await SendAsync(request, cancellationToken);
+                return Deserialize<VisionResponse>(request.downloadHandler.text);
+            }
+            catch (YuiBackendException ex) when (ShouldTryHttpClientFallback(ex))
+            {
+                Debug.LogWarning($"Yui backend UnityWebRequest vision failed; retrying with HttpClient. {ex.Message}");
+                var content = new MultipartFormDataContent();
+                var imageContent = new ByteArrayContent(imageBytes);
+                imageContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(mimeType);
+                content.Add(imageContent, "image", filename);
+                content.Add(new StringContent(promptType ?? "screen"), "prompt_type");
+
+                var json = await SendHttpClientAsync(
+                    HttpMethod.Post,
+                    ToAbsoluteUrl("/vision"),
+                    content,
+                    60,
+                    "application/json",
+                    cancellationToken);
+                return Deserialize<VisionResponse>(json);
+            }
         }
 
         public async Task<RealtimeAudioResponse> SendRealtimeAudioAsync(
@@ -137,8 +194,30 @@ namespace YuiPhysicalAI.Api
             using var request = UnityWebRequest.Post(ToAbsoluteUrl("/realtime/audio"), form);
             request.timeout = 90;
             request.SetRequestHeader("Accept", "application/json");
-            await SendAsync(request, cancellationToken);
-            return Deserialize<RealtimeAudioResponse>(request.downloadHandler.text);
+            try
+            {
+                await SendAsync(request, cancellationToken);
+                return Deserialize<RealtimeAudioResponse>(request.downloadHandler.text);
+            }
+            catch (YuiBackendException ex) when (ShouldTryHttpClientFallback(ex))
+            {
+                Debug.LogWarning($"Yui backend UnityWebRequest realtime audio failed; retrying with HttpClient. {ex.Message}");
+                var content = new MultipartFormDataContent();
+                var audioContent = new ByteArrayContent(wavBytes);
+                audioContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("audio/wav");
+                content.Add(audioContent, "audio", filename);
+                content.Add(new StringContent(mode ?? "voice"), "mode");
+                content.Add(new StringContent(instructions ?? string.Empty), "instructions");
+
+                var json = await SendHttpClientAsync(
+                    HttpMethod.Post,
+                    ToAbsoluteUrl("/realtime/audio"),
+                    content,
+                    90,
+                    "application/json",
+                    cancellationToken);
+                return Deserialize<RealtimeAudioResponse>(json);
+            }
         }
 
         public Task<MemoryItem> SaveMemoryAsync(
@@ -190,10 +269,27 @@ namespace YuiPhysicalAI.Api
             CancellationToken cancellationToken = default)
         {
             var url = ToAbsoluteUrl(audioUrl);
-            using var request = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.WAV);
+            using var request = UnityWebRequest.Get(url);
             request.timeout = 30;
-            await SendAsync(request, cancellationToken);
-            return CopyAudioClip(DownloadHandlerAudioClip.GetContent(request), "YuiBackendAudio");
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Accept", "audio/wav");
+            try
+            {
+                await SendAsync(request, cancellationToken);
+                return WavBytesToAudioClip(request.downloadHandler.data, "YuiBackendAudio");
+            }
+            catch (YuiBackendException ex) when (ShouldTryHttpClientFallback(ex))
+            {
+                Debug.LogWarning($"Yui backend UnityWebRequest audio download failed; retrying with HttpClient. {ex.Message}");
+                var bytes = await SendHttpClientBytesAsync(
+                    HttpMethod.Get,
+                    url,
+                    null,
+                    30,
+                    "audio/wav",
+                    cancellationToken);
+                return WavBytesToAudioClip(bytes, "YuiBackendAudio");
+            }
         }
 
         public async Task<AudioClip> SynthesizeSpeechClipAsync(
@@ -211,11 +307,27 @@ namespace YuiPhysicalAI.Api
             using var request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST);
             request.timeout = 60;
             request.uploadHandler = new UploadHandlerRaw(bytes);
-            request.downloadHandler = new DownloadHandlerAudioClip(url, AudioType.WAV);
+            request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Content-Type", "application/json; charset=utf-8");
             request.SetRequestHeader("Accept", "audio/wav");
-            await SendAsync(request, cancellationToken);
-            return CopyAudioClip(DownloadHandlerAudioClip.GetContent(request), "YuiBackendAudio");
+            try
+            {
+                await SendAsync(request, cancellationToken);
+                return WavBytesToAudioClip(request.downloadHandler.data, "YuiBackendAudio");
+            }
+            catch (YuiBackendException ex) when (ShouldTryHttpClientFallback(ex))
+            {
+                Debug.LogWarning($"Yui backend UnityWebRequest TTS audio failed; retrying with HttpClient. {ex.Message}");
+                using var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var wavBytes = await SendHttpClientBytesAsync(
+                    HttpMethod.Post,
+                    url,
+                    content,
+                    60,
+                    "audio/wav",
+                    cancellationToken);
+                return WavBytesToAudioClip(wavBytes, "YuiBackendAudio");
+            }
         }
 
         public async Task<ChatSpeechResult> SendChatWithSpeechAsync(
@@ -268,8 +380,26 @@ namespace YuiPhysicalAI.Api
             using var request = UnityWebRequest.Get(ToAbsoluteUrl(path));
             request.timeout = 10;
             request.SetRequestHeader("Accept", "application/json");
-            await SendAsync(request, cancellationToken);
-            return Deserialize<TResponse>(request.downloadHandler.text);
+            try
+            {
+                await SendAsync(request, cancellationToken);
+                return Deserialize<TResponse>(request.downloadHandler.text);
+            }
+            catch (YuiBackendException ex) when (ShouldTryHttpClientFallback(ex))
+            {
+                if (!string.Equals(path, "/health", StringComparison.OrdinalIgnoreCase))
+                {
+                    Debug.LogWarning($"Yui backend UnityWebRequest GET failed; retrying with HttpClient. {ex.Message}");
+                }
+                var json = await SendHttpClientAsync(
+                    HttpMethod.Get,
+                    ToAbsoluteUrl(path),
+                    null,
+                    10,
+                    "application/json",
+                    cancellationToken);
+                return Deserialize<TResponse>(json);
+            }
         }
 
         private async Task<TResponse> PostJsonAsync<TRequest, TResponse>(
@@ -287,8 +417,24 @@ namespace YuiPhysicalAI.Api
             request.SetRequestHeader("Content-Type", "application/json; charset=utf-8");
             request.SetRequestHeader("Accept", "application/json");
 
-            await SendAsync(request, cancellationToken);
-            return Deserialize<TResponse>(request.downloadHandler.text);
+            try
+            {
+                await SendAsync(request, cancellationToken);
+                return Deserialize<TResponse>(request.downloadHandler.text);
+            }
+            catch (YuiBackendException ex) when (ShouldTryHttpClientFallback(ex))
+            {
+                Debug.LogWarning($"Yui backend UnityWebRequest POST failed; retrying with HttpClient. {ex.Message}");
+                using var content = new StringContent(json, Encoding.UTF8, "application/json");
+                var responseJson = await SendHttpClientAsync(
+                    HttpMethod.Post,
+                    ToAbsoluteUrl(path),
+                    content,
+                    60,
+                    "application/json",
+                    cancellationToken);
+                return Deserialize<TResponse>(responseJson);
+            }
         }
 
         private async Task<TResponse> DeleteJsonAsync<TResponse>(
@@ -299,8 +445,23 @@ namespace YuiPhysicalAI.Api
             request.timeout = 30;
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Accept", "application/json");
-            await SendAsync(request, cancellationToken);
-            return Deserialize<TResponse>(request.downloadHandler.text);
+            try
+            {
+                await SendAsync(request, cancellationToken);
+                return Deserialize<TResponse>(request.downloadHandler.text);
+            }
+            catch (YuiBackendException ex) when (ShouldTryHttpClientFallback(ex))
+            {
+                Debug.LogWarning($"Yui backend UnityWebRequest DELETE failed; retrying with HttpClient. {ex.Message}");
+                var json = await SendHttpClientAsync(
+                    HttpMethod.Delete,
+                    ToAbsoluteUrl(path),
+                    null,
+                    30,
+                    "application/json",
+                    cancellationToken);
+                return Deserialize<TResponse>(json);
+            }
         }
 
         private static async Task SendAsync(
@@ -324,6 +485,72 @@ namespace YuiPhysicalAI.Api
                     request.error,
                     body,
                     request.url);
+            }
+        }
+
+        private static bool ShouldTryHttpClientFallback(YuiBackendException ex)
+        {
+            return ex.StatusCode == 0;
+        }
+
+        private static async Task<string> SendHttpClientAsync(
+            HttpMethod method,
+            string url,
+            HttpContent content,
+            int timeoutSeconds,
+            string accept,
+            CancellationToken cancellationToken)
+        {
+            var bytes = await SendHttpClientBytesAsync(method, url, content, timeoutSeconds, accept, cancellationToken);
+            return Encoding.UTF8.GetString(bytes);
+        }
+
+        private static async Task<byte[]> SendHttpClientBytesAsync(
+            HttpMethod method,
+            string url,
+            HttpContent content,
+            int timeoutSeconds,
+            string accept,
+            CancellationToken cancellationToken)
+        {
+            using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeout.CancelAfter(TimeSpan.FromSeconds(Math.Max(1, timeoutSeconds)));
+
+            var request = new HttpRequestMessage(method, url);
+            try
+            {
+                request.Content = content;
+                request.Headers.ConnectionClose = true;
+                if (!string.IsNullOrWhiteSpace(accept))
+                {
+                    request.Headers.Accept.ParseAdd(accept);
+                }
+
+                using var response = await FallbackHttpClient.SendAsync(request, timeout.Token);
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new YuiBackendException(
+                        (long)response.StatusCode,
+                        response.ReasonPhrase,
+                        Encoding.UTF8.GetString(bytes),
+                        url);
+                }
+
+                return bytes;
+            }
+            catch (YuiBackendException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new YuiBackendException(0, $"HttpClient fallback failed: {ex}", string.Empty, url);
+            }
+            finally
+            {
+                request.Content = null;
+                request.Dispose();
             }
         }
 
@@ -378,6 +605,88 @@ namespace YuiPhysicalAI.Api
                 false);
             copy.SetData(samples, 0);
             return copy;
+        }
+
+        private static AudioClip WavBytesToAudioClip(byte[] wavBytes, string clipName)
+        {
+            if (wavBytes == null || wavBytes.Length < 44)
+            {
+                return null;
+            }
+
+            using var stream = new MemoryStream(wavBytes);
+            using var reader = new BinaryReader(stream);
+            if (ReadFourCc(reader) != "RIFF")
+            {
+                return null;
+            }
+
+            reader.ReadInt32();
+            if (ReadFourCc(reader) != "WAVE")
+            {
+                return null;
+            }
+
+            short channels = 1;
+            int sampleRate = 24000;
+            short bitsPerSample = 16;
+            byte[] data = null;
+
+            while (stream.Position + 8 <= stream.Length)
+            {
+                var chunkId = ReadFourCc(reader);
+                var chunkSize = reader.ReadInt32();
+                var chunkStart = stream.Position;
+                if (chunkId == "fmt ")
+                {
+                    var format = reader.ReadInt16();
+                    channels = reader.ReadInt16();
+                    sampleRate = reader.ReadInt32();
+                    reader.ReadInt32();
+                    reader.ReadInt16();
+                    bitsPerSample = reader.ReadInt16();
+                    if (format != 1 || bitsPerSample != 16)
+                    {
+                        return null;
+                    }
+                }
+                else if (chunkId == "data")
+                {
+                    data = reader.ReadBytes(chunkSize);
+                }
+
+                stream.Position = chunkStart + chunkSize + (chunkSize % 2);
+                if (data != null)
+                {
+                    break;
+                }
+            }
+
+            if (data == null || data.Length < 2 || channels <= 0)
+            {
+                return null;
+            }
+
+            var sampleValueCount = data.Length / 2;
+            var samples = new float[sampleValueCount];
+            for (var i = 0; i < sampleValueCount; i++)
+            {
+                samples[i] = Mathf.Clamp(BitConverter.ToInt16(data, i * 2) / 32768f, -1f, 1f);
+            }
+
+            var clip = AudioClip.Create(
+                string.IsNullOrWhiteSpace(clipName) ? "YuiBackendAudio" : clipName,
+                sampleValueCount / channels,
+                channels,
+                sampleRate,
+                false);
+            clip.SetData(samples, 0);
+            return clip;
+        }
+
+        private static string ReadFourCc(BinaryReader reader)
+        {
+            return Encoding.ASCII.GetString(reader.ReadBytes(4));
         }
 
         public static AudioClip Pcm16Base64ToAudioClip(

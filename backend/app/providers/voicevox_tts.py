@@ -16,11 +16,6 @@ class TTSProviderError(RuntimeError):
 
 logger = logging.getLogger(__name__)
 
-# Cap the on-disk cache so long-running sessions don't fill the data directory.
-# Each chat reply is split into multiple chunks and produces multiple .wav files,
-# so this needs to be generous; ~600 files is a few hours of conversation worst case.
-_AUDIO_CACHE_LIMIT = 600
-
 
 class VoiceVoxProvider(TTSProvider):
     name = "voicevox"
@@ -118,19 +113,57 @@ class VoiceVoxProvider(TTSProvider):
         return response, "/synthesis"
 
     def _enforce_cache_limit(self) -> None:
-        """Keep at most _AUDIO_CACHE_LIMIT .wav files in the audio cache."""
+        """Keep generated WAV cache within the configured local retention policy."""
         try:
             entries = [p for p in self.audio_dir.iterdir() if p.suffix.lower() == ".wav"]
         except OSError as exc:
             logger.warning("VOICEVOX cache scan failed: %s", exc)
             return
 
-        if len(entries) <= _AUDIO_CACHE_LIMIT:
+        if not entries:
             return
 
-        # Drop oldest first; mtime is good enough for a local cache.
-        entries.sort(key=lambda p: p.stat().st_mtime)
-        for stale in entries[: len(entries) - _AUDIO_CACHE_LIMIT]:
+        max_files = max(0, int(getattr(self.settings, "tts_audio_cache_max_files", 300) or 0))
+        max_mb = max(0, int(getattr(self.settings, "tts_audio_cache_max_mb", 256) or 0))
+        max_age_hours = max(0, int(getattr(self.settings, "tts_audio_cache_max_age_hours", 24) or 0))
+        max_bytes = max_mb * 1024 * 1024
+        cutoff = time.time() - (max_age_hours * 60 * 60) if max_age_hours > 0 else None
+
+        def stat_mtime(path: Path) -> float:
+            try:
+                return path.stat().st_mtime
+            except OSError:
+                return 0.0
+
+        entries.sort(key=stat_mtime)
+        stale_paths: set[Path] = set()
+        if cutoff is not None:
+            stale_paths.update(path for path in entries if stat_mtime(path) < cutoff)
+
+        remaining = [path for path in entries if path not in stale_paths]
+        if max_files > 0 and len(remaining) > max_files:
+            overflow = len(remaining) - max_files
+            stale_paths.update(remaining[:overflow])
+            remaining = remaining[overflow:]
+
+        if max_bytes > 0:
+            total_bytes = 0
+            sizes: dict[Path, int] = {}
+            for path in remaining:
+                try:
+                    size = path.stat().st_size
+                except OSError:
+                    size = 0
+                sizes[path] = size
+                total_bytes += size
+
+            for path in remaining:
+                if total_bytes <= max_bytes:
+                    break
+                stale_paths.add(path)
+                total_bytes -= sizes[path]
+
+        for stale in sorted(stale_paths, key=stat_mtime):
             try:
                 stale.unlink()
             except OSError as exc:

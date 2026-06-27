@@ -6,7 +6,7 @@ __pycache__/
 .pytest_cache/
 runtime/
 handoff_prompt_*.md
-Info.plist.Unity-*.codex-backup-*
+Info.plist.Unity-*.co?ex-backup-*
 _private_migration/
 backend/data/*.db
 backend/data/*.db-*
@@ -20,13 +20,23 @@ unity/**/Build/
 unity/**/Builds/
 unity/**/Logs/
 unity/**/UserSettings/
-unity/.vsconfig
 *.csproj
 *.sln
 *.user
+unity/.vs/
+unity/TestResults-*.xml
+unity/mono_crash.*.json
 logs/
+builds/
+benchmarks/
+*.safetensors
+*.pt
+*.pth
+*.onnx
+*.gguf
 downloads/*.unitypackage
 scripts/audit_private_patterns.txt
+scripts/publication_guard.local.txt
 installer/windows/output/
 
 # Local-only private avatar assets

@@ -328,16 +328,19 @@ namespace YuiPhysicalAI.UI
                 ? YuiChatLogStyle.SystemSpeaker
                 : YuiChatLogStyle.Speaker;
             var bodyColor = YuiChatLogStyle.Body;
+            var parsedText = YuiChatLinkUtility.Parse(entry.Text);
             entry.Bubble?.Bind(
                 entry.Speaker,
-                entry.Text,
+                parsedText.DisplayText,
                 width,
                 isUser,
                 backgroundColor,
                 speakerColor,
                 bodyColor,
                 chatFont,
-                bubbleSprite);
+                bubbleSprite,
+                entry.Text,
+                parsedText.Links);
         }
 
         private void TrimOldMessages()

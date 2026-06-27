@@ -28,6 +28,10 @@ namespace YuiPhysicalAI.UI
         [SerializeField] private Button clearCancelButton;
         [SerializeField] private GameObject advancedRoot;
         [SerializeField] private InputField backendUrlInput;
+        [SerializeField] private Dropdown voicePresetDropdown;
+        [SerializeField] private InputField voicePresetNameInput;
+        [SerializeField] private Button voicePresetSaveButton;
+        [SerializeField] private Button voicePresetDeleteButton;
         [SerializeField] private Dropdown speakerDropdown;
         [SerializeField] private Slider volumeSlider;
         [SerializeField] private Text volumeValueText;
@@ -45,6 +49,8 @@ namespace YuiPhysicalAI.UI
         [SerializeField] private Text postPhonemeValueText;
         [SerializeField] private Dropdown conversationModeDropdown;
         [SerializeField] private Dropdown ttsModeDropdown;
+        [SerializeField] private Dropdown irodoriVoiceGenderDropdown;
+        [SerializeField] private InputField irodoriVoiceInstructInput;
         [SerializeField] private Dropdown microphoneDropdown;
         [SerializeField] private Dropdown lookCameraDropdown;
         [SerializeField] private Dropdown backgroundDropdown;
@@ -70,7 +76,6 @@ namespace YuiPhysicalAI.UI
         private readonly float[] microphoneTestSamples = new float[256];
         private bool advancedVisible;
         private bool isPreviewingVoice;
-        private bool previewVoiceStartedThisOpen;
 
 
         private void Awake()
@@ -221,7 +226,6 @@ namespace YuiPhysicalAI.UI
 
         public void Show()
         {
-            previewVoiceStartedThisOpen = false;
             if (settingsRoot != null)
             {
                 settingsRoot.SetActive(true);

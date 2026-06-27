@@ -47,8 +47,11 @@ namespace YuiPhysicalAI.UI
             try
             {
                 SetStatus("Previewing voice...");
+                var previewText = IsHttpTtsMode()
+                    ? "こんにちは、ユイです。"
+                    : "こんにちは、ユイです。声の設定はこんな感じです。";
                 var clip = await SynthesizeSpeechClipAsync(
-                    "こんにちは、ユイです。声の設定はこんな感じです。",
+                    previewText,
                     "normal",
                     "voice-preview-" + Guid.NewGuid().ToString("N"),
                     cancellationTokenSource.Token);
@@ -121,9 +124,15 @@ namespace YuiPhysicalAI.UI
             audioSource.Stop();
 
             var chunks = allowChunking
-                ? YuiSpeechTextUtility.SplitSpeechText(speechText, speechChunkMaxCharacters)
+                ? SplitSpeechTextForCurrentTts(speechText)
                 : new[] { speechText };
             Debug.Log($"Yui TTS chunks: {chunks.Length}");
+
+            if (IsHttpTtsMode() && chunks.Length > 1)
+            {
+                await SpeakResponseWithPrefetchAsync(chunks, chat.VoiceStyle, chatRequestId, cancellationToken);
+                return;
+            }
 
             for (var index = 0; index < chunks.Length; index++)
             {
@@ -156,6 +165,105 @@ namespace YuiPhysicalAI.UI
             }
         }
 
+        private async Task SpeakResponseWithPrefetchAsync(
+            string[] chunks,
+            string voiceStyle,
+            string chatRequestId,
+            CancellationToken cancellationToken)
+        {
+            var tasks = new Task<AudioClip>[chunks.Length];
+            var prefetchGate = new SemaphoreSlim(2, 2);
+            for (var index = 0; index < chunks.Length; index++)
+            {
+                var chunkIndex = index;
+                tasks[chunkIndex] = SynthesizeSpeechClipWithPrefetchGateAsync(
+                    prefetchGate,
+                    chunks[chunkIndex],
+                    voiceStyle,
+                    $"{chatRequestId}-tts-{chunkIndex}",
+                    cancellationToken);
+            }
+
+            for (var index = 0; index < chunks.Length; index++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var chunkTimer = System.Diagnostics.Stopwatch.StartNew();
+                AudioClip clip = null;
+                try
+                {
+                    clip = await tasks[index];
+                }
+                catch
+                {
+                    for (var cleanupIndex = index + 1; cleanupIndex < tasks.Length; cleanupIndex++)
+                    {
+                        if (tasks[cleanupIndex].IsCompletedSuccessfully)
+                        {
+                            DestroyOwnedAudioClip(tasks[cleanupIndex].Result, null);
+                        }
+                    }
+
+                    throw;
+                }
+
+                Debug.Log($"Yui TTS chunk {index + 1}/{chunks.Length} latency: {chunkTimer.ElapsedMilliseconds} ms, chars={chunks[index].Length}, prefetch=true");
+                if (clip == null)
+                {
+                    continue;
+                }
+
+                while (audioSource.isPlaying && !cancellationToken.IsCancellationRequested)
+                {
+                    await Task.Delay(30, cancellationToken);
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+                var previousClip = audioSource.clip;
+                audioSource.Stop();
+                audioSource.clip = clip;
+                DestroyOwnedAudioClip(previousClip, clip);
+                audioSource.Play();
+            }
+        }
+
+        private async Task<AudioClip> SynthesizeSpeechClipWithPrefetchGateAsync(
+            SemaphoreSlim gate,
+            string text,
+            string voiceStyle,
+            string requestId,
+            CancellationToken cancellationToken)
+        {
+            await gate.WaitAsync(cancellationToken);
+            try
+            {
+                return await SynthesizeSpeechClipAsync(text, voiceStyle, requestId, cancellationToken);
+            }
+            finally
+            {
+                gate.Release();
+            }
+        }
+
+        private string[] SplitSpeechTextForCurrentTts(string speechText)
+        {
+            if (IsHttpTtsMode())
+            {
+                var httpMaxCharacters = Mathf.Max(speechChunkMaxCharacters, 220);
+                if (speechText.Length <= httpMaxCharacters)
+                {
+                    return new[] { speechText };
+                }
+
+                return YuiSpeechTextUtility.SplitSpeechText(
+                    speechText,
+                    httpMaxCharacters,
+                    httpMaxCharacters,
+                    httpMaxCharacters);
+            }
+
+            return YuiSpeechTextUtility.SplitSpeechText(speechText, speechChunkMaxCharacters);
+        }
+
         private static void DestroyOwnedAudioClip(AudioClip previousClip, AudioClip nextClip)
         {
             if (previousClip == null || previousClip == nextClip)
@@ -176,6 +284,7 @@ namespace YuiPhysicalAI.UI
             {
                 var canTryLocalVoicevox = !localVoicevoxUnavailable
                     && !IsTtsMode("server")
+                    && !IsHttpTtsMode()
                     && !IsRemoteBackend()
                     && preferChatdollKitVoicevoxTts
                     && chatdollKitVoicevoxTts != null;
@@ -205,16 +314,25 @@ namespace YuiPhysicalAI.UI
                 new TtsRequest
                 {
                     RequestId = requestId,
+                    Provider = IsHttpTtsMode() ? "http" : null,
                     Text = text,
                     SpeakerId = speakerId,
                     SpeedScale = speedScale,
-                    PitchScale = pitchScale,
+                    PitchScale = YuiTtsTuning.SafePitchForMode(ttsMode, pitchScale),
                     IntonationScale = intonationScale,
                     VolumeScale = synthesisVolumeScale,
                     PrePhonemeLength = prePhonemeLength,
-                    PostPhonemeLength = postPhonemeLength
+                    PostPhonemeLength = postPhonemeLength,
+                    VoiceInstruct = IsHttpTtsMode() ? irodoriVoiceInstruct : null,
+                    VoiceGender = IsHttpTtsMode() ? irodoriVoiceGender : null,
+                    VoiceLangCode = IsHttpTtsMode() ? "ja" : null
                 },
                 cancellationToken);
+        }
+
+        private bool IsHttpTtsMode()
+        {
+            return IsTtsMode("server-http");
         }
 
         private bool IsRemoteBackend()

@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using UnityEngine.EventSystems;
 using UnityEngine;
 using YuiPhysicalAI.Audio;
 using YuiPhysicalAI.Api;
@@ -89,7 +90,12 @@ namespace YuiPhysicalAI.UI
                 SetInteractable(true);
                 if (inputField != null)
                 {
-                    inputField.ActivateInputField();
+                    inputField.DeactivateInputField();
+                    if (EventSystem.current != null
+                        && EventSystem.current.currentSelectedGameObject == inputField.gameObject)
+                    {
+                        EventSystem.current.SetSelectedGameObject(null);
+                    }
                 }
             }
         }

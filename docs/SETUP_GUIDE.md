@@ -1,7 +1,10 @@
-# Setup Guide
+# Windows Setup Guide
 
-This guide is for the public BYOK Windows alpha. BYOK means you provide your
-own API key and run the backend locally on your PC.
+This guide is for the Windows Desktop Public Alpha. BYOK means you provide your
+own API key and run the local helper service on your PC.
+
+For macOS, use [`docs/MAC_PUBLIC_ALPHA.md`](MAC_PUBLIC_ALPHA.md) or
+[`docs/MAC_PUBLIC_ALPHA.en.md`](MAC_PUBLIC_ALPHA.en.md) instead.
 
 Most first-run problems are setup-related rather than app bugs: Python PATH,
 VOICEVOX location, `.env`, or Windows SmartScreen. Follow the steps in order
@@ -76,10 +79,9 @@ VOICEVOX/VOICEVOX Engine is not bundled with this project. Install it separately
 and follow the VOICEVOX terms and credit requirements.
 
 The launcher does not automate the VOICEVOX GUI. It launches `vv-engine\run.exe`
-directly and uses it as a local API server at `http://127.0.0.1:50021`. On first
-launch, VOICEVOX Engine may spend a short time loading voices or preparing its
-local engine. If it looks quiet for a moment, wait until the launcher says the
-service is ready.
+directly and uses it as a local API server. On first launch, VOICEVOX Engine may
+spend a short time loading voices or preparing its local engine. If it looks
+quiet for a moment, wait until the launcher says the service is ready.
 
 ## 4. Create An OpenAI API Key
 
@@ -99,7 +101,7 @@ enough to play with normal chat, voice input, image checks, and translation
 tests. Heavy realtime experiments, long sessions, or high-volume image/audio
 use will cost more.
 
-## 5. Run Backend Setup
+## 5. Run Local Service Setup
 
 Open PowerShell in the repository folder and run:
 
@@ -149,10 +151,14 @@ Double-click:
 Start_Yui_Backend_And_VOICEVOX.bat
 ```
 
-Keep the launcher window open while using the app. It starts both:
+Keep the launcher window open while using the app. It starts both the local AI
+helper service and VOICEVOX Engine. The default ports are only local runtime
+details; most users do not need to edit them.
 
-- the local backend at `http://127.0.0.1:8000`
-- VOICEVOX Engine at `http://127.0.0.1:50021`
+If another Yui backend is already running, the launcher may reuse it. When
+testing a freshly extracted copy, stop the old service first with
+`Stop_Yui_Backend_And_VOICEVOX.bat`, then start again from the new folder. This
+prevents old local conversation history from appearing in the fresh copy.
 
 Startup may take a little while on the first run. When the log stops at the
 ready state and no new error appears, you can launch the app.
@@ -222,16 +228,10 @@ import that exported `.vrm` into Yui VRM AI Studio.
 
 ## Troubleshooting
 
-Backendが起動していない:
+Local service is not running:
 
 ```powershell
 .\scripts\check_backend.ps1
-```
-
-Or open:
-
-```text
-http://127.0.0.1:8000/health
 ```
 
 VOICEVOX Engineが見つからない:
@@ -254,7 +254,6 @@ VOICEVOX Engineが見つからない:
 音声が再生されない:
 
 - Confirm VOICEVOX is running.
-- Open `http://127.0.0.1:50021/version` in a browser.
 
 ファイル選択画面が開かない:
 
@@ -279,7 +278,10 @@ OpenAI API setup.
 
 Does it support macOS or Linux?
 
-Not yet. This alpha currently targets Windows.
+macOS has a separate experimental Desktop Public Alpha path. Start from
+[`docs/MAC_PUBLIC_ALPHA.en.md`](MAC_PUBLIC_ALPHA.en.md) or the
+[`macos-public-alpha` branch](https://github.com/Tsubame-chan/YuiVRMAIStudio/tree/macos-public-alpha).
+Linux is not a supported public target yet.
 
 Can I change the character name?
 

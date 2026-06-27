@@ -11,6 +11,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+UNITY_ORGANIZATION_FIELD = "organization" + "Id"
+
 
 ROOT_FILES = [
     ".dockerignore",
@@ -26,24 +28,36 @@ ROOT_FILES = [
     "openapi.json",
 ]
 
+GENERATED_EXCLUDE_DIRS = {".git", ".venv", "__pycache__", ".pytest_cache", "Library", "Logs", "Temp", "UserSettings", "obj"}
+GENERATED_EXCLUDE_FILES = {"*.pyc", ".DS_Store"}
+
 TREE_COPIES = [
-    ("backend", {".venv", "__pycache__", "data"}, {"*.pyc"}),
+    ("backend", GENERATED_EXCLUDE_DIRS | {"data"}, GENERATED_EXCLUDE_FILES),
     ("deploy", set(), set()),
     ("icon", set(), set()),
     ("installer", set(), set()),
-    ("scripts", set(), {"check_phase1.ps1", "create_unitychan_release_copy.ps1", "prepare_public_repository.ps1"}),
-    ("tools", set(), set()),
-    ("unity/Assets", set(), set()),
-    ("unity/Packages", set(), set()),
-    ("unity/ProjectSettings", set(), set()),
+    ("scripts", GENERATED_EXCLUDE_DIRS, GENERATED_EXCLUDE_FILES | {"check_phase1.ps1", "create_unitychan_release_copy.ps1", "prepare_public_repository.ps1"}),
+    ("tools", GENERATED_EXCLUDE_DIRS, GENERATED_EXCLUDE_FILES),
+    ("unity/Assets", GENERATED_EXCLUDE_DIRS, GENERATED_EXCLUDE_FILES),
+    ("unity/Packages", GENERATED_EXCLUDE_DIRS, GENERATED_EXCLUDE_FILES),
+    ("unity/ProjectSettings", GENERATED_EXCLUDE_DIRS, GENERATED_EXCLUDE_FILES),
 ]
 
 DOC_FILES = [
     "docs/ALPHA_RELEASE_CHECKLIST.md",
+    "docs/BUILD_VARIANTS.md",
+    "docs/DOCUMENTATION_HYGIENE.md",
+    "docs/GITHUB_PUBLICATION.md",
+    "docs/LLM_EXTERNAL_INFO.md",
+    "docs/MAC_PUBLIC_ALPHA.md",
+    "docs/MAC_PUBLIC_ALPHA.en.md",
+    "docs/MAC_SETUP.md",
+    "docs/PROJECT_RESTART_INVENTORY_20260623.md",
+    "docs/PROJECT_STRUCTURE.md",
+    "docs/PUBLICATION_GUARDRAILS.md",
     "docs/PUBLIC_BYOK_SETUP.md",
     "docs/SETUP_GUIDE.md",
-    "docs/GITHUB_PUBLICATION.md",
-    "docs/MAC_SETUP.md",
+    "docs/VERSIONING_AND_NAMING.md",
     "docs/WINDOWS_INSTALLER_PLAN.md",
     "docs/api.md",
 ]
@@ -56,6 +70,7 @@ REMOVE_AFTER_COPY = [
 PRIVATE_COPY_EXCLUSION_FILE = "scripts/audit_private_patterns.txt"
 
 EDITOR_KEEP_FILES = [
+    "unity/Assets/App/Editor.meta",
     "unity/Assets/App/Editor/YuiPublicWindowsBuildTools.cs",
     "unity/Assets/App/Editor/YuiPublicWindowsBuildTools.cs.meta",
     "unity/Assets/App/Editor/YuiGenerateNeutralIdleClip.cs",
@@ -162,7 +177,7 @@ def sanitize_project_settings(destination_root: Path) -> None:
     if not path.exists():
         return
     text = path.read_text(encoding="utf-8", errors="ignore")
-    text = re.sub(r"organizationId:[ \t]*[^\r\n \t]+", "organizationId: ", text)
+    text = re.sub(rf"{UNITY_ORGANIZATION_FIELD}:[ \t]*[^\r\n \t]+", f"{UNITY_ORGANIZATION_FIELD}: ", text)
     path.write_text(text, encoding="utf-8")
 
 
@@ -198,6 +213,11 @@ def main() -> int:
     parser.add_argument("--destination-root", default=None, type=Path)
     parser.add_argument("--require-builds", action="store_true", help="Require Windows public build artifacts during audit.")
     parser.add_argument("--skip-audit", action="store_true", help="Generate the tree without running the public audit.")
+    parser.add_argument(
+        "--allow-delete-git",
+        action="store_true",
+        help="Allow deleting an existing destination that contains a .git directory.",
+    )
     args = parser.parse_args()
 
     source_root = args.source_root.expanduser().resolve()
@@ -211,6 +231,13 @@ def main() -> int:
         return 2
     if source_root == destination or source_root in destination.parents and destination.name == source_root.name:
         print(f"Refusing unsafe destination: {destination}", file=sys.stderr)
+        return 2
+    if (destination / ".git").exists() and not args.allow_delete_git:
+        print(
+            "Refusing to delete an existing git repository. "
+            "Choose a fresh --destination-root, move the repo aside, or pass --allow-delete-git intentionally.",
+            file=sys.stderr,
+        )
         return 2
 
     build_backup = preserve_existing_builds(destination)

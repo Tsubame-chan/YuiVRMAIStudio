@@ -38,14 +38,26 @@ namespace YuiPhysicalAI.Api
         [JsonProperty("chat_provider")]
         public string ChatProvider { get; set; }
 
+        [JsonProperty("chat_providers")]
+        public List<string> ChatProviders { get; set; }
+
         [JsonProperty("vision_provider")]
         public string VisionProvider { get; set; }
+
+        [JsonProperty("vision_providers")]
+        public List<string> VisionProviders { get; set; }
 
         [JsonProperty("tts_provider")]
         public string TtsProvider { get; set; }
 
+        [JsonProperty("tts_providers")]
+        public List<string> TtsProviders { get; set; }
+
         [JsonProperty("stt_provider")]
         public string SttProvider { get; set; }
+
+        [JsonProperty("stt_providers")]
+        public List<string> SttProviders { get; set; }
 
         [JsonProperty("default_user_id")]
         public string DefaultUserId { get; set; }
@@ -274,6 +286,9 @@ namespace YuiPhysicalAI.Api
         [JsonProperty("request_id")]
         public string RequestId { get; set; }
 
+        [JsonProperty("provider")]
+        public string Provider { get; set; }
+
         [JsonProperty("text")]
         public string Text { get; set; }
 
@@ -297,6 +312,15 @@ namespace YuiPhysicalAI.Api
 
         [JsonProperty("post_phoneme_length")]
         public float? PostPhonemeLength { get; set; }
+
+        [JsonProperty("voice_instruct")]
+        public string VoiceInstruct { get; set; }
+
+        [JsonProperty("voice_gender")]
+        public string VoiceGender { get; set; }
+
+        [JsonProperty("voice_lang_code")]
+        public string VoiceLangCode { get; set; }
     }
 
     [Serializable]
@@ -506,6 +530,81 @@ namespace YuiPhysicalAI.Api
 
         [JsonProperty("memories")]
         public int Memories { get; set; }
+    }
+
+    [Serializable]
+    public sealed class WeatherLocation
+    {
+        [JsonProperty("name")]
+        public string Name { get; set; }
+
+        [JsonProperty("country")]
+        public string Country { get; set; }
+
+        [JsonProperty("admin1")]
+        public string Admin1 { get; set; }
+
+        [JsonProperty("latitude")]
+        public double Latitude { get; set; }
+
+        [JsonProperty("longitude")]
+        public double Longitude { get; set; }
+
+        [JsonProperty("timezone")]
+        public string Timezone { get; set; }
+    }
+
+    [Serializable]
+    public sealed class WeatherCurrent
+    {
+        [JsonProperty("time")]
+        public string Time { get; set; }
+
+        [JsonProperty("temperature")]
+        public float? Temperature { get; set; }
+
+        [JsonProperty("temperature_unit")]
+        public string TemperatureUnit { get; set; }
+
+        [JsonProperty("relative_humidity")]
+        public int? RelativeHumidity { get; set; }
+
+        [JsonProperty("relative_humidity_unit")]
+        public string RelativeHumidityUnit { get; set; }
+
+        [JsonProperty("apparent_temperature")]
+        public float? ApparentTemperature { get; set; }
+
+        [JsonProperty("apparent_temperature_unit")]
+        public string ApparentTemperatureUnit { get; set; }
+
+        [JsonProperty("precipitation")]
+        public float? Precipitation { get; set; }
+
+        [JsonProperty("precipitation_unit")]
+        public string PrecipitationUnit { get; set; }
+
+        [JsonProperty("weather_code")]
+        public int? WeatherCode { get; set; }
+
+        [JsonProperty("wind_speed")]
+        public float? WindSpeed { get; set; }
+
+        [JsonProperty("wind_speed_unit")]
+        public string WindSpeedUnit { get; set; }
+    }
+
+    [Serializable]
+    public sealed class WeatherCurrentResponse
+    {
+        [JsonProperty("provider")]
+        public string Provider { get; set; }
+
+        [JsonProperty("location")]
+        public WeatherLocation Location { get; set; }
+
+        [JsonProperty("current")]
+        public WeatherCurrent Current { get; set; }
     }
 
     public sealed class ChatSpeechResult

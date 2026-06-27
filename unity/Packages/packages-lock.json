@@ -104,7 +104,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.render-pipelines.core": {
-      "version": "14.0.8",
+      "version": "14.0.12",
       "depth": 1,
       "source": "builtin",
       "dependencies": {

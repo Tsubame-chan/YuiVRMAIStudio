@@ -6,11 +6,12 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, W
 from fastapi.responses import FileResponse
 
 from app.core.config import Settings, get_settings
-from app.core.provider_status import build_provider_status, probe_voicevox
+from app.core.provider_status import build_provider_status, probe_http_tts, probe_voicevox
 from app.db.repositories import ChatRepository, MemoryRepository, UsageRepository
 from app.db.sqlite import check_database
 from app.models.chat import ChatRequest, ChatResponse, RecentConversationsResponse
 from app.models.config import ConfigResponse
+from app.models.external_info import WeatherCurrentResponse
 from app.models.health import HealthResponse
 from app.models.memory import (
     MemoryItem,
@@ -36,6 +37,7 @@ from app.providers.openai_vision import VisionProviderError as OpenAIVisionProvi
 from app.providers.router import ProviderNotImplementedError, ProviderRouter
 from app.providers.gemini_vision import VisionProviderError as GeminiVisionProviderError
 from app.providers.voicevox_tts import TTSProviderError
+from app.providers.weather import WeatherProvider, WeatherProviderError
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -53,6 +55,10 @@ def get_usage_repository(settings: Settings = Depends(get_settings)) -> UsageRep
     return UsageRepository(settings.database_url)
 
 
+def get_weather_provider(settings: Settings = Depends(get_settings)) -> WeatherProvider:
+    return WeatherProvider(settings)
+
+
 @router.get("/health", response_model=HealthResponse)
 def health(settings: Settings = Depends(get_settings)) -> HealthResponse:
     database_ok = check_database(settings.database_url)
@@ -68,6 +74,8 @@ def health(settings: Settings = Depends(get_settings)) -> HealthResponse:
             "tts_provider": settings.tts_provider,
             "stt_provider": settings.stt_provider,
             "voicevox_base_url": settings.voicevox_base_url,
+            "http_tts_configured": bool(settings.http_tts_base_url),
+            "http_tts_provider_id": settings.http_tts_provider_id,
             "lmstudio_base_url": settings.lmstudio_base_url,
         },
         features={
@@ -75,6 +83,7 @@ def health(settings: Settings = Depends(get_settings)) -> HealthResponse:
             "voice_input": bool(settings.openai_api_key),
             "vision": bool(settings.openai_api_key or settings.gemini_api_key),
             "local_voicevox_tts": settings.tts_provider == "voicevox",
+            "external_http_tts": settings.tts_provider == "http" and bool(settings.http_tts_base_url),
             "realtime": bool(settings.openai_api_key),
             "realtime_voicevox": bool(settings.openai_api_key),
             "app_awareness_context": False,
@@ -84,12 +93,32 @@ def health(settings: Settings = Depends(get_settings)) -> HealthResponse:
 
 @router.get("/config", response_model=ConfigResponse)
 def config(settings: Settings = Depends(get_settings)) -> ConfigResponse:
+    chat_providers = ["openai", "lmstudio"]
+    if settings.xai_api_key:
+        chat_providers.append("xai")
+    vision_providers = ["openai"]
+    stt_providers = ["openai"]
+    tts_providers = ["voicevox"]
+    if settings.http_tts_base_url:
+        tts_providers.append("http")
     return ConfigResponse(
         character_name=settings.character_name,
         chat_provider=settings.chat_provider,
+        chat_providers=chat_providers,
         vision_provider=settings.vision_provider,
+        vision_providers=vision_providers,
         tts_provider=settings.tts_provider,
+        tts_providers=tts_providers,
+        tts_recommendation={
+            "default": "voicevox",
+            "macos_apple_silicon": "irodori_mlx",
+            "windows_nvidia": "irodori_server",
+            "windows_cpu": "voicevox",
+            "irodori_mlx_label": "Irodori MLX VoiceDesign",
+            "irodori_server_label": "Irodori-TTS-Server for Windows NVIDIA",
+        },
         stt_provider=settings.stt_provider,
+        stt_providers=stt_providers,
         default_user_id=settings.default_user_id,
         limits={
             "daily_chat": settings.daily_chat_limit,
@@ -104,10 +133,12 @@ def config(settings: Settings = Depends(get_settings)) -> ConfigResponse:
 async def providers_status(settings: Settings = Depends(get_settings)) -> ProviderStatusResponse:
     database_ok = check_database(settings.database_url)
     voicevox_status = await probe_voicevox(settings)
+    http_tts_status = await probe_http_tts(settings)
     return build_provider_status(
         settings,
         database_ok=database_ok,
         voicevox_status=voicevox_status,
+        http_tts_status=http_tts_status,
     )
 
 
@@ -218,7 +249,7 @@ async def chat(
             user_message=request.message,
             response=response,
             provider=provider.name,
-            model=settings.openai_chat_model,
+            model=_chat_model_name(settings, provider.name),
         )
     if not request.secret and response.memory_action == "save":
         memory_repository.save(
@@ -230,6 +261,14 @@ async def chat(
             )
         )
     return response
+
+
+def _chat_model_name(settings: Settings, provider_name: str) -> str:
+    if provider_name == "lmstudio":
+        return settings.lmstudio_chat_model
+    if provider_name == "xai":
+        return settings.xai_chat_model
+    return settings.openai_chat_model
 
 
 def _memory_context(
@@ -277,8 +316,7 @@ async def tts(
 ) -> TTSResponse:
     provider_router = ProviderRouter(settings)
     try:
-        provider = provider_router.tts()
-        response = await provider.synthesize(request)
+        provider, response = await _synthesize_tts_with_fallback(provider_router, request, settings)
         usage_repository.log(
             request_id=request.request_id,
             user_id=settings.default_user_id,
@@ -315,8 +353,7 @@ async def tts_audio(
 ) -> FileResponse:
     provider_router = ProviderRouter(settings)
     try:
-        provider = provider_router.tts()
-        response = await provider.synthesize(request)
+        provider, response = await _synthesize_tts_with_fallback(provider_router, request, settings)
         usage_repository.log(
             request_id=request.request_id,
             user_id=settings.default_user_id,
@@ -344,6 +381,26 @@ async def tts_audio(
         ) from exc
 
 
+async def _synthesize_tts_with_fallback(
+    provider_router: ProviderRouter,
+    request: TTSRequest,
+    settings: Settings,
+):
+    provider = provider_router.tts(request.provider)
+    try:
+        return provider, await provider.synthesize(request)
+    except TTSProviderError:
+        fallback_provider_name = (settings.tts_fallback_provider or "").strip().lower()
+        if (
+            request.provider is not None
+            or not fallback_provider_name
+            or fallback_provider_name == (provider.name or "").strip().lower()
+        ):
+            raise
+        fallback_provider = provider_router.tts(fallback_provider_name)
+        return fallback_provider, await fallback_provider.synthesize(request)
+
+
 @router.get("/audio/{filename}")
 def audio(filename: str) -> FileResponse:
     return _audio_file_response(filename)
@@ -361,10 +418,14 @@ def _audio_file_response(filename: str) -> FileResponse:
     ):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Audio not found.")
 
-    # VOICEVOX is the only Phase 2 TTS writer, so `/audio` intentionally serves
-    # WAV only. If a future cloud TTS adds MP3/OGG output, relax this allow-list
-    # together with the provider writer and returned media_type.
-    if not filename.lower().endswith(".wav"):
+    media_types = {
+        ".wav": "audio/wav",
+        ".mp3": "audio/mpeg",
+        ".ogg": "audio/ogg",
+    }
+    suffix = Path(filename).suffix.lower()
+    media_type = media_types.get(suffix)
+    if media_type is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Audio not found.")
 
     candidate = (_AUDIO_DIR / filename).resolve()
@@ -372,7 +433,7 @@ def _audio_file_response(filename: str) -> FileResponse:
     if not candidate.is_relative_to(_AUDIO_DIR) or not candidate.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Audio not found.")
 
-    return FileResponse(candidate, media_type="audio/wav", filename=filename)
+    return FileResponse(candidate, media_type=media_type, filename=filename)
 
 
 @router.post("/stt", response_model=STTResponse)
@@ -503,6 +564,20 @@ def _safe_error_detail(exc: Exception, max_length: int = 300) -> str:
     detail = str(exc).strip() or exc.__class__.__name__
     detail = detail.replace("\r", " ").replace("\n", " ")
     return detail[:max_length]
+
+
+@router.get("/external/weather/current", response_model=WeatherCurrentResponse)
+async def external_current_weather(
+    location: str,
+    provider: WeatherProvider = Depends(get_weather_provider),
+) -> WeatherCurrentResponse:
+    try:
+        return await provider.current_weather(location)
+    except WeatherProviderError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=_safe_error_detail(exc),
+        ) from exc
 
 
 @router.post("/memory/save", response_model=MemoryItem)

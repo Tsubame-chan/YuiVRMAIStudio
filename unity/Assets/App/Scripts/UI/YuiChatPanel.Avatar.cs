@@ -20,18 +20,19 @@ namespace YuiPhysicalAI.UI
     {
         private string GetDefaultAvatarSlot()
         {
-            return YuiAvatarSlots.UnityChanDefault;
+            return YuiBuildProfile.DefaultAvatarSlot;
         }
 
-        private static string UpgradeDefaultAvatarSlot(string savedAvatarSlot)
+        private static string UpgradeDefaultAvatarSlot(string savedAvatarSlot, string defaultAvatarSlot)
         {
             if (PlayerPrefs.GetInt(YuiPrefsKeys.AvatarSlotDefaultUpgraded, 0) == 0
+                && string.Equals(defaultAvatarSlot, YuiAvatarSlots.DemoKikyo, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(YuiAvatarSlots.Normalize(savedAvatarSlot), YuiAvatarSlots.UnityChanDefault, StringComparison.OrdinalIgnoreCase))
             {
                 PlayerPrefs.SetInt(YuiPrefsKeys.AvatarSlotDefaultUpgraded, 1);
-                PlayerPrefs.SetString(AvatarSlotPrefsKey, YuiAvatarSlots.UnityChanDefault);
+                PlayerPrefs.SetString(AvatarSlotPrefsKey, defaultAvatarSlot);
                 PlayerPrefs.Save();
-                return YuiAvatarSlots.UnityChanDefault;
+                return defaultAvatarSlot;
             }
 
             return savedAvatarSlot;
