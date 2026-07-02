@@ -18,6 +18,35 @@ namespace YuiPhysicalAI.UI
         private YuiLocalAiService localAiService;
         private bool localAiUnavailableWarningShown;
 
+        public void RequestLocalAiAssetRepairDownload()
+        {
+            EnsureLocalAiDownloadOverlay();
+            localAiDownloadOverlay?.ShowRepairDownload();
+        }
+
+        public void RefreshLocalAiRuntimeAfterAssetInstall()
+        {
+            ConfigureAiRuntimeRouter();
+            localAiUnavailableWarningShown = false;
+            AppendLog("System", "ローカルAIデータの準備が完了しました。Local Gemmaを使用できます。");
+            SetStatus("Local AI ready");
+        }
+
+        private void EnsureLocalAiDownloadOverlay()
+        {
+            if (localAiDownloadOverlay == null)
+            {
+                localAiDownloadOverlay = GetComponent<YuiLocalAiDownloadOverlay>();
+            }
+
+            if (localAiDownloadOverlay == null)
+            {
+                localAiDownloadOverlay = gameObject.AddComponent<YuiLocalAiDownloadOverlay>();
+            }
+
+            localAiDownloadOverlay.Initialize(this);
+        }
+
         private void ConfigureAiRuntimeRouter()
         {
             IYuiLocalAiRuntime runtime = null;

@@ -77,6 +77,7 @@ namespace YuiPhysicalAI.UI
             EnsureCustomVrmNameInput(content);
             EnsureVoicePresetControls(content);
             EnsureIrodoriVoiceInstructInput(content);
+            EnsureLocalAiAssetControls(content);
             Debug.Log("Yui settings UI repaired: ensured Experimental / Mode dropdown.");
         }
 
@@ -403,6 +404,60 @@ namespace YuiPhysicalAI.UI
             irodoriVoiceInstructInput.transform.SetParent(content, false);
             irodoriVoiceInstructInput.lineType = InputField.LineType.MultiLineSubmit;
             SetTopRectRuntime(irodoriVoiceInstructInput.transform, 176f, 1514f, 22f, 72f);
+        }
+
+        private void EnsureLocalAiAssetControls(Transform content)
+        {
+            CreateOrMoveRuntimeLabel(content, "LocalAiAssetSectionLabel", "Local AI Data", 1614f);
+            if (localAiAssetStatusText == null)
+            {
+                var existing = UiTreeUtility.FindDeepChild(settingsRoot.transform, "LocalAiAssetStatusText");
+                localAiAssetStatusText = existing != null ? existing.GetComponent<Text>() : null;
+            }
+
+            if (localAiAssetStatusText == null)
+            {
+                localAiAssetStatusText = CreateRuntimeStatusText(content, "LocalAiAssetStatusText");
+            }
+
+            localAiAssetStatusText.transform.SetParent(content, false);
+            SetTopRectRuntime(localAiAssetStatusText.transform, 176f, 1604f, 22f, 42f);
+
+            localAiAssetRepairButton = EnsureRuntimeButton(content, localAiAssetRepairButton, "LocalAiAssetRepairButton", "Repair / Download", true);
+            SetTopRectRuntime(localAiAssetRepairButton.transform, 176f, 1654f, 22f, 42f);
+            localAiAssetRepairButton.onClick.RemoveListener(RequestLocalAiAssetRepair);
+            localAiAssetRepairButton.onClick.AddListener(RequestLocalAiAssetRepair);
+            RefreshLocalAiAssetStatus();
+        }
+
+        private static Text CreateRuntimeStatusText(Transform parent, string name)
+        {
+            var root = new GameObject(name, typeof(RectTransform), typeof(Text));
+            root.transform.SetParent(parent, false);
+            var text = root.GetComponent<Text>();
+            text.font = BuiltinUiFont();
+            text.fontSize = 14;
+            text.color = new Color(0.88f, 0.92f, 1f, 1f);
+            text.alignment = TextAnchor.MiddleLeft;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
+            return text;
+        }
+
+        private void RefreshLocalAiAssetStatus()
+        {
+            if (localAiAssetStatusText != null)
+            {
+                localAiAssetStatusText.text = chatPanel != null
+                    ? chatPanel.LocalAiAssetStatusText
+                    : "Local AI data: not checked";
+            }
+        }
+
+        private void RequestLocalAiAssetRepair()
+        {
+            chatPanel?.RequestLocalAiAssetRepairDownload();
+            RefreshLocalAiAssetStatus();
         }
 
         private void EnsureCustomVrmNameInput(Transform content)

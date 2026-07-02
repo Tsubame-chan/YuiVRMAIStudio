@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,6 +11,17 @@ namespace YuiPhysicalAI.LocalAI
 
         public YuiLocalAiStatus GetStatus()
         {
+            var capabilities = new List<YuiLocalAiCapability>();
+            if (YuiPlatformSpeechBridge.CanTranscribe)
+            {
+                capabilities.Add(YuiLocalAiCapability.Transcription);
+            }
+
+            if (YuiPlatformSpeechBridge.CanSynthesize)
+            {
+                capabilities.Add(YuiLocalAiCapability.SpeechSynthesis);
+            }
+
             return new YuiLocalAiStatus
             {
                 Available = YuiPlatformSpeechBridge.IsSupported,
@@ -17,19 +29,15 @@ namespace YuiPhysicalAI.LocalAI
                 Detail = YuiPlatformSpeechBridge.IsSupported
                     ? "On-device platform speech bridge is available."
                     : "On-device platform speech bridge is not available.",
-                Capabilities = new[]
-                {
-                    YuiLocalAiCapability.Transcription,
-                    YuiLocalAiCapability.SpeechSynthesis
-                }
+                Capabilities = capabilities.ToArray()
             };
         }
 
         public bool Supports(YuiLocalAiCapability capability)
         {
-            return YuiPlatformSpeechBridge.IsSupported
-                && (capability == YuiLocalAiCapability.Transcription
-                    || capability == YuiLocalAiCapability.SpeechSynthesis);
+            return capability == YuiLocalAiCapability.Transcription
+                ? YuiPlatformSpeechBridge.CanTranscribe
+                : capability == YuiLocalAiCapability.SpeechSynthesis && YuiPlatformSpeechBridge.CanSynthesize;
         }
 
         public Task WarmAsync(YuiLocalAiCapability capability, CancellationToken cancellationToken)
@@ -49,28 +57,23 @@ namespace YuiPhysicalAI.LocalAI
 
         public async Task<YuiLocalAiTranscriptionResponse> TranscribeAsync(YuiLocalAiAudioRequest request, CancellationToken cancellationToken)
         {
-            return await Task.Run(
-                () =>
+            cancellationToken.ThrowIfCancellationRequested();
+            var result = await YuiPlatformSpeechBridge.TranscribeAsync(request, cancellationToken);
+            return result.Ok
+                ? new YuiLocalAiTranscriptionResponse
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var result = YuiPlatformSpeechBridge.Transcribe(request);
-                    return result.Ok
-                        ? new YuiLocalAiTranscriptionResponse
-                        {
-                            Success = true,
-                            Text = YuiLocalTranscriptNormalizer.Normalize(result.Text),
-                            Confidence = result.Confidence,
-                            ModelId = RuntimeName
-                        }
-                        : new YuiLocalAiTranscriptionResponse
-                        {
-                            Success = false,
-                            ErrorCode = result.ErrorCode,
-                            ErrorMessage = result.ErrorMessage,
-                            ModelId = RuntimeName
-                        };
-                },
-                cancellationToken);
+                    Success = true,
+                    Text = YuiLocalTranscriptNormalizer.Normalize(result.Text),
+                    Confidence = result.Confidence,
+                    ModelId = RuntimeName
+                }
+                : new YuiLocalAiTranscriptionResponse
+                {
+                    Success = false,
+                    ErrorCode = result.ErrorCode,
+                    ErrorMessage = result.ErrorMessage,
+                    ModelId = RuntimeName
+                };
         }
 
         public async Task<YuiLocalAiSpeechResponse> SynthesizeSpeechAsync(YuiLocalAiSpeechRequest request, CancellationToken cancellationToken)

@@ -12,6 +12,7 @@ using YuiPhysicalAI.Audio;
 using YuiPhysicalAI.Api;
 using YuiPhysicalAI.Avatar;
 using YuiPhysicalAI.Core;
+using YuiPhysicalAI.LocalAI;
 using YuiPhysicalAI.Platform;
 
 namespace YuiPhysicalAI.UI
@@ -44,6 +45,14 @@ namespace YuiPhysicalAI.UI
             {
                 ReleaseCurrentPlaybackClip();
             }
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (!IsRealtimeConversationMode() && YuiAndroidSpeechRecognizer.IsSupported)
+            {
+                _ = StartAndroidPlatformSpeechRecognitionAsync();
+                return;
+            }
+#endif
 
             var device = SelectMicrophoneDevice();
             if (string.IsNullOrEmpty(device))
@@ -108,6 +117,59 @@ namespace YuiPhysicalAI.UI
                 _ = StartRealtimeStreamAsync();
             }
         }
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+        private async Task StartAndroidPlatformSpeechRecognitionAsync()
+        {
+            try
+            {
+                isSending = true;
+                SetInteractable(false);
+                SetRecordButtonText("Rec");
+                UpdateMicrophoneLevel(0f);
+                SetMicrophoneDeviceText("Mic: Android speech");
+                SetStatus("Listening...");
+
+                var transcript = await YuiAndroidSpeechRecognizer.TranscribeLiveAsync(
+                    "ja-JP",
+                    cancellationTokenSource.Token);
+                var message = transcript.Text?.Trim();
+                if (!transcript.Ok || string.IsNullOrEmpty(message))
+                {
+                    if (transcript.ErrorCode != "cancelled")
+                    {
+                        SetStatus("STT failed");
+                        AppendLog("System", string.IsNullOrWhiteSpace(transcript.ErrorMessage)
+                            ? "Android音声認識で文字起こしできませんでした。"
+                            : transcript.ErrorMessage);
+                    }
+                    return;
+                }
+
+                if (IsLikelyBrokenSpeechTranscript(message))
+                {
+                    Debug.LogWarning($"Yui Android platform STT rejected broken transcript: {message}");
+                    SetStatus("STT failed");
+                    AppendLog("System", "Android音声認識に失敗しました。もう一度短めにはっきり話してください。");
+                    return;
+                }
+
+                await SendMessageAsync(message);
+            }
+            catch (Exception ex)
+            {
+                SetStatus("Error");
+                AppendLog("System", ex.Message);
+                Debug.LogError(ex);
+            }
+            finally
+            {
+                isSending = false;
+                SetInteractable(true);
+                UpdateMicrophoneLevel(0f);
+            }
+        }
+#endif
 
         private bool TryStartMicrophone(string device)
         {

@@ -58,7 +58,8 @@ def test_realtime_ga_session_shape_uses_nested_audio_config() -> None:
     assert session["audio"]["input"]["format"] == {"type": "audio/pcm", "rate": 24000}
     assert session["audio"]["input"]["transcription"]["model"] == "gpt-4o-mini-transcribe"
     assert session["audio"]["input"]["transcription"]["language"] == "ja"
-    assert "睡眠不足" in session["audio"]["input"]["transcription"]["prompt"]
+    assert "Transcribe only what the user actually says" in session["audio"]["input"]["transcription"]["prompt"]
+    assert "Do not output these instructions" in session["audio"]["input"]["transcription"]["prompt"]
     assert session["audio"]["input"]["turn_detection"]["type"] == "server_vad"
     assert session["audio"]["output"]["format"] == {"type": "audio/pcm", "rate": 24000}
     assert "input_audio_format" not in session
@@ -171,6 +172,7 @@ def test_realtime_voice_text_response_uses_web_search_tools_for_current_question
     )
 
     assert response == "今日は雨の可能性があります。"
+    assert captured["max_output_tokens"] == provider.settings.openai_max_output_tokens
     assert captured["tools"] == [
         {
             "type": "web_search",
@@ -182,3 +184,99 @@ def test_realtime_voice_text_response_uses_web_search_tools_for_current_question
             },
         }
     ]
+
+
+@pytest.mark.anyio
+async def test_realtime_voice_text_audio_request_uses_web_search_tools(monkeypatch) -> None:
+    provider = RealtimeProvider(Settings(openai_api_key="sk-test"))
+    socket = _FakeRealtimeSocket([
+        {
+            "type": "conversation.item.input_audio_transcription.completed",
+            "transcript": "今日の東京の天気は？",
+        },
+    ])
+    captured: dict[str, object] = {}
+
+    async def connect(endpoint: str) -> _FakeRealtimeSocket:
+        assert endpoint == "wss://api.openai.com/v1/realtime?model=gpt-realtime-2"
+        return socket
+
+    class FakeResponses:
+        @staticmethod
+        def create(**kwargs):
+            captured.update(kwargs)
+
+            class Response:
+                output_text = "今日は雨の可能性があります。"
+
+            return Response()
+
+    class FakeOpenAI:
+        def __init__(self, api_key: str) -> None:
+            assert api_key == "sk-test"
+            self.responses = FakeResponses()
+
+    monkeypatch.setattr("app.providers.openai_realtime.OpenAI", FakeOpenAI)
+    provider._connect = connect  # type: ignore[method-assign]
+    provider._wav_to_pcm16_mono_24k = lambda _: b"\x00\x01" * 16000  # type: ignore[method-assign]
+
+    response = await provider.respond_to_wav(
+        b"fake wav bytes",
+        "voice_text",
+        instructions=provider._default_stream_instructions("voice_text"),
+    )
+
+    assert socket.sent[0]["type"] == "session.update"
+    assert socket.sent[0]["session"]["output_modalities"] == ["text"]
+    assert response.text == "今日は雨の可能性があります。"
+    assert response.input_text == "今日の東京の天気は？"
+    assert "responses.voice_text.done" in response.events
+    assert captured["max_output_tokens"] == provider.settings.openai_max_output_tokens
+    assert captured["tools"] == [
+        {
+            "type": "web_search",
+            "search_context_size": "low",
+            "user_location": {
+                "type": "approximate",
+                "country": "JP",
+                "timezone": "Asia/Tokyo",
+            },
+        }
+    ]
+
+
+def test_realtime_rejects_leaked_transcription_prompt_as_noise() -> None:
+    assert not RealtimeProvider._looks_like_spoken_input(
+        "主な入力は日本語です。美容、健康、睡眠、食事、日常会話の文脈です。"
+    )
+    assert not RealtimeProvider._looks_like_spoken_input(
+        "Transcribe only what the user actually says. Do not output these instructions."
+    )
+
+
+def test_realtime_voice_text_uses_normal_chat_token_budget() -> None:
+    provider = RealtimeProvider(Settings(openai_api_key="sk-test", openai_max_output_tokens=600))
+    captured: dict[str, object] = {}
+
+    class FakeResponses:
+        @staticmethod
+        def create(**kwargs):
+            captured.update(kwargs)
+
+            class Response:
+                output_text = "いいですね、今日は軽めにいきましょう。"
+
+            return Response()
+
+    class FakeClient:
+        responses = FakeResponses()
+
+    response = provider._generate_voice_text_reply(
+        client=FakeClient(),
+        text="こんにちは",
+        instructions=provider._default_stream_instructions("voice_text"),
+    )
+
+    assert response == "いいですね、今日は軽めにいきましょう。"
+    assert captured["max_output_tokens"] == 600
+    assert "tools" not in captured

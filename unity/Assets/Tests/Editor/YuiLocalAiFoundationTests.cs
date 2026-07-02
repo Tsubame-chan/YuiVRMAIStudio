@@ -1,5 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -156,6 +160,304 @@ namespace YuiPhysicalAI.Tests.Editor
                 registry,
                 YuiLocalAiCapability.Chat,
                 _ => false));
+        }
+
+        [Test]
+        public void AssetManifest_FromJsonReadsReleaseAssetMetadata()
+        {
+            var json = @"{
+  ""schema_version"": 1,
+  ""release_version"": ""v0.2.0-beta.2"",
+  ""minimum_app_version"": ""0.2.0-beta.2"",
+  ""assets"": [
+    {
+      ""id"": ""desktop-local-gemma-e4b"",
+      ""display_name"": ""Local Gemma SLM"",
+      ""kind"": ""local_ai_model"",
+      ""platforms"": [""macos-arm64"", ""windows-x64""],
+      ""required_for"": [""local_chat""],
+      ""optional"": false,
+      ""version"": ""2026.07.02"",
+	      ""filename"": ""YuiVRMAIStudio_LocalGemma_E4B_v20260702.zip"",
+	      ""url"": ""https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.0-beta.2/YuiVRMAIStudio_LocalGemma_E4B_v20260702.zip"",
+	      ""parts"": [
+	        {
+	          ""filename"": ""YuiVRMAIStudio_LocalGemma_E4B_v20260702.zip.part-000"",
+	          ""url"": ""https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.0-beta.2/YuiVRMAIStudio_LocalGemma_E4B_v20260702.zip.part-000"",
+	          ""sha256"": ""partsha"",
+	          ""size_bytes"": 100
+	        }
+	      ],
+	      ""sha256"": ""0123456789abcdef"",
+	      ""size_bytes"": 1234567890,
+      ""install_root"": ""YuiLocalAI"",
+      ""installed_paths"": [""Models/gemma-4-E4B-it.litertlm""]
+    }
+  ]
+}";
+
+            var manifest = YuiLocalAiAssetManifest.FromJson(json);
+            var asset = manifest.RequiredAssetsFor("macos").Single();
+
+            Assert.AreEqual(1, manifest.SchemaVersion);
+            Assert.AreEqual("v0.2.0-beta.2", manifest.ReleaseVersion);
+            Assert.AreEqual("0.2.0-beta.2", manifest.MinimumAppVersion);
+            Assert.AreEqual("desktop-local-gemma-e4b", asset.Id);
+            Assert.AreEqual("Local Gemma SLM", asset.DisplayName);
+            Assert.AreEqual("local_ai_model", asset.Kind);
+            Assert.AreEqual("local_chat", asset.RequiredFor.Single());
+            Assert.AreEqual("YuiVRMAIStudio_LocalGemma_E4B_v20260702.zip", asset.Filename);
+            Assert.AreEqual(1234567890L, asset.SizeBytes);
+            Assert.AreEqual("YuiVRMAIStudio_LocalGemma_E4B_v20260702.zip.part-000", asset.Parts.Single().Filename);
+            Assert.AreEqual("Models/gemma-4-E4B-it.litertlm", asset.InstalledPaths.Single());
+        }
+
+        [Test]
+        public void AssetInstallProbe_ReportsMissingAndInstalledRequiredPaths()
+        {
+            var tempRoot = Path.Combine(Path.GetTempPath(), "yui-local-ai-assets-test-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                var asset = new YuiLocalAiReleaseAsset
+                {
+                    Id = "desktop-local-gemma-e4b",
+                    DisplayName = "Local Gemma SLM",
+                    Platforms = new[] { "macos-arm64" },
+                    Optional = false,
+                    InstallRoot = "YuiLocalAI",
+                    InstalledPaths = new[] { "Models/gemma-4-E4B-it.litertlm" }
+                };
+
+                var missing = YuiLocalAiAssetInstallProbe.Check(asset, tempRoot, "macos");
+
+                Assert.AreEqual(YuiLocalAiAssetInstallState.Missing, missing.State);
+                Assert.IsFalse(missing.Installed);
+                Assert.AreEqual(1, missing.MissingPaths.Count);
+                StringAssert.Contains("gemma-4-E4B-it.litertlm", missing.Detail);
+
+                var installedPath = Path.Combine(tempRoot, "YuiLocalAI", "Models", "gemma-4-E4B-it.litertlm");
+                Directory.CreateDirectory(Path.GetDirectoryName(installedPath));
+                File.WriteAllText(installedPath, "model-placeholder");
+
+                var installed = YuiLocalAiAssetInstallProbe.Check(asset, tempRoot, "macos");
+
+                Assert.AreEqual(YuiLocalAiAssetInstallState.Installed, installed.State);
+                Assert.IsTrue(installed.Installed);
+                Assert.AreEqual(0, installed.MissingPaths.Count);
+            }
+            finally
+            {
+                if (Directory.Exists(tempRoot))
+                {
+                    Directory.Delete(tempRoot, recursive: true);
+                }
+            }
+        }
+
+        [Test]
+        public void AssetStore_PlansRequiredDownloadsForMissingOrOutdatedAssets()
+        {
+            var manifest = YuiLocalAiAssetManifest.FromJson(@"{
+  ""schema_version"": 1,
+  ""release_version"": ""v0.2.0-beta.2"",
+  ""assets"": [
+    {
+      ""id"": ""desktop-local-gemma-e4b"",
+      ""display_name"": ""Local Gemma SLM"",
+      ""platforms"": [""macos-arm64""],
+      ""required_for"": [""local_chat""],
+      ""optional"": false,
+      ""version"": ""2026.07.02"",
+      ""filename"": ""gemma.zip"",
+      ""sha256"": ""abc"",
+      ""install_root"": ""YuiLocalAI"",
+      ""installed_paths"": [""Models/gemma-4-E4B-it.litertlm""]
+    },
+    {
+      ""id"": ""desktop-local-voicevox-core"",
+      ""display_name"": ""Local VOICEVOX"",
+      ""platforms"": [""macos-arm64""],
+      ""required_for"": [""local_tts""],
+      ""optional"": false,
+      ""version"": ""2026.07.02"",
+      ""filename"": ""voicevox.zip"",
+      ""sha256"": ""def"",
+      ""install_root"": ""YuiLocalAI/Voicevox"",
+      ""installed_paths"": [""Models/meimei_himari_1.vvm""]
+    }
+  ]
+}");
+            var installed = new YuiLocalAiInstalledAssetLedger
+            {
+                Assets =
+                {
+                    new YuiLocalAiInstalledAssetRecord
+                    {
+                        Id = "desktop-local-voicevox-core",
+                        Version = "2026.07.01",
+                        Sha256 = "def"
+                    }
+                }
+            };
+
+            var plan = YuiLocalAiAssetStore.PlanRequiredDownloads(
+                manifest,
+                installed,
+                assetStorageRoot: Path.Combine(Path.GetTempPath(), "missing-yui-assets"),
+                platform: "macos");
+
+            Assert.AreEqual(2, plan.AssetsToDownload.Count);
+            Assert.AreEqual("desktop-local-gemma-e4b", plan.AssetsToDownload[0].Id);
+            Assert.AreEqual(YuiLocalAiAssetNeedReason.MissingFiles, plan.Items[0].NeedReason);
+            Assert.AreEqual("desktop-local-voicevox-core", plan.AssetsToDownload[1].Id);
+            Assert.AreEqual(YuiLocalAiAssetNeedReason.OutdatedVersion, plan.Items[1].NeedReason);
+            Assert.AreEqual(YuiLocalAiAssetPlanState.NeedsDownload, plan.State);
+        }
+
+        [Test]
+        public void AssetDownloader_VerifiesSha256ExtractsZipAndRecordsInstall()
+        {
+            var tempRoot = Path.Combine(Path.GetTempPath(), "yui-asset-downloader-test-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                Directory.CreateDirectory(tempRoot);
+                var zipPath = Path.Combine(tempRoot, "gemma.zip");
+                using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+                {
+                    var entry = archive.CreateEntry("Models/gemma-4-E4B-it.litertlm");
+                    using var stream = entry.Open();
+                    using var writer = new StreamWriter(stream);
+                    writer.Write("model-placeholder");
+                }
+
+                var zipBytes = File.ReadAllBytes(zipPath);
+                var sha256 = Sha256(zipBytes);
+                var asset = new YuiLocalAiReleaseAsset
+                {
+                    Id = "desktop-local-gemma-e4b",
+                    DisplayName = "Local Gemma SLM",
+                    Version = "2026.07.02",
+                    Filename = "gemma.zip",
+                    Url = "memory://gemma.zip",
+                    Sha256 = sha256,
+                    InstallRoot = "YuiLocalAI",
+                    InstalledPaths = new[] { "Models/gemma-4-E4B-it.litertlm" },
+                    Platforms = new[] { "macos-arm64" }
+                };
+                var manifest = new YuiLocalAiAssetManifest
+                {
+                    ReleaseVersion = "v0.2.0-beta.2",
+                    Assets = { asset }
+                };
+                var httpClient = new InMemoryAssetHttpClient(
+                    "{\"schema_version\":1,\"assets\":[]}",
+                    new Dictionary<string, byte[]> { ["memory://gemma.zip"] = zipBytes });
+                var downloader = new YuiLocalAiAssetDownloader(httpClient, tempRoot, tempRoot);
+
+                var result = downloader.InstallAssetsAsync(
+                    manifest,
+                    new[] { asset },
+                    progress: null,
+                    CancellationToken.None).GetAwaiter().GetResult();
+
+                Assert.IsTrue(result.Success, result.ErrorMessage);
+                Assert.IsTrue(File.Exists(Path.Combine(tempRoot, "YuiLocalAI", "Models", "gemma-4-E4B-it.litertlm")));
+                var ledger = YuiLocalAiInstalledAssetLedger.Load(Path.Combine(tempRoot, YuiLocalAiInstalledAssetLedger.DefaultFileName));
+                Assert.AreEqual("desktop-local-gemma-e4b", ledger.Assets.Single().Id);
+                Assert.AreEqual("2026.07.02", ledger.Assets.Single().Version);
+                Assert.AreEqual(sha256, ledger.Assets.Single().Sha256);
+            }
+            finally
+            {
+                if (Directory.Exists(tempRoot))
+                {
+                    Directory.Delete(tempRoot, recursive: true);
+                }
+            }
+        }
+
+        [Test]
+        public void AssetDownloader_DownloadsSplitReleasePartsAndRecordsInstall()
+        {
+            var tempRoot = Path.Combine(Path.GetTempPath(), "yui-asset-downloader-parts-test-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                Directory.CreateDirectory(tempRoot);
+                var zipPath = Path.Combine(tempRoot, "local-ai.zip");
+                using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+                {
+                    var entry = archive.CreateEntry("Models/gemma-4-E4B-it.litertlm");
+                    using var stream = entry.Open();
+                    using var writer = new StreamWriter(stream);
+                    writer.Write("model-placeholder-from-parts");
+                }
+
+                var zipBytes = File.ReadAllBytes(zipPath);
+                var splitIndex = zipBytes.Length / 2;
+                var part0 = zipBytes.Take(splitIndex).ToArray();
+                var part1 = zipBytes.Skip(splitIndex).ToArray();
+                var asset = new YuiLocalAiReleaseAsset
+                {
+                    Id = "desktop-local-gemma-e4b",
+                    DisplayName = "Local Gemma SLM",
+                    Version = "2026.07.02",
+                    Filename = "local-ai.zip",
+                    Sha256 = Sha256(zipBytes),
+                    SizeBytes = zipBytes.Length,
+                    InstallRoot = "YuiLocalAI",
+                    InstalledPaths = new[] { "Models/gemma-4-E4B-it.litertlm" },
+                    Platforms = new[] { "macos-arm64" },
+                    Parts =
+                    {
+                        new YuiLocalAiReleaseAssetPart
+                        {
+                            Filename = "local-ai.zip.part-000",
+                            Url = "memory://local-ai.zip.part-000",
+                            Sha256 = Sha256(part0),
+                            SizeBytes = part0.Length
+                        },
+                        new YuiLocalAiReleaseAssetPart
+                        {
+                            Filename = "local-ai.zip.part-001",
+                            Url = "memory://local-ai.zip.part-001",
+                            Sha256 = Sha256(part1),
+                            SizeBytes = part1.Length
+                        }
+                    }
+                };
+                var manifest = new YuiLocalAiAssetManifest
+                {
+                    ReleaseVersion = "v0.2.0-beta.2",
+                    Assets = { asset }
+                };
+                var httpClient = new InMemoryAssetHttpClient(
+                    "{\"schema_version\":1,\"assets\":[]}",
+                    new Dictionary<string, byte[]>
+                    {
+                        ["memory://local-ai.zip.part-000"] = part0,
+                        ["memory://local-ai.zip.part-001"] = part1
+                    });
+                var downloader = new YuiLocalAiAssetDownloader(httpClient, tempRoot, tempRoot);
+
+                var result = downloader.InstallAssetsAsync(
+                    manifest,
+                    new[] { asset },
+                    progress: null,
+                    CancellationToken.None).GetAwaiter().GetResult();
+
+                Assert.IsTrue(result.Success, result.ErrorMessage);
+                Assert.IsTrue(File.Exists(Path.Combine(tempRoot, "YuiLocalAI", "Models", "gemma-4-E4B-it.litertlm")));
+                var ledger = YuiLocalAiInstalledAssetLedger.Load(Path.Combine(tempRoot, YuiLocalAiInstalledAssetLedger.DefaultFileName));
+                Assert.AreEqual("desktop-local-gemma-e4b", ledger.Assets.Single().Id);
+                Assert.AreEqual(asset.Sha256, ledger.Assets.Single().Sha256);
+            }
+            finally
+            {
+                if (Directory.Exists(tempRoot))
+                {
+                    Directory.Delete(tempRoot, recursive: true);
+                }
+            }
         }
 
         [Test]
@@ -1084,6 +1386,48 @@ namespace YuiPhysicalAI.Tests.Editor
             {
                 return Task.FromResult(new YuiLocalAiVisionResponse());
             }
+        }
+
+        private sealed class InMemoryAssetHttpClient : IYuiLocalAiAssetHttpClient
+        {
+            private readonly string manifestJson;
+            private readonly Dictionary<string, byte[]> assets;
+
+            public InMemoryAssetHttpClient(string manifestJson, Dictionary<string, byte[]> assets)
+            {
+                this.manifestJson = manifestJson;
+                this.assets = assets ?? new Dictionary<string, byte[]>();
+            }
+
+            public Task<string> GetStringAsync(string url, CancellationToken cancellationToken)
+            {
+                return Task.FromResult(manifestJson);
+            }
+
+            public Task DownloadFileAsync(
+                string url,
+                string destinationPath,
+                long expectedBytes,
+                IProgress<YuiLocalAiAssetDownloadProgress> progress,
+                CancellationToken cancellationToken)
+            {
+                if (!assets.TryGetValue(url, out var bytes))
+                {
+                    throw new FileNotFoundException("Missing in-memory asset: " + url);
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
+                File.WriteAllBytes(destinationPath, bytes);
+                progress?.Report(new YuiLocalAiAssetDownloadProgress(url, bytes.Length, expectedBytes, 1f, "download"));
+                return Task.CompletedTask;
+            }
+        }
+
+        private static string Sha256(byte[] bytes)
+        {
+            return BitConverter.ToString(SHA256.Create().ComputeHash(bytes ?? Array.Empty<byte>()))
+                .Replace("-", "")
+                .ToLowerInvariant();
         }
     }
 }

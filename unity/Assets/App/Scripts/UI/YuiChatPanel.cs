@@ -175,6 +175,7 @@ namespace YuiPhysicalAI.UI
         private IReadOnlyList<string> ttsProviderOptions = Array.Empty<string>();
         private IReadOnlyList<TtsVoiceOption> backendAivisVoiceOptions = Array.Empty<TtsVoiceOption>();
         private IReadOnlyList<string> sttProviderOptions = Array.Empty<string>();
+        private YuiLocalAiDownloadOverlay localAiDownloadOverlay;
 
         public string BackendUrl => backendUrl;
         public string OpenAiApiKey => openAiApiKey;
@@ -205,6 +206,9 @@ namespace YuiPhysicalAI.UI
         public string CharacterName => characterName;
         public string CustomInstruction => customInstruction;
         public string AvatarSlot => avatarSlot;
+        public string LocalAiAssetStatusText => localAiDownloadOverlay != null
+            ? localAiDownloadOverlay.CurrentStatusText
+            : "Local AI data: not checked";
 
         private void Awake()
         {
