@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc854a004fc83c74684bc3e798ca978c, type: 3}
+  m_Name: YuiPresenceAnimationProfile
+  m_EditorClassIdentifier: 
+  calmIdle: {fileID: 7400000, guid: 5eeee500f032c384fa863359b9356c40, type: 2}
+  cheerfulIdle: {fileID: 7400000, guid: 5eeee500f032c384fa863359b9356c40, type: 2}
+  thinkingIdle: {fileID: 7400000, guid: 5eeee500f032c384fa863359b9356c40, type: 2}
+  nodGesture: {fileID: 7400000, guid: c80e89b871ffbad4fbda1363788e733d, type: 2}
+  waveGesture: {fileID: 7400000, guid: 61422073bd4c7b641bbbdea450bfce6e, type: 2}
+  talkGesture: {fileID: 7400000, guid: 61422073bd4c7b641bbbdea450bfce6e, type: 2}
+  surpriseGesture: {fileID: 7400000, guid: c80e89b871ffbad4fbda1363788e733d, type: 2}

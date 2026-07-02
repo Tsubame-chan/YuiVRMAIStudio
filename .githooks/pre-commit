@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+
+"$PYTHON_BIN" "$ROOT/scripts/publication_guard.py" --scope staged --check-git-metadata

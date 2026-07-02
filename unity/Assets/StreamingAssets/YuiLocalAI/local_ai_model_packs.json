@@ -1,0 +1,174 @@
+{
+  "schema_version": "2026-06-28",
+  "packs": [
+    {
+      "id": "core_text",
+      "display_name": "Gemma 4 E4B LiteRT-LM Text",
+      "provider": "google-litert-lm",
+      "model_id": "litert-community/gemma-4-E4B-it-litert-lm",
+      "format": "litert-lm",
+      "runtime_model_ref": "gemma-4-E4B-it.litertlm",
+      "deployment_kind": "OnDeviceEmbedded",
+      "capabilities": [
+        "Chat",
+        "Summarization",
+        "Translation",
+        "Extraction"
+      ],
+      "enabled_by_default": true,
+      "download_required": true,
+      "memory_budget_mb": 2600,
+      "disk_budget_mb": 3400,
+      "priority": 8,
+      "startup_policy": "WarmTextOnly",
+      "platforms": [
+        "macos",
+        "windows"
+      ],
+      "notes": "Desktop offline default chat candidate for Mac/Windows. Keep out of the mobile default package because its memory footprint can prevent repeated local TTS/chat turns."
+    },
+    {
+      "id": "core_text_e2b",
+      "display_name": "Gemma 4 E2B LiteRT-LM Text",
+      "provider": "google-litert-lm",
+      "model_id": "litert-community/gemma-4-E2B-it-litert-lm",
+      "format": "litert-lm",
+      "runtime_model_ref": "gemma-4-E2B-it.litertlm",
+      "deployment_kind": "OnDeviceEmbedded",
+      "capabilities": [
+        "Chat",
+        "Summarization",
+        "Translation",
+        "Extraction"
+      ],
+      "enabled_by_default": true,
+      "download_required": true,
+      "memory_budget_mb": 1200,
+      "disk_budget_mb": 2400,
+      "priority": 10,
+      "startup_policy": "WarmTextOnly",
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "notes": "Mobile offline default. Desktop public beta builds use the higher-quality E4B asset as the bundled minimum SLM."
+    },
+    {
+      "id": "vision_gemma4_e2b",
+      "display_name": "Gemma 4 E2B LiteRT-LM Vision",
+      "provider": "google-litert-lm",
+      "model_id": "litert-community/gemma-4-E2B-it-litert-lm",
+      "format": "litert-lm",
+      "runtime_model_ref": "gemma-4-E2B-it.litertlm",
+      "deployment_kind": "OnDeviceEmbedded",
+      "capabilities": [
+        "Vision"
+      ],
+      "enabled_by_default": true,
+      "download_required": true,
+      "memory_budget_mb": 1500,
+      "disk_budget_mb": 0,
+      "priority": 11,
+      "startup_policy": "OnDemand",
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "notes": "Reuses the embedded Gemma 4 E2B LiteRT-LM artifact for multimodal image understanding through the official LiteRT-LM image Content API. If a device/model build lacks vision resources, the router falls back to the lightweight descriptor."
+    },
+    {
+      "id": "core_text_12b_experimental",
+      "display_name": "Gemma 4 12B LiteRT-LM Text (Experimental)",
+      "provider": "google-litert-lm",
+      "model_id": "litert-community/gemma-4-12B-it-litert-lm",
+      "format": "litert-lm",
+      "runtime_model_ref": "gemma-4-12B-it.litertlm",
+      "deployment_kind": "DesktopAudition",
+      "capabilities": [
+        "Chat",
+        "Summarization",
+        "Translation",
+        "Extraction"
+      ],
+      "enabled_by_default": false,
+      "download_required": true,
+      "memory_budget_mb": 8000,
+      "disk_budget_mb": 9000,
+      "priority": 18,
+      "startup_policy": "OnDemand",
+      "platforms": [
+        "macos",
+        "windows"
+      ],
+      "notes": "Desktop/high-memory experiment only. Keep off for iPhone 16 / Pixel 8a class mobile defaults until real device benchmarks prove otherwise."
+    },
+    {
+      "id": "tts_kokoro_sherpa_onnx",
+      "display_name": "Kokoro ONNX TTS (English Audition Only)",
+      "provider": "kokoro-onnx",
+      "model_id": "onnx-community/Kokoro-82M-v1.0-ONNX",
+      "format": "sherpa-onnx-tts",
+      "runtime_model_ref": "kokoro-v1.0.onnx",
+      "deployment_kind": "DesktopAudition",
+      "capabilities": [
+        "SpeechSynthesis"
+      ],
+      "enabled_by_default": false,
+      "download_required": true,
+      "memory_budget_mb": 512,
+      "disk_budget_mb": 400,
+      "priority": 22,
+      "startup_policy": "OnDemand",
+      "platforms": [
+        "macos",
+        "windows"
+      ],
+      "notes": "Rejected for Japanese Yui voice by the current kokoro-onnx path: the v1.0 tokenizer is English phonemizer based, so Japanese text can produce broken English-like audio. Keep only as a desktop English audition reference unless a Japanese-capable Kokoro runtime/model is selected."
+    },
+    {
+      "id": "tts_aivis_desktop_audition",
+      "display_name": "AivisSpeech TTS (Desktop Audition)",
+      "provider": "aivis-speech",
+      "model_id": "AivisSpeech/local-engine",
+      "format": "voicevox-compatible-http",
+      "deployment_kind": "DesktopAudition",
+      "capabilities": [
+        "SpeechSynthesis"
+      ],
+      "enabled_by_default": false,
+      "download_required": false,
+      "memory_budget_mb": 2048,
+      "disk_budget_mb": 0,
+      "priority": 24,
+      "startup_policy": "OnDemand",
+      "platforms": [
+        "macos",
+        "windows"
+      ],
+      "notes": "High-quality desktop/Advanced voice audition path. Do not use this as the mobile default unless a real embedded Aivis runtime/model package is selected."
+    },
+    {
+      "id": "tts_aivis_native_jp",
+      "display_name": "AivisSpeech HD Native Japanese Voices",
+      "provider": "aivis-native",
+      "model_id": "AivisSpeech/aivmx-selected-jp-voices",
+      "format": "aivmx-style-bert-vits2-onnx",
+      "runtime_model_ref": "Aivis/aivis_voices.json",
+      "deployment_kind": "OnDeviceEmbedded",
+      "capabilities": [
+        "SpeechSynthesis"
+      ],
+      "enabled_by_default": false,
+      "download_required": false,
+      "memory_budget_mb": 2048,
+      "disk_budget_mb": 965,
+      "priority": 25,
+      "startup_policy": "OnDemand",
+      "platforms": [
+        "ios",
+        "android"
+      ],
+      "notes": "Selected Aivis .aivmx models and extracted metadata are embedded for the native mobile bridge. The model pack is present, but the Style-Bert-VITS2 Japanese frontend/ONNX runtime bridge must report runtime_ready before this appears in the in-app voice selector."
+    }
+  ]
+}
