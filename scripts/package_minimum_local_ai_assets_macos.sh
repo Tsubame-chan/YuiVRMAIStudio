@@ -50,8 +50,13 @@ copy_path "unity/Assets/StreamingAssets/YuiLocalAI/Voicevox/open_jtalk_dic_utf_8
 
 (
   cd "$TMP_DIR"
-  ditto -c -k --sequesterRsrc --keepParent unity "$OUT_DIR/$PACKAGE_NAME"
+  ditto -c -k --norsrc --noextattr --noqtn --noacl --keepParent unity "$OUT_DIR/$PACKAGE_NAME"
 )
+
+if unzip -Z1 "$OUT_DIR/$PACKAGE_NAME" | grep -q '^__MACOSX/'; then
+  echo "Archive contains __MACOSX metadata: $OUT_DIR/$PACKAGE_NAME" >&2
+  exit 1
+fi
 
 if [[ "${YUI_RELEASE_SPLIT:-1}" != "0" ]]; then
   rm -f "$OUT_DIR/$PACKAGE_NAME.part-"*

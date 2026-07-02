@@ -28,11 +28,14 @@ Windows / macOSのREADMEとセットアップ手順は、同じ設計思想で�
 
 ## ダウンロードの選び方
 
-- すぐ使う: GitHub ReleasesからWindowsまたはmacOSのBeta配布物をダウンロードします。大きいZIPは `.part-*` に分割しているため、Release本文またはOS別ガイドの手順で結合してから展開します。最小構成のLocal Gemma SLMとLocal VOICEVOXを含むため、追加データなしでも起動して試せます。
+- すぐ使う: GitHub Releasesから、自分のOS名が入ったアプリ配布物だけをダウンロードします。macOSなら `MacOSPublicBeta` の2つの `.part-*` と `.sha256`、Windowsなら `WindowsPublicBeta` の2つの `.part-*` と `.sha256` です。
+- 大きいZIPは `.part-*` に分割しているため、Release本文またはOS別ガイドの手順で1つのZIPに戻してから展開します。最小構成のLocal Gemma SLMとLocal VOICEVOXを含むため、追加データなしでも起動して試せます。
 - ソースを見る/改造する: GitHubの `Code > Download ZIP` や `git clone` はソースコード用です。実行ファイルや大型モデルは含まれないため、そのまま展開しただけでは完成アプリとしては不完全です。
 - ソースからビルドする: Releaseの `LocalAIAssets_Minimum` をリポジトリ直下へ展開してからUnityでビルドします。
 - 任意の高品質音声を使う: AivisSpeech HDやIrodori TTSなどは追加runtimeとして導入します。なくてもアプリは動きますが、バックエンド接続時の声の選択肢を増やせます。
 - フル機能を使う: リアルタイム会話/翻訳、会話DB、Backend TTSを使う場合は、アプリZIPに加えてこのリポジトリのソースを取得し、セットアップガイドに従ってローカルバックエンドを起動します。
+
+将来的には、アプリ本体を軽くし、Local Gemmaなどの大型データやアプリ更新をGitHub Releasesからアプリ内で取得する導線へ寄せる予定です。現時点のBetaでは、オフラインでも試しやすいように最小ローカルAI/TTSをアプリ配布物へ同梱しています。
 
 ## できること
 

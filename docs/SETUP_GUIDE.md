@@ -6,7 +6,10 @@ macOS版は [`MAC_PUBLIC_BETA.md`](MAC_PUBLIC_BETA.md) を見てください。
 
 ## まず動かす
 
-1. GitHub Releasesから `YuiVRMAIStudio_WindowsPublicBeta_..._windows.zip.part-000`、`part-001`、`.sha256` を同じフォルダへダウンロードします。
+1. GitHub Releasesで、名前に `WindowsPublicBeta` が入っている次の3ファイルだけを同じフォルダへダウンロードします。
+   - `YuiVRMAIStudio_WindowsPublicBeta_..._windows.zip.part-000`
+   - `YuiVRMAIStudio_WindowsPublicBeta_..._windows.zip.part-001`
+   - `YuiVRMAIStudio_WindowsPublicBeta_..._windows.zip.sha256`
 2. PowerShellでそのフォルダを開き、分割ファイルを結合してsha256を確認します。
 3. 作成されたZIPを展開します。
 4. `Yui VRM AI Studio.exe` を起動します。
@@ -23,6 +26,8 @@ WindowsのSmartScreenが表示された場合は、信頼できる配布物で�
 同じフォルダに `YuiFilePickerHelper.exe` が必要です。これは画像やVRMファイルを選ぶための補助ツールです。
 
 ReleaseアプリZIPには、最小構成のLocal Gemma SLMとLocal VOICEVOXを含めています。追加データなしでも、まずテキスト会話と日本語音声応答を試せます。
+
+`MacOSPublicBeta` はmacOS用、`LocalAIAssets_Minimum` はソースからUnityでビルドする人向けです。Windowsアプリを試すだけならダウンロード不要です。
 
 ## ダウンロードの違い
 

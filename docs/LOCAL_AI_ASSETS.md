@@ -104,9 +104,31 @@ Backend-only features include:
 Local Gemma and local VOICEVOX are fallback paths, not a replacement for the
 full backend feature set.
 
+## Future Download And Update Direction
+
+The current Beta bundles the minimum Local Gemma and Local VOICEVOX set inside
+the desktop app artifacts so users can try the app without extra setup.
+
+The preferred longer-term distribution model is:
+
+- keep the app download smaller,
+- let the app download large Local Gemma data from GitHub Releases on first run,
+- verify downloaded files with sha256 before enabling the local model, and
+- expose app update checks through the app UI while still using GitHub Releases
+  as the trusted source.
+
+This keeps the public distribution on GitHub while reducing the need for users
+to manually choose and join multiple large `.part-*` files.
+
 ## Maintainer Packaging
 
-On macOS, create the minimum source-build asset pack with:
+On macOS, create the macOS app archive with:
+
+```bash
+YUI_RELEASE_VERSION=v0.2.0-beta.1 ./scripts/package_macos_public_beta_macos.sh
+```
+
+Create the minimum source-build asset pack with:
 
 ```bash
 YUI_RELEASE_VERSION=v0.2.0-beta.1 ./scripts/package_minimum_local_ai_assets_macos.sh
