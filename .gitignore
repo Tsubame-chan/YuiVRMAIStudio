@@ -5,6 +5,8 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 runtime/
+!unity/Assets/App/Scripts/LocalAI/Runtime/
+!unity/Assets/App/Scripts/LocalAI/Runtime/**
 handoff_prompt_*.md
 docs/handoffs/
 Info.plist.Unity-*.co?ex-backup-*
@@ -45,4 +47,6 @@ tools/tts/aivis-models/**/*.aivmx
 downloads/*.unitypackage
 scripts/audit_private_patterns.txt
 scripts/publication_guard.local.txt
+tmp_kikyo_pkg/
+public/
 installer/windows/output/
