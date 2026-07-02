@@ -35,7 +35,7 @@ Windows and macOS setup docs now follow the same design model. For runnable buil
 - To add optional higher-quality voices: install extra runtimes such as AivisSpeech HD or Irodori TTS. The app works without them, but they add backend voice choices.
 - To use the full feature set: use the app ZIP plus a source checkout of this repository, then run the local backend from the setup guide for realtime talk/translation, memory DB, and backend TTS.
 
-Future releases are expected to move toward in-app downloads for large Local Gemma data and app updates through GitHub Releases. This Beta still bundles the minimum local AI/TTS set with the app so it can be tried without extra setup.
+The Desktop Beta now includes the first-run downloader foundation for checking a GitHub Releases manifest and fetching missing Local AI/TTS data. Current Release app artifacts still favor bundling the minimum local AI/TTS set so the app can be tried offline, while missing data and future optional packs can move toward in-app downloads.
 
 ## What It Does
 
@@ -171,6 +171,7 @@ Be careful with sensitive screen or audio content when using screen context or r
 ### Next
 
 - improve Windows / macOS Release distribution flow
+- verify the first-run downloader on real desktop installs and extend it toward update checks
 - continue viewer-mode and desktop usability improvements
 - test Irodori TTS and other services through the generic HTTP TTS adapter
 - provider selection UI
