@@ -28,11 +28,14 @@ Windows and macOS setup docs now follow the same design model. For runnable buil
 
 ## Which Download To Use
 
-- To run the app now: download the Windows or macOS Beta release files from GitHub Releases. Large ZIPs are split into `.part-*` files, so join them first using the Release notes or the platform setup guide, then unzip the result. The minimum Local Gemma SLM and Local VOICEVOX set is included, so the app can be tried without extra data.
+- To run the app now: download only the app files for your OS from GitHub Releases. For macOS, use the two `MacOSPublicBeta` `.part-*` files plus the matching `.sha256`. For Windows, use the two `WindowsPublicBeta` `.part-*` files plus the matching `.sha256`.
+- Large ZIPs are split into `.part-*` files, so join them first using the Release notes or the platform setup guide, then unzip the result. The minimum Local Gemma SLM and Local VOICEVOX set is included, so the app can be tried without extra data.
 - To inspect or modify source: `Code > Download ZIP` and `git clone` are source-code paths. They do not include generated app builds or large models, so they are incomplete as a runnable app by themselves.
 - To build from source: restore the `LocalAIAssets_Minimum` release asset into the repository root before building in Unity.
 - To add optional higher-quality voices: install extra runtimes such as AivisSpeech HD or Irodori TTS. The app works without them, but they add backend voice choices.
 - To use the full feature set: use the app ZIP plus a source checkout of this repository, then run the local backend from the setup guide for realtime talk/translation, memory DB, and backend TTS.
+
+Future releases are expected to move toward in-app downloads for large Local Gemma data and app updates through GitHub Releases. This Beta still bundles the minimum local AI/TTS set with the app so it can be tried without extra setup.
 
 ## What It Does
 

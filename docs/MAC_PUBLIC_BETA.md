@@ -6,7 +6,10 @@
 
 ## まず動かす
 
-1. GitHub Releasesから `YuiVRMAIStudio_MacOSPublicBeta_..._macos.zip.part-000`、`part-001`、`.sha256` を同じフォルダへダウンロードします。
+1. GitHub Releasesで、名前に `MacOSPublicBeta` が入っている次の3ファイルだけを同じフォルダへダウンロードします。
+   - `YuiVRMAIStudio_MacOSPublicBeta_..._macos.zip.part-000`
+   - `YuiVRMAIStudio_MacOSPublicBeta_..._macos.zip.part-001`
+   - `YuiVRMAIStudio_MacOSPublicBeta_..._macos.zip.sha256`
 2. Terminalでそのフォルダを開き、ZIPを結合してsha256を確認します。
 3. ZIPを展開し、`Yui VRM AI Studio.app` を起動します。
 
@@ -18,6 +21,8 @@ shasum -a 256 -c YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip.sha256
 このBetaはまだ署名・notarizationの整備前です。macOSで警告が出た場合は、信頼できる配布物であることを確認してからシステム設定または右クリックメニューから許可してください。
 
 Releaseアプリには、最小構成のLocal Gemma SLMとLocal VOICEVOXを含めています。追加データなしでも、まずテキスト会話と日本語音声応答を試せます。
+
+`WindowsPublicBeta` はWindows用、`LocalAIAssets_Minimum` はソースからUnityでビルドする人向けです。macOSアプリを試すだけならダウンロード不要です。
 
 ## ダウンロードの違い
 
