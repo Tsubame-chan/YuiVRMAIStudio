@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -24,6 +26,28 @@ namespace YuiPhysicalAI.LocalAI
         {
             get
             {
+                return CanTranscribe || CanSynthesize;
+            }
+        }
+
+        public static bool CanTranscribe
+        {
+            get
+            {
+#if UNITY_IOS && !UNITY_EDITOR
+                return true;
+#elif UNITY_ANDROID && !UNITY_EDITOR
+                return YuiAndroidSpeechRecognizer.IsSupported;
+#else
+                return false;
+#endif
+            }
+        }
+
+        public static bool CanSynthesize
+        {
+            get
+            {
 #if UNITY_IOS && !UNITY_EDITOR
                 return true;
 #else
@@ -34,7 +58,7 @@ namespace YuiPhysicalAI.LocalAI
 
         public static YuiPlatformSpeechSynthesisResult Synthesize(YuiLocalAiSpeechRequest request)
         {
-            if (!IsSupported)
+            if (!CanSynthesize)
             {
                 return YuiPlatformSpeechSynthesisResult.Error("platform_unsupported", "Platform speech synthesis is not available.");
             }
@@ -56,7 +80,7 @@ namespace YuiPhysicalAI.LocalAI
 
         public static YuiPlatformSpeechTranscriptionResult Transcribe(YuiLocalAiAudioRequest request)
         {
-            if (!IsSupported)
+            if (!CanTranscribe)
             {
                 return YuiPlatformSpeechTranscriptionResult.Error("platform_unsupported", "Platform speech recognition is not available.");
             }
@@ -101,6 +125,17 @@ namespace YuiPhysicalAI.LocalAI
                     // Best-effort temp cleanup.
                 }
             }
+        }
+
+        public static async Task<YuiPlatformSpeechTranscriptionResult> TranscribeAsync(
+            YuiLocalAiAudioRequest request,
+            CancellationToken cancellationToken)
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            return await YuiAndroidSpeechRecognizer.TranscribeLiveAsync("ja-JP", cancellationToken);
+#else
+            return await Task.Run(() => Transcribe(request), cancellationToken);
+#endif
         }
 
 #if UNITY_IOS && !UNITY_EDITOR

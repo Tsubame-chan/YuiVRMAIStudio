@@ -69,6 +69,8 @@ namespace YuiPhysicalAI.UI
         [SerializeField] private YuiWindowResolutionController windowResolutionController;
         private Image microphoneTestLevelFill;
         private Text microphoneTestStatusText;
+        private Text localAiAssetStatusText;
+        private Button localAiAssetRepairButton;
         private YuiMicrophoneDeviceSelector microphoneTestDeviceSelector;
         private YuiUnityMicrophoneRecorder microphoneTestRecorder;
         private YuiMacEditorMicrophoneRecorder microphoneTestMacFallback;
@@ -248,6 +250,7 @@ namespace YuiPhysicalAI.UI
             RepairMissingRuntimeUi();
             ApplyResponsiveOverlayLayout();
             RefreshFields();
+            RefreshLocalAiAssetStatus();
             HideClearConfirm();
             if (settingsRoot != null)
             {

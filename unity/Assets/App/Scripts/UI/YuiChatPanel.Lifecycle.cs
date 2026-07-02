@@ -134,6 +134,7 @@ namespace YuiPhysicalAI.UI
 
         private async void Start()
         {
+            _ = CheckLocalAiAssetsOnFirstLaunchAsync();
             if (ShouldMonitorBackend())
             {
                 EnsureBackendMonitorIfNeeded();
@@ -146,6 +147,22 @@ namespace YuiPhysicalAI.UI
             else
             {
                 SetStatus("Local AI ready");
+            }
+        }
+
+        private async Task CheckLocalAiAssetsOnFirstLaunchAsync()
+        {
+            try
+            {
+                EnsureLocalAiDownloadOverlay();
+                if (localAiDownloadOverlay != null && cancellationTokenSource != null)
+                {
+                    await localAiDownloadOverlay.CheckAndPromptIfNeededAsync(cancellationTokenSource.Token);
+                }
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException))
+            {
+                Debug.LogWarning($"Yui Local AI first-launch asset check failed: {ex.Message}");
             }
         }
 

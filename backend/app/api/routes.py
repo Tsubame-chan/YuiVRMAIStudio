@@ -156,6 +156,15 @@ def realtime_status(settings: Settings = Depends(get_settings)) -> RealtimeStatu
     return RealtimeProvider(settings).status()
 
 
+def _normalize_realtime_audio_mode(mode: str) -> str:
+    normalized = (mode or "voice").strip().lower()
+    if normalized == "translate":
+        return "translate"
+    if normalized in {"voice_text", "voicevox", "aivis"}:
+        return "voice_text"
+    return "voice"
+
+
 @router.post("/realtime/probe", response_model=RealtimeProbeResponse)
 async def realtime_probe(
     request: RealtimeProbeRequest,
@@ -175,10 +184,9 @@ async def realtime_audio(
 ) -> RealtimeAudioResponse:
     provider = RealtimeProvider(settings, repository, memory_repository)
     try:
-        normalized_mode = "translate" if mode == "translate" else "voice"
         return await provider.respond_to_wav(
             await audio.read(),
-            normalized_mode,  # type: ignore[arg-type]
+            _normalize_realtime_audio_mode(mode),  # type: ignore[arg-type]
             instructions=instructions,
         )
     except RealtimeProviderError as exc:

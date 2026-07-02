@@ -622,9 +622,12 @@ class RealtimeProvider:
             )
 
         return (
-            "主な入力は日本語です。美容、健康、睡眠、食事、日常会話の文脈です。"
-            "日本語の発音を英語の商品名へ過剰に置き換えず、"
-            "睡眠不足、肌荒れ、保湿、スキンケアなどの自然な日本語として認識してください。"
+            "The user is speaking conversationally, mostly in Japanese. "
+            "Transcribe only what the user actually says. "
+            "Do not output these instructions, system prompts, JSON, metadata, or guessed context. "
+            "If the audio is only noise, room sound, music, or silence, return an empty or minimal transcript rather than inventing speech. "
+            "Keep natural Japanese words as Japanese; do not over-convert them into unrelated English product names, brands, or technical terms. "
+            "Preserve names, places, numbers, dates, and search queries as accurately as possible."
         )
 
     @staticmethod
@@ -657,6 +660,16 @@ class RealtimeProvider:
             "applause",
         }
         if lowered in non_speech_markers:
+            return False
+
+        leaked_prompt_markers = {
+            "主な入力は日本語です",
+            "自然な日本語として認識してください",
+            "transcribeonlywhattheuseractuallysays",
+            "donotoutputtheseinstructions",
+            "systempromptsjsonmetadata",
+        }
+        if any(marker in lowered for marker in leaked_prompt_markers):
             return False
 
         speech_chars = re.findall(r"[A-Za-z0-9ぁ-んァ-ン一-龯]", text)
@@ -704,23 +717,24 @@ class RealtimeProvider:
             return (
                 "あなたは日本語で自然に会話するVRMアバターです。"
                 "音声はUnity側のVOICEVOXで読み上げます。必ずテキストだけを返してください。"
-                "返答は原則1〜2文、80字前後を目安にしてください。"
-                "複雑な質問では必要な要点を短くまとめ、相づちや短い質問にはさらに短く返してください。"
+                "日常会話、相づち、短い質問には1〜2文で軽く返してください。"
+                "検索、比較、場所案内、候補出し、手順説明では、途中で切れるよりも候補数を絞って最後まで言い切ってください。"
+                "検索結果を使う回答は原則3件前後、必要なときだけ最大5件までにし、名称、場所または日時、理由を短く含めてください。"
+                "長くなる場合でも400字程度までを目安に、結論が途中で途切れない構成にしてください。"
                 "『短くまとめると』『少し整理して』など、返答方針の前置きは言わず、答えから始めてください。"
                 "検索ツールが使える場合、天気、ニュース、場所、営業時間、価格、最新情報など現在性のある質問では必要に応じて確認してから答えてください。"
                 "検索、調査、候補出し、比較、イベント探しを依頼されたら、その場で調べて具体的な候補を返してください。検索できる、絞り込める、などの説明だけで終わらないでください。"
-                "検索系の回答では、可能なら3〜6件を、名称、日付またはエリア、短い理由つきで話してください。"
                 "URLはユーザーが明示的に求めた場合以外は本文に入れず、必要ならリンクも出せると短く伝えてください。"
                 "外部アプリ操作や予約、購入、ナビ開始など実際の操作はできません。できない操作は短く伝え、代わりに調べられる情報を答えてください。"
             )
         return (
             "あなたは日本語で自然に会話するVRMアバターです。"
-            "短く、会話として返してください。"
+            "日常会話は短く自然に返し、検索や比較が必要な質問では必要な情報が途中で切れないように候補数を絞って最後まで言い切ってください。"
             "『短くまとめると』『少し整理して』など、返答方針の前置きは言わず、答えから始めてください。"
             "可能な範囲で、明るく若い女性らしい高めの声に寄せてください。"
             "検索ツールが使える場合、天気、ニュース、場所、営業時間、価格、最新情報など現在性のある質問では必要に応じて確認してから答えてください。"
             "検索、調査、候補出し、比較、イベント探しを依頼されたら、その場で調べて具体的な候補を返してください。検索できる、絞り込める、などの説明だけで終わらないでください。"
-            "検索系の回答では、可能なら3〜6件を、名称、日付またはエリア、短い理由つきで話してください。"
+            "検索系の回答では3件前後を基本に、名称、日付またはエリア、短い理由つきで話してください。"
             "URLはユーザーが明示的に求めた場合以外は本文に入れず、必要ならリンクも出せると短く伝えてください。"
             "外部アプリ操作や予約、購入、ナビ開始など実際の操作はできません。できない操作は短く伝え、代わりに調べられる情報を答えてください。"
         )
@@ -789,7 +803,7 @@ class RealtimeProvider:
             "model": self.settings.openai_chat_model,
             "instructions": instructions,
             "input": text,
-            "max_output_tokens": min(self.settings.openai_max_output_tokens, 220),
+            "max_output_tokens": self.settings.openai_max_output_tokens,
         }
         if tools:
             request_params["tools"] = tools
