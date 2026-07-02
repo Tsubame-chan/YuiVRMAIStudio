@@ -28,7 +28,7 @@ Windows and macOS setup docs now follow the same design model. For runnable buil
 
 ## Which Download To Use
 
-- To run the app now: download the Windows or macOS Beta ZIP from GitHub Releases. The minimum Local Gemma SLM and Local VOICEVOX set is included, so the app can be tried without extra data.
+- To run the app now: download the Windows or macOS Beta release files from GitHub Releases. Large ZIPs are split into `.part-*` files, so join them first using the Release notes or the platform setup guide, then unzip the result. The minimum Local Gemma SLM and Local VOICEVOX set is included, so the app can be tried without extra data.
 - To inspect or modify source: `Code > Download ZIP` and `git clone` are source-code paths. They do not include generated app builds or large models, so they are incomplete as a runnable app by themselves.
 - To build from source: restore the `LocalAIAssets_Minimum` release asset into the repository root before building in Unity.
 - To add optional higher-quality voices: install extra runtimes such as AivisSpeech HD or Irodori TTS. The app works without them, but they add backend voice choices.
@@ -88,7 +88,7 @@ When the backend is running, Yui can use higher-quality conversation paths, real
 
 Minimum:
 
-- The Windows or macOS Beta ZIP from GitHub Releases
+- The Windows or macOS Beta release files from GitHub Releases
 - A VRM file if you want to use your own `.vrm` avatar
 
 Optional:
@@ -106,9 +106,9 @@ Platform details:
 
 The git repository does not commit large Gemma model files, voice models,
 voice dictionaries, or generated app builds. Those belong in GitHub Release
-Beta ZIPs because of size and license boundaries. Release app ZIPs are meant
-to run with the minimum local set already included. Optional voices and
-source-build assets are only needed when you choose those paths. See
+Beta artifacts because of size and license boundaries. Release app artifacts
+are meant to run with the minimum local set already included. Optional voices
+and source-build assets are only needed when you choose those paths. See
 [`docs/LOCAL_AI_ASSETS.md`](docs/LOCAL_AI_ASSETS.md).
 
 ### TTS / Irodori Validation

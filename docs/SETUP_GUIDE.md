@@ -1,14 +1,22 @@
 # Windows Desktop Public Beta セットアップ
 
-このページはWindows版を試す人向けの入口です。まずはGitHub ReleasesのWindows Beta ZIPを使ってください。GitHubの `Code > Download ZIP` はソースコード用で、実行ファイルや大型AI/TTSデータを含まないため、そのままでは完成アプリとして動きません。
+このページはWindows版を試す人向けの入口です。まずはGitHub ReleasesのWindows Beta配布物を使ってください。GitHubの `Code > Download ZIP` はソースコード用で、実行ファイルや大型AI/TTSデータを含まないため、そのままでは完成アプリとして動きません。
 
 macOS版は [`MAC_PUBLIC_BETA.md`](MAC_PUBLIC_BETA.md) を見てください。
 
 ## まず動かす
 
-1. GitHub Releasesから `YuiVRMAIStudio_WindowsPublicBeta_..._windows.zip` をダウンロードします。
-2. ZIPを展開します。
-3. `Yui VRM AI Studio.exe` を起動します。
+1. GitHub Releasesから `YuiVRMAIStudio_WindowsPublicBeta_..._windows.zip.part-000`、`part-001`、`.sha256` を同じフォルダへダウンロードします。
+2. PowerShellでそのフォルダを開き、分割ファイルを結合してsha256を確認します。
+3. 作成されたZIPを展開します。
+4. `Yui VRM AI Studio.exe` を起動します。
+
+```powershell
+cmd /c copy /b YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip.part-000+YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip.part-001 YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip
+$expected = (Get-Content .\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip.sha256).Split()[0]
+$actual = (Get-FileHash .\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($actual -ne $expected) { throw "SHA256 mismatch" }
+```
 
 WindowsのSmartScreenが表示された場合は、信頼できる配布物であることを確認してから `詳細情報` -> `実行` を選びます。
 
@@ -20,7 +28,7 @@ ReleaseアプリZIPには、最小構成のLocal Gemma SLMとLocal VOICEVOXを�
 
 | 入手方法 | 用途 |
 | --- | --- |
-| ReleaseのWindows ZIP | すぐ使う人向け。実行ファイルと最小ローカルAI/TTSを含みます。 |
+| ReleaseのWindows ZIP / `.part-*` | すぐ使う人向け。実行ファイルと最小ローカルAI/TTSを含みます。分割されている場合は結合してから展開します。 |
 | `Code > Download ZIP` | ソースを読む/改造する人向け。実行ファイルや大型モデルは含みません。 |
 | `LocalAIAssets_Minimum` | ソースからUnityビルドする人向けの最小asset packです。 |
 | Optional voice / 外部runtime | AivisSpeech HDやIrodori TTSなど、声の選択肢を増やすための任意追加です。 |
@@ -135,7 +143,7 @@ https://voicevox.hiroshiba.jp/
 
 Release ZIPではなくCode ZIPを落としてしまった:
 
-- それはソースコードです。すぐ使う場合はGitHub ReleasesのWindows Beta ZIPを落としてください。
+- それはソースコードです。すぐ使う場合はGitHub ReleasesのWindows Beta配布物を落としてください。
 
 ## ソースからビルドする場合
 

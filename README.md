@@ -28,7 +28,7 @@ Windows / macOSのREADMEとセットアップ手順は、同じ設計思想で�
 
 ## ダウンロードの選び方
 
-- すぐ使う: GitHub ReleasesからWindowsまたはmacOSのBeta ZIPをダウンロードします。最小構成のLocal Gemma SLMとLocal VOICEVOXを含むため、追加データなしでも起動して試せます。
+- すぐ使う: GitHub ReleasesからWindowsまたはmacOSのBeta配布物をダウンロードします。大きいZIPは `.part-*` に分割しているため、Release本文またはOS別ガイドの手順で結合してから展開します。最小構成のLocal Gemma SLMとLocal VOICEVOXを含むため、追加データなしでも起動して試せます。
 - ソースを見る/改造する: GitHubの `Code > Download ZIP` や `git clone` はソースコード用です。実行ファイルや大型モデルは含まれないため、そのまま展開しただけでは完成アプリとしては不完全です。
 - ソースからビルドする: Releaseの `LocalAIAssets_Minimum` をリポジトリ直下へ展開してからUnityでビルドします。
 - 任意の高品質音声を使う: AivisSpeech HDやIrodori TTSなどは追加runtimeとして導入します。なくてもアプリは動きますが、バックエンド接続時の声の選択肢を増やせます。
@@ -88,7 +88,7 @@ Windows / macOSのREADMEとセットアップ手順は、同じ設計思想で�
 
 最小構成:
 
-- GitHub ReleasesのWindows / macOS Beta ZIP
+- GitHub ReleasesのWindows / macOS Beta配布物
 - `.vrm` アバターを使う場合はVRMファイル
 
 追加機能:
@@ -104,7 +104,7 @@ OS別の詳細:
 
 ### Git cloneとRelease配布物の違い
 
-GitHubの通常リポジトリには、巨大なGemmaモデル本体、音声モデル、音声辞書、生成済みビルドを入れません。これらは容量とライセンス境界の都合で、GitHub ReleasesのBeta ZIP側に分けます。ReleaseのアプリZIPは最小構成だけで動きます。追加音声やソースビルド用assetは必要な人だけ取得してください。詳しくは [`docs/LOCAL_AI_ASSETS.md`](docs/LOCAL_AI_ASSETS.md) を参照してください。
+GitHubの通常リポジトリには、巨大なGemmaモデル本体、音声モデル、音声辞書、生成済みビルドを入れません。これらは容量とライセンス境界の都合で、GitHub ReleasesのBeta配布物側に分けます。Releaseのアプリ配布物は最小構成だけで動きます。追加音声やソースビルド用assetは必要な人だけ取得してください。詳しくは [`docs/LOCAL_AI_ASSETS.md`](docs/LOCAL_AI_ASSETS.md) を参照してください。
 
 ### TTS / Irodori検証
 

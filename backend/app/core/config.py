@@ -33,7 +33,7 @@ class Settings(BaseSettings):
         frozen=True,
     )
 
-    app_version: str = "0.1.0-alpha.1"
+    app_version: str = "0.2.0-beta.1"
     character_name: str = "Yui"
 
     database_url: str = "sqlite:///./data/yui.db"

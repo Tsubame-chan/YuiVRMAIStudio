@@ -9,7 +9,7 @@ GitHub Release assets or prepared locally before building.
 
 | Case | What to download |
 | --- | --- |
-| I want to run the app now | Download the latest Desktop Public Beta app ZIP from GitHub Releases. It includes the app plus the minimum local set: Local Gemma SLM + Local VOICEVOX. |
+| I want to run the app now | Download the latest Desktop Public Beta app release files from GitHub Releases. They include the app plus the minimum local set: Local Gemma SLM + Local VOICEVOX. |
 | I want optional/high-quality voices | Install the matching backend runtime, such as AivisSpeech HD or Irodori TTS, or download optional voice asset ZIPs if a Release provides them. |
 | I downloaded `Code > Download ZIP` | That is source code only. It does not include generated app builds or large local AI/TTS assets. |
 | I want to build from source | Clone the repo, then restore the local AI/TTS assets before building. |
@@ -43,13 +43,16 @@ The source repository intentionally does not commit:
 
 ## Expected Release Assets
 
-A complete Beta Release should include:
+A complete Beta Release should include the app artifacts and checksum files.
+Large artifacts may be uploaded as split `.part-*` files instead of one ZIP.
 
 ```text
-YuiVRMAIStudio_WindowsPublicBeta_<version>_windows.zip
-YuiVRMAIStudio_MacOSPublicBeta_<version>_macos.zip
-YuiVRMAIStudio_LocalAIAssets_Minimum_<version>.zip
-YuiVRMAIStudio_LocalAIAssets_OptionalVoices_<version>.zip
+YuiVRMAIStudio_WindowsPublicBeta_<version>_windows.zip.part-*
+YuiVRMAIStudio_WindowsPublicBeta_<version>_windows.zip.sha256
+YuiVRMAIStudio_MacOSPublicBeta_<version>_macos.zip.part-*
+YuiVRMAIStudio_MacOSPublicBeta_<version>_macos.zip.sha256
+YuiVRMAIStudio_LocalAIAssets_Minimum_<version>.zip.part-*
+YuiVRMAIStudio_LocalAIAssets_Minimum_<version>.zip.sha256
 ```
 
 The app ZIP is for normal users and contains the minimum local
@@ -57,9 +60,10 @@ set. Because these files are large, Release assets may be split into `.part-*`
 files, but no extra data should be required for the minimum app experience.
 The `LocalAIAssets_Minimum` ZIP is mainly for source builders or as a fallback
 distribution when a platform artifact must be split because of hosting limits.
-Optional voice packs are for larger or more experimental runtimes such as
-embedded Aivis. Backend AivisSpeech HD and Irodori TTS are usually installed as
-separate local runtimes instead of being bundled into the minimum app ZIP.
+Optional voice packs may be added in future Releases for larger or more
+experimental embedded runtimes. Backend AivisSpeech HD and Irodori TTS are
+usually installed as separate local runtimes instead of being bundled into the
+minimum app ZIP.
 
 ## Restore Assets For A Source Build
 

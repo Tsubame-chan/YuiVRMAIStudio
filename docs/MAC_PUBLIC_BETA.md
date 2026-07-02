@@ -1,14 +1,19 @@
 # macOS Desktop Public Beta セットアップ
 
-このページはmacOS版を試す人向けの入口です。まずはGitHub ReleasesのmacOS Beta ZIPを使ってください。GitHubの `Code > Download ZIP` はソースコード用で、実行済みアプリや大型AI/TTSデータは含まれません。
+このページはmacOS版を試す人向けの入口です。まずはGitHub ReleasesのmacOS Beta配布物を使ってください。GitHubの `Code > Download ZIP` はソースコード用で、実行済みアプリや大型AI/TTSデータは含まれません。
 
 - English guide: [`MAC_PUBLIC_BETA.en.md`](MAC_PUBLIC_BETA.en.md)
 
 ## まず動かす
 
-1. GitHub Releasesから `YuiVRMAIStudio_MacOSPublicBeta_..._macos.zip` をダウンロードします。
-2. 分割ファイルの場合は、Release本文のコマンドでZIPを結合します。
+1. GitHub Releasesから `YuiVRMAIStudio_MacOSPublicBeta_..._macos.zip.part-000`、`part-001`、`.sha256` を同じフォルダへダウンロードします。
+2. Terminalでそのフォルダを開き、ZIPを結合してsha256を確認します。
 3. ZIPを展開し、`Yui VRM AI Studio.app` を起動します。
+
+```bash
+cat YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip.part-* > YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip
+shasum -a 256 -c YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip.sha256
+```
 
 このBetaはまだ署名・notarizationの整備前です。macOSで警告が出た場合は、信頼できる配布物であることを確認してからシステム設定または右クリックメニューから許可してください。
 
@@ -18,7 +23,7 @@ Releaseアプリには、最小構成のLocal Gemma SLMとLocal VOICEVOXを含�
 
 | 入手方法 | 用途 |
 | --- | --- |
-| ReleaseのmacOS ZIP | すぐ使う人向け。`.app` と最小ローカルAI/TTSを含みます。 |
+| ReleaseのmacOS ZIP / `.part-*` | すぐ使う人向け。`.app` と最小ローカルAI/TTSを含みます。分割されている場合は結合してから展開します。 |
 | `Code > Download ZIP` | ソースを読む/改造する人向け。`.app` や大型モデルは含みません。 |
 | `LocalAIAssets_Minimum` | ソースからUnityビルドする人向けの最小asset packです。 |
 | Optional voice / 外部runtime | AivisSpeech HDやIrodori TTSなど、声の選択肢を増やすための任意追加です。 |

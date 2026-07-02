@@ -1,14 +1,19 @@
 # macOS Desktop Public Beta Setup
 
-This page is the entry point for trying the macOS build. Start from the macOS Beta ZIP on GitHub Releases. GitHub `Code > Download ZIP` is source code only and does not include the built app or large local AI/TTS data.
+This page is the entry point for trying the macOS build. Start from the macOS Beta release files on GitHub Releases. GitHub `Code > Download ZIP` is source code only and does not include the built app or large local AI/TTS data.
 
 - Japanese guide: [`MAC_PUBLIC_BETA.md`](MAC_PUBLIC_BETA.md)
 
 ## Run It First
 
-1. Download `YuiVRMAIStudio_MacOSPublicBeta_..._macos.zip` from GitHub Releases.
-2. If the asset is split into `.part-*` files, reassemble it with the command shown in the Release notes.
+1. Download `YuiVRMAIStudio_MacOSPublicBeta_..._macos.zip.part-000`, `part-001`, and `.sha256` into the same folder from GitHub Releases.
+2. Open that folder in Terminal, join the split ZIP, and verify sha256.
 3. Extract the ZIP and launch `Yui VRM AI Studio.app`.
+
+```bash
+cat YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip.part-* > YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip
+shasum -a 256 -c YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip.sha256
+```
 
 This beta is not fully signed/notarized yet. If macOS blocks the first launch, confirm that you trust the downloaded artifact, then allow it from System Settings or the right-click open flow.
 
@@ -18,7 +23,7 @@ Release app ZIPs include the minimum Local Gemma SLM and Local VOICEVOX set, so 
 
 | Download | Use |
 | --- | --- |
-| macOS ZIP from Releases | For normal users. Includes the `.app` and minimum local AI/TTS set. |
+| macOS ZIP / `.part-*` from Releases | For normal users. Includes the `.app` and minimum local AI/TTS set. Join split files before unzipping. |
 | `Code > Download ZIP` | Source code only. Does not include the app bundle or large models. |
 | `LocalAIAssets_Minimum` | For source builders who need to restore local AI/TTS assets before building. |
 | Optional voice/runtime | Extra voice choices such as AivisSpeech HD or Irodori TTS. Not required for the app to run. |
