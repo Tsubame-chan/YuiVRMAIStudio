@@ -60,26 +60,27 @@ namespace YuiPhysicalAI.UI
             }
 
             var elapsed = Time.realtimeSinceStartup - recordingStartedAt;
+            var recordingLimitSeconds = EffectiveRecordingClipLengthSeconds(realtimeMode);
             if (macRealtimeInputActive)
             {
                 UpdateMicrophoneLevel(Mathf.Clamp01(macEditorRealtimeMicrophoneStreamer.LatestLevel * 32f));
             }
             SetStatus(realtimeMode
                 ? $"Realtime listening... {FormatElapsedTime(elapsed)}"
-                : $"Recording... {Mathf.FloorToInt(elapsed)}/{maxRecordingSeconds}s");
-            if ((!realtimeMode && elapsed >= maxRecordingSeconds - 0.05f)
+                : $"Recording... {Mathf.FloorToInt(elapsed)}/{recordingLimitSeconds}s");
+            if ((!realtimeMode && elapsed >= recordingLimitSeconds - 0.05f)
                 || (!macRealtimeInputActive && !unityMicrophoneRecorder.IsRecording()))
             {
-                Debug.LogWarning($"Recording reached max length or stopped by device. elapsed={elapsed:F1}s, maxSeconds={maxRecordingSeconds}");
-                if (elapsed >= maxRecordingSeconds - 0.05f)
+                Debug.LogWarning($"Recording reached max length or stopped by device. elapsed={elapsed:F1}s, maxSeconds={recordingLimitSeconds}");
+                if (elapsed >= recordingLimitSeconds - 0.05f)
                 {
-                    AppendLog("System", "入力制限の1分を超過しました。ここまでの音声で送信します。");
+                    AppendLog("System", $"入力制限の{recordingLimitSeconds}秒を超過しました。ここまでの音声で送信します。");
                 }
                 _ = StopRecordingAndSendAsync();
                 return;
             }
 
-            var shouldHoldRealtimeMic = IsRealtimeVoicevoxMode()
+            var shouldHoldRealtimeMic = IsRealtimeTextTtsMode()
                 ? IsRealtimeInputHeldForVoicevox()
                 : IsRealtimeTranslateMode()
                     ? realtimeWaitingForResponse
@@ -133,8 +134,36 @@ namespace YuiPhysicalAI.UI
 
         private async void Start()
         {
-            _ = MonitorBackendAsync(cancellationTokenSource.Token);
-            await CheckBackendOnceAsync(cancellationTokenSource.Token);
+            _ = CheckLocalAiAssetsOnFirstLaunchAsync();
+            if (ShouldMonitorBackend())
+            {
+                EnsureBackendMonitorIfNeeded();
+                await CheckBackendOnceAsync(cancellationTokenSource.Token);
+            }
+            else if (IsDirectOpenAiConversationMode())
+            {
+                SetStatus("API ready");
+            }
+            else
+            {
+                SetStatus("Local AI ready");
+            }
+        }
+
+        private async Task CheckLocalAiAssetsOnFirstLaunchAsync()
+        {
+            try
+            {
+                EnsureLocalAiDownloadOverlay();
+                if (localAiDownloadOverlay != null && cancellationTokenSource != null)
+                {
+                    await localAiDownloadOverlay.CheckAndPromptIfNeededAsync(cancellationTokenSource.Token);
+                }
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException))
+            {
+                Debug.LogWarning($"Yui Local AI first-launch asset check failed: {ex.Message}");
+            }
         }
 
         private async Task MonitorBackendAsync(CancellationToken cancellationToken)
@@ -142,8 +171,37 @@ namespace YuiPhysicalAI.UI
             while (!cancellationToken.IsCancellationRequested)
             {
                 await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+                if (!ShouldMonitorBackend())
+                {
+                    continue;
+                }
+
                 await CheckBackendOnceAsync(cancellationToken);
             }
+        }
+
+        private bool ShouldMonitorBackend()
+        {
+            return YuiBackendMonitorPolicy.ShouldMonitorBackend(
+                conversationMode,
+                ttsMode,
+                NativeVoicevoxAvailable());
+        }
+
+        private bool IsBackendIndependentRuntimePreferred()
+        {
+            return !ShouldMonitorBackend();
+        }
+
+        private void EnsureBackendMonitorIfNeeded()
+        {
+            if (backendMonitorStarted || cancellationTokenSource == null || !ShouldMonitorBackend())
+            {
+                return;
+            }
+
+            backendMonitorStarted = true;
+            _ = MonitorBackendAsync(cancellationTokenSource.Token);
         }
 
         private async Task CheckBackendOnceAsync(CancellationToken cancellationToken)
@@ -195,22 +253,44 @@ namespace YuiPhysicalAI.UI
                 chatProviderOptions = config?.ChatProviders != null ? config.ChatProviders : Array.Empty<string>();
                 visionProviderOptions = config?.VisionProviders != null ? config.VisionProviders : Array.Empty<string>();
                 ttsProviderOptions = config?.TtsProviders != null ? config.TtsProviders : Array.Empty<string>();
+                backendAivisVoiceOptions = BackendVoiceOptions(config, "aivis");
                 sttProviderOptions = config?.SttProviders != null ? config.SttProviders : Array.Empty<string>();
                 httpTtsAvailable = config?.TtsProviders != null
                     && config.TtsProviders.Exists(provider => string.Equals(provider, "http", StringComparison.OrdinalIgnoreCase));
+                backendConfigLoaded = true;
             }
             catch (Exception ex) when (!(ex is OperationCanceledException))
             {
                 chatProviderOptions = Array.Empty<string>();
                 visionProviderOptions = Array.Empty<string>();
                 ttsProviderOptions = Array.Empty<string>();
+                backendAivisVoiceOptions = Array.Empty<TtsVoiceOption>();
                 sttProviderOptions = Array.Empty<string>();
                 httpTtsAvailable = false;
+                backendConfigLoaded = false;
                 if (EnableBackendDiagnosticsLog)
                 {
                     Debug.LogWarning($"Yui backend config refresh failed: {ex.Message}");
                 }
             }
+        }
+
+        private static IReadOnlyList<TtsVoiceOption> BackendVoiceOptions(ConfigResponse config, string provider)
+        {
+            if (config?.TtsVoiceOptions == null || string.IsNullOrWhiteSpace(provider))
+            {
+                return Array.Empty<TtsVoiceOption>();
+            }
+
+            foreach (var pair in config.TtsVoiceOptions)
+            {
+                if (string.Equals(pair.Key, provider, StringComparison.OrdinalIgnoreCase))
+                {
+                    return pair.Value ?? (IReadOnlyList<TtsVoiceOption>)Array.Empty<TtsVoiceOption>();
+                }
+            }
+
+            return Array.Empty<TtsVoiceOption>();
         }
 
         private async Task<bool> TryConfirmBackendReachableAsync(CancellationToken cancellationToken)

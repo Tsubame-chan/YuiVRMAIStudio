@@ -181,6 +181,9 @@ namespace YuiPhysicalAI.Audio
 
         private void StartWarmUp()
         {
+#if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
+            return;
+#else
             var key = endpointUrl.TrimEnd('/') + "|" + speaker;
             if (!warmUpKeys.Add(key))
             {
@@ -188,6 +191,7 @@ namespace YuiPhysicalAI.Audio
             }
 
             _ = WarmUpAsync(key);
+#endif
         }
 
         private async Task WarmUpAsync(string key)

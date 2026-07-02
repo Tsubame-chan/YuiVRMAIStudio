@@ -53,6 +53,15 @@ namespace YuiPhysicalAI.Api
         [JsonProperty("tts_providers")]
         public List<string> TtsProviders { get; set; }
 
+        [JsonProperty("tts_recommendation")]
+        public Dictionary<string, string> TtsRecommendation { get; set; }
+
+        [JsonProperty("tts_voice_options")]
+        public Dictionary<string, List<TtsVoiceOption>> TtsVoiceOptions { get; set; }
+
+        [JsonProperty("tts_default_voice")]
+        public Dictionary<string, int> TtsDefaultVoice { get; set; }
+
         [JsonProperty("stt_provider")]
         public string SttProvider { get; set; }
 
@@ -64,6 +73,28 @@ namespace YuiPhysicalAI.Api
 
         [JsonProperty("limits")]
         public Dictionary<string, int> Limits { get; set; }
+    }
+
+    [Serializable]
+    public sealed class TtsVoiceOption
+    {
+        [JsonProperty("provider")]
+        public string Provider { get; set; }
+
+        [JsonProperty("id")]
+        public int Id { get; set; }
+
+        [JsonProperty("label")]
+        public string Label { get; set; }
+
+        [JsonProperty("gender")]
+        public string Gender { get; set; }
+
+        [JsonProperty("style")]
+        public string Style { get; set; }
+
+        [JsonProperty("release_review")]
+        public string ReleaseReview { get; set; }
     }
 
     [Serializable]

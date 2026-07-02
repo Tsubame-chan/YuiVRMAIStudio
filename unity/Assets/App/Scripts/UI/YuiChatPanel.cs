@@ -21,6 +21,9 @@ namespace YuiPhysicalAI.UI
     public sealed partial class YuiChatPanel : MonoBehaviour
     {
         private const string BackendUrlKey = YuiPrefsKeys.BackendUrl;
+        private const string OpenAiApiKeyKey = YuiPrefsKeys.OpenAiApiKey;
+        private const string OpenAiModelKey = YuiPrefsKeys.OpenAiModel;
+        private const string AutoAiFallbackEnabledKey = YuiPrefsKeys.AutoAiFallbackEnabled;
         private const string SpeakerIdKey = YuiPrefsKeys.SpeakerId;
         private const string VoiceVolumeKey = YuiPrefsKeys.VoiceVolume;
         private const string VoiceSpeedKey = YuiPrefsKeys.VoiceSpeed;
@@ -31,6 +34,7 @@ namespace YuiPhysicalAI.UI
         private const string VoicePostPhonemeLengthKey = YuiPrefsKeys.VoicePostPhonemeLength;
         private const string ConversationModeKey = YuiPrefsKeys.ConversationMode;
         private const string TtsModeKey = YuiPrefsKeys.TtsMode;
+        private const string VoiceTuningSchemaVersionKey = YuiPrefsKeys.VoiceTuningSchemaVersion;
         private const string IrodoriVoiceGenderKey = YuiPrefsKeys.IrodoriVoiceGender;
         private const string IrodoriVoiceInstructKey = YuiPrefsKeys.IrodoriVoiceInstruct;
         private const string MicrophoneDeviceKey = YuiPrefsKeys.MicrophoneDevice;
@@ -40,11 +44,15 @@ namespace YuiPhysicalAI.UI
         private const string CharacterNameKey = YuiPrefsKeys.CharacterName;
         private const string AvatarSlotKey = YuiPrefsKeys.AvatarSlot;
         private const string ClientSchemaVersion = "2026-05-10";
+        private const int CurrentVoiceTuningSchemaVersion = 8;
         private const bool EnableDormantAppAwarenessPrototype = false;
         private static readonly bool EnableBackendDiagnosticsLog = false;
 
         [Header("Backend")]
         [SerializeField] private string backendUrl = "http://127.0.0.1:8000";
+        [SerializeField] private string openAiApiKey = "";
+        [SerializeField] private string openAiModel = YuiDirectOpenAiClient.DefaultModel;
+        [SerializeField] private bool autoAiFallbackEnabled = true;
         [SerializeField] private string userId = "local_user";
         [SerializeField] private int speakerId = 14;
         [SerializeField] private float speedScale = 1.0f;
@@ -54,7 +62,7 @@ namespace YuiPhysicalAI.UI
         [SerializeField] private float prePhonemeLength = 0.1f;
         [SerializeField] private float postPhonemeLength = 0.1f;
         [SerializeField] private string conversationMode = "stable";
-        [SerializeField] private string ttsMode = "local";
+        [SerializeField] private string ttsMode = "server";
         [SerializeField] private string irodoriVoiceGender = "female";
         [SerializeField] private string irodoriVoiceInstruct = "若い女性の、明るく可愛いアニメ調の声で話してください。";
         [SerializeField] private string characterName = "Yui";
@@ -118,7 +126,7 @@ namespace YuiPhysicalAI.UI
         private float recordingStartedAt;
         private readonly float[] microphoneSampleBuffer = new float[256];
         private VisionResponse latestVision;
-        private string latestVisionImageDataUrl;
+        private readonly YuiPendingVisionImageAttachment pendingVisionImageAttachment = new YuiPendingVisionImageAttachment();
         private bool secretMode;
         private string currentStatus = "Ready";
         private bool localVoicevoxUnavailable;
@@ -126,6 +134,7 @@ namespace YuiPhysicalAI.UI
         private CancellationTokenSource realtimeCancellationTokenSource;
         private CancellationTokenSource realtimeVoicevoxSpeechCancellationTokenSource;
         private readonly SemaphoreSlim realtimeSendLock = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim aivisNativeSynthesisLock = new SemaphoreSlim(1, 1);
         private readonly Queue<byte[]> realtimeAudioPcmQueue = new Queue<byte[]>();
         private readonly List<byte> realtimeAudioPcmBuffer = new List<byte>(48000);
         private readonly List<byte> realtimeTranslatePcmBuffer = new List<byte>(96000);
@@ -155,13 +164,23 @@ namespace YuiPhysicalAI.UI
         private float nextAppAwarenessPollAt;
         private float displayedMicrophoneLevel;
         private float lastBackendSuccessAt = -999f;
+        private bool backendMonitorStarted;
         private bool httpTtsAvailable;
+        private bool backendConfigLoaded;
+        private ProviderStatusResponse cachedProviderStatus;
+        private float lastProviderStatusSuccessAt = -999f;
+        private YuiDirectOpenAiClient directOpenAiClient;
         private IReadOnlyList<string> chatProviderOptions = Array.Empty<string>();
         private IReadOnlyList<string> visionProviderOptions = Array.Empty<string>();
         private IReadOnlyList<string> ttsProviderOptions = Array.Empty<string>();
+        private IReadOnlyList<TtsVoiceOption> backendAivisVoiceOptions = Array.Empty<TtsVoiceOption>();
         private IReadOnlyList<string> sttProviderOptions = Array.Empty<string>();
+        private YuiLocalAiDownloadOverlay localAiDownloadOverlay;
 
         public string BackendUrl => backendUrl;
+        public string OpenAiApiKey => openAiApiKey;
+        public string OpenAiModel => openAiModel;
+        public bool AutoAiFallbackEnabled => autoAiFallbackEnabled;
         public int SpeakerId => speakerId;
         public float VoiceVolume => audioSource != null ? audioSource.volume : PlayerPrefs.GetFloat(VoiceVolumeKey, 1f);
         public float VoiceSpeedScale => speedScale;
@@ -175,9 +194,11 @@ namespace YuiPhysicalAI.UI
         public string IrodoriVoiceGender => irodoriVoiceGender;
         public string IrodoriVoiceInstruct => irodoriVoiceInstruct;
         public bool HttpTtsAvailable => httpTtsAvailable;
+        public bool BackendConfigLoaded => backendConfigLoaded;
         public IReadOnlyList<string> ChatProviderOptions => chatProviderOptions;
         public IReadOnlyList<string> VisionProviderOptions => visionProviderOptions;
         public IReadOnlyList<string> TtsProviderOptions => ttsProviderOptions;
+        public IReadOnlyList<TtsVoiceOption> BackendAivisVoiceOptions => backendAivisVoiceOptions;
         public IReadOnlyList<string> SttProviderOptions => sttProviderOptions;
         public string PreferredMicrophoneDevice => preferredMicrophoneDevice;
         public string PreferredLookCameraDevice => preferredLookCameraDevice;
@@ -185,11 +206,18 @@ namespace YuiPhysicalAI.UI
         public string CharacterName => characterName;
         public string CustomInstruction => customInstruction;
         public string AvatarSlot => avatarSlot;
+        public string LocalAiAssetStatusText => localAiDownloadOverlay != null
+            ? localAiDownloadOverlay.CurrentStatusText
+            : "Local AI data: not checked";
 
         private void Awake()
         {
+            ConfigureMobileLogStackTraces();
+            YuiMemoryDiagnostics.RegisterLowMemoryHandler();
+            YuiMemoryDiagnostics.LogSnapshot("awake");
             LoadSavedRuntimeSettings();
             client = new YuiBackendClient(backendUrl);
+            ConfigureAiRuntimeRouter();
             microphoneDeviceSelector = new YuiMicrophoneDeviceSelector(preferredRecordingFrequency);
             unityMicrophoneRecorder = new YuiUnityMicrophoneRecorder();
             cancellationTokenSource = new CancellationTokenSource();
@@ -253,6 +281,14 @@ namespace YuiPhysicalAI.UI
             YuiToolbarIconUtility.ApplySecretIcon(secretModeButton);
             UpdateSecretModeUi();
             SetStatus("Ready");
+        }
+
+        private static void ConfigureMobileLogStackTraces()
+        {
+#if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
+            Application.SetStackTraceLogType(LogType.Log, StackTraceLogType.None);
+            Application.SetStackTraceLogType(LogType.Warning, StackTraceLogType.ScriptOnly);
+#endif
         }
 
     }

@@ -40,17 +40,27 @@ namespace YuiPhysicalAI.UI
             {
                 backendUrl = nextBackendUrl.Trim();
                 client = new YuiBackendClient(backendUrl);
+                ConfigureAiRuntimeRouter();
                 PlayerPrefs.SetString(BackendUrlKey, backendUrl);
             }
 
-            var voiceSettings = new YuiVoiceSettings(
+            ttsMode = NormalizeTtsMode(nextTtsMode ?? ttsMode);
+            var safeTuning = YuiTtsTuningPrefs.Sanitize(ttsMode, new YuiSavedTtsTuning(
                 nextSpeakerId,
                 nextSpeedScale,
                 nextPitchScale,
                 nextIntonationScale,
                 nextSynthesisVolumeScale,
                 nextPrePhonemeLength,
-                nextPostPhonemeLength);
+                nextPostPhonemeLength));
+            var voiceSettings = new YuiVoiceSettings(
+                safeTuning.SpeakerId,
+                safeTuning.SpeedScale,
+                safeTuning.PitchScale,
+                safeTuning.IntonationScale,
+                safeTuning.SynthesisVolumeScale,
+                safeTuning.PrePhonemeLength,
+                safeTuning.PostPhonemeLength);
             speakerId = voiceSettings.SpeakerId;
             speedScale = voiceSettings.SpeedScale;
             pitchScale = voiceSettings.PitchScale;
@@ -61,7 +71,7 @@ namespace YuiPhysicalAI.UI
             var previousConversationMode = conversationMode;
             conversationMode = NormalizeConversationMode(nextConversationMode ?? conversationMode);
             var conversationModeChanged = !string.Equals(previousConversationMode, conversationMode, StringComparison.OrdinalIgnoreCase);
-            ttsMode = NormalizeTtsMode(nextTtsMode ?? ttsMode);
+            ConfigureAiRuntimeRouter();
             irodoriVoiceGender = NormalizeIrodoriVoiceGender(nextIrodoriVoiceGender ?? irodoriVoiceGender);
             irodoriVoiceInstruct = NormalizeIrodoriVoiceInstruct(nextIrodoriVoiceInstruct ?? irodoriVoiceInstruct);
             preferredMicrophoneDevice = nextMicrophoneDevice ?? preferredMicrophoneDevice;
@@ -79,6 +89,15 @@ namespace YuiPhysicalAI.UI
             PlayerPrefs.SetFloat(VoicePostPhonemeLengthKey, postPhonemeLength);
             PlayerPrefs.SetString(ConversationModeKey, conversationMode);
             PlayerPrefs.SetString(TtsModeKey, ttsMode);
+            PlayerPrefs.SetInt(VoiceTuningSchemaVersionKey, CurrentVoiceTuningSchemaVersion);
+            YuiTtsTuningPrefs.SaveForMode(ttsMode, new YuiSavedTtsTuning(
+                speakerId,
+                speedScale,
+                pitchScale,
+                intonationScale,
+                synthesisVolumeScale,
+                prePhonemeLength,
+                postPhonemeLength));
             PlayerPrefs.SetString(IrodoriVoiceGenderKey, irodoriVoiceGender);
             PlayerPrefs.SetString(IrodoriVoiceInstructKey, irodoriVoiceInstruct);
             PlayerPrefs.SetString(MicrophoneDeviceKey, preferredMicrophoneDevice);
@@ -115,12 +134,16 @@ namespace YuiPhysicalAI.UI
             {
                 AppendLog("System", YuiConversationModes.ExperimentalWarningText(conversationMode));
             }
+            EnsureBackendMonitorIfNeeded();
             SetStatus("Settings saved");
         }
 
         private void LoadSavedRuntimeSettings()
         {
             backendUrl = PlayerPrefs.GetString(BackendUrlKey, backendUrl);
+            openAiApiKey = PlayerPrefs.GetString(OpenAiApiKeyKey, openAiApiKey);
+            openAiModel = YuiDirectOpenAiClient.NormalizeModel(PlayerPrefs.GetString(OpenAiModelKey, openAiModel));
+            autoAiFallbackEnabled = PlayerPrefs.GetInt(AutoAiFallbackEnabledKey, 1) == 1;
             speakerId = PlayerPrefs.GetInt(SpeakerIdKey, speakerId);
             speedScale = PlayerPrefs.GetFloat(VoiceSpeedKey, speedScale);
             pitchScale = PlayerPrefs.GetFloat(VoicePitchKey, pitchScale);
@@ -128,9 +151,25 @@ namespace YuiPhysicalAI.UI
             synthesisVolumeScale = PlayerPrefs.GetFloat(VoiceSynthesisVolumeKey, synthesisVolumeScale);
             prePhonemeLength = PlayerPrefs.GetFloat(VoicePrePhonemeLengthKey, prePhonemeLength);
             postPhonemeLength = PlayerPrefs.GetFloat(VoicePostPhonemeLengthKey, postPhonemeLength);
-            conversationMode = NormalizeConversationMode(PlayerPrefs.GetString(ConversationModeKey, conversationMode));
+            conversationMode = NormalizeConversationMode(PlayerPrefs.GetString(ConversationModeKey, DefaultConversationMode()));
             SyncRealtimeActiveBackendModeWithConversation();
-            ttsMode = NormalizeTtsMode(PlayerPrefs.GetString(TtsModeKey, ttsMode));
+            ttsMode = NormalizeTtsMode(PlayerPrefs.GetString(TtsModeKey, DefaultTtsMode()));
+            MigrateVoiceTuningIfNeeded();
+            var tuning = YuiTtsTuningPrefs.LoadForMode(ttsMode, new YuiSavedTtsTuning(
+                speakerId,
+                speedScale,
+                pitchScale,
+                intonationScale,
+                synthesisVolumeScale,
+                prePhonemeLength,
+                postPhonemeLength));
+            speakerId = tuning.SpeakerId;
+            speedScale = tuning.SpeedScale;
+            pitchScale = tuning.PitchScale;
+            intonationScale = tuning.IntonationScale;
+            synthesisVolumeScale = tuning.SynthesisVolumeScale;
+            prePhonemeLength = tuning.PrePhonemeLength;
+            postPhonemeLength = tuning.PostPhonemeLength;
             irodoriVoiceGender = NormalizeIrodoriVoiceGender(PlayerPrefs.GetString(IrodoriVoiceGenderKey, irodoriVoiceGender));
             irodoriVoiceInstruct = NormalizeIrodoriVoiceInstruct(PlayerPrefs.GetString(IrodoriVoiceInstructKey, irodoriVoiceInstruct));
             preferredMicrophoneDevice = PlayerPrefs.GetString(MicrophoneDeviceKey, preferredMicrophoneDevice);
@@ -147,6 +186,88 @@ namespace YuiPhysicalAI.UI
                 PlayerPrefs.SetString(AvatarSlotPrefsKey, avatarSlot);
                 PlayerPrefs.Save();
             }
+        }
+
+        public void SetDirectOpenAiSettings(string apiKey, string model)
+        {
+            openAiApiKey = string.IsNullOrWhiteSpace(apiKey) ? string.Empty : apiKey.Trim();
+            openAiModel = YuiDirectOpenAiClient.NormalizeModel(model);
+            directOpenAiClient = null;
+            PlayerPrefs.SetString(OpenAiApiKeyKey, openAiApiKey);
+            PlayerPrefs.SetString(OpenAiModelKey, openAiModel);
+            PlayerPrefs.Save();
+            ConfigureAiRuntimeRouter();
+            SetStatus("Settings saved");
+        }
+
+        public void SetAutoAiFallbackEnabled(bool enabled)
+        {
+            autoAiFallbackEnabled = enabled;
+            PlayerPrefs.SetInt(AutoAiFallbackEnabledKey, enabled ? 1 : 0);
+            PlayerPrefs.Save();
+            ConfigureAiRuntimeRouter();
+            SetStatus("Settings saved");
+        }
+
+        private void MigrateVoiceTuningIfNeeded()
+        {
+            if (PlayerPrefs.GetInt(VoiceTuningSchemaVersionKey, 0) >= CurrentVoiceTuningSchemaVersion)
+            {
+                return;
+            }
+
+            var rawSavedTtsMode = PlayerPrefs.GetString(TtsModeKey, string.Empty);
+            var savedTtsMode = NormalizeTtsMode(rawSavedTtsMode);
+#if UNITY_IOS
+            var voicevoxMode = "voicevox-native";
+#else
+            var voicevoxMode = "server";
+#endif
+            var shouldMoveSavedModeToVoicevox = string.IsNullOrWhiteSpace(rawSavedTtsMode)
+                || string.Equals(rawSavedTtsMode, "local", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(rawSavedTtsMode, "local-ai", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(rawSavedTtsMode, "liquid-audio", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(rawSavedTtsMode, "on-device-audio", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(savedTtsMode, "local", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(savedTtsMode, "local-ai", StringComparison.OrdinalIgnoreCase);
+            var voicevoxDefaults = YuiTtsTuningPrefs.DefaultForMode("server");
+            var aivisDefaults = YuiTtsTuningPrefs.DefaultForMode("aivis");
+            YuiTtsTuningPrefs.SaveForMode("server", voicevoxDefaults);
+            YuiTtsTuningPrefs.SaveForMode("aivis", aivisDefaults);
+            var activeDefaults = shouldMoveSavedModeToVoicevox ? voicevoxDefaults : YuiTtsTuningPrefs.DefaultForMode(savedTtsMode);
+            if (shouldMoveSavedModeToVoicevox)
+            {
+                PlayerPrefs.SetString(TtsModeKey, voicevoxMode);
+                ttsMode = voicevoxMode;
+            }
+
+            PlayerPrefs.SetInt(SpeakerIdKey, activeDefaults.SpeakerId);
+            PlayerPrefs.SetFloat(VoiceSpeedKey, activeDefaults.SpeedScale);
+            PlayerPrefs.SetFloat(VoicePitchKey, activeDefaults.PitchScale);
+            PlayerPrefs.SetFloat(VoiceIntonationKey, activeDefaults.IntonationScale);
+            PlayerPrefs.SetFloat(VoiceSynthesisVolumeKey, activeDefaults.SynthesisVolumeScale);
+            PlayerPrefs.SetFloat(VoicePrePhonemeLengthKey, activeDefaults.PrePhonemeLength);
+            PlayerPrefs.SetFloat(VoicePostPhonemeLengthKey, activeDefaults.PostPhonemeLength);
+            PlayerPrefs.SetInt(VoiceTuningSchemaVersionKey, CurrentVoiceTuningSchemaVersion);
+            PlayerPrefs.Save();
+        }
+
+        private static string DefaultConversationMode()
+        {
+#if UNITY_IOS || UNITY_ANDROID
+            return YuiConversationModes.LocalAi;
+#else
+            return YuiConversationModes.Stable;
+#endif
+        }
+
+        private static string DefaultTtsMode()
+        {
+#if UNITY_IOS
+            return "voicevox-native";
+#else
+            return "server";
+#endif
         }
 
         public void SetCustomInstruction(string value)
@@ -415,6 +536,11 @@ namespace YuiPhysicalAI.UI
             return YuiConversationModes.IsRealtimeVoicevox(conversationMode);
         }
 
+        private bool IsRealtimeTextTtsMode()
+        {
+            return YuiConversationModes.IsRealtimeTextTts(conversationMode);
+        }
+
         private bool IsRealtimeTranslateMode()
         {
             return YuiConversationModes.IsRealtimeTranslate(conversationMode);
@@ -442,14 +568,56 @@ namespace YuiPhysicalAI.UI
 
         private static string NormalizeTtsMode(string mode)
         {
+            if (string.Equals(mode, "aivis-native", StringComparison.OrdinalIgnoreCase))
+            {
+                return "aivis-native";
+            }
+
+            if (string.Equals(mode, "voicevox-native", StringComparison.OrdinalIgnoreCase))
+            {
+                return "voicevox-native";
+            }
+
+#if UNITY_IOS || UNITY_ANDROID
+            if (string.Equals(mode, "local-ai", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "liquid-audio", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "on-device-audio", StringComparison.OrdinalIgnoreCase))
+            {
+                return "server";
+            }
+#endif
             if (string.Equals(mode, "server", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "local", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(mode, "server-http", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "aivis", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "aivis-native", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "voicevox-native", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "local-ai", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "liquid-audio", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "on-device-audio", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(mode, "silent", StringComparison.OrdinalIgnoreCase))
             {
+                if (string.Equals(mode, "liquid-audio", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(mode, "on-device-audio", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(mode, "local-ai", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "server";
+                }
+
+                if (string.Equals(mode, "local", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "local";
+                }
+
+                if (string.Equals(mode, "server-http", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "server-http";
+                }
+
                 return mode.ToLowerInvariant();
             }
 
-            return "local";
+            return "server";
         }
 
         private static string NormalizeIrodoriVoiceInstruct(string value)
@@ -529,11 +697,7 @@ namespace YuiPhysicalAI.UI
                 context.ScreenContext = latestVision.Summary;
             }
 
-            if (!string.IsNullOrEmpty(latestVisionImageDataUrl))
-            {
-                context.Extra["image_data_url"] = latestVisionImageDataUrl;
-                context.Extra["image_detail"] = "auto";
-            }
+            pendingVisionImageAttachment.ApplyTo(context);
 
             if (EnableDormantAppAwarenessPrototype && appAwarenessEnabled && currentForegroundApp != null && currentForegroundApp.IsAvailable)
             {

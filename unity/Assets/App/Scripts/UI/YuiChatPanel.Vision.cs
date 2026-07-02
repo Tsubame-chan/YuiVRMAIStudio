@@ -100,10 +100,18 @@ namespace YuiPhysicalAI.UI
                     frame,
                     visionImageMaxLongSide,
                     visionJpegQuality);
-                latestVisionImageDataUrl = YuiVisionImageUtility.ToImageDataUrl(
+                pendingVisionImageAttachment.SetImageDataUrl(YuiVisionImageUtility.ToImageDataUrl(
                     imageBytes,
-                    "image/jpeg");
-                latestVision = await client.AnalyzeImageAsync(
+                    "image/jpeg"));
+                if (ShouldAttachImageForApiChat())
+                {
+                    latestVision = CreateApiAttachedVision("camera");
+                    AppendLog("Vision", latestVision.Summary);
+                    SetStatus("Ready");
+                    return true;
+                }
+
+                latestVision = await AnalyzeImageViaRuntimeAsync(
                     imageBytes,
                     "camera.jpg",
                     "camera",
@@ -383,8 +391,16 @@ namespace YuiPhysicalAI.UI
                 {
                     mimeType = "image/jpeg";
                 }
-                latestVisionImageDataUrl = YuiVisionImageUtility.ToImageDataUrl(imageBytes, mimeType);
-                latestVision = await client.AnalyzeImageAsync(
+                pendingVisionImageAttachment.SetImageDataUrl(YuiVisionImageUtility.ToImageDataUrl(imageBytes, mimeType));
+                if (ShouldAttachImageForApiChat())
+                {
+                    latestVision = CreateApiAttachedVision("general");
+                    AppendLog("Vision", latestVision.Summary);
+                    SetStatus("Ready");
+                    return;
+                }
+
+                latestVision = await AnalyzeImageViaRuntimeAsync(
                     imageBytes,
                     Path.GetFileName(path),
                     "general",
@@ -413,6 +429,27 @@ namespace YuiPhysicalAI.UI
             }
         }
 
+        private bool ShouldAttachImageForApiChat()
+        {
+            return IsDirectOpenAiConversationMode()
+                || string.Equals(
+                    YuiConversationModes.Normalize(conversationMode),
+                    YuiConversationModes.Stable,
+                    StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static VisionResponse CreateApiAttachedVision(string promptType)
+        {
+            return new VisionResponse
+            {
+                VisionResultId = "api-attachment-" + Guid.NewGuid().ToString("N"),
+                Summary = promptType == "camera"
+                    ? "API Mode用にカメラ画像を添付しました。次のメッセージで画像を直接見ながら返答します。"
+                    : "API Mode用に画像を添付しました。次のメッセージで画像を直接見ながら返答します。",
+                Structured = new VisionStructured(),
+                CreatedAt = DateTime.UtcNow.ToString("o")
+            };
+        }
 
     }
 }

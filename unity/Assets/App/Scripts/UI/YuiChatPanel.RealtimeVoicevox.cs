@@ -185,7 +185,7 @@ namespace YuiPhysicalAI.UI
         {
             pausedDevice = activeMicrophoneDevice;
             pausedFrequency = activeRecordingFrequency;
-            if (!IsRealtimeVoicevoxMode()
+            if (!IsRealtimeTextTtsMode()
                 || IsMacEditorRuntime()
                 || unityMicrophoneRecorder == null
                 || !unityMicrophoneRecorder.HasClip)
@@ -205,7 +205,7 @@ namespace YuiPhysicalAI.UI
         {
             if (!isRecording
                 || !realtimeStreamActive
-                || !IsRealtimeVoicevoxMode()
+                || !IsRealtimeTextTtsMode()
                 || IsMacEditorRuntime()
                 || string.IsNullOrEmpty(device))
             {

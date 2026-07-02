@@ -39,7 +39,7 @@ namespace YuiPhysicalAI.Tests.Editor
                 gate.Feed(Chunk((byte)(10 + i)), 0.02f, 1.2f + (i * 0.1f));
             }
 
-            var decision = gate.Feed(Chunk(20), 0.001f, 2.0f);
+            var decision = gate.Feed(Chunk(20), 0.001f, 2.6f);
 
             Assert.AreEqual(YuiRealtimeVadDecisionKind.Commit, decision.Kind);
             Assert.AreEqual(10, decision.CommittedChunks);

@@ -387,7 +387,8 @@ namespace YuiPhysicalAI.Api
             }
             catch (YuiBackendException ex) when (ShouldTryHttpClientFallback(ex))
             {
-                if (!string.Equals(path, "/health", StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(path, "/health", StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(path, "/config", StringComparison.OrdinalIgnoreCase))
                 {
                     Debug.LogWarning($"Yui backend UnityWebRequest GET failed; retrying with HttpClient. {ex.Message}");
                 }

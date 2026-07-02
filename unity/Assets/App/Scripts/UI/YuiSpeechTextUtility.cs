@@ -92,6 +92,7 @@ namespace YuiPhysicalAI.UI
             cleaned = Regex.Replace(cleaned, @"^[\s\-・*]+", "", RegexOptions.Multiline);
             cleaned = Regex.Replace(cleaned, @"[【】「」『』（）()]", " ");
             cleaned = Regex.Replace(cleaned, @"\s+", " ");
+            cleaned = NormalizeCharacterNameForSpeech(cleaned);
             return cleaned.Trim();
         }
 
@@ -118,6 +119,15 @@ namespace YuiPhysicalAI.UI
             cleaned = Regex.Replace(cleaned, @"`([^`]+)`", "$1");
             cleaned = Regex.Replace(cleaned, @"^\s*[-*]\s+", "", RegexOptions.Multiline);
             return cleaned;
+        }
+
+        private static string NormalizeCharacterNameForSpeech(string text)
+        {
+            return Regex.Replace(
+                text,
+                @"(?<![A-Za-z])Yui(?![A-Za-z])",
+                "ユイ",
+                RegexOptions.IgnoreCase);
         }
     }
 }

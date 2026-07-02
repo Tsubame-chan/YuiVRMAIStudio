@@ -1,3 +1,4 @@
+using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
 using YuiPhysicalAI.Audio;
@@ -28,6 +29,9 @@ namespace YuiPhysicalAI.UI
         [SerializeField] private Button clearCancelButton;
         [SerializeField] private GameObject advancedRoot;
         [SerializeField] private InputField backendUrlInput;
+        [SerializeField] private InputField openAiApiKeyInput;
+        [SerializeField] private InputField openAiModelInput;
+        [SerializeField] private Toggle autoAiFallbackToggle;
         [SerializeField] private Dropdown voicePresetDropdown;
         [SerializeField] private InputField voicePresetNameInput;
         [SerializeField] private Button voicePresetSaveButton;
@@ -65,6 +69,8 @@ namespace YuiPhysicalAI.UI
         [SerializeField] private YuiWindowResolutionController windowResolutionController;
         private Image microphoneTestLevelFill;
         private Text microphoneTestStatusText;
+        private Text localAiAssetStatusText;
+        private Button localAiAssetRepairButton;
         private YuiMicrophoneDeviceSelector microphoneTestDeviceSelector;
         private YuiUnityMicrophoneRecorder microphoneTestRecorder;
         private YuiMacEditorMicrophoneRecorder microphoneTestMacFallback;
@@ -76,6 +82,7 @@ namespace YuiPhysicalAI.UI
         private readonly float[] microphoneTestSamples = new float[256];
         private bool advancedVisible;
         private bool isPreviewingVoice;
+        private string lastTtsModeValue = "server";
 
 
         private void Awake()
@@ -224,7 +231,7 @@ namespace YuiPhysicalAI.UI
             Hide();
         }
 
-        public void Show()
+        public async void Show()
         {
             if (settingsRoot != null)
             {
@@ -234,9 +241,16 @@ namespace YuiPhysicalAI.UI
 
             EnsureOverlayCanvas(settingsRoot, 5000);
             ResolveRuntimeMeterReferences();
+            if (chatPanel != null)
+            {
+                using var capabilityRefresh = new CancellationTokenSource(1500);
+                await chatPanel.RefreshCapabilitySnapshotAsync(capabilityRefresh.Token);
+            }
+
             RepairMissingRuntimeUi();
             ApplyResponsiveOverlayLayout();
             RefreshFields();
+            RefreshLocalAiAssetStatus();
             HideClearConfirm();
             if (settingsRoot != null)
             {

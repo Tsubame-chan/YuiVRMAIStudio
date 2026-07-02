@@ -39,7 +39,7 @@ namespace YuiPhysicalAI.UI
             {
                 var responseText = response.Text.Trim();
                 AppendLog(CharacterName, responseText);
-                if (IsRealtimeVoicevoxMode())
+                if (IsRealtimeTextTtsMode())
                 {
                     EnqueueRealtimeVoicevoxSpeech(responseText);
                 }
@@ -576,7 +576,7 @@ namespace YuiPhysicalAI.UI
                 if (eventName == "response.created")
                 {
                     realtimeAssistantTurnActive = true;
-                    if (IsRealtimeVoicevoxMode() || string.Equals(realtimeActiveBackendMode, YuiConversationModes.BackendVoiceText, StringComparison.OrdinalIgnoreCase))
+                    if (IsRealtimeTextTtsMode() || string.Equals(realtimeActiveBackendMode, YuiConversationModes.BackendVoiceText, StringComparison.OrdinalIgnoreCase))
                     {
                         realtimeVoicevoxTurnTimer = System.Diagnostics.Stopwatch.StartNew();
                         realtimeVoicevoxFirstTextMs = -1;
@@ -585,7 +585,7 @@ namespace YuiPhysicalAI.UI
                     }
                 }
                 else if (eventName == "input_audio_buffer.speech_started"
-                    && (IsRealtimeVoicevoxMode() || string.Equals(realtimeActiveBackendMode, YuiConversationModes.BackendVoiceText, StringComparison.OrdinalIgnoreCase)))
+                    && (IsRealtimeTextTtsMode() || string.Equals(realtimeActiveBackendMode, YuiConversationModes.BackendVoiceText, StringComparison.OrdinalIgnoreCase)))
                 {
                     ClearRealtimeVoicevoxSpeechQueue();
                 }
@@ -606,7 +606,7 @@ namespace YuiPhysicalAI.UI
             {
                 var delta = message.Value<string>("delta") ?? string.Empty;
                 realtimeTextBuffer.Append(delta);
-                if (IsRealtimeVoicevoxMode() || string.Equals(realtimeActiveBackendMode, YuiConversationModes.BackendVoiceText, StringComparison.OrdinalIgnoreCase))
+                if (IsRealtimeTextTtsMode() || string.Equals(realtimeActiveBackendMode, YuiConversationModes.BackendVoiceText, StringComparison.OrdinalIgnoreCase))
                 {
                     if (realtimeVoicevoxTurnTimer != null && realtimeVoicevoxFirstTextMs < 0)
                     {
@@ -618,7 +618,7 @@ namespace YuiPhysicalAI.UI
 
             if (type == "audio_delta")
             {
-                if (IsRealtimeVoicevoxMode() || string.Equals(realtimeActiveBackendMode, YuiConversationModes.BackendVoiceText, StringComparison.OrdinalIgnoreCase))
+                if (IsRealtimeTextTtsMode() || string.Equals(realtimeActiveBackendMode, YuiConversationModes.BackendVoiceText, StringComparison.OrdinalIgnoreCase))
                 {
                     return;
                 }
@@ -659,7 +659,7 @@ namespace YuiPhysicalAI.UI
                 ResetRealtimeClientVadState();
                 lock (realtimeAudioLock)
                 {
-                    if (IsRealtimeVoicevoxMode() || string.Equals(realtimeActiveBackendMode, YuiConversationModes.BackendVoiceText, StringComparison.OrdinalIgnoreCase))
+                    if (IsRealtimeTextTtsMode() || string.Equals(realtimeActiveBackendMode, YuiConversationModes.BackendVoiceText, StringComparison.OrdinalIgnoreCase))
                     {
                         realtimeAudioPcmBuffer.Clear();
                         realtimeAudioPcmQueue.Clear();
@@ -670,7 +670,7 @@ namespace YuiPhysicalAI.UI
                         realtimeAudioPcmBuffer.Clear();
                     }
                 }
-                if (IsRealtimeVoicevoxMode() && !string.IsNullOrWhiteSpace(text))
+                if (IsRealtimeTextTtsMode() && !string.IsNullOrWhiteSpace(text))
                 {
                     EnqueueRealtimeVoicevoxSpeech(text);
                 }

@@ -9,6 +9,9 @@ namespace YuiPhysicalAI.Core
     {
         // Backend / connection
         public const string BackendUrl = "Yui.Settings.BackendUrl";
+        public const string OpenAiApiKey = "Yui.Settings.OpenAiApiKey";
+        public const string OpenAiModel = "Yui.Settings.OpenAiModel";
+        public const string AutoAiFallbackEnabled = "Yui.Settings.AutoAiFallbackEnabled";
 
         // Voice / VOICEVOX
         public const string ConversationMode = "Yui.Settings.ConversationMode";
@@ -21,6 +24,7 @@ namespace YuiPhysicalAI.Core
         public const string VoicePrePhonemeLength = "Yui.Settings.VoicePrePhonemeLength";
         public const string VoicePostPhonemeLength = "Yui.Settings.VoicePostPhonemeLength";
         public const string TtsMode = "Yui.Settings.TtsMode";
+        public const string VoiceTuningSchemaVersion = "Yui.Settings.VoiceTuningSchemaVersion";
         public const string IrodoriVoiceGender = "Yui.Settings.IrodoriVoiceGender";
         public const string IrodoriVoiceInstruct = "Yui.Settings.IrodoriVoiceInstruct";
         public const string VoicePresetLibrary = "Yui.Settings.VoicePresetLibrary";

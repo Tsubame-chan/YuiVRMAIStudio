@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using YuiPhysicalAI.Api;
 using YuiPhysicalAI.Core;
+using YuiPhysicalAI.LocalAI;
 
 namespace YuiPhysicalAI.UI
 {
@@ -142,22 +143,22 @@ namespace YuiPhysicalAI.UI
             SetAnchors(panel.Find("Title"), new Vector2(0.06f, 0.91f), new Vector2(0.72f, 0.985f));
             SetAnchors(closeButton != null ? closeButton.transform : panel.Find("CloseButton"), new Vector2(0.86f, 0.91f), new Vector2(0.96f, 0.985f));
             SetText(panel.Find("Title"), "Yuiでできること", 22, FontStyle.Bold);
-            SetText(panel.Find("Subtitle"), "会話、音声、画像、カメラ、VRM、表示、記憶をまとめて扱うローカルAIアバターです。Sは履歴を残さない会話モードです。", 13, FontStyle.Normal);
-            SetAnchors(panel.Find("Subtitle"), new Vector2(0.06f, 0.82f), new Vector2(0.94f, 0.90f));
+            SetText(panel.Find("Subtitle"), "会話、音声、画像、カメラ、VRM、表示、記憶をまとめて扱うAIアバターです。シークレットモードでは履歴を残さず会話できます。", 16, FontStyle.Normal);
+            SetAnchors(panel.Find("Subtitle"), new Vector2(0.06f, 0.815f), new Vector2(0.94f, 0.895f));
             ReflowCard(panel, "TalkCard", new Vector2(0.06f, 0.66f), new Vector2(0.94f, 0.80f),
                 "接続状態", providerStatusBody, providerStatusDetail);
             ReflowCard(panel, "VisionCard", new Vector2(0.06f, 0.50f), new Vector2(0.94f, 0.64f),
-                "話す", "Messageに入力してGo。Recは音声入力です。",
-                "マイクはSettings > Micで選択し、Mic Testで入力レベルを確認できます。");
+                "AIモード", "ローカルAIはオフライン優先で軽く使えます。API Modeは通信とAPI利用量が発生します。",
+                "高精度な画像理解、長い文脈、複雑な推論はAPI向きです。Local AI時はAPIへ自動切替しません。");
             ReflowCard(panel, "AvatarCard", new Vector2(0.06f, 0.34f), new Vector2(0.94f, 0.48f),
-                "見せる", "Imgは画像ファイル、Lookは選択中のカメラ画像を送ります。",
-                "Look用カメラはSettings > Camera > Deviceで選びます。");
+                "Direct API", "BackendなしでAPIチャットとAPI画像理解を使えます。声はTTS Modeで別に選びます。",
+                "できないこと: Realtime会話/翻訳、メモリDB、Web検索、外部ツール、Backend TTSにはBackendが必要です。");
             ReflowCard(panel, "ViewerCard", new Vector2(0.06f, 0.18f), new Vector2(0.94f, 0.32f),
-                "VRM", "AvatarでUnityChanまたはCustom VRMを選びます。",
-                "Load VRMはVRM 1.0/0.xの.vrmファイル向けです。VRChat SDKのprefabやunitypackageは直接読み込めません。");
+                "話す/見せる", "Messageに入力してGo。Recは音声入力、Imgは画像、Lookは選択中のカメラ画像です。",
+                "API Modeでは画像をAPI LLMへ直接渡します。Local AIでは端末内の軽量Visionを使います。");
             ReflowCard(panel, "SettingsCard", new Vector2(0.06f, 0.045f), new Vector2(0.94f, 0.16f),
-                "声の設定", "Speed=速さ / Pitch=高さ / Intonation=抑揚 / Synthesis Vol=生成音量。",
-                "Pre/Post Pauseは発話前後の無音です。Irodoriは声の方向性を文章で指定し、Speed/Pitchは対応バックエンドで連続調整します。他者の声真似やなりすましは禁止です。");
+                "VRMと声", "AvatarでUnityChanまたはCustom VRMを選びます。声はTTS ModeでAIモードとは別に選べます。",
+                "Load VRMは.vrmファイル向けです。Backend URLはYui backendだけを指定します。");
             var oldFooter = panel.Find("Footer");
             if (oldFooter != null)
             {
@@ -174,20 +175,23 @@ namespace YuiPhysicalAI.UI
                 try
                 {
                     var status = await client.GetProviderStatusAsync();
-                    providerStatusBody = FormatProviderStatusBody(status);
-                    providerStatusDetail = FormatProviderStatusDetail(status);
+                    var snapshot = CapabilitySnapshotFromProviderStatus(status, backendReachable: true);
+                    providerStatusBody = YuiCapabilityDiagnostics.FormatBody(snapshot);
+                    providerStatusDetail = YuiCapabilityDiagnostics.FormatDetail(snapshot);
                 }
                 catch (YuiBackendException ex) when (ex.StatusCode == 404)
                 {
                     var health = await client.GetHealthAsync();
-                    providerStatusBody = FormatHealthStatusBody(health);
+                    var snapshot = CapabilitySnapshotFromHealth(health, backendReachable: true);
+                    providerStatusBody = YuiCapabilityDiagnostics.FormatBody(snapshot);
                     providerStatusDetail = "Backendは起動していますが、接続診断APIが古い可能性があります。Backendを再起動してください。";
                 }
             }
             catch (System.Exception ex)
             {
-                providerStatusBody = "Backendに接続できません。";
-                providerStatusDetail = $"ローカルサービスを起動してください: {ShortMessage(ex.Message)}";
+                var snapshot = CapabilitySnapshotFromProviderStatus(null, backendReachable: false);
+                providerStatusBody = YuiCapabilityDiagnostics.FormatBody(snapshot);
+                providerStatusDetail = $"Backendに接続できません。ローカル機能で継続できますが、Realtime/Backend TTSにはローカルサービスが必要です: {ShortMessage(ex.Message)}";
             }
 
             ApplyResponsiveLayout();
@@ -196,67 +200,42 @@ namespace YuiPhysicalAI.UI
 
         private static string FormatProviderStatusBody(ProviderStatusResponse status)
         {
-            if (status == null)
-            {
-                return "Backendの状態を取得できませんでした。";
-            }
-
-            var backend = StatusIcon(status.Backend?.Status) + " Backend";
-            var database = StatusIcon(status.Database?.Status) + " DB";
-            var openai = StatusIcon(ProviderStatus(status, "openai")) + " OpenAI";
-            var xai = StatusIcon(ProviderStatus(status, "xai")) + " xAI";
-            var lmstudio = StatusIcon(ProviderStatus(status, "lmstudio")) + " LM Studio";
-            var voicevox = StatusIcon(ProviderStatus(status, "voicevox")) + " Backend VOICEVOX";
-            var httpTts = StatusIcon(ProviderStatus(status, "http_tts")) + " Irodori TTS";
-            return $"{backend}  {database}  {openai}  {xai}  {lmstudio}  {voicevox}  {httpTts}";
+            return YuiCapabilityDiagnostics.FormatBody(CapabilitySnapshotFromProviderStatus(status, backendReachable: status != null));
         }
 
         private static string FormatProviderStatusDetail(ProviderStatusResponse status)
         {
-            if (status == null || status.Providers == null)
-            {
-                return "Backendログと .env を確認してください。";
-            }
-
-            var openaiStatus = ProviderStatus(status, "openai");
-            if (openaiStatus == "missing_key")
-            {
-                return ".env の OPENAI_API_KEY が未設定です。設定後にBackendを再起動してください。";
-            }
-
-            var voicevoxStatus = ProviderStatus(status, "voicevox");
-            if (voicevoxStatus == "offline")
-            {
-                return "VOICEVOX Engineが起動していません。テキスト会話は可能ですが、音声再生にはVOICEVOXが必要です。";
-            }
-
-            var httpTtsStatus = ProviderStatus(status, "http_tts");
-            if (httpTtsStatus == "configured")
-            {
-                return "Irodori TTS adapterが設定されています。SettingsでIrodori TTSを選ぶと、VOICEVOXとは別providerとして試せます。";
-            }
-
-            if (status.Database != null && status.Database.Status != "ok")
-            {
-                return "SQLite DBの確認に失敗しています。Backendログを確認してください。";
-            }
-
-            return "主要providerは使用できる状態です。音声や画像が動かない場合はSettingsのデバイス選択を確認してください。";
+            return YuiCapabilityDiagnostics.FormatDetail(CapabilitySnapshotFromProviderStatus(status, backendReachable: status != null));
         }
 
         private static string FormatHealthStatusBody(HealthResponse health)
         {
-            if (health == null)
-            {
-                return "Backendの状態を取得できませんでした。";
-            }
+            return YuiCapabilityDiagnostics.FormatBody(CapabilitySnapshotFromHealth(health, backendReachable: health != null));
+        }
 
-            var backend = StatusIcon(health.Status) + " Backend";
-            var database = StatusIcon(health.Database) + " DB";
-            var openai = HealthBool(health, "openai_configured") ? "OK OpenAI" : "NG OpenAI";
-            var voicevox = HealthFeature(health, "local_voicevox_tts") ? "-- Backend VOICEVOX" : "NG Backend VOICEVOX";
-            var httpTts = HealthFeature(health, "external_http_tts") ? "OK Irodori TTS" : "-- Irodori TTS";
-            return $"{backend}  {database}  {openai}  {voicevox}  {httpTts}";
+        private static YuiCapabilitySnapshot CapabilitySnapshotFromProviderStatus(ProviderStatusResponse status, bool backendReachable)
+        {
+            return YuiCapabilityMatrix.FromProviderStatus(
+                status,
+                backendReachable,
+                YuiVoicevoxCoreBridge.IsSupported,
+                localChatAvailable: true,
+                directOpenAiConfigured: !string.IsNullOrWhiteSpace(PlayerPrefs.GetString(YuiPrefsKeys.OpenAiApiKey, "")));
+        }
+
+        private static YuiCapabilitySnapshot CapabilitySnapshotFromHealth(HealthResponse health, bool backendReachable)
+        {
+            return YuiCapabilityMatrix.FromHealth(
+                health,
+                backendReachable,
+                YuiVoicevoxCoreBridge.IsSupported,
+                localChatAvailable: true,
+                directOpenAiConfigured: !string.IsNullOrWhiteSpace(PlayerPrefs.GetString(YuiPrefsKeys.OpenAiApiKey, "")));
+        }
+
+        private static string FormatStatusLine(string label, string status)
+        {
+            return $"{label}: {StatusBadge(status)}";
         }
 
         private static string ProviderStatus(ProviderStatusResponse status, string key)
@@ -284,7 +263,14 @@ namespace YuiPhysicalAI.UI
                 && enabled;
         }
 
-        private static string StatusIcon(string status)
+        private static string StatusBadge(string status)
+        {
+            var label = StatusText(status);
+            var color = StatusColor(status);
+            return $"<color={color}><b>{label}</b></color>";
+        }
+
+        private static string StatusText(string status)
         {
             switch (status)
             {
@@ -302,6 +288,24 @@ namespace YuiPhysicalAI.UI
                     return "WARN";
                 default:
                     return "--";
+            }
+        }
+
+        private static string StatusColor(string status)
+        {
+            switch (status)
+            {
+                case "ok":
+                case "configured":
+                    return "#7FE391";
+                case "missing_key":
+                case "offline":
+                case "error":
+                    return "#FF8A80";
+                case "degraded":
+                    return "#FFD166";
+                default:
+                    return "#AEB7C4";
             }
         }
 
@@ -331,12 +335,12 @@ namespace YuiPhysicalAI.UI
 
             card.gameObject.SetActive(true);
             SetAnchors(card, anchorMin, anchorMax);
-            SetAnchors(card.Find("Title"), new Vector2(0.04f, 0.58f), new Vector2(0.26f, 0.94f));
-            SetAnchors(card.Find("Body"), new Vector2(0.29f, 0.52f), new Vector2(0.96f, 0.94f));
-            SetAnchors(card.Find("Example"), new Vector2(0.04f, 0.08f), new Vector2(0.96f, 0.46f));
-            SetText(card.Find("Title"), title, 15, FontStyle.Bold);
-            SetText(card.Find("Body"), body, 12, FontStyle.Normal);
-            SetText(card.Find("Example"), example, 11, FontStyle.Normal);
+            SetAnchors(card.Find("Title"), new Vector2(0.04f, 0.70f), new Vector2(0.96f, 0.94f));
+            SetAnchors(card.Find("Body"), new Vector2(0.04f, 0.39f), new Vector2(0.96f, 0.70f));
+            SetAnchors(card.Find("Example"), new Vector2(0.04f, 0.08f), new Vector2(0.96f, 0.38f));
+            SetText(card.Find("Title"), title, 18, FontStyle.Bold);
+            SetText(card.Find("Body"), body, 15, FontStyle.Normal);
+            SetText(card.Find("Example"), example, 14, FontStyle.Normal);
         }
 
         private static void CreateCardText(Transform card, string name)
@@ -385,9 +389,10 @@ namespace YuiPhysicalAI.UI
             text.text = value;
             text.fontSize = fontSize;
             text.fontStyle = fontStyle;
+            text.supportRichText = true;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Truncate;
-            text.resizeTextForBestFit = true;
+            text.resizeTextForBestFit = false;
             text.resizeTextMinSize = Mathf.Max(8, fontSize - 4);
             text.resizeTextMaxSize = fontSize;
         }

@@ -34,8 +34,11 @@ namespace YuiPhysicalAI.UI
         [SerializeField] private float maxOrbitDistance = 8.0f;
         [SerializeField] private float hiddenDefaultDistanceMultiplier = 1.35f;
         [SerializeField] private float pinchDistanceSensitivity = 0.006f;
+        [SerializeField] private float touchPinchDistanceSensitivity = 0.0018f;
         [SerializeField] private float mouseWheelDistanceSensitivity = 0.35f;
         [SerializeField] private float panSensitivity = 0.0022f;
+        [SerializeField] private float touchPanSensitivityMultiplier = 0.25f;
+        [SerializeField] private float touchRotateSensitivityMultiplier = 0.65f;
         [SerializeField] private float orbitPivotHeightOffset = 0.1f;
 
         private enum PointerMode
@@ -472,8 +475,8 @@ namespace YuiPhysicalAI.UI
                 pointerDown = true;
                 dragged = true;
                 pointerMode = PointerMode.Pan;
-                ApplyZoom(-pinchDelta * pinchDistanceSensitivity);
-                ApplyPan(panDelta);
+                ApplyZoom(-pinchDelta * touchPinchDistanceSensitivity);
+                ApplyPan(panDelta, touchPanSensitivityMultiplier);
                 return;
             }
 
@@ -486,7 +489,7 @@ namespace YuiPhysicalAI.UI
                 }
                 else if (touch.phase == TouchPhase.Moved || touch.phase == TouchPhase.Stationary)
                 {
-                    MovePointer(touch.position);
+                    MovePointer(touch.position, touchRotateSensitivityMultiplier, touchPanSensitivityMultiplier);
                 }
                 else if (touch.phase == TouchPhase.Ended || touch.phase == TouchPhase.Canceled)
                 {
@@ -549,6 +552,11 @@ namespace YuiPhysicalAI.UI
 
         private void MovePointer(Vector2 position)
         {
+            MovePointer(position, 1f, 1f);
+        }
+
+        private void MovePointer(Vector2 position, float rotateMultiplier, float panMultiplier)
+        {
             if (!pointerDown)
             {
                 return;
@@ -563,14 +571,14 @@ namespace YuiPhysicalAI.UI
             switch (pointerMode)
             {
                 case PointerMode.Pan:
-                    ApplyPan(delta);
+                    ApplyPan(delta, panMultiplier);
                     break;
                 case PointerMode.Zoom:
                     ApplyZoom(delta.y * mouseWheelDistanceSensitivity * 0.05f);
                     break;
                 default:
-                    currentYaw -= delta.x * rotateSensitivity;
-                    currentPitch += delta.y * rotateSensitivity;
+                    currentYaw -= delta.x * rotateSensitivity * rotateMultiplier;
+                    currentPitch += delta.y * rotateSensitivity * rotateMultiplier;
                     break;
             }
 
@@ -603,12 +611,17 @@ namespace YuiPhysicalAI.UI
 
         private void ApplyPan(Vector2 screenDelta)
         {
+            ApplyPan(screenDelta, 1f);
+        }
+
+        private void ApplyPan(Vector2 screenDelta, float sensitivityMultiplier)
+        {
             if (targetCamera == null)
             {
                 return;
             }
 
-            var scale = Mathf.Max(0.45f, currentOrbitDistance) * panSensitivity;
+            var scale = Mathf.Max(0.45f, currentOrbitDistance) * panSensitivity * sensitivityMultiplier;
             var right = targetCamera.transform.right;
             var up = targetCamera.transform.up;
             currentPanOffset += (-right * screenDelta.x + -up * screenDelta.y) * scale;

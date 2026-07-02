@@ -1,38 +1,40 @@
 using UnityEngine;
 using UnityEngine.UI;
 using YuiPhysicalAI.Core;
+using YuiPhysicalAI.LocalAI;
 
 namespace YuiPhysicalAI.UI
 {
     public sealed partial class YuiSettingsOverlay
     {
-        private static readonly VoiceOption[] VoiceOptions =
-        {
-            new VoiceOption("冥鳴ひまり / ノーマル", 14),
-            new VoiceOption("四国めたん / ノーマル", 2),
-            new VoiceOption("四国めたん / あまあま", 0),
-            new VoiceOption("四国めたん / ツンツン", 6),
-            new VoiceOption("四国めたん / セクシー", 4),
-            new VoiceOption("四国めたん / ささやき", 36),
-            new VoiceOption("四国めたん / ヒソヒソ", 37),
-            new VoiceOption("ずんだもん / ノーマル", 3),
-            new VoiceOption("ずんだもん / あまあま", 1),
-            new VoiceOption("ずんだもん / ツンツン", 7),
-            new VoiceOption("ずんだもん / セクシー", 5),
-            new VoiceOption("ずんだもん / ささやき", 22),
-            new VoiceOption("ずんだもん / ヒソヒソ", 38),
-            new VoiceOption("ずんだもん / ヘロヘロ", 75),
-            new VoiceOption("ずんだもん / なみだめ", 76),
-        };
         private void RefreshFields()
         {
             if (chatPanel != null)
             {
-                ConfigureVoiceSliderRanges();
                 if (backendUrlInput != null)
                 {
                     backendUrlInput.text = chatPanel.BackendUrl;
                 }
+                if (openAiApiKeyInput != null)
+                {
+                    openAiApiKeyInput.text = chatPanel.OpenAiApiKey;
+                }
+                if (openAiModelInput != null)
+                {
+                    openAiModelInput.text = chatPanel.OpenAiModel;
+                }
+                if (autoAiFallbackToggle != null)
+                {
+                    autoAiFallbackToggle.SetIsOnWithoutNotify(chatPanel.AutoAiFallbackEnabled);
+                }
+                RefreshTtsModeOptions();
+                if (ttsModeDropdown != null)
+                {
+                    ttsModeDropdown.value = TtsModeIndex(chatPanel.TtsMode);
+                    ttsModeDropdown.RefreshShownValue();
+                }
+                lastTtsModeValue = TtsModeValue();
+                ConfigureVoiceSliderRanges();
                 if (speakerDropdown != null)
                 {
                     EnsureVoiceOptions();
@@ -45,11 +47,11 @@ namespace YuiPhysicalAI.UI
                 }
                 if (speedSlider != null)
                 {
-                    speedSlider.value = chatPanel.VoiceSpeedScale;
+                    speedSlider.value = YuiTtsTuning.SafeSpeedForMode(TtsModeValue(), chatPanel.VoiceSpeedScale);
                 }
                 if (pitchSlider != null)
                 {
-                    pitchSlider.value = chatPanel.VoicePitchScale;
+                    pitchSlider.value = YuiTtsTuning.SafePitchForMode(TtsModeValue(), chatPanel.VoicePitchScale);
                 }
                 if (intonationSlider != null)
                 {
@@ -72,12 +74,6 @@ namespace YuiPhysicalAI.UI
                 {
                     conversationModeDropdown.value = ConversationModeIndex(chatPanel.ConversationMode);
                     conversationModeDropdown.RefreshShownValue();
-                }
-                RefreshTtsModeOptions();
-                if (ttsModeDropdown != null)
-                {
-                    ttsModeDropdown.value = TtsModeIndex(chatPanel.TtsMode);
-                    ttsModeDropdown.RefreshShownValue();
                 }
                 RefreshIrodoriVoiceGenderOptions();
                 if (irodoriVoiceGenderDropdown != null)
@@ -153,8 +149,9 @@ namespace YuiPhysicalAI.UI
         {
             if (speedSlider != null)
             {
-                speedSlider.minValue = 0.5f;
-                speedSlider.maxValue = 1.8f;
+                speedSlider.minValue = YuiTtsTuning.SpeedMinForMode(TtsModeValue());
+                speedSlider.maxValue = YuiTtsTuning.SpeedMaxForMode(TtsModeValue());
+                speedSlider.value = YuiTtsTuning.SafeSpeedForMode(TtsModeValue(), speedSlider.value);
             }
 
             if (pitchSlider != null)
@@ -166,13 +163,32 @@ namespace YuiPhysicalAI.UI
         }
         private void EnsureVoiceOptions()
         {
-            if (speakerDropdown == null || speakerDropdown.options.Count == VoiceOptions.Length)
+            if (speakerDropdown == null)
             {
                 return;
             }
 
+            var options = ActiveVoiceOptions();
+            if (speakerDropdown.options.Count == options.Count)
+            {
+                var same = true;
+                for (var i = 0; i < options.Count; i++)
+                {
+                    if (speakerDropdown.options[i].text != options[i].Label)
+                    {
+                        same = false;
+                        break;
+                    }
+                }
+
+                if (same)
+                {
+                    return;
+                }
+            }
+
             speakerDropdown.options.Clear();
-            foreach (var option in VoiceOptions)
+            foreach (var option in options)
             {
                 speakerDropdown.options.Add(new Dropdown.OptionData(option.Label));
             }
@@ -186,13 +202,27 @@ namespace YuiPhysicalAI.UI
             }
 
             var includeHttpTts = ShouldShowHttpTtsOption();
+            var httpTtsAvailableOrUnknown = chatPanel == null
+                || !chatPanel.BackendConfigLoaded
+                || chatPanel.HttpTtsAvailable;
             ttsModeDropdown.options.Clear();
             var options = YuiTtsModeOptions.Labels(
+                ShouldShowLocalAiTtsOption(),
+                ShouldShowNativeAivisOption(),
+                ShouldShowNativeVoicevoxOption(),
                 includeHttpTts,
-                chatPanel != null && chatPanel.HttpTtsAvailable);
-            foreach (var option in options)
+                httpTtsAvailableOrUnknown);
+            var capabilitySnapshot = chatPanel != null ? chatPanel.CurrentCapabilitySnapshot() : null;
+            for (var i = 0; i < options.Length; i++)
             {
-                ttsModeDropdown.options.Add(new Dropdown.OptionData(option));
+                var mode = YuiTtsModeOptions.ModeFromIndex(
+                    i,
+                    ShouldShowLocalAiTtsOption(),
+                    ShouldShowNativeAivisOption(),
+                    ShouldShowNativeVoicevoxOption(),
+                    includeHttpTts);
+                var label = YuiCapabilityDiagnostics.DecorateTtsLabel(options[i], mode, capabilitySnapshot);
+                ttsModeDropdown.options.Add(new Dropdown.OptionData(label));
             }
         }
 
@@ -224,9 +254,12 @@ namespace YuiPhysicalAI.UI
             }
 
             conversationModeDropdown.options.Clear();
-            foreach (var option in options)
+            var capabilitySnapshot = chatPanel != null ? chatPanel.CurrentCapabilitySnapshot() : null;
+            for (var i = 0; i < options.Length; i++)
             {
-                conversationModeDropdown.options.Add(new Dropdown.OptionData(option));
+                var mode = YuiConversationModes.FromDropdownIndex(i);
+                var label = YuiCapabilityDiagnostics.DecorateConversationLabel(options[i], mode, capabilitySnapshot);
+                conversationModeDropdown.options.Add(new Dropdown.OptionData(label));
             }
         }
 
@@ -466,15 +499,22 @@ namespace YuiPhysicalAI.UI
         {
             if (ttsModeDropdown == null)
             {
-                return "local";
+                return "server";
             }
 
-            return YuiTtsModeOptions.ModeFromIndex(ttsModeDropdown.value, ShouldShowHttpTtsOption());
+            return YuiTtsModeOptions.ModeFromIndex(
+                ttsModeDropdown.value,
+                ShouldShowLocalAiTtsOption(),
+                ShouldShowNativeAivisOption(),
+                ShouldShowNativeVoicevoxOption(),
+                ShouldShowHttpTtsOption());
         }
 
-        private bool IsIrodoriTtsSelected()
+        private bool IsAivisTtsSelected()
         {
-            return string.Equals(TtsModeValue(), "server-http", System.StringComparison.OrdinalIgnoreCase);
+            var mode = TtsModeValue();
+            return string.Equals(mode, "aivis", System.StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "aivis-native", System.StringComparison.OrdinalIgnoreCase);
         }
 
         private string IrodoriVoiceGenderValue()
@@ -557,7 +597,12 @@ namespace YuiPhysicalAI.UI
 
         private int TtsModeIndex(string mode)
         {
-            return YuiTtsModeOptions.IndexFromMode(mode, ShouldShowHttpTtsOption());
+            return YuiTtsModeOptions.IndexFromMode(
+                mode,
+                ShouldShowLocalAiTtsOption(),
+                ShouldShowNativeAivisOption(),
+                ShouldShowNativeVoicevoxOption(),
+                ShouldShowHttpTtsOption());
         }
 
         private static int IrodoriVoiceGenderIndex(string gender)
@@ -567,8 +612,31 @@ namespace YuiPhysicalAI.UI
 
         private bool ShouldShowHttpTtsOption()
         {
-            return (chatPanel != null && chatPanel.HttpTtsAvailable)
-                || (chatPanel != null && string.Equals(chatPanel.TtsMode, "server-http", System.StringComparison.OrdinalIgnoreCase));
+            return true;
+        }
+
+        private static bool ShouldShowLocalAiTtsOption()
+        {
+            return false;
+        }
+
+        private static bool ShouldShowNativeAivisOption()
+        {
+#if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
+            var status = YuiAivisNativeBridge.GetStatus();
+            return status != null && status.RuntimeReady;
+#else
+            return false;
+#endif
+        }
+
+        private static bool ShouldShowNativeVoicevoxOption()
+        {
+#if UNITY_IOS && !UNITY_EDITOR
+            return true;
+#else
+            return false;
+#endif
         }
 
         private int MicrophoneIndex(string device)
@@ -607,34 +675,34 @@ namespace YuiPhysicalAI.UI
             return 0;
         }
 
-        private static int VoiceIdAt(int index, int fallback)
+        private System.Collections.Generic.IReadOnlyList<YuiTtsVoiceOption> ActiveVoiceOptions()
         {
-            return index >= 0 && index < VoiceOptions.Length ? VoiceOptions[index].Id : fallback;
+            return VoiceOptionsForMode(TtsModeValue());
         }
 
-        private static int VoiceIndexForId(int speakerId)
+        private System.Collections.Generic.IReadOnlyList<YuiTtsVoiceOption> VoiceOptionsForMode(string mode)
         {
-            for (var i = 0; i < VoiceOptions.Length; i++)
-            {
-                if (VoiceOptions[i].Id == speakerId)
-                {
-                    return i;
-                }
-            }
-
-            return 0;
+            return YuiTtsVoiceOptionCatalog.OptionsForMode(mode, chatPanel != null ? chatPanel.BackendAivisVoiceOptions : null);
         }
 
-        private struct VoiceOption
+        private int VoiceIdAt(int index, int fallback)
         {
-            public string Label;
-            public int Id;
+            return YuiTtsVoiceOptionCatalog.VoiceIdAt(ActiveVoiceOptions(), index, fallback);
+        }
 
-            public VoiceOption(string label, int id)
-            {
-                Label = label;
-                Id = id;
-            }
+        private int VoiceIdAtForMode(string mode, int index, int fallback)
+        {
+            return YuiTtsVoiceOptionCatalog.VoiceIdAt(VoiceOptionsForMode(mode), index, fallback);
+        }
+
+        private int VoiceIndexForId(int speakerId)
+        {
+            return YuiTtsVoiceOptionCatalog.VoiceIndexForId(ActiveVoiceOptions(), speakerId);
+        }
+
+        private int VoiceIndexForIdForMode(string mode, int speakerId)
+        {
+            return YuiTtsVoiceOptionCatalog.VoiceIndexForId(VoiceOptionsForMode(mode), speakerId);
         }
     }
 }

@@ -40,6 +40,10 @@ namespace YuiPhysicalAI.UI
             {
                 StopRealtimeAudioPlayback();
             }
+            else
+            {
+                ReleaseCurrentPlaybackClip();
+            }
 
             var device = SelectMicrophoneDevice();
             if (string.IsNullOrEmpty(device))
@@ -97,7 +101,7 @@ namespace YuiPhysicalAI.UI
             isRecording = true;
             recordingStartedAt = Time.realtimeSinceStartup;
             SetInteractable(false);
-            SetStatus(IsRealtimeConversationMode() ? "Realtime listening... 00:00" : $"Recording... 0/{maxRecordingSeconds}s");
+            SetStatus(IsRealtimeConversationMode() ? "Realtime listening... 00:00" : $"Recording... 0/{EffectiveRecordingClipLengthSeconds(false)}s");
             SetRecordButtonText("Stop");
             if (IsRealtimeConversationMode())
             {
@@ -114,7 +118,7 @@ namespace YuiPhysicalAI.UI
             activeMicrophoneDevice = device;
             activeRecordingFrequency = ResolveRecordingFrequency(device);
             var realtimeMode = IsRealtimeConversationMode();
-            var clipLengthSeconds = realtimeMode ? 10 : maxRecordingSeconds;
+            var clipLengthSeconds = EffectiveRecordingClipLengthSeconds(realtimeMode);
             Debug.Log($"Starting microphone device='{activeMicrophoneDevice}', frequency={activeRecordingFrequency}, maxSeconds={clipLengthSeconds}, realtime={realtimeMode}");
 
             if (unityMicrophoneRecorder.Start(
@@ -129,6 +133,20 @@ namespace YuiPhysicalAI.UI
 
             recordingClip = null;
             return false;
+        }
+
+        private int EffectiveRecordingClipLengthSeconds(bool realtimeMode)
+        {
+            if (realtimeMode)
+            {
+                return 10;
+            }
+
+#if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
+            return Mathf.Clamp(maxRecordingSeconds, 1, 60);
+#else
+            return maxRecordingSeconds;
+#endif
         }
 
         private void StartMacEditorMicrophoneFallback()
@@ -277,8 +295,12 @@ namespace YuiPhysicalAI.UI
                 isSending = true;
                 SetInteractable(false);
                 SetStatus("Transcribing...");
-                var wavBytes = WavUtility.FromAudioClip(recordingClip, samplePosition);
                 var unityStats = YuiUnityMicrophoneRecorder.CalculateAudioStats(recordingClip, samplePosition);
+                var wavBytes = WavUtility.FromAudioClip(recordingClip, samplePosition);
+                var completedRecordingClip = recordingClip;
+                recordingClip = null;
+                DestroyOwnedAudioClip(completedRecordingClip, null);
+                CollectAivisMobileGarbage();
                 var macEditorWavBytes = await macEditorWavBytesTask;
                 if (IsSilentRecording(unityStats.rms, unityStats.peak) && macEditorWavBytes != null && macEditorWavBytes.Length > 44)
                 {
@@ -287,7 +309,7 @@ namespace YuiPhysicalAI.UI
                     wavBytes = macEditorWavBytes;
                 }
                 var durationMs = Mathf.RoundToInt(samplePosition * 1000f / activeRecordingFrequency);
-                var transcript = await client.TranscribeAudioAsync(
+                var transcript = await TranscribeViaRuntimeAsync(
                     wavBytes,
                     "ptt_recording.wav",
                     durationMs,
@@ -297,6 +319,14 @@ namespace YuiPhysicalAI.UI
                 if (string.IsNullOrEmpty(message))
                 {
                     AppendLog("System", "音声を文字起こしできませんでした。");
+                    return;
+                }
+
+                if (IsLikelyBrokenSpeechTranscript(message))
+                {
+                    Debug.LogWarning($"Yui local STT rejected broken transcript: {message}");
+                    SetStatus("STT failed");
+                    AppendLog("System", "ローカル音声認識に失敗しました。もう一度短めにはっきり話すか、音声/STT設定を変更してください。");
                     return;
                 }
 
@@ -316,6 +346,37 @@ namespace YuiPhysicalAI.UI
                 isSending = false;
                 SetInteractable(true);
             }
+        }
+
+        private static bool IsLikelyBrokenSpeechTranscript(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                return true;
+            }
+
+            var meaningful = 0;
+            var broken = 0;
+            foreach (var ch in message)
+            {
+                if (char.IsWhiteSpace(ch))
+                {
+                    continue;
+                }
+
+                meaningful++;
+                if (ch == '?' || ch == '？' || ch == '\uFFFD')
+                {
+                    broken++;
+                }
+            }
+
+            if (meaningful == 0)
+            {
+                return true;
+            }
+
+            return meaningful >= 6 && broken >= meaningful * 0.45f;
         }
 
 

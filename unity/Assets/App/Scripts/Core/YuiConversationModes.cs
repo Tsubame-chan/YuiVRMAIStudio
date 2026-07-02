@@ -5,9 +5,13 @@ namespace YuiPhysicalAI.Core
     public static class YuiConversationModes
     {
         public const string Stable = "stable";
+        public const string BackendAi = "backend_ai";
         public const string RealtimeVoice = "realtime_voice";
         public const string RealtimeVoicevox = "realtime_voicevox";
+        public const string RealtimeAivis = "realtime_aivis";
         public const string RealtimeTranslate = "realtime_translate";
+        public const string LocalAi = "local_ai";
+        public const string DirectOpenAi = "direct_openai";
 
         public const string BackendVoice = "voice";
         public const string BackendVoiceText = "voice_text";
@@ -15,10 +19,14 @@ namespace YuiPhysicalAI.Core
 
         public static readonly string[] DropdownLabels =
         {
-            "Stable",
-            "Realtime Voice (Experimental)",
-            "Realtime VOICEVOX (Experimental)",
-            "Realtime Translate (Experimental)"
+            "Auto Select (Backend > Local)",
+            "Local Gemma SLM (On-device)",
+            "Backend Talk (Standard)",
+            "Realtime Talk (OpenAI Voice)",
+            "Realtime Talk (VOICEVOX)",
+            "Realtime Talk (AivisSpeech HD)",
+            "Realtime Translation (Backend)",
+            "Direct OpenAI API (No Backend)"
         };
 
         public static bool IsRealtime(string mode)
@@ -26,12 +34,25 @@ namespace YuiPhysicalAI.Core
             var normalized = Normalize(mode);
             return string.Equals(normalized, RealtimeVoice, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(normalized, RealtimeVoicevox, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(normalized, RealtimeAivis, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(normalized, RealtimeTranslate, StringComparison.OrdinalIgnoreCase);
         }
 
         public static bool IsRealtimeVoicevox(string mode)
         {
             return string.Equals(Normalize(mode), RealtimeVoicevox, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static bool IsRealtimeAivis(string mode)
+        {
+            return string.Equals(Normalize(mode), RealtimeAivis, StringComparison.OrdinalIgnoreCase);
+        }
+
+        public static bool IsRealtimeTextTts(string mode)
+        {
+            var normalized = Normalize(mode);
+            return string.Equals(normalized, RealtimeVoicevox, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(normalized, RealtimeAivis, StringComparison.OrdinalIgnoreCase);
         }
 
         public static bool IsRealtimeTranslate(string mode)
@@ -53,25 +74,50 @@ namespace YuiPhysicalAI.Core
                 return BackendVoiceText;
             }
 
+            if (string.Equals(normalized, RealtimeAivis, StringComparison.OrdinalIgnoreCase))
+            {
+                return BackendVoiceText;
+            }
+
             return BackendVoice;
         }
 
         public static int DropdownIndex(string mode)
         {
             var normalized = Normalize(mode);
-            if (string.Equals(normalized, RealtimeVoice, StringComparison.OrdinalIgnoreCase))
-            {
-                return 1;
-            }
-
-            if (string.Equals(normalized, RealtimeVoicevox, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(normalized, BackendAi, StringComparison.OrdinalIgnoreCase))
             {
                 return 2;
             }
 
-            if (string.Equals(normalized, RealtimeTranslate, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(normalized, RealtimeVoice, StringComparison.OrdinalIgnoreCase))
             {
                 return 3;
+            }
+
+            if (string.Equals(normalized, RealtimeVoicevox, StringComparison.OrdinalIgnoreCase))
+            {
+                return 4;
+            }
+
+            if (string.Equals(normalized, RealtimeTranslate, StringComparison.OrdinalIgnoreCase))
+            {
+                return 6;
+            }
+
+            if (string.Equals(normalized, RealtimeAivis, StringComparison.OrdinalIgnoreCase))
+            {
+                return 5;
+            }
+
+            if (string.Equals(normalized, DirectOpenAi, StringComparison.OrdinalIgnoreCase))
+            {
+                return 7;
+            }
+
+            if (string.Equals(normalized, LocalAi, StringComparison.OrdinalIgnoreCase))
+            {
+                return 1;
             }
 
             return 0;
@@ -82,11 +128,19 @@ namespace YuiPhysicalAI.Core
             switch (index)
             {
                 case 1:
-                    return RealtimeVoice;
+                    return LocalAi;
                 case 2:
-                    return RealtimeVoicevox;
+                    return BackendAi;
                 case 3:
+                    return RealtimeVoice;
+                case 4:
+                    return RealtimeVoicevox;
+                case 5:
+                    return RealtimeAivis;
+                case 6:
                     return RealtimeTranslate;
+                case 7:
+                    return DirectOpenAi;
                 default:
                     return Stable;
             }
@@ -100,11 +154,43 @@ namespace YuiPhysicalAI.Core
                 return RealtimeVoice;
             }
 
+            if (string.Equals(mode, BackendAi, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "backend", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "backend-ai", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "local_backend", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "local-backend", StringComparison.OrdinalIgnoreCase))
+            {
+                return BackendAi;
+            }
+
+            if (string.Equals(mode, LocalAi, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "local", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "on_device", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "on-device", StringComparison.OrdinalIgnoreCase))
+            {
+                return LocalAi;
+            }
+
+            if (string.Equals(mode, DirectOpenAi, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "openai_direct", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "direct-api", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "direct_api", StringComparison.OrdinalIgnoreCase))
+            {
+                return DirectOpenAi;
+            }
+
             if (string.Equals(mode, RealtimeVoicevox, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(mode, BackendVoiceText, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(mode, "voicevox", StringComparison.OrdinalIgnoreCase))
             {
                 return RealtimeVoicevox;
+            }
+
+            if (string.Equals(mode, RealtimeAivis, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "aivis_realtime", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "realtime-aivis", StringComparison.OrdinalIgnoreCase))
+            {
+                return RealtimeAivis;
             }
 
             if (string.Equals(mode, RealtimeTranslate, StringComparison.OrdinalIgnoreCase)
@@ -121,12 +207,32 @@ namespace YuiPhysicalAI.Core
             var normalized = Normalize(mode);
             if (string.Equals(normalized, RealtimeVoice, StringComparison.OrdinalIgnoreCase))
             {
-                return "Realtime Voice ON";
+                return "Realtime Talk ON";
+            }
+
+            if (string.Equals(normalized, BackendAi, StringComparison.OrdinalIgnoreCase))
+            {
+                return "Backend Talk ON";
+            }
+
+            if (string.Equals(normalized, LocalAi, StringComparison.OrdinalIgnoreCase))
+            {
+                return "Local AI ON";
+            }
+
+            if (string.Equals(normalized, DirectOpenAi, StringComparison.OrdinalIgnoreCase))
+            {
+                return "API Mode ON";
             }
 
             if (string.Equals(normalized, RealtimeVoicevox, StringComparison.OrdinalIgnoreCase))
             {
-                return "Realtime VOICEVOX ON";
+                return "Realtime Talk VOICEVOX ON";
+            }
+
+            if (string.Equals(normalized, RealtimeAivis, StringComparison.OrdinalIgnoreCase))
+            {
+                return "Realtime Talk Aivis ON";
             }
 
             if (string.Equals(normalized, RealtimeTranslate, StringComparison.OrdinalIgnoreCase))
@@ -142,7 +248,13 @@ namespace YuiPhysicalAI.Core
             var label = StatusLabel(mode);
             return string.IsNullOrEmpty(label)
                 ? string.Empty
-                : $"{label}: 実験機能です。音声ストリーム接続中はAPIコストが増えやすいので、使う時だけオンにしてください。";
+                : string.Equals(Normalize(mode), LocalAi, StringComparison.OrdinalIgnoreCase)
+                    ? $"{label}: 端末内モデルを優先します。難しい質問や高精度な画像理解はAPIの方が向いています。"
+                    : string.Equals(Normalize(mode), BackendAi, StringComparison.OrdinalIgnoreCase)
+                        ? $"{label}: バックエンドの標準会話基盤を固定で使用します。バックエンド未起動時はAuto SelectかLocal Gemmaを使ってください。"
+                    : string.Equals(Normalize(mode), DirectOpenAi, StringComparison.OrdinalIgnoreCase)
+                        ? $"{label}: BackendなしでAPIキーを使います。声はSettingsのTTS Modeがそのまま使われます。"
+                        : $"{label}: 実験機能です。音声ストリーム接続中はAPIコストが増えやすいので、使う時だけオンにしてください。";
         }
 
         public static string InstructionsForMode(string mode, string characterName)

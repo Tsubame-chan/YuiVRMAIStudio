@@ -24,22 +24,34 @@ namespace YuiPhysicalAI.UI
             var volume = volumeSlider != null ? volumeSlider.value : 1f;
             if (chatPanel != null)
             {
+                var conversationMode = ConversationModeValue();
+                var ttsMode = TtsModeForConversationMode(conversationMode, TtsModeValue());
+                var speed = speedSlider != null
+                    ? YuiTtsTuning.SafeSpeedForMode(ttsMode, speedSlider.value)
+                    : 1.0f;
+                var pitch = pitchSlider != null
+                    ? YuiTtsTuning.SafePitchForMode(ttsMode, pitchSlider.value)
+                    : 0.0f;
                 SaveCustomVrmDisplayNameFromInput();
                 chatPanel.SetCharacterName(characterNameInput != null ? characterNameInput.text : chatPanel.CharacterName);
                 chatPanel.SetCustomInstruction(customInstructionInput != null ? customInstructionInput.text : chatPanel.CustomInstruction);
+                chatPanel.SetDirectOpenAiSettings(
+                    openAiApiKeyInput != null ? openAiApiKeyInput.text : chatPanel.OpenAiApiKey,
+                    openAiModelInput != null ? openAiModelInput.text : chatPanel.OpenAiModel);
+                chatPanel.SetAutoAiFallbackEnabled(autoAiFallbackToggle == null || autoAiFallbackToggle.isOn);
                 chatPanel.SetAvatarSlot(AvatarSlotValue());
                 chatPanel.ApplyRuntimeSettings(
                     backendUrl,
                     speakerId,
                     volume,
-                    speedSlider != null ? speedSlider.value : 1.0f,
-                    pitchSlider != null ? pitchSlider.value : 0.0f,
+                    speed,
+                    pitch,
                     intonationSlider != null ? intonationSlider.value : 1.0f,
                     synthesisVolumeSlider != null ? synthesisVolumeSlider.value : 1.0f,
                     prePhonemeSlider != null ? prePhonemeSlider.value : 0.1f,
                     postPhonemeSlider != null ? postPhonemeSlider.value : 0.1f,
-                    ConversationModeValue(),
-                    TtsModeValue(),
+                    conversationMode,
+                    ttsMode,
                     IrodoriVoiceGenderValue(),
                     irodoriVoiceInstructInput != null ? irodoriVoiceInstructInput.text : chatPanel.IrodoriVoiceInstruct,
                     MicrophoneValue(),
@@ -55,6 +67,21 @@ namespace YuiPhysicalAI.UI
             {
                 windowResolutionController.SetPreset(resolutionDropdown.value);
             }
+        }
+
+        private static string TtsModeForConversationMode(string conversationMode, string selectedTtsMode)
+        {
+            if (YuiConversationModes.IsRealtimeVoicevox(conversationMode))
+            {
+                return "server";
+            }
+
+            if (YuiConversationModes.IsRealtimeAivis(conversationMode))
+            {
+                return "aivis";
+            }
+
+            return selectedTtsMode;
         }
 
         private void PreviewVoice()
@@ -424,9 +451,53 @@ namespace YuiPhysicalAI.UI
 
         private void OnTtsModeDropdownChanged(int _)
         {
+            SaveCurrentVoiceFieldsForMode(lastTtsModeValue);
+            var nextMode = TtsModeValue();
+            lastTtsModeValue = nextMode;
+            EnsureVoiceOptions();
             ConfigureVoiceSliderRanges();
+            LoadVoiceFieldsForMode(nextMode);
+            UpdateSpeedLabel(speedSlider != null ? speedSlider.value : 1f);
             UpdatePitchLabel(pitchSlider != null ? pitchSlider.value : 0f);
+            UpdateIntonationLabel(intonationSlider != null ? intonationSlider.value : 1f);
+            UpdateSynthesisVolumeLabel(synthesisVolumeSlider != null ? synthesisVolumeSlider.value : 1f);
+            UpdatePrePhonemeLabel(prePhonemeSlider != null ? prePhonemeSlider.value : 0.1f);
+            UpdatePostPhonemeLabel(postPhonemeSlider != null ? postPhonemeSlider.value : 0.1f);
             RefreshTtsSpecificVoiceControls();
+        }
+
+        private void SaveCurrentVoiceFieldsForMode(string mode)
+        {
+            if (string.IsNullOrWhiteSpace(mode))
+            {
+                return;
+            }
+
+            YuiTtsTuningPrefs.SaveForMode(mode, new YuiSavedTtsTuning(
+                VoiceIdAtForMode(mode, speakerDropdown != null ? speakerDropdown.value : 0, YuiTtsTuningPrefs.DefaultSpeakerForMode(mode)),
+                speedSlider != null ? speedSlider.value : 1.0f,
+                pitchSlider != null ? pitchSlider.value : 0.0f,
+                intonationSlider != null ? intonationSlider.value : 1.0f,
+                synthesisVolumeSlider != null ? synthesisVolumeSlider.value : 1.0f,
+                prePhonemeSlider != null ? prePhonemeSlider.value : 0.1f,
+                postPhonemeSlider != null ? postPhonemeSlider.value : 0.1f));
+            PlayerPrefs.Save();
+        }
+
+        private void LoadVoiceFieldsForMode(string mode)
+        {
+            var tuning = YuiTtsTuningPrefs.LoadForMode(mode, YuiTtsTuningPrefs.DefaultForMode(mode));
+            if (speakerDropdown != null)
+            {
+                speakerDropdown.SetValueWithoutNotify(VoiceIndexForIdForMode(mode, tuning.SpeakerId));
+                speakerDropdown.RefreshShownValue();
+            }
+            SetSliderValue(speedSlider, tuning.SpeedScale);
+            SetSliderValue(pitchSlider, tuning.PitchScale);
+            SetSliderValue(intonationSlider, tuning.IntonationScale);
+            SetSliderValue(synthesisVolumeSlider, tuning.SynthesisVolumeScale);
+            SetSliderValue(prePhonemeSlider, tuning.PrePhonemeLength);
+            SetSliderValue(postPhonemeSlider, tuning.PostPhonemeLength);
         }
 
         private void SaveVoicePreset()
@@ -504,19 +575,29 @@ namespace YuiPhysicalAI.UI
                 ttsModeDropdown.SetValueWithoutNotify(TtsModeIndex(preset.TtsMode));
                 ttsModeDropdown.RefreshShownValue();
             }
+            lastTtsModeValue = TtsModeValue();
+            ConfigureVoiceSliderRanges();
+            var sanitized = YuiTtsTuningPrefs.Sanitize(lastTtsModeValue, new YuiSavedTtsTuning(
+                preset.SpeakerId,
+                preset.SpeedScale,
+                preset.PitchScale,
+                preset.IntonationScale,
+                preset.SynthesisVolumeScale,
+                preset.PrePhonemeLength,
+                preset.PostPhonemeLength));
             if (speakerDropdown != null)
             {
                 EnsureVoiceOptions();
-                speakerDropdown.SetValueWithoutNotify(VoiceIndexForId(preset.SpeakerId));
+                speakerDropdown.SetValueWithoutNotify(VoiceIndexForId(sanitized.SpeakerId));
                 speakerDropdown.RefreshShownValue();
             }
             SetSliderValue(volumeSlider, preset.VoiceVolume <= 0f ? 1f : preset.VoiceVolume);
-            SetSliderValue(speedSlider, preset.SpeedScale);
-            SetSliderValue(pitchSlider, preset.PitchScale);
-            SetSliderValue(intonationSlider, preset.IntonationScale);
-            SetSliderValue(synthesisVolumeSlider, preset.SynthesisVolumeScale);
-            SetSliderValue(prePhonemeSlider, preset.PrePhonemeLength);
-            SetSliderValue(postPhonemeSlider, preset.PostPhonemeLength);
+            SetSliderValue(speedSlider, sanitized.SpeedScale);
+            SetSliderValue(pitchSlider, sanitized.PitchScale);
+            SetSliderValue(intonationSlider, sanitized.IntonationScale);
+            SetSliderValue(synthesisVolumeSlider, sanitized.SynthesisVolumeScale);
+            SetSliderValue(prePhonemeSlider, sanitized.PrePhonemeLength);
+            SetSliderValue(postPhonemeSlider, sanitized.PostPhonemeLength);
             if (irodoriVoiceGenderDropdown != null)
             {
                 RefreshIrodoriVoiceGenderOptions();

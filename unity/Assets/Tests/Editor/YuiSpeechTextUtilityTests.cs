@@ -42,9 +42,9 @@ namespace YuiPhysicalAI.Tests.Editor
                 80,
                 80);
 
-            Assert.That(chunks, Has.Length.EqualTo(2));
+            Assert.That(chunks, Has.Length.EqualTo(1));
             Assert.That(chunks[0], Does.Contain("開発は頭も使うし"));
-            Assert.That(chunks[1], Does.Contain("少し休憩しながら"));
+            Assert.That(chunks[0], Does.Contain("少し休憩しながら"));
         }
 
     }

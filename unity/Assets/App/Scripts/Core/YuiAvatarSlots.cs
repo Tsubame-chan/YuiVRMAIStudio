@@ -14,7 +14,7 @@ namespace YuiPhysicalAI.Core
         public const string CustomVrm3 = "custom_vrm_3";
         public const string CustomVrm4 = "custom_vrm_4";
 
-        // Historical value kept only for one-time migration from early alpha builds.
+        // Historical value kept only for one-time migration from early builds.
         public const string LegacyDistributionDefault = "distribution_default";
 
         public static string Normalize(string value)

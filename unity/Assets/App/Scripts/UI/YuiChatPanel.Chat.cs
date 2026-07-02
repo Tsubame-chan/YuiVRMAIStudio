@@ -21,13 +21,18 @@ namespace YuiPhysicalAI.UI
     {
         private async System.Threading.Tasks.Task SendMessageAsync(string message)
         {
-            Debug.Log($"Sending message to Yui backend: {message}");
+            Debug.Log(IsLocalAiConversationMode()
+                ? $"Sending message to Yui local AI: {message}"
+                : IsDirectOpenAiConversationMode()
+                    ? $"Sending message to Yui API mode: {message}"
+                    : $"Sending message to Yui backend: {message}");
             var totalTimer = System.Diagnostics.Stopwatch.StartNew();
             isSending = true;
             SetInteractable(false);
             AppendLog("You", message);
             SetStatus("Thinking...");
             SetPendingLine(CharacterName, "考え中...");
+            YuiMemoryDiagnostics.LogSnapshot("chat_before_request", $"user_chars={message?.Length ?? 0}");
 
             try
             {
@@ -35,7 +40,7 @@ namespace YuiPhysicalAI.UI
                 SetPendingLine(CharacterName, "返答生成中...");
                 var chatRequestId = Guid.NewGuid().ToString("N");
                 var chatTimer = System.Diagnostics.Stopwatch.StartNew();
-                var chat = await client.SendChatAsync(
+                var chat = await SendChatViaRuntimeAsync(
                     new ChatRequest
                     {
                         RequestId = chatRequestId,
@@ -47,7 +52,11 @@ namespace YuiPhysicalAI.UI
                         CharacterName = characterName
                     },
                     cancellationTokenSource.Token);
+                pendingVisionImageAttachment.MarkConsumedAfterSuccessfulChat();
                 Debug.Log($"Yui chat latency: {chatTimer.ElapsedMilliseconds} ms");
+                YuiMemoryDiagnostics.LogSnapshot(
+                    "chat_after_response",
+                    $"user_chars={message?.Length ?? 0},reply_chars={chat?.Text?.Length ?? 0},chat_ms={chatTimer.ElapsedMilliseconds}");
 
                 ClearPendingLine();
                 AppendLog(CharacterName, chat.Text);
@@ -62,6 +71,9 @@ namespace YuiPhysicalAI.UI
                 }
 
                 await SpeakResponseAsync(chat, chatRequestId, cancellationTokenSource.Token);
+                YuiMemoryDiagnostics.LogSnapshot(
+                    "chat_after_tts",
+                    $"user_chars={message?.Length ?? 0},reply_chars={chat?.Text?.Length ?? 0},total_ms={totalTimer.ElapsedMilliseconds}");
                 Debug.Log($"Yui total response latency: {totalTimer.ElapsedMilliseconds} ms");
                 SetStatus("Ready");
             }
@@ -77,7 +89,7 @@ namespace YuiPhysicalAI.UI
             catch (Exception ex)
             {
                 ClearPendingLine();
-                SetStatus("Error");
+                SetStatus(IsLocalAiConversationMode() ? "Local AI unavailable" : "Error");
                 var errorMessage = ex is YuiBackendException backendException
                     ? backendException.UserMessage
                     : ex.Message;
