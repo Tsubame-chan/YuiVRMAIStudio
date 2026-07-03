@@ -74,28 +74,14 @@ REQUIRED_SOURCE_PATHS = [
     ("unity/Assets/App/Scripts/LocalAI/Runtime/YuiLocalAiAssetManifest.cs", "first-run local AI downloads need the manifest parser"),
     ("unity/Assets/App/Scripts/LocalAI/Runtime/YuiLocalAiAssetStore.cs", "first-run local AI downloads need asset planning and verification"),
     ("unity/Assets/App/Scripts/LocalAI/Runtime/YuiLocalAiAssetDownloader.cs", "first-run local AI downloads need the downloader implementation"),
+    ("unity/Assets/App/Editor/YuiPublicWindowsBuildTools.cs", "public source builds need the Windows/macOS public build entrypoint"),
     ("tools/YuiFilePickerHelper", "Windows file picker helper source should be available"),
     ("docs/SETUP_GUIDE.md", "Windows users need a first-run and backend setup guide"),
     ("docs/MAC_PUBLIC_BETA.md", "macOS users need a first-run and backend setup guide"),
     ("docs/LOCAL_AI_ASSETS.md", "source builders need local AI/TTS asset instructions"),
 ]
 
-REQUIRED_WINDOWS_BUILD_PATHS = [
-    ("builds/YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1/Yui VRM AI Studio.exe", "public users need the Windows app executable"),
-    ("builds/YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1/YuiFilePickerHelper.exe", "Windows standalone image/VRM selection needs the helper beside the app exe"),
-]
-
-REQUIRED_WINDOWS_BUILD_ARCHIVES = [
-    ("builds/YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip", "public users need the downloadable Windows public beta archive"),
-]
-
-REQUIRED_MACOS_BUILD_PATHS = [
-    ("builds/YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1/Yui VRM AI Studio.app", "public users need the macOS app bundle"),
-]
-
-REQUIRED_MACOS_BUILD_ARCHIVES = [
-    ("builds/YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip", "public users need the downloadable macOS public beta archive"),
-]
+DEFAULT_RELEASE_VERSION = "v0.2.0-beta.1"
 
 FORBIDDEN_ZIP_ENTRY_PATTERNS = [
     re.compile(r"(^|/)__MACOSX(/|$)"),
@@ -258,16 +244,31 @@ def contains_private_hash(value: str) -> bool:
     return False
 
 
-def required_build_sets(platform: str) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+def required_build_sets(platform: str, release_version: str) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+    windows_build_paths = [
+        (f"builds/YuiVRMAIStudio_WindowsPublicBeta_{release_version}/Yui VRM AI Studio.exe", "public users need the Windows app executable"),
+        (f"builds/YuiVRMAIStudio_WindowsPublicBeta_{release_version}/YuiFilePickerHelper.exe", "Windows standalone image/VRM selection needs the helper beside the app exe"),
+    ]
+    windows_build_archives = [
+        (f"releases/{release_version}/YuiVRMAIStudio_WindowsPublicBeta_{release_version}_windows.zip", "public users need the downloadable Windows public beta archive"),
+        (f"builds/YuiVRMAIStudio_WindowsPublicBeta_{release_version}_windows.zip", "public users need the downloadable Windows public beta archive"),
+    ]
+    macos_build_paths = [
+        (f"builds/YuiVRMAIStudio_MacOSPublicBeta_{release_version}/Yui VRM AI Studio.app", "public users need the macOS app bundle"),
+    ]
+    macos_build_archives = [
+        (f"releases/{release_version}/YuiVRMAIStudio_MacOSPublicBeta_{release_version}_macos.zip", "public users need the downloadable macOS public beta archive"),
+        (f"builds/YuiVRMAIStudio_MacOSPublicBeta_{release_version}_macos.zip", "public users need the downloadable macOS public beta archive"),
+    ]
     normalized = platform.strip().lower()
     if normalized == "windows":
-        return REQUIRED_WINDOWS_BUILD_PATHS, REQUIRED_WINDOWS_BUILD_ARCHIVES
+        return windows_build_paths, windows_build_archives
     if normalized == "macos":
-        return REQUIRED_MACOS_BUILD_PATHS, REQUIRED_MACOS_BUILD_ARCHIVES
+        return macos_build_paths, macos_build_archives
     if normalized == "all":
         return (
-            REQUIRED_WINDOWS_BUILD_PATHS + REQUIRED_MACOS_BUILD_PATHS,
-            REQUIRED_WINDOWS_BUILD_ARCHIVES + REQUIRED_MACOS_BUILD_ARCHIVES,
+            windows_build_paths + macos_build_paths,
+            windows_build_archives + macos_build_archives,
         )
     raise ValueError(f"Unsupported platform: {platform}")
 
@@ -284,7 +285,7 @@ def forbidden_zip_entries(path: Path) -> list[str]:
         return ["<invalid zip archive>"]
 
 
-def audit(root: Path, require_builds: bool, platform: str = "windows") -> int:
+def audit(root: Path, require_builds: bool, platform: str = "windows", release_version: str = DEFAULT_RELEASE_VERSION) -> int:
     failures = 0
     reported_blockers: set[str] = set()
 
@@ -344,7 +345,7 @@ def audit(root: Path, require_builds: bool, platform: str = "windows") -> int:
             failures += 1
 
     if require_builds:
-        required_build_paths, required_build_archives = required_build_sets(platform)
+        required_build_paths, required_build_archives = required_build_sets(platform, release_version)
         has_expanded_build = all((root / relative).exists() for relative, _reason in required_build_paths)
         has_build_archive = any((root / relative).exists() for relative, _reason in required_build_archives)
         if not has_expanded_build and not has_build_archive:
@@ -412,6 +413,11 @@ def main() -> int:
     parser.add_argument("--project-root", default=".", help="Generated public project root to audit.")
     parser.add_argument("--require-builds", action="store_true", help="Also require selected public build artifacts.")
     parser.add_argument(
+        "--release-version",
+        default=os.environ.get("YUI_RELEASE_VERSION", DEFAULT_RELEASE_VERSION),
+        help="Release version tag used for --require-builds artifact paths.",
+    )
+    parser.add_argument(
         "--platform",
         choices=("windows", "macos", "all"),
         default="windows",
@@ -420,7 +426,7 @@ def main() -> int:
     args = parser.parse_args()
 
     root = Path(args.project_root).expanduser().resolve()
-    return audit(root, args.require_builds, platform=args.platform)
+    return audit(root, args.require_builds, platform=args.platform, release_version=args.release_version)
 
 
 if __name__ == "__main__":
