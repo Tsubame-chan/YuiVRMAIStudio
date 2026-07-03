@@ -12,8 +12,6 @@ namespace YuiPhysicalAI.UI
     {
         public const string DefaultManifestUrl = "https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/latest/download/YuiVRMAIStudio_AssetManifest.json";
 
-        private const string LaterReleasePrefsKey = "Yui.LocalAI.Assets.LaterRelease";
-
         [SerializeField] private string manifestUrl = DefaultManifestUrl;
 
         private YuiChatPanel chatPanel;
@@ -26,7 +24,6 @@ namespace YuiPhysicalAI.UI
         private Text detailText;
         private Slider progressSlider;
         private Button downloadButton;
-        private Button laterButton;
         private Button retryButton;
         private Button cancelButton;
         private bool checkInProgress;
@@ -67,11 +64,6 @@ namespace YuiPhysicalAI.UI
                     return;
                 }
 
-                if (string.Equals(PlayerPrefs.GetString(LaterReleasePrefsKey, string.Empty), manifest?.ReleaseVersion, StringComparison.Ordinal))
-                {
-                    return;
-                }
-
                 ShowDownloadPrompt();
             }
             catch (Exception ex) when (!(ex is OperationCanceledException))
@@ -102,7 +94,7 @@ namespace YuiPhysicalAI.UI
                 EnsureUi();
                 Show();
                 SetBody("ローカルAIデータの確認に失敗しました。", ex.Message);
-                SetButtons(download: false, later: false, retry: true, cancel: false);
+                SetButtons(download: false, retry: true, cancel: false);
             }
         }
 
@@ -134,15 +126,15 @@ namespace YuiPhysicalAI.UI
             if (currentPlan == null || currentPlan.State != YuiLocalAiAssetPlanState.NeedsDownload)
             {
                 SetBody("ローカルAIデータは準備できています。", CurrentStatusText);
-                SetButtons(download: false, later: false, retry: false, cancel: false);
+                SetButtons(download: false, retry: false, cancel: false);
                 return;
             }
 
             var count = currentPlan.AssetsToDownload.Count;
             SetBody(
-                "ローカルAIを使うには追加データのダウンロードが必要です。",
-                $"対象: {count}件。数分かかる場合があります。Wi-Fiまたは有線接続を推奨します。");
-            SetButtons(download: true, later: !force, retry: false, cancel: false);
+                "初回のデータダウンロードを開始します。",
+                $"対象: {count}件。必要なデータをGitHub Releasesから取得します。");
+            SetButtons(download: true, retry: false, cancel: false);
             SetProgress(0f, "待機中");
         }
 
@@ -156,8 +148,8 @@ namespace YuiPhysicalAI.UI
 
             downloadCancellation?.Cancel();
             downloadCancellation = new CancellationTokenSource();
-            SetButtons(download: false, later: false, retry: false, cancel: true);
-            SetBody("ローカルAIデータをダウンロードしています。", "完了までアプリを閉じずにお待ちください。");
+            SetButtons(download: false, retry: false, cancel: true);
+            SetBody("初回データをダウンロードしています。", "完了までアプリを閉じずにお待ちください。");
             try
             {
                 var downloader = CreateDownloader();
@@ -170,44 +162,31 @@ namespace YuiPhysicalAI.UI
                 if (!result.Success)
                 {
                     SetBody("ローカルAIデータのインストールに失敗しました。", result.ErrorMessage);
-                    SetButtons(download: false, later: true, retry: true, cancel: false);
+                    SetButtons(download: false, retry: true, cancel: false);
                     CurrentStatusText = $"Local AI data: failed ({result.ErrorMessage})";
                     return;
                 }
 
-                PlayerPrefs.DeleteKey(LaterReleasePrefsKey);
-                PlayerPrefs.Save();
                 await RefreshPlanAsync(CancellationToken.None);
                 chatPanel?.RefreshLocalAiRuntimeAfterAssetInstall();
                 SetProgress(1f, "完了");
                 SetBody("ローカルAIデータの準備が完了しました。", "Local Gemmaを使用できます。");
-                SetButtons(download: false, later: false, retry: false, cancel: false);
+                SetButtons(download: false, retry: false, cancel: false);
                 await Task.Delay(1200);
                 Hide();
             }
             catch (OperationCanceledException)
             {
-                SetBody("ダウンロードを中断しました。", "Settingsから再開できます。");
-                SetButtons(download: true, later: true, retry: false, cancel: false);
+                SetBody("ダウンロードを中断しました。", "準備できたらもう一度開始してください。");
+                SetButtons(download: true, retry: false, cancel: false);
                 CurrentStatusText = "Local AI data: download cancelled";
             }
             catch (Exception ex)
             {
                 SetBody("ローカルAIデータのダウンロードに失敗しました。", ex.Message);
-                SetButtons(download: false, later: true, retry: true, cancel: false);
+                SetButtons(download: false, retry: true, cancel: false);
                 CurrentStatusText = $"Local AI data: failed ({ex.Message})";
             }
-        }
-
-        private void Later()
-        {
-            if (!string.IsNullOrWhiteSpace(manifest?.ReleaseVersion))
-            {
-                PlayerPrefs.SetString(LaterReleasePrefsKey, manifest.ReleaseVersion);
-                PlayerPrefs.Save();
-            }
-
-            Hide();
         }
 
         private void CancelDownload()
@@ -282,32 +261,30 @@ namespace YuiPhysicalAI.UI
             panelRect.anchorMin = new Vector2(0.5f, 0.5f);
             panelRect.anchorMax = new Vector2(0.5f, 0.5f);
             panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.sizeDelta = new Vector2(620f, 330f);
+            panelRect.anchoredPosition = new Vector2(0f, 42f);
+            panelRect.sizeDelta = new Vector2(740f, 380f);
 
-            titleText = CreateText(panel.transform, "Title", 24, TextAnchor.UpperLeft, new Color(1f, 1f, 1f, 1f));
-            titleText.text = "Local AI Data";
-            SetRect(titleText.transform, 32f, 28f, 32f, 40f);
+            titleText = CreateText(panel.transform, "Title", 26, TextAnchor.UpperLeft, new Color(1f, 1f, 1f, 1f));
+            titleText.text = "初回データダウンロード";
+            SetRect(titleText.transform, 36f, 30f, 36f, 44f);
 
-            bodyText = CreateText(panel.transform, "Body", 17, TextAnchor.UpperLeft, new Color(0.93f, 0.95f, 1f, 1f));
-            SetRect(bodyText.transform, 32f, 78f, 32f, 70f);
+            bodyText = CreateText(panel.transform, "Body", 18, TextAnchor.UpperLeft, new Color(0.93f, 0.95f, 1f, 1f));
+            SetRect(bodyText.transform, 36f, 86f, 36f, 82f);
 
             detailText = CreateText(panel.transform, "Detail", 14, TextAnchor.UpperLeft, new Color(0.68f, 0.75f, 0.86f, 1f));
-            SetRect(detailText.transform, 32f, 150f, 32f, 56f);
+            SetRect(detailText.transform, 36f, 176f, 36f, 58f);
 
             progressSlider = CreateSlider(panel.transform);
-            SetRect(progressSlider.transform, 32f, 218f, 32f, 18f);
+            SetRect(progressSlider.transform, 36f, 252f, 36f, 18f);
 
-            downloadButton = CreateButton(panel.transform, "DownloadButton", "Download");
-            laterButton = CreateButton(panel.transform, "LaterButton", "Later");
-            retryButton = CreateButton(panel.transform, "RetryButton", "Retry");
-            cancelButton = CreateButton(panel.transform, "CancelButton", "Cancel");
-            SetRect(downloadButton.transform, 314f, 268f, 192f, 42f);
-            SetRect(retryButton.transform, 314f, 268f, 192f, 42f);
-            SetRect(laterButton.transform, 424f, 268f, 82f, 42f);
-            SetRect(cancelButton.transform, 424f, 268f, 82f, 42f);
+            downloadButton = CreateButton(panel.transform, "DownloadButton", "ダウンロードを開始");
+            retryButton = CreateButton(panel.transform, "RetryButton", "もう一度試す");
+            cancelButton = CreateButton(panel.transform, "CancelButton", "キャンセル");
+            SetRect(downloadButton.transform, 420f, 312f, 36f, 44f);
+            SetRect(retryButton.transform, 420f, 312f, 36f, 44f);
+            SetRect(cancelButton.transform, 552f, 312f, 36f, 44f);
 
             downloadButton.onClick.AddListener(StartDownload);
-            laterButton.onClick.AddListener(Later);
             retryButton.onClick.AddListener(StartDownload);
             cancelButton.onClick.AddListener(CancelDownload);
             Hide();
@@ -370,10 +347,9 @@ namespace YuiPhysicalAI.UI
             }
         }
 
-        private void SetButtons(bool download, bool later, bool retry, bool cancel)
+        private void SetButtons(bool download, bool retry, bool cancel)
         {
             SetButtonVisible(downloadButton, download);
-            SetButtonVisible(laterButton, later);
             SetButtonVisible(retryButton, retry);
             SetButtonVisible(cancelButton, cancel);
         }

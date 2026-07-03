@@ -9,7 +9,7 @@ GitHub Release assets or prepared locally before building.
 
 | Case | What to download |
 | --- | --- |
-| I want to run the app now | Download the current runnable Desktop Public Beta app release files from GitHub Releases. At the moment, the app ZIPs are in `v0.2.0-beta.1`; the Latest `v0.2.0-beta.2` Release is for the first-run downloader manifest and Desktop Local AI asset pack. |
+| I want to run the app now | Download the current `v0.2.0-beta.3` Desktop Public Beta app ZIP and checksum for your OS from GitHub Releases. |
 | I want optional/high-quality voices | Install the matching backend runtime, such as AivisSpeech HD or Irodori TTS, or download optional voice asset ZIPs if a Release provides them. |
 | I downloaded `Code > Download ZIP` | That is source code only. It does not include generated app builds or large local AI/TTS assets. |
 | I want to build from source | Clone the repo, then restore the local AI/TTS assets before building. |
@@ -28,7 +28,7 @@ The source repository intentionally keeps only files such as:
 - capability diagnostics
 - setup scripts and documentation
 
-The Release app ZIP includes the minimum user-facing local set:
+The first-run downloader uses the Release manifest to restore the minimum user-facing local set when it is missing:
 
 - one desktop Local Gemma SLM pack
 - local VOICEVOX voice model and OpenJTalk dictionary
@@ -107,8 +107,8 @@ full backend feature set.
 
 ## Future Download And Update Direction
 
-The current Beta bundles the minimum Local Gemma and Local VOICEVOX set inside
-the desktop app artifacts so users can try the app without extra setup.
+The current Beta can fetch the minimum Local Gemma and Local VOICEVOX set from
+GitHub Releases on first run when those files are not already present.
 
 The preferred longer-term distribution model is:
 
@@ -124,8 +124,8 @@ to manually choose and join multiple large `.part-*` files.
 ## Maintainer Packaging
 
 Set `YUI_RELEASE_VERSION` to the release version being prepared. Do not reuse
-`v0.2.0-beta.1` for rebuilt app ZIPs, because that tag is the older runnable
-app release before the first-run downloader source was published.
+older release tags for rebuilt app ZIPs, because those tags may not include the
+current first-run downloader behavior.
 
 On macOS, create the macOS app archive with:
 
@@ -145,6 +145,6 @@ limit, and keep the `.sha256` file with them. Users can reassemble split parts
 on macOS/Linux with:
 
 ```bash
-cat YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.2.zip.part-* > YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.2.zip
-shasum -a 256 -c YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.2.zip.sha256
+cat YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.3.zip.part-* > YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.3.zip
+shasum -a 256 -c YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.3.zip.sha256
 ```

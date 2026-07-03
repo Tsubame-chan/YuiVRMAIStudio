@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${YUI_RELEASE_VERSION:-v0.2.0-beta.1}"
+VERSION="${YUI_RELEASE_VERSION:-v0.2.0-beta.3}"
 APP_SOURCE="${YUI_MACOS_APP_SOURCE:-$ROOT_DIR/builds/YuiVRMAIStudio_MacOSPublicBeta_$VERSION/Yui VRM AI Studio.app}"
 OUT_DIR="${YUI_RELEASE_OUT_DIR:-$ROOT_DIR/releases/$VERSION}"
 PACKAGE_NAME="YuiVRMAIStudio_MacOSPublicBeta_${VERSION}_macos.zip"

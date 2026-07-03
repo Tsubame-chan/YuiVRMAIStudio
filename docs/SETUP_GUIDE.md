@@ -2,24 +2,22 @@
 
 このページはWindows版を試す人向けの入口です。まずはGitHub ReleasesのWindows Beta配布物を使ってください。GitHubの `Code > Download ZIP` はソースコード用で、実行ファイルや大型AI/TTSデータを含まないため、そのままでは完成アプリとして動きません。
 
-現在、Latestの `v0.2.0-beta.2` は初回ダウンローダー用manifestとDesktop Local AI asset packのReleaseです。実行用WindowsアプリZIPは、次の再ビルド版が出るまでは `v0.2.0-beta.1` の `WindowsPublicBeta` 配布物を使ってください。
+現在のWindows実行用ZIPは `v0.2.0-beta.3` です。この版には初回ダウンローダーも含まれており、不足しているLocal AI/TTSデータがあればGitHub Releasesのmanifestから取得します。
 
 macOS版は [`MAC_PUBLIC_BETA.md`](MAC_PUBLIC_BETA.md) を見てください。
 
 ## まず動かす
 
-1. GitHub Releasesの `v0.2.0-beta.1` で、名前に `WindowsPublicBeta` が入っている次の3ファイルだけを同じフォルダへダウンロードします。
-   - `YuiVRMAIStudio_WindowsPublicBeta_..._windows.zip.part-000`
-   - `YuiVRMAIStudio_WindowsPublicBeta_..._windows.zip.part-001`
-   - `YuiVRMAIStudio_WindowsPublicBeta_..._windows.zip.sha256`
-2. PowerShellでそのフォルダを開き、分割ファイルを結合してsha256を確認します。
+1. GitHub Releasesの `v0.2.0-beta.3` で、名前に `WindowsPublicBeta` が入っている次のファイルを同じフォルダへダウンロードします。
+   - `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3_windows.zip`
+   - `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3_windows.zip.sha256`
+2. PowerShellでそのフォルダを開き、sha256を確認します。
 3. 作成されたZIPを展開します。
 4. `Yui VRM AI Studio.exe` を起動します。
 
 ```powershell
-cmd /c copy /b YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip.part-000+YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip.part-001 YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip
-$expected = (Get-Content .\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip.sha256).Split()[0]
-$actual = (Get-FileHash .\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+$expected = (Get-Content .\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3_windows.zip.sha256).Split()[0]
+$actual = (Get-FileHash .\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3_windows.zip -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($actual -ne $expected) { throw "SHA256 mismatch" }
 ```
 
@@ -27,7 +25,7 @@ WindowsのSmartScreenが表示された場合は、信頼できる配布物で�
 
 同じフォルダに `YuiFilePickerHelper.exe` が必要です。これは画像やVRMファイルを選ぶための補助ツールです。
 
-ReleaseアプリZIPには、最小構成のLocal Gemma SLMとLocal VOICEVOXを含めています。追加データなしでも、まずテキスト会話と日本語音声応答を試せます。
+初回起動時にLocal AI/TTSデータが不足している場合は、アプリ内のダウンローダーがGitHub Releasesから必要なデータを取得します。
 
 `MacOSPublicBeta` はmacOS用、`YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` はソースからUnityでビルドする人向けです。Windowsアプリを試すだけならダウンロード不要です。
 

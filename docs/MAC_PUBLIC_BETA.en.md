@@ -2,27 +2,25 @@
 
 This page is the entry point for trying the macOS build. Start from the macOS Beta release files on GitHub Releases. GitHub `Code > Download ZIP` is source code only and does not include the built app or large local AI/TTS data.
 
-Current packaging note: the Latest `v0.2.0-beta.2` Release hosts the first-run downloader manifest and Desktop Local AI asset pack. Until the next app ZIP is rebuilt, use the `MacOSPublicBeta` app artifacts from `v0.2.0-beta.1`.
+Current packaging note: `v0.2.0-beta.3` is the current macOS runnable app Release. It includes the first-run downloader, which fetches missing Local AI/TTS data from the GitHub Releases manifest.
 
 - Japanese guide: [`MAC_PUBLIC_BETA.md`](MAC_PUBLIC_BETA.md)
 
 ## Run It First
 
-1. From the `v0.2.0-beta.1` GitHub Release, download only these three files whose names include `MacOSPublicBeta` into the same folder.
-   - `YuiVRMAIStudio_MacOSPublicBeta_..._macos.zip.part-000`
-   - `YuiVRMAIStudio_MacOSPublicBeta_..._macos.zip.part-001`
-   - `YuiVRMAIStudio_MacOSPublicBeta_..._macos.zip.sha256`
-2. Open that folder in Terminal, join the split ZIP, and verify sha256.
+1. From the `v0.2.0-beta.3` GitHub Release, download these files whose names include `MacOSPublicBeta` into the same folder.
+   - `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip`
+   - `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip.sha256`
+2. Open that folder in Terminal and verify sha256.
 3. Extract the ZIP and launch `Yui VRM AI Studio.app`.
 
 ```bash
-cat YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip.part-* > YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip
-shasum -a 256 -c YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip.sha256
+shasum -a 256 -c YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip.sha256
 ```
 
 This beta is not fully signed/notarized yet. If macOS blocks the first launch, confirm that you trust the downloaded artifact, then allow it from System Settings or the right-click open flow.
 
-Release app ZIPs include the minimum Local Gemma SLM and Local VOICEVOX set, so users can try text chat and Japanese voice output without extra data.
+If Local AI/TTS data is missing on first launch, the in-app downloader fetches the required data from GitHub Releases.
 
 `WindowsPublicBeta` is for Windows. `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` is for people building from source in Unity or validating the first-run downloader. You do not need either one just to try the macOS app.
 

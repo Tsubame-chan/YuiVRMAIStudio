@@ -3,7 +3,7 @@ param(
     [switch]$RequireBuilds,
     [ValidateSet("windows", "macos", "all")]
     [string]$Platform = "windows",
-    [string]$ReleaseVersion = $(if ($env:YUI_RELEASE_VERSION) { $env:YUI_RELEASE_VERSION } else { "v0.2.0-beta.1" })
+    [string]$ReleaseVersion = $(if ($env:YUI_RELEASE_VERSION) { $env:YUI_RELEASE_VERSION } else { "v0.2.0-beta.3" })
 )
 
 $ErrorActionPreference = "Stop"
