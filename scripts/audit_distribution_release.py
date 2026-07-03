@@ -81,7 +81,7 @@ REQUIRED_SOURCE_PATHS = [
     ("docs/LOCAL_AI_ASSETS.md", "source builders need local AI/TTS asset instructions"),
 ]
 
-DEFAULT_RELEASE_VERSION = "v0.2.0-beta.1"
+DEFAULT_RELEASE_VERSION = "v0.2.0-beta.3"
 
 FORBIDDEN_ZIP_ENTRY_PATTERNS = [
     re.compile(r"(^|/)__MACOSX(/|$)"),

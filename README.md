@@ -26,22 +26,22 @@ Yui VRM AI Studioは、自分のVRMキャラクターをデスクトップ上の
 
 実行ファイルと大型Local AI/TTSデータは [GitHub Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases) で配布します。GitHubの `Code > Download ZIP` はソースコード用で、実行ファイルや大型AI/TTSデータは含まれません。
 
-現在の公開状態では、`v0.2.0-beta.2` は初回ダウンローダー用のmanifestとDesktop Local AI asset packを置いたReleaseです。実行用アプリZIPはまだ `v0.2.0-beta.1` のWindows/macOS Public Beta配布物を使います。次のアプリ配布では、`v0.2.0-beta.2` 以降の初回ダウンローダー入りソースから再ビルドしたZIPへ更新する予定です。
+現在の配布版は `v0.2.0-beta.3` です。このReleaseには、Windows/macOSの実行用アプリZIP、初回ダウンローダー用manifest、Desktop Local AI asset packをまとめて置いています。
 
 ## インストール
 
-GitHub Releasesから、お使いのOSに対応した配布ファイルだけをダウンロードしてください。現時点で実行用アプリを試す場合は `v0.2.0-beta.1` の配布物を使います。
+GitHub Releasesから、お使いのOSに対応した `v0.2.0-beta.3` の配布ファイルだけをダウンロードしてください。
 
-- macOS: `MacOSPublicBeta` の2つの `.part-*` と `.sha256`
-- Windows: `WindowsPublicBeta` の2つの `.part-*` と `.sha256`
+- macOS: `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip` と `.sha256`
+- Windows: `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3_windows.zip` と `.sha256`
 
-容量が大きいZIPは `.part-*` に分割しています。Release本文またはOS別ガイドの手順で1つのZIPに戻してから展開してください。最小構成のLocal Gemma SLMとLocal VOICEVOXを含むため、追加データなしでも起動して試せます。
+容量が大きいZIPは `.part-*` に分割している場合があります。ReleaseにフルZIPがある場合はそれを使い、`.part-*` だけがある場合はRelease本文またはOS別ガイドの手順で1つのZIPに戻してから展開してください。初回起動時に不足しているLocal AI/TTSデータがあれば、アプリ内ダウンローダーがGitHub Releasesのmanifestを参照して取得します。
 
 ソースコードを読みたい、または自分でビルドしたい場合は `Code > Download ZIP` や `git clone` を使います。ソースからUnityでビルドする場合は、Releaseの `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` または旧 `LocalAIAssets_Minimum` をリポジトリ直下へ展開してください。
 
 AivisSpeech HDやIrodori TTSなどの高品質音声は任意の追加ランタイムです。なくてもアプリは動きますが、バックエンド接続時の声の選択肢を増やせます。リアルタイム会話/翻訳、会話DB、Backend TTSを使う場合は、アプリ本体に加えてローカルバックエンドをセットアップします。
 
-PC版ベータには、GitHub Releasesのmanifestを見て不足しているLocal AI/TTSデータを初回起動時に取得するためのダウンローダー基盤を入れています。現時点のReleaseアプリ配布物は、オフラインでも試しやすいように最小ローカルAI/TTSを同梱する構成を基本にしつつ、欠けているデータや今後の追加データはアプリ内ダウンロードへ寄せていきます。
+PC版ベータには、GitHub Releasesのmanifestを見て不足しているLocal AI/TTSデータを初回起動時に取得するためのダウンローダー基盤を入れています。今後の追加データや更新データも、このmanifestベースの取得経路へ寄せていきます。
 
 ## 主な機能
 

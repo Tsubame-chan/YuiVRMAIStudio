@@ -17,7 +17,7 @@ namespace YuiPhysicalAI.Editor
         private const string IconPath = "Assets/App/Art/Yui_icon.png";
         private const string WindowsExeName = "Yui VRM AI Studio.exe";
         private const string MacAppName = "Yui VRM AI Studio.app";
-        private const string DefaultReleaseVersion = "v0.2.0-beta.1";
+        private const string DefaultReleaseVersion = "v0.2.0-beta.3";
         private const string PublicProfileDefine = "YUI_PROFILE_PUBLIC";
 
         [MenuItem("Yui/Build/Build Windows Public Beta", false, 501)]
