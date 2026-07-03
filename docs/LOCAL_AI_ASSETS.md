@@ -123,16 +123,20 @@ to manually choose and join multiple large `.part-*` files.
 
 ## Maintainer Packaging
 
+Set `YUI_RELEASE_VERSION` to the release version being prepared. Do not reuse
+`v0.2.0-beta.1` for rebuilt app ZIPs, because that tag is the older runnable
+app release before the first-run downloader source was published.
+
 On macOS, create the macOS app archive with:
 
 ```bash
-YUI_RELEASE_VERSION=v0.2.0-beta.1 ./scripts/package_macos_public_beta_macos.sh
+YUI_RELEASE_VERSION=v0.2.0-beta.3 ./scripts/package_macos_public_beta_macos.sh
 ```
 
 Create the minimum source-build asset pack with:
 
 ```bash
-YUI_RELEASE_VERSION=v0.2.0-beta.1 ./scripts/package_minimum_local_ai_assets_macos.sh
+YUI_RELEASE_VERSION=v0.2.0-beta.3 ./scripts/package_minimum_local_ai_assets_macos.sh
 ```
 
 By default the script also creates `.part-000`, `.part-001`, ... files beside
