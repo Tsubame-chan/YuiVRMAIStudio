@@ -2,11 +2,13 @@
 
 このページはWindows版を試す人向けの入口です。まずはGitHub ReleasesのWindows Beta配布物を使ってください。GitHubの `Code > Download ZIP` はソースコード用で、実行ファイルや大型AI/TTSデータを含まないため、そのままでは完成アプリとして動きません。
 
+現在、Latestの `v0.2.0-beta.2` は初回ダウンローダー用manifestとDesktop Local AI asset packのReleaseです。実行用WindowsアプリZIPは、次の再ビルド版が出るまでは `v0.2.0-beta.1` の `WindowsPublicBeta` 配布物を使ってください。
+
 macOS版は [`MAC_PUBLIC_BETA.md`](MAC_PUBLIC_BETA.md) を見てください。
 
 ## まず動かす
 
-1. GitHub Releasesで、名前に `WindowsPublicBeta` が入っている次の3ファイルだけを同じフォルダへダウンロードします。
+1. GitHub Releasesの `v0.2.0-beta.1` で、名前に `WindowsPublicBeta` が入っている次の3ファイルだけを同じフォルダへダウンロードします。
    - `YuiVRMAIStudio_WindowsPublicBeta_..._windows.zip.part-000`
    - `YuiVRMAIStudio_WindowsPublicBeta_..._windows.zip.part-001`
    - `YuiVRMAIStudio_WindowsPublicBeta_..._windows.zip.sha256`
@@ -27,7 +29,7 @@ WindowsのSmartScreenが表示された場合は、信頼できる配布物で�
 
 ReleaseアプリZIPには、最小構成のLocal Gemma SLMとLocal VOICEVOXを含めています。追加データなしでも、まずテキスト会話と日本語音声応答を試せます。
 
-`MacOSPublicBeta` はmacOS用、`LocalAIAssets_Minimum` はソースからUnityでビルドする人向けです。Windowsアプリを試すだけならダウンロード不要です。
+`MacOSPublicBeta` はmacOS用、`YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` はソースからUnityでビルドする人向けです。Windowsアプリを試すだけならダウンロード不要です。
 
 ## ダウンロードの違い
 
@@ -35,7 +37,7 @@ ReleaseアプリZIPには、最小構成のLocal Gemma SLMとLocal VOICEVOXを�
 | --- | --- |
 | ReleaseのWindows ZIP / `.part-*` | すぐ使う人向け。実行ファイルと最小ローカルAI/TTSを含みます。分割されている場合は結合してから展開します。 |
 | `Code > Download ZIP` | ソースを読む/改造する人向け。実行ファイルや大型モデルは含みません。 |
-| `LocalAIAssets_Minimum` | ソースからUnityビルドする人向けの最小asset packです。 |
+| `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | ソースからUnityビルドする人向け、または初回ダウンローダー検証用の最小asset packです。 |
 | Optional voice / 外部runtime | AivisSpeech HDやIrodori TTSなど、声の選択肢を増やすための任意追加です。 |
 
 ## できることの目安
@@ -152,4 +154,4 @@ Release ZIPではなくCode ZIPを落としてしまった:
 
 ## ソースからビルドする場合
 
-Releaseの `LocalAIAssets_Minimum` をリポジトリ直下へ展開してからUnityで開きます。詳しくは [`LOCAL_AI_ASSETS.md`](LOCAL_AI_ASSETS.md) を参照してください。
+Releaseの `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` または旧 `LocalAIAssets_Minimum` をリポジトリ直下へ展開してからUnityで開きます。詳しくは [`LOCAL_AI_ASSETS.md`](LOCAL_AI_ASSETS.md) を参照してください。
