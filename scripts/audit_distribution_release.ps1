@@ -91,6 +91,47 @@ function Test-RequiredPath {
     }
 }
 
+function Test-ZipNoMacMetadata {
+    param(
+        [string]$RelativePath
+    )
+
+    $path = Join-Path $ProjectRoot $RelativePath
+    if (-not (Test-Path -LiteralPath $path)) {
+        return
+    }
+
+    Add-Type -AssemblyName System.IO.Compression.FileSystem -ErrorAction SilentlyContinue
+    $archive = $null
+    try {
+        $archive = [System.IO.Compression.ZipFile]::OpenRead($path)
+        $badEntries = New-Object System.Collections.Generic.List[string]
+        foreach ($entry in $archive.Entries) {
+            $name = $entry.FullName
+            if ($name -match '(^|/)__MACOSX(/|$)' -or $name -match '(^|/)\._[^/]+$') {
+                $badEntries.Add($name)
+                if ($badEntries.Count -ge 6) {
+                    break
+                }
+            }
+        }
+        if ($badEntries.Count -gt 0) {
+            $preview = ($badEntries | Select-Object -First 5) -join ", "
+            Write-Host "BLOCKER: $RelativePath - public ZIP contains macOS metadata entries: $preview" -ForegroundColor Red
+            $script:failed += 1
+        }
+    }
+    catch {
+        Write-Host "BLOCKER: $RelativePath - public ZIP could not be inspected: $($_.Exception.Message)" -ForegroundColor Red
+        $script:failed += 1
+    }
+    finally {
+        if ($null -ne $archive) {
+            $archive.Dispose()
+        }
+    }
+}
+
 function Test-ForbiddenText {
     param(
         [string]$RelativeRoot,
@@ -277,6 +318,9 @@ if ($RequireBuilds) {
             Test-RequiredPath "builds\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1\YuiFilePickerHelper.exe" "Windows standalone image/VRM selection needs the file picker helper beside the app exe"
             Test-RequiredPath "builds\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip" "public users need the downloadable Windows public beta archive"
         }
+        if ($windowsArchive) {
+            Test-ZipNoMacMetadata "builds\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip"
+        }
     }
     if ($Platform -eq "macos" -or $Platform -eq "all") {
         $macExpanded = Test-Path -LiteralPath (Join-Path $ProjectRoot "builds\YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1\Yui VRM AI Studio.app")
@@ -284,6 +328,9 @@ if ($RequireBuilds) {
         if (-not ($macExpanded -or $macArchive)) {
             Test-RequiredPath "builds\YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1\Yui VRM AI Studio.app" "public users need the macOS app bundle"
             Test-RequiredPath "builds\YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip" "public users need the downloadable macOS public beta archive"
+        }
+        if ($macArchive) {
+            Test-ZipNoMacMetadata "builds\YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip"
         }
     }
 }
