@@ -24,14 +24,16 @@ The project is now a Desktop Public Beta for Windows and macOS. Release app ZIPs
 | macOS Desktop Public Beta | Public beta | [`docs/MAC_PUBLIC_BETA.en.md`](docs/MAC_PUBLIC_BETA.en.md) |
 | iOS / Android | Future public candidates | Desktop Beta is the current priority |
 
-Windows and macOS setup docs now follow the same design model. For runnable builds, check the latest Beta assets on [GitHub Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases).
+Windows and macOS setup docs now follow the same design model. Runnable builds and large Local AI/TTS assets are distributed through [GitHub Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases).
+
+Current packaging note: `v0.2.0-beta.2` is the Release that hosts the first-run downloader manifest and Desktop Local AI asset pack. The runnable app ZIPs are still the Windows/macOS Public Beta artifacts from `v0.2.0-beta.1`. The next app ZIP should be rebuilt from the `v0.2.0-beta.2` or newer source so the first-run downloader is included in the binary.
 
 ## Which Download To Use
 
-- To run the app now: download only the app files for your OS from GitHub Releases. For macOS, use the two `MacOSPublicBeta` `.part-*` files plus the matching `.sha256`. For Windows, use the two `WindowsPublicBeta` `.part-*` files plus the matching `.sha256`.
+- To run the app now: download only the app files for your OS from the `v0.2.0-beta.1` GitHub Release. For macOS, use the two `MacOSPublicBeta` `.part-*` files plus the matching `.sha256`. For Windows, use the two `WindowsPublicBeta` `.part-*` files plus the matching `.sha256`.
 - Large ZIPs are split into `.part-*` files, so join them first using the Release notes or the platform setup guide, then unzip the result. The minimum Local Gemma SLM and Local VOICEVOX set is included, so the app can be tried without extra data.
 - To inspect or modify source: `Code > Download ZIP` and `git clone` are source-code paths. They do not include generated app builds or large models, so they are incomplete as a runnable app by themselves.
-- To build from source: restore the `LocalAIAssets_Minimum` release asset into the repository root before building in Unity.
+- To build from source: restore the `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` asset pack, or the older `LocalAIAssets_Minimum` pack, into the repository root before building in Unity.
 - To add optional higher-quality voices: install extra runtimes such as AivisSpeech HD or Irodori TTS. The app works without them, but they add backend voice choices.
 - To use the full feature set: use the app ZIP plus a source checkout of this repository, then run the local backend from the setup guide for realtime talk/translation, memory DB, and backend TTS.
 

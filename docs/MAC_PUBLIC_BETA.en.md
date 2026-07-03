@@ -2,11 +2,13 @@
 
 This page is the entry point for trying the macOS build. Start from the macOS Beta release files on GitHub Releases. GitHub `Code > Download ZIP` is source code only and does not include the built app or large local AI/TTS data.
 
+Current packaging note: the Latest `v0.2.0-beta.2` Release hosts the first-run downloader manifest and Desktop Local AI asset pack. Until the next app ZIP is rebuilt, use the `MacOSPublicBeta` app artifacts from `v0.2.0-beta.1`.
+
 - Japanese guide: [`MAC_PUBLIC_BETA.md`](MAC_PUBLIC_BETA.md)
 
 ## Run It First
 
-1. From GitHub Releases, download only these three files whose names include `MacOSPublicBeta` into the same folder.
+1. From the `v0.2.0-beta.1` GitHub Release, download only these three files whose names include `MacOSPublicBeta` into the same folder.
    - `YuiVRMAIStudio_MacOSPublicBeta_..._macos.zip.part-000`
    - `YuiVRMAIStudio_MacOSPublicBeta_..._macos.zip.part-001`
    - `YuiVRMAIStudio_MacOSPublicBeta_..._macos.zip.sha256`
@@ -22,7 +24,7 @@ This beta is not fully signed/notarized yet. If macOS blocks the first launch, c
 
 Release app ZIPs include the minimum Local Gemma SLM and Local VOICEVOX set, so users can try text chat and Japanese voice output without extra data.
 
-`WindowsPublicBeta` is for Windows. `LocalAIAssets_Minimum` is for people building from source in Unity. You do not need either one just to try the macOS app.
+`WindowsPublicBeta` is for Windows. `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` is for people building from source in Unity or validating the first-run downloader. You do not need either one just to try the macOS app.
 
 ## Download Types
 
@@ -30,7 +32,7 @@ Release app ZIPs include the minimum Local Gemma SLM and Local VOICEVOX set, so 
 | --- | --- |
 | macOS ZIP / `.part-*` from Releases | For normal users. Includes the `.app` and minimum local AI/TTS set. Join split files before unzipping. |
 | `Code > Download ZIP` | Source code only. Does not include the app bundle or large models. |
-| `LocalAIAssets_Minimum` | For source builders who need to restore local AI/TTS assets before building. |
+| `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | For source builders or first-run downloader validation. |
 | Optional voice/runtime | Extra voice choices such as AivisSpeech HD or Irodori TTS. Not required for the app to run. |
 
 ## What Works
@@ -127,6 +129,6 @@ Open Settings in the app and choose your `.vrm` from Custom VRM.
 
 ## Source Builds
 
-Restore the `LocalAIAssets_Minimum` release asset into the repository root before opening the Unity project. See [`LOCAL_AI_ASSETS.md`](LOCAL_AI_ASSETS.md).
+Restore the `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` asset pack, or the older `LocalAIAssets_Minimum` release asset, into the repository root before opening the Unity project. See [`LOCAL_AI_ASSETS.md`](LOCAL_AI_ASSETS.md).
 
 Current build verification uses Unity `2022.3.62f3`.

@@ -24,18 +24,20 @@ Yui VRM AI Studioは、自分のVRMキャラクターをデスクトップ上の
 | macOS デスクトップ版 | 公開ベータ | [`docs/MAC_PUBLIC_BETA.md`](docs/MAC_PUBLIC_BETA.md) |
 | iOS / Android | 公開候補として検証中 | 現時点ではデスクトップ版を優先 |
 
-最新版の実行ファイルは [GitHub Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases) で配布しています。GitHubの `Code > Download ZIP` はソースコード用で、実行ファイルや大型AI/TTSデータは含まれません。
+実行ファイルと大型Local AI/TTSデータは [GitHub Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases) で配布します。GitHubの `Code > Download ZIP` はソースコード用で、実行ファイルや大型AI/TTSデータは含まれません。
+
+現在の公開状態では、`v0.2.0-beta.2` は初回ダウンローダー用のmanifestとDesktop Local AI asset packを置いたReleaseです。実行用アプリZIPはまだ `v0.2.0-beta.1` のWindows/macOS Public Beta配布物を使います。次のアプリ配布では、`v0.2.0-beta.2` 以降の初回ダウンローダー入りソースから再ビルドしたZIPへ更新する予定です。
 
 ## インストール
 
-GitHub Releasesから、お使いのOSに対応した配布ファイルだけをダウンロードしてください。
+GitHub Releasesから、お使いのOSに対応した配布ファイルだけをダウンロードしてください。現時点で実行用アプリを試す場合は `v0.2.0-beta.1` の配布物を使います。
 
 - macOS: `MacOSPublicBeta` の2つの `.part-*` と `.sha256`
 - Windows: `WindowsPublicBeta` の2つの `.part-*` と `.sha256`
 
 容量が大きいZIPは `.part-*` に分割しています。Release本文またはOS別ガイドの手順で1つのZIPに戻してから展開してください。最小構成のLocal Gemma SLMとLocal VOICEVOXを含むため、追加データなしでも起動して試せます。
 
-ソースコードを読みたい、または自分でビルドしたい場合は `Code > Download ZIP` や `git clone` を使います。ソースからUnityでビルドする場合は、Releaseの `LocalAIAssets_Minimum` をリポジトリ直下へ展開してください。
+ソースコードを読みたい、または自分でビルドしたい場合は `Code > Download ZIP` や `git clone` を使います。ソースからUnityでビルドする場合は、Releaseの `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` または旧 `LocalAIAssets_Minimum` をリポジトリ直下へ展開してください。
 
 AivisSpeech HDやIrodori TTSなどの高品質音声は任意の追加ランタイムです。なくてもアプリは動きますが、バックエンド接続時の声の選択肢を増やせます。リアルタイム会話/翻訳、会話DB、Backend TTSを使う場合は、アプリ本体に加えてローカルバックエンドをセットアップします。
 
