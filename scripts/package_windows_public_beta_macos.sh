@@ -51,16 +51,12 @@ fi
 
 if [[ "${YUI_RELEASE_SPLIT:-1}" != "0" ]]; then
   split -b "$SPLIT_SIZE" -d -a 3 "$OUT_DIR/$PACKAGE_NAME" "$OUT_DIR/$PACKAGE_NAME.part-"
-  (
-    cd "$OUT_DIR"
-    shasum -a 256 "$PACKAGE_NAME" "$PACKAGE_NAME.part-"* > "$PACKAGE_NAME.sha256"
-  )
-else
-  (
-    cd "$OUT_DIR"
-    shasum -a 256 "$PACKAGE_NAME" > "$PACKAGE_NAME.sha256"
-  )
 fi
+
+(
+  cd "$OUT_DIR"
+  shasum -a 256 "$PACKAGE_NAME" > "$PACKAGE_NAME.sha256"
+)
 
 echo "Packaged Windows public beta app:"
 echo "  $OUT_DIR/$PACKAGE_NAME"
