@@ -8,6 +8,7 @@ import hashlib
 import os
 import re
 import sys
+import zipfile
 from pathlib import Path
 
 
@@ -94,6 +95,11 @@ REQUIRED_MACOS_BUILD_PATHS = [
 
 REQUIRED_MACOS_BUILD_ARCHIVES = [
     ("builds/YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip", "public users need the downloadable macOS public beta archive"),
+]
+
+FORBIDDEN_ZIP_ENTRY_PATTERNS = [
+    re.compile(r"(^|/)__MACOSX(/|$)"),
+    re.compile(r"(^|/)\._[^/]+$"),
 ]
 
 UNITY_TEXT_EXTENSIONS = {".unity", ".prefab", ".asset", ".controller", ".overrideController"}
@@ -266,6 +272,18 @@ def required_build_sets(platform: str) -> tuple[list[tuple[str, str]], list[tupl
     raise ValueError(f"Unsupported platform: {platform}")
 
 
+def forbidden_zip_entries(path: Path) -> list[str]:
+    try:
+        with zipfile.ZipFile(path) as archive:
+            return [
+                name
+                for name in archive.namelist()
+                if any(pattern.search(name) for pattern in FORBIDDEN_ZIP_ENTRY_PATTERNS)
+            ]
+    except zipfile.BadZipFile:
+        return ["<invalid zip archive>"]
+
+
 def audit(root: Path, require_builds: bool, platform: str = "windows") -> int:
     failures = 0
     reported_blockers: set[str] = set()
@@ -334,6 +352,16 @@ def audit(root: Path, require_builds: bool, platform: str = "windows") -> int:
                 if not (root / relative).exists():
                     print(f"MISSING: {relative} - {reason}")
             failures += 1
+        for relative, _reason in required_build_archives:
+            path = root / relative
+            if not path.exists():
+                continue
+            bad_entries = forbidden_zip_entries(path)
+            if bad_entries:
+                preview = ", ".join(bad_entries[:5])
+                if len(bad_entries) > 5:
+                    preview += f", ... ({len(bad_entries)} total)"
+                report_blocker(relative, f"public ZIP contains macOS metadata entries: {preview}")
 
     unity_assets = root / "unity" / "Assets"
     if unity_assets.exists():
