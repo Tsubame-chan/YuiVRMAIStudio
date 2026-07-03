@@ -2,7 +2,8 @@ param(
     [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
     [switch]$RequireBuilds,
     [ValidateSet("windows", "macos", "all")]
-    [string]$Platform = "windows"
+    [string]$Platform = "windows",
+    [string]$ReleaseVersion = $(if ($env:YUI_RELEASE_VERSION) { $env:YUI_RELEASE_VERSION } else { "v0.2.0-beta.1" })
 )
 
 $ErrorActionPreference = "Stop"
@@ -307,30 +308,47 @@ Test-RequiredPath "LICENSE" "public repositories need a project license"
 Test-RequiredPath "backend\requirements.txt" "public users need backend dependencies for BYOK setup"
 Test-RequiredPath "backend\main.py" "public users need the FastAPI backend entrypoint"
 Test-RequiredPath "backend\app\main.py" "public users need the FastAPI backend app source"
+Test-RequiredPath "unity\Assets\App\Editor\YuiPublicWindowsBuildTools.cs" "public source builds need the Windows/macOS public build entrypoint"
 if ($RequireBuilds) {
     if ($Platform -eq "windows" -or $Platform -eq "all") {
+        $windowsBuildDirectory = "builds\YuiVRMAIStudio_WindowsPublicBeta_$ReleaseVersion"
+        $windowsBuildArchive = "builds\YuiVRMAIStudio_WindowsPublicBeta_${ReleaseVersion}_windows.zip"
+        $windowsReleaseArchive = "releases\$ReleaseVersion\YuiVRMAIStudio_WindowsPublicBeta_${ReleaseVersion}_windows.zip"
         $windowsExpanded =
-            (Test-Path -LiteralPath (Join-Path $ProjectRoot "builds\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1\Yui VRM AI Studio.exe")) -and
-            (Test-Path -LiteralPath (Join-Path $ProjectRoot "builds\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1\YuiFilePickerHelper.exe"))
-        $windowsArchive = Test-Path -LiteralPath (Join-Path $ProjectRoot "builds\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip")
+            (Test-Path -LiteralPath (Join-Path $ProjectRoot "$windowsBuildDirectory\Yui VRM AI Studio.exe")) -and
+            (Test-Path -LiteralPath (Join-Path $ProjectRoot "$windowsBuildDirectory\YuiFilePickerHelper.exe"))
+        $windowsBuildArchiveExists = Test-Path -LiteralPath (Join-Path $ProjectRoot $windowsBuildArchive)
+        $windowsReleaseArchiveExists = Test-Path -LiteralPath (Join-Path $ProjectRoot $windowsReleaseArchive)
+        $windowsArchive = $windowsBuildArchiveExists -or $windowsReleaseArchiveExists
         if (-not ($windowsExpanded -or $windowsArchive)) {
-            Test-RequiredPath "builds\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1\Yui VRM AI Studio.exe" "public users need the Windows app executable"
-            Test-RequiredPath "builds\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1\YuiFilePickerHelper.exe" "Windows standalone image/VRM selection needs the file picker helper beside the app exe"
-            Test-RequiredPath "builds\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip" "public users need the downloadable Windows public beta archive"
+            Test-RequiredPath "$windowsBuildDirectory\Yui VRM AI Studio.exe" "public users need the Windows app executable"
+            Test-RequiredPath "$windowsBuildDirectory\YuiFilePickerHelper.exe" "Windows standalone image/VRM selection needs the file picker helper beside the app exe"
+            Test-RequiredPath $windowsReleaseArchive "public users need the downloadable Windows public beta archive"
         }
-        if ($windowsArchive) {
-            Test-ZipNoMacMetadata "builds\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.1_windows.zip"
+        if ($windowsBuildArchiveExists) {
+            Test-ZipNoMacMetadata $windowsBuildArchive
+        }
+        if ($windowsReleaseArchiveExists) {
+            Test-ZipNoMacMetadata $windowsReleaseArchive
         }
     }
     if ($Platform -eq "macos" -or $Platform -eq "all") {
-        $macExpanded = Test-Path -LiteralPath (Join-Path $ProjectRoot "builds\YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1\Yui VRM AI Studio.app")
-        $macArchive = Test-Path -LiteralPath (Join-Path $ProjectRoot "builds\YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip")
+        $macBuildDirectory = "builds\YuiVRMAIStudio_MacOSPublicBeta_$ReleaseVersion"
+        $macBuildArchive = "builds\YuiVRMAIStudio_MacOSPublicBeta_${ReleaseVersion}_macos.zip"
+        $macReleaseArchive = "releases\$ReleaseVersion\YuiVRMAIStudio_MacOSPublicBeta_${ReleaseVersion}_macos.zip"
+        $macExpanded = Test-Path -LiteralPath (Join-Path $ProjectRoot "$macBuildDirectory\Yui VRM AI Studio.app")
+        $macBuildArchiveExists = Test-Path -LiteralPath (Join-Path $ProjectRoot $macBuildArchive)
+        $macReleaseArchiveExists = Test-Path -LiteralPath (Join-Path $ProjectRoot $macReleaseArchive)
+        $macArchive = $macBuildArchiveExists -or $macReleaseArchiveExists
         if (-not ($macExpanded -or $macArchive)) {
-            Test-RequiredPath "builds\YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1\Yui VRM AI Studio.app" "public users need the macOS app bundle"
-            Test-RequiredPath "builds\YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip" "public users need the downloadable macOS public beta archive"
+            Test-RequiredPath "$macBuildDirectory\Yui VRM AI Studio.app" "public users need the macOS app bundle"
+            Test-RequiredPath $macReleaseArchive "public users need the downloadable macOS public beta archive"
         }
-        if ($macArchive) {
-            Test-ZipNoMacMetadata "builds\YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.1_macos.zip"
+        if ($macBuildArchiveExists) {
+            Test-ZipNoMacMetadata $macBuildArchive
+        }
+        if ($macReleaseArchiveExists) {
+            Test-ZipNoMacMetadata $macReleaseArchive
         }
     }
 }
