@@ -22,7 +22,6 @@ import onnx
 VOICES = (
     ("female_voice_1", "女性ボイス①", 1431611904, 0),
     ("female_voice_2", "女性ボイス②", 604166016, 0),
-    ("female_voice_3", "女性ボイス③", 1920374593, 1),
     ("male_voice_1", "男性ボイス①", 1310138976, 0),
 )
 DEFAULT_MOBILE_VOICES = (

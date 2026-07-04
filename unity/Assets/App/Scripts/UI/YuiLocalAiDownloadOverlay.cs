@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
+using YuiPhysicalAI.Backend;
 using YuiPhysicalAI.LocalAI;
 
 namespace YuiPhysicalAI.UI
@@ -169,6 +170,8 @@ namespace YuiPhysicalAI.UI
 
                 await RefreshPlanAsync(CancellationToken.None);
                 chatPanel?.RefreshLocalAiRuntimeAfterAssetInstall();
+                var backendSupervisor = GetComponent<YuiDesktopBackendSupervisor>();
+                backendSupervisor?.RequestEnsureBackend();
                 SetProgress(1f, "完了");
                 SetBody("ローカルAIデータの準備が完了しました。", "Local Gemmaを使用できます。");
                 SetButtons(download: false, retry: false, cancel: false);

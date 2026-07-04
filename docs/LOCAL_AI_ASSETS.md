@@ -32,6 +32,7 @@ The first-run downloader uses the Release manifest to restore the minimum user-f
 
 - one desktop Local Gemma SLM pack
 - local VOICEVOX voice model and OpenJTalk dictionary
+- macOS Yui Backend bundle, when the manifest includes it
 
 The source repository intentionally does not commit:
 
@@ -39,6 +40,7 @@ The source repository intentionally does not commit:
 - `*.vvm` VOICEVOX voice model files
 - OpenJTalk dictionary binaries
 - Aivis embedded model/runtime files
+- downloaded Yui Backend bundles
 - generated Windows/macOS app builds
 
 ## Expected Release Assets
@@ -53,14 +55,19 @@ YuiVRMAIStudio_MacOSPublicBeta_<version>_macos.zip.part-*
 YuiVRMAIStudio_MacOSPublicBeta_<version>_macos.zip.sha256
 YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_<version>.zip.part-*
 YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_<version>.zip.sha256
+YuiVRMAIStudio_BackendBundle_<version>_macos.zip.part-*
+YuiVRMAIStudio_BackendBundle_<version>_macos.zip.sha256
+YuiVRMAIStudio_BackendBundle_<version>_windows.zip.part-*
+YuiVRMAIStudio_BackendBundle_<version>_windows.zip.sha256
 ```
 
-The app ZIP is for normal users and contains the minimum local
-set. Because these files are large, Release assets may be split into `.part-*`
-files, but no extra data should be required for the minimum app experience.
+The app ZIP is for normal users and contains the Unity app. Large runtime data
+can be restored by the first-run downloader from the Release manifest. Because
+these files are large, Release assets may be split into `.part-*` files.
 The `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` ZIP, and the older
-`LocalAIAssets_Minimum` ZIP naming, are mainly for source builders or as a fallback
-distribution when a platform artifact must be split because of hosting limits.
+`LocalAIAssets_Minimum` ZIP naming, are mainly for source builders, first-run
+download installs, or as a fallback distribution when a platform artifact must
+be split because of hosting limits.
 Optional voice packs may be added in future Releases for larger or more
 experimental embedded runtimes. Backend AivisSpeech HD and Irodori TTS are
 usually installed as separate local runtimes instead of being bundled into the
@@ -88,11 +95,14 @@ If the assets are absent, the app should still compile, but Local Gemma and
 local VOICEVOX may appear unavailable until the matching files are installed or
 bundled. Release app ZIPs should not put normal users in this state.
 
-## Backend Is Separate
+## Backend Bundle
 
-The backend source is in this repository. Users run it locally with the setup
-scripts. Backend runtime data, `.env`, local databases, generated audio, and
-private caches are never shipped through git.
+The backend source is in this repository. For desktop releases, the backend can
+also be packaged as a GitHub Release asset and installed by the first-run
+downloader under the app's user data folder as `YuiBackend`.
+
+Backend runtime data, `.env`, local databases, generated audio, and private
+caches are never shipped through git or public release bundles.
 
 Backend-only features include:
 
@@ -103,7 +113,9 @@ Backend-only features include:
 - backend provider integrations that need local service state
 
 Local Gemma and local VOICEVOX are fallback paths, not a replacement for the
-full backend feature set.
+full backend feature set. The PC edition is the complete host; mobile editions
+can run locally but work best when connected to the user's PC backend over LAN
+or a private VPN.
 
 ## Future Download And Update Direction
 
@@ -113,7 +125,8 @@ GitHub Releases on first run when those files are not already present.
 The preferred longer-term distribution model is:
 
 - keep the app download smaller,
-- let the app download large Local Gemma data from GitHub Releases on first run,
+- let the app download large Local Gemma data and the desktop Backend bundle
+  from GitHub Releases on first run,
 - verify downloaded files with sha256 before enabling the local model, and
 - expose app update checks through the app UI while still using GitHub Releases
   as the trusted source.

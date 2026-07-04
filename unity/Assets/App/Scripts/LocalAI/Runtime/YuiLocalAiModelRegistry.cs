@@ -102,8 +102,8 @@ namespace YuiPhysicalAI.LocalAI
                         DiskBudgetMb = 2400,
                         Priority = 10,
                         StartupPolicy = YuiLocalAiStartupPolicy.WarmTextOnly,
-                        Platforms = new[] { "ios", "android" },
-                        Notes = "Mobile offline default. Desktop public beta builds use the higher-quality E4B asset as the bundled minimum SLM."
+                        Platforms = new[] { "ios", "android", "macos", "windows" },
+                        Notes = "Mobile offline default and desktop fallback when the higher-quality E4B asset is not included in the current release asset set."
                     },
                     new YuiLocalAiModelPack
                     {

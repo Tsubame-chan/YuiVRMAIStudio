@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BACKEND_DIR="$REPO_ROOT/backend"
 LOG_DIR="$REPO_ROOT/logs"
 RUNTIME_DIR="$REPO_ROOT/runtime"
+PYTHONHOME_CANDIDATE="$BACKEND_DIR/.venv"
 
 load_env_file() {
   local env_file="$REPO_ROOT/.env"
@@ -40,6 +41,18 @@ YUI_REUSE_EXISTING_BACKEND="${YUI_REUSE_EXISTING_BACKEND:-0}"
 RUN_ID="$(date +%Y%m%d-%H%M%S)"
 
 mkdir -p "$LOG_DIR" "$RUNTIME_DIR"
+
+if [[ -d "$PYTHONHOME_CANDIDATE/lib/python3.12/encodings" ]]; then
+  export PYTHONHOME="$PYTHONHOME_CANDIDATE"
+fi
+
+record_owned_pid() {
+  local name="$1"
+  local pid="$2"
+  [[ -n "${YUI_BACKEND_OWNERSHIP_FILE:-}" ]] || return 0
+  mkdir -p "$(dirname "$YUI_BACKEND_OWNERSHIP_FILE")"
+  printf '%s %s\n' "$name" "$pid" >> "$YUI_BACKEND_OWNERSHIP_FILE"
+}
 
 http_ok() {
   /usr/bin/curl -fsS --max-time 2 "$1" >/dev/null 2>&1
@@ -190,6 +203,7 @@ start_irodori_if_configured() {
     nohup /bin/bash -lc "$IRODORI_START_COMMAND" >"$out_log" 2>"$err_log" < /dev/null &
     local irodori_pid=$!
     echo "$irodori_pid" > "$RUNTIME_DIR/irodori.pid"
+    record_owned_pid "irodori" "$irodori_pid"
     disown "$irodori_pid" 2>/dev/null || true
     wait_http_ok "Irodori TTS" "$health_url" 180 || true
     return 0
@@ -205,6 +219,7 @@ start_irodori_if_configured() {
         >"$out_log" 2>"$err_log" < /dev/null &
       local irodori_pid=$!
       echo "$irodori_pid" > "$RUNTIME_DIR/irodori.pid"
+      record_owned_pid "irodori" "$irodori_pid"
       disown "$irodori_pid" 2>/dev/null || true
     )
     wait_http_ok "Irodori TTS" "$health_url" 180 || true
@@ -287,6 +302,7 @@ elif VOICEVOX_ENGINE_PATH="$(resolve_voicevox_engine)"; then
   nohup "$VOICEVOX_ENGINE_PATH" "${voicevox_args[@]}" >"$VOICEVOX_OUT" 2>"$VOICEVOX_ERR" < /dev/null &
   voicevox_pid=$!
   echo "$voicevox_pid" > "$RUNTIME_DIR/voicevox.pid"
+  record_owned_pid "voicevox" "$voicevox_pid"
   disown "$voicevox_pid" 2>/dev/null || true
   wait_http_ok "VOICEVOX Engine" "$VOICEVOX_BASE_URL/version" 90 || true
 else
@@ -303,6 +319,7 @@ if is_aivis_configured; then
     nohup "$AIVIS_ENGINE_PATH" --host "$AIVIS_HOST" --port "$AIVIS_PORT" --output_log_utf8 --disable_sentry >"$AIVIS_OUT" 2>"$AIVIS_ERR" < /dev/null &
     aivis_pid=$!
     echo "$aivis_pid" > "$RUNTIME_DIR/aivis.pid"
+    record_owned_pid "aivis" "$aivis_pid"
     disown "$aivis_pid" 2>/dev/null || true
     wait_http_ok "AivisSpeech Engine" "$AIVIS_BASE_URL/version" 90 || true
   else
@@ -336,6 +353,7 @@ else
       >"$BACKEND_OUT" 2>"$BACKEND_ERR" < /dev/null &
     backend_pid=$!
     echo "$backend_pid" > "$RUNTIME_DIR/backend.pid"
+    record_owned_pid "backend" "$backend_pid"
     disown "$backend_pid" 2>/dev/null || true
   )
   wait_http_ok "Backend" "$BACKEND_BASE_URL/health" 90 || true

@@ -6,6 +6,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BACKEND_DIR="$REPO_ROOT/backend"
 LOG_DIR="$REPO_ROOT/logs"
 RUNTIME_DIR="$REPO_ROOT/runtime"
+PYTHONHOME_CANDIDATE="$BACKEND_DIR/.venv"
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
 load_env_file() {
@@ -41,6 +42,10 @@ YUI_REUSE_EXISTING_BACKEND="${YUI_REUSE_EXISTING_BACKEND:-0}"
 RUN_ID="$(date +%Y%m%d-%H%M%S)"
 
 mkdir -p "$LOG_DIR" "$RUNTIME_DIR"
+
+if [[ -d "$PYTHONHOME_CANDIDATE/lib/python3.12/encodings" ]]; then
+  export PYTHONHOME="$PYTHONHOME_CANDIDATE"
+fi
 
 http_ok() {
   /usr/bin/curl -fsS --max-time 2 "$1" >/dev/null 2>&1

@@ -36,7 +36,7 @@ namespace YuiPhysicalAI.Tests.Editor
                 directOpenAiConfigured: false);
 
             Assert.AreEqual(YuiCapabilityState.NeedsBackend, snapshot.Tts("aivis").State);
-            Assert.AreEqual(YuiCapabilityState.SetupRequired, snapshot.Tts("server-http").State);
+            Assert.AreEqual(YuiCapabilityState.NeedsBackend, snapshot.Tts("server-http").State);
             Assert.IsTrue(snapshot.Tts("server-http").Visible);
         }
 

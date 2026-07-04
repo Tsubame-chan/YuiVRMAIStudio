@@ -51,14 +51,6 @@ def test_config_reports_available_provider_options() -> None:
         },
         {
             "provider": "aivis",
-            "id": 1920374593,
-            "label": "女性ボイス③",
-            "gender": "female",
-            "style": "negative",
-            "release_review": "custom_license",
-        },
-        {
-            "provider": "aivis",
             "id": 1310138976,
             "label": "男性ボイス①",
             "gender": "male",

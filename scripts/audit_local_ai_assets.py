@@ -88,7 +88,7 @@ def collect_findings(root: Path, fail_on_desktop_missing: bool) -> list[Finding]
         "desktop Aivis audition engine is missing",
     )
 
-    for voice in ["female_voice_1", "female_voice_2", "female_voice_3", "male_voice_1"]:
+    for voice in ["female_voice_1", "female_voice_2", "male_voice_1"]:
         require(
             f"tools/tts/aivis-models/selected/{voice}.aivmx",
             f"selected Aivis source voice {voice} is missing",

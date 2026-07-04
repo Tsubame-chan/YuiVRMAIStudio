@@ -47,6 +47,4 @@ tools/tts/aivis-models/**/*.aivmx
 downloads/*.unitypackage
 scripts/audit_private_patterns.txt
 scripts/publication_guard.local.txt
-tmp_kikyo_pkg/
-public/
 installer/windows/output/

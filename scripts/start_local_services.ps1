@@ -10,6 +10,7 @@ param(
     [string]$IrodoriStartCommand = "",
     [int]$StartupTimeoutSeconds = 90,
     [switch]$SkipIrodori,
+    [switch]$SkipVoicevox,
     [switch]$NoWait
 )
 
@@ -50,6 +51,24 @@ function Import-DotEnv {
 function Write-Step {
     param([string]$Message)
     Write-Host "[Yui services] $Message"
+}
+
+function Record-OwnedPid {
+    param(
+        [string]$Name,
+        [int]$ProcessId
+    )
+
+    if ([string]::IsNullOrWhiteSpace($env:YUI_BACKEND_OWNERSHIP_FILE)) {
+        return
+    }
+
+    $ownerDir = Split-Path -Parent $env:YUI_BACKEND_OWNERSHIP_FILE
+    if (-not [string]::IsNullOrWhiteSpace($ownerDir)) {
+        New-Item -ItemType Directory -Force -Path $ownerDir | Out-Null
+    }
+
+    Add-Content -LiteralPath $env:YUI_BACKEND_OWNERSHIP_FILE -Value "$Name $ProcessId"
 }
 
 function Test-HttpOk {
@@ -168,17 +187,24 @@ function Resolve-VoicevoxEngineExe {
         }
     }
 
-    throw @"
-VOICEVOX Engine run.exe was not found.
+    return ""
+}
 
-Install VOICEVOX first, then either:
-  - install it to the default Windows location:
-    %LOCALAPPDATA%\Programs\VOICEVOX\vv-engine\run.exe
-  - or set VOICEVOX_ENGINE_EXE to the full path of vv-engine\run.exe
-  - or pass -VoicevoxEngineExe "C:\path\to\VOICEVOX\vv-engine\run.exe"
+function Ensure-BackendPython {
+    if (Test-Path -LiteralPath $backendPython) {
+        return
+    }
 
-VOICEVOX is a prerequisite and is not bundled with this project.
-"@
+    $setupScript = Join-Path $PSScriptRoot "setup_backend_byok.ps1"
+    if (-not (Test-Path -LiteralPath $setupScript)) {
+        throw "Backend Python virtual environment was not found and setup script is missing: $setupScript"
+    }
+
+    Write-Step "Backend virtual environment is missing. Running first-time backend setup."
+    & $powershellExe -NoProfile -ExecutionPolicy Bypass -File $setupScript -ProjectRoot $repoRoot
+    if (-not (Test-Path -LiteralPath $backendPython)) {
+        throw "Backend Python virtual environment was not created: $backendPython"
+    }
 }
 
 function Start-IrodoriIfConfigured {
@@ -239,11 +265,18 @@ $backendBaseUrl = "http://$BackendHost`:$BackendPort"
 Write-Step "Repository: $repoRoot"
 Write-Step "Logs: $logDir"
 
-if (Test-HttpOk -Url "$voicevoxBaseUrl/version") {
+if ($SkipVoicevox) {
+    Write-Step "Skipping VOICEVOX startup."
+}
+elseif (Test-HttpOk -Url "$voicevoxBaseUrl/version") {
     Write-Step "VOICEVOX Engine is already running: $voicevoxBaseUrl"
 }
 else {
     $resolvedVoicevoxEngineExe = Resolve-VoicevoxEngineExe -RequestedPath $VoicevoxEngineExe
+    if ([string]::IsNullOrWhiteSpace($resolvedVoicevoxEngineExe)) {
+        Write-Warning "VOICEVOX Engine was not found. Text chat and backend features can still work, but backend VOICEVOX speech needs VOICEVOX installed."
+    }
+    else {
     $voicevoxScript = Join-Path $PSScriptRoot "run_voicevox_engine_optimized.ps1"
     $voicevoxOut = Join-Path $logDir "voicevox-service-$runId.out.log"
     $voicevoxErr = Join-Path $logDir "voicevox-service-$runId.err.log"
@@ -276,7 +309,9 @@ else {
     }
 
     Write-Step "VOICEVOX launcher pid: $($voicevoxProcess.Id)"
+    Record-OwnedPid -Name "voicevox" -ProcessId $voicevoxProcess.Id
     Wait-HttpOk -Name "VOICEVOX Engine" -Url "$voicevoxBaseUrl/version" -TimeoutSeconds $StartupTimeoutSeconds | Out-Null
+    }
 }
 
 Start-IrodoriIfConfigured
@@ -285,9 +320,7 @@ if (Test-HttpOk -Url "$backendBaseUrl/health") {
     Write-Step "Backend is already running: $backendBaseUrl"
 }
 else {
-    if (-not (Test-Path -LiteralPath $backendPython)) {
-        throw "Backend Python virtual environment was not found: $backendPython"
-    }
+    Ensure-BackendPython
 
     $backendOut = Join-Path $logDir "backend-service-$runId.out.log"
     $backendErr = Join-Path $logDir "backend-service-$runId.err.log"
@@ -303,6 +336,7 @@ else {
         -PassThru
 
     Write-Step "Backend pid: $($backendProcess.Id)"
+    Record-OwnedPid -Name "backend" -ProcessId $backendProcess.Id
     Wait-HttpOk -Name "Backend" -Url "$backendBaseUrl/health" -TimeoutSeconds $StartupTimeoutSeconds | Out-Null
 }
 

@@ -6,14 +6,14 @@
 
 Yui VRM AI Studio turns your own VRM character into a desktop AI avatar that can talk through text, voice, images, and screen context. It is for people who want their VRChat/VRM character, original character, or favorite avatar to become something they can speak with, remember with, search with, and keep around while working or playing.
 
-The project is now a Desktop Public Beta for Windows and macOS. Release app ZIPs include the minimum Local Gemma SLM and Local VOICEVOX set, so users can try the app before setting up the full backend. OpenAI API keys, the local backend, realtime features, memory DB, and additional TTS runtimes can be added later.
+The project is now a Desktop Public Beta for Windows and macOS. Release app ZIPs stay relatively small, then the first-run downloader fetches the required Local Gemma / VOICEVOX data and the desktop backend bundle from GitHub Releases. OpenAI API keys and optional higher-quality TTS runtimes can be added later.
 
 ## What The Experience Is
 
 - Show your own `.vrm` character on screen and talk with that character.
 - Use text input, voice input, image input, and selected camera/screen context.
 - Keep conversation history and local memory as the app grows toward a persistent AI avatar.
-- Try the minimum app without the backend, then add BYOK/backend setup for the richer feature set.
+- Try the app after the first-run download, then add BYOK settings or optional voice runtimes for the richer feature set.
 - Use VOICEVOX as the standard Japanese voice fallback, with optional AivisSpeech HD and Irodori TTS paths.
 
 ## Where To Start
@@ -26,18 +26,18 @@ The project is now a Desktop Public Beta for Windows and macOS. Release app ZIPs
 
 Windows and macOS setup docs now follow the same design model. Runnable builds and large Local AI/TTS assets are distributed through [GitHub Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases).
 
-Current packaging note: `v0.2.0-beta.3` is the current Desktop Public Beta Release. It hosts the Windows/macOS runnable app ZIPs, the first-run downloader manifest, and the Desktop Local AI asset pack together.
+Current packaging note: `v0.2.0-beta.3` is the current Desktop Public Beta Release. It hosts the Windows/macOS runnable app ZIPs, the first-run downloader manifest, the Desktop Local AI asset pack, and the Windows/macOS backend bundles.
 
 ## Which Download To Use
 
 - To run the app now: download only the `v0.2.0-beta.3` app ZIP and matching `.sha256` for your OS.
-- Large ZIPs may also be uploaded as `.part-*` files. If the full ZIP is present, use it directly. If only parts are present, join them first using the Release notes or the platform setup guide, then unzip the result. Missing Local AI/TTS data is fetched by the first-run downloader from the GitHub Releases manifest.
+- Large ZIPs may also be uploaded as `.part-*` files. If the full ZIP is present, use it directly. If only parts are present, join them first using the Release notes or the platform setup guide, then unzip the result. Missing Local AI/TTS/backend data is fetched by the first-run downloader from the GitHub Releases manifest.
 - To inspect or modify source: `Code > Download ZIP` and `git clone` are source-code paths. They do not include generated app builds or large models, so they are incomplete as a runnable app by themselves.
 - To build from source: restore the `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` asset pack, or the older `LocalAIAssets_Minimum` pack, into the repository root before building in Unity.
 - To add optional higher-quality voices: install extra runtimes such as AivisSpeech HD or Irodori TTS. The app works without them, but they add backend voice choices.
-- To use the full feature set: use the app ZIP plus a source checkout of this repository, then run the local backend from the setup guide for realtime talk/translation, memory DB, and backend TTS.
+- To use the full PC feature set: install the app ZIP and let the first-run downloader install the backend bundle. The app can auto-start the local backend; manual start/stop scripts are included in the downloaded `YuiBackend` folder.
 
-The Desktop Beta now includes the first-run downloader for checking a GitHub Releases manifest and fetching missing Local AI/TTS data. Missing data and future optional packs can move toward in-app downloads.
+The Desktop Beta now includes the first-run downloader for checking a GitHub Releases manifest and fetching missing Local AI/TTS/backend data. Missing data and future optional packs can move toward in-app downloads.
 
 ## What It Does
 
@@ -55,9 +55,9 @@ The Desktop Beta now includes the first-run downloader for checking a GitHub Rel
 
 ## How It Works, Briefly
 
-The app UI runs in Unity. AI provider calls, the conversation database, speech generation, and image processing are handled by either a local helper service on the same machine or by the app's embedded local runtime.
+The app UI runs in Unity. AI provider calls, the conversation database, speech generation, web search, and image processing are handled by either the downloaded local backend on the same machine or by the app's embedded local runtime.
 
-When the backend is running, Yui can use higher-quality conversation paths, realtime talk/translation, memory DB, and backend TTS providers. Without the backend, the app is being shaped to remain immediately usable through Direct API mode, Local Gemma, and local VOICEVOX fallback. Connection details and ports are configurable, so this README does not assume any developer-specific URL or private IP address.
+When the backend is running, Yui can use higher-quality conversation paths, realtime talk/translation, memory DB, web search, and backend TTS providers. Without the backend, the app remains usable through Direct API mode, Local Gemma, and local VOICEVOX fallback. Connection details and ports are configurable, so this README does not assume any developer-specific URL or private IP address.
 
 ## Technical Notes: Provider Status
 
@@ -79,7 +79,7 @@ When the backend is running, Yui can use higher-quality conversation paths, real
 ### Beta Confidence Notes
 
 - `Auto Select` is the recommended first choice. It prefers the backend when healthy and falls back to local/direct paths when needed.
-- Release app ZIPs are expected to run with the minimum local set already included.
+- Release app ZIPs are expected to trigger the first-run downloader when required local/backend data is missing.
 - Provider/model availability can change on the external service side. Check Settings and Help connection status when something looks unavailable.
 
 ### Candidates
@@ -99,7 +99,7 @@ Minimum:
 Optional:
 
 - An OpenAI API key for Direct API, higher-quality vision, or STT paths
-- Python 3.12+ and the local backend for realtime talk/translation, memory DB, and backend TTS
+- The downloaded local backend bundle for realtime talk/translation, memory DB, web search, and backend TTS
 - VOICEVOX Engine, AivisSpeech HD, Irodori TTS, or another supported runtime when extending Japanese voice playback
 
 Platform details:
@@ -110,10 +110,11 @@ Platform details:
 ### Git Clone vs Release Artifacts
 
 The git repository does not commit large Gemma model files, voice models,
-voice dictionaries, or generated app builds. Those belong in GitHub Release
-Beta artifacts because of size and license boundaries. Release app artifacts
-are meant to run with the minimum local set already included. Optional voices
-and source-build assets are only needed when you choose those paths. See
+voice dictionaries, backend bundles, or generated app builds. Those belong in
+GitHub Release Beta artifacts because of size and license boundaries. Release
+app artifacts are meant to download the required local/backend data on first
+launch. Optional voices and source-build assets are only needed when you choose
+those paths. See
 [`docs/LOCAL_AI_ASSETS.md`](docs/LOCAL_AI_ASSETS.md).
 
 ### TTS / Irodori Validation

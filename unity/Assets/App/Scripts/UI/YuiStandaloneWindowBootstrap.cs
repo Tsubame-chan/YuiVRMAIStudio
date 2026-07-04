@@ -1,4 +1,6 @@
 using UnityEngine;
+using YuiPhysicalAI.Backend;
+using YuiPhysicalAI.Core;
 
 namespace YuiPhysicalAI.UI
 {
@@ -9,11 +11,26 @@ namespace YuiPhysicalAI.UI
 
         [SerializeField] private int windowWidth = DefaultWindowWidth;
         [SerializeField] private int windowHeight = DefaultWindowHeight;
+#pragma warning disable 0414
+        [SerializeField] private bool autoStartBundledBackend = true;
+#pragma warning restore 0414
 
         public void ConfigureWindowSize(int width, int height)
         {
             windowWidth = Mathf.Max(360, width);
             windowHeight = Mathf.Max(640, height);
+        }
+
+        private void Awake()
+        {
+#if (UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN) && !UNITY_EDITOR
+            if (autoStartBundledBackend
+                && GetComponent<YuiDesktopBackendSupervisor>() == null
+                && YuiSceneObjectFinder.FindFirst<YuiDesktopBackendSupervisor>() == null)
+            {
+                gameObject.AddComponent<YuiDesktopBackendSupervisor>();
+            }
+#endif
         }
 
         private void Start()

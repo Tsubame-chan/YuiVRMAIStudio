@@ -13,6 +13,10 @@ if [[ ! -x "$PYTHON_BIN" ]]; then
   exit 1
 fi
 
+if [[ -d "$BACKEND_DIR/.venv/lib/python3.12/encodings" ]]; then
+  export PYTHONHOME="$BACKEND_DIR/.venv"
+fi
+
 cd "$BACKEND_DIR"
 BACKEND_HOST="${BACKEND_HOST:-127.0.0.1}"
 BACKEND_PORT="${BACKEND_PORT:-8000}"

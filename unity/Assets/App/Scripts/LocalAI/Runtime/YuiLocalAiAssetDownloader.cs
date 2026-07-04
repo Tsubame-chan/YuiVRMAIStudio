@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -226,6 +227,7 @@ namespace YuiPhysicalAI.LocalAI
             var installRoot = Path.Combine(assetStorageRoot, NormalizeRelativePath(asset.InstallRoot));
             Directory.CreateDirectory(installRoot);
             ExtractZipSafely(zipPath, installRoot);
+            ApplyPostInstallPermissions(asset, installRoot);
             progress?.Report(new YuiLocalAiAssetDownloadProgress(asset.DisplayName ?? asset.Id, zipSize, asset.SizeBytes, 1f, "install"));
         }
 
@@ -303,6 +305,54 @@ namespace YuiPhysicalAI.LocalAI
                 Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
                 entry.ExtractToFile(destinationPath, overwrite: true);
             }
+        }
+
+        private static void ApplyPostInstallPermissions(YuiLocalAiReleaseAsset asset, string installRoot)
+        {
+#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+            if (asset == null
+                || !string.Equals(asset.Kind, "desktop_backend_bundle", StringComparison.OrdinalIgnoreCase)
+                || string.IsNullOrWhiteSpace(installRoot)
+                || !Directory.Exists(installRoot))
+            {
+                return;
+            }
+
+            ChmodIfExists(Path.Combine(installRoot, "Start_Yui_Backend.command"), "+x");
+            ChmodIfExists(Path.Combine(installRoot, "Stop_Yui_Backend.command"), "+x");
+            ChmodIfExists(Path.Combine(installRoot, "scripts"), "-R", "+x");
+            ChmodIfExists(Path.Combine(installRoot, "backend", ".venv", "bin"), "-R", "+x");
+#endif
+        }
+
+        private static void ChmodIfExists(string path, params string[] modeArgs)
+        {
+            if (string.IsNullOrWhiteSpace(path) || (!File.Exists(path) && !Directory.Exists(path)))
+            {
+                return;
+            }
+
+            try
+            {
+                var arguments = string.Join(" ", modeArgs.Select(ShellQuote).Concat(new[] { ShellQuote(path) }));
+                var process = Process.Start(new ProcessStartInfo
+                {
+                    FileName = "/bin/chmod",
+                    Arguments = arguments,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                });
+                process?.WaitForExit(10000);
+            }
+            catch
+            {
+                // Permission repair is best-effort; the launch path reports a clearer error if it still cannot execute.
+            }
+        }
+
+        private static string ShellQuote(string value)
+        {
+            return $"'{(value ?? string.Empty).Replace("'", "'\\''")}'";
         }
 
         private static string NormalizeRelativePath(string path)

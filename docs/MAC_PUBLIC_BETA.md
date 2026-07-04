@@ -2,7 +2,7 @@
 
 このページはmacOS版を試す人向けの入口です。まずはGitHub ReleasesのmacOS Beta配布物を使ってください。GitHubの `Code > Download ZIP` はソースコード用で、実行済みアプリや大型AI/TTSデータは含まれません。
 
-現在のmacOS実行用ZIPは `v0.2.0-beta.3` です。この版には初回ダウンローダーも含まれており、不足しているLocal AI/TTSデータがあればGitHub Releasesのmanifestから取得します。
+現在のmacOS実行用ZIPは `v0.2.0-beta.3` です。この版には初回ダウンローダーも含まれており、不足しているLocal AI/TTSデータとmacOS Backend bundleがあればGitHub Releasesのmanifestから取得します。
 
 - English guide: [`MAC_PUBLIC_BETA.en.md`](MAC_PUBLIC_BETA.en.md)
 
@@ -20,7 +20,7 @@ shasum -a 256 -c YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip.sha256
 
 このBetaはまだ署名・notarizationの整備前です。macOSで警告が出た場合は、信頼できる配布物であることを確認してからシステム設定または右クリックメニューから許可してください。
 
-初回起動時にLocal AI/TTSデータが不足している場合は、アプリ内のダウンローダーがGitHub Releasesから必要なデータを取得します。
+初回起動時にLocal AI/TTSデータやBackend bundleが不足している場合は、アプリ内のダウンローダーがGitHub Releasesから必要なデータを取得します。目安はLocal AIが約2GB台、macOS Backend bundle本体が約10MB台です。AivisSpeech HDやIrodori TTSなどの追加runtimeは別扱いです。
 
 `WindowsPublicBeta` はWindows用、`YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` はソースからUnityでビルドする人向けです。macOSアプリを試すだけならダウンロード不要です。
 
@@ -28,9 +28,10 @@ shasum -a 256 -c YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip.sha256
 
 | 入手方法 | 用途 |
 | --- | --- |
-| ReleaseのmacOS ZIP / `.part-*` | すぐ使う人向け。`.app` と最小ローカルAI/TTSを含みます。分割されている場合は結合してから展開します。 |
+| ReleaseのmacOS ZIP / `.part-*` | すぐ使う人向けのアプリ本体です。大型データは初回起動時にmanifestから取得します。分割されている場合は結合してから展開します。 |
 | `Code > Download ZIP` | ソースを読む/改造する人向け。`.app` や大型モデルは含みません。 |
-| `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | ソースからUnityビルドする人向け、または初回ダウンローダー検証用の最小asset packです。 |
+| `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | ソースからUnityビルドする人向け、または初回ダウンローダー検証用の最小asset packです。通常ユーザーはアプリ内で取得します。 |
+| `YuiVRMAIStudio_BackendBundle_*_macos` | macOS Backend bundleです。通常ユーザーはアプリ内で取得します。 |
 | Optional voice / 外部runtime | AivisSpeech HDやIrodori TTSなど、声の選択肢を増やすための任意追加です。 |
 
 ## できることの目安
@@ -43,26 +44,24 @@ shasum -a 256 -c YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip.sha256
 
 ## バックエンドを使う場合
 
-フル機能を使いたい場合だけ、以下をセットアップします。
-
-バックエンドの起動スクリプトはアプリZIPではなく、このリポジトリのソース側に入っています。Releaseアプリだけを試す場合、この章は飛ばして構いません。
+フル機能を使いたい場合、通常は初回ダウンローダーが取得したYui Backend bundleをアプリが自動起動します。手動で起動・停止したい場合は、ユーザーデータ領域に展開された `YuiBackend` 内のコマンドを使います。
 
 必要なもの:
 
 - Apple Silicon Mac
-- Homebrew
-- Python 3.12+
+- 初回ダウンロード済みの `YuiBackend`
+- 初回セットアップが必要な場合はPython 3.12+
 - OpenAI APIキー
 - VOICEVOX Engine、AivisSpeech HD、Irodori TTSなど、使いたい外部TTS runtime
 
-HomebrewとPythonを用意します。
+ソースから起動する場合やBackend bundleにvenvがない場合は、HomebrewとPythonを用意します。
 
 ```bash
 brew install python@3.12 git git-lfs
 git lfs install
 ```
 
-ローカルサービスを初期化します。
+ソース版ではローカルサービスを初期化します。
 
 ```bash
 PYTHON_BIN=/opt/homebrew/bin/python3.12 ./scripts/setup_backend_byok_macos.sh
@@ -80,7 +79,19 @@ OPENAI_API_KEY=sk-...
 
 ## バックエンドの起動と停止
 
-起動:
+初回ダウンロード済みBackend bundleを手動起動する場合:
+
+```text
+YuiBackend/Start_Yui_Backend.command
+```
+
+停止:
+
+```text
+YuiBackend/Stop_Yui_Backend.command
+```
+
+ソース版の起動:
 
 ```bash
 ./scripts/start_local_services_macos.sh
@@ -92,7 +103,7 @@ Finderから起動する場合:
 Start_Yui_Local_Services.command
 ```
 
-停止:
+ソース版の停止:
 
 ```bash
 ./scripts/stop_local_services_macos.sh

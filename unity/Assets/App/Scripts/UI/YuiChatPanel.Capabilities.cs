@@ -72,17 +72,17 @@ namespace YuiPhysicalAI.UI
             }
 
             var registry = YuiLocalAiModelRegistry.FromStreamingAssetsOrDefault();
-            var pack = registry.BestFor(YuiLocalAiCapability.Chat);
-            if (pack == null)
-            {
-                return false;
-            }
+            return YuiLocalAiRuntimeFactory.HasOnDeviceEmbeddedPack(
+                registry,
+                YuiLocalAiCapability.Chat,
+                RuntimeAssetAvailableForLocalChat);
+        }
 
-            if (!pack.DownloadRequired)
+        private static bool RuntimeAssetAvailableForLocalChat(YuiLocalAiModelPack pack)
+        {
+            if (pack == null || !pack.DownloadRequired)
             {
-                return YuiLocalAiRuntimeFactory.HasOnDeviceEmbeddedPack(
-                    registry,
-                    YuiLocalAiCapability.Chat);
+                return true;
             }
 
             return System.IO.File.Exists(YuiLocalAiModelPathResolver.PersistentModelPath(pack))
