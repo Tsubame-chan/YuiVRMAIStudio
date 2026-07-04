@@ -2,25 +2,20 @@
 
 This page is the entry point for trying the macOS build. Start from the macOS Beta release files on GitHub Releases. GitHub `Code > Download ZIP` is source code only and does not include the built app or large local AI/TTS data.
 
-Current packaging note: `v0.2.0-beta.3` is the current macOS runnable app Release. It includes the first-run downloader, which fetches missing Local AI/TTS data and the macOS backend bundle from the GitHub Releases manifest.
+`v0.2.0-beta.3` is the current macOS runnable app Release. On first launch, the app downloads missing Local AI/TTS data and the macOS backend bundle automatically.
 
 - Japanese guide: [`MAC_PUBLIC_BETA.md`](MAC_PUBLIC_BETA.md)
 
 ## Run It First
 
-1. From the `v0.2.0-beta.3` GitHub Release, download these files whose names include `MacOSPublicBeta` into the same folder.
+1. From the `v0.2.0-beta.3` GitHub Release, download the app ZIP whose name includes `MacOSPublicBeta`.
    - `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip`
-   - `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip.sha256`
-2. Open that folder in Terminal and verify sha256.
-3. Extract the ZIP and launch `Yui VRM AI Studio.app`.
-
-```bash
-shasum -a 256 -c YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip.sha256
-```
+2. Extract the ZIP and launch `Yui VRM AI Studio.app`.
+3. Start the first-run download when prompted. The required Local AI/TTS data and macOS backend bundle are installed automatically.
 
 This beta is not fully signed/notarized yet. If macOS blocks the first launch, confirm that you trust the downloaded artifact, then allow it from System Settings or the right-click open flow.
 
-If Local AI/TTS/backend data is missing on first launch, the in-app downloader fetches the required data from GitHub Releases.
+The `.sha256` file is optional and only needed if you want to verify download integrity.
 
 `WindowsPublicBeta` is for Windows. `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum`, `YuiVRMAIStudio_BackendBundle`, and older `LocalAIAssets_Minimum` downloads are normally fetched by the app or used by people validating the first-run downloader. You do not need to download them manually just to try the macOS app.
 
@@ -28,10 +23,11 @@ If Local AI/TTS/backend data is missing on first launch, the in-app downloader f
 
 | Download | Use |
 | --- | --- |
-| macOS ZIP / `.part-*` from Releases | For normal users. Includes the `.app`; first launch downloads required Local AI/TTS/backend data. Join split files before unzipping if the app ZIP itself is split. |
+| macOS app ZIP from Releases | For normal users. Download this, unzip it, and launch the app. |
+| `.sha256` | Optional integrity check for the app ZIP. |
 | `Code > Download ZIP` | Source code only. Does not include the app bundle or large models. |
-| `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | For source builders or first-run downloader validation. |
-| `YuiVRMAIStudio_BackendBundle` | Downloaded by the app for full PC features; source builders can inspect it manually. |
+| `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | Normally downloaded by the app. Manual use is for source builds, validation, or recovery. |
+| `YuiVRMAIStudio_BackendBundle` | Normally downloaded by the app for full PC features; source builders can inspect it manually. |
 | Optional voice/runtime | Extra voice choices such as AivisSpeech HD or Irodori TTS. Not required for the app to run. |
 
 ## What Works

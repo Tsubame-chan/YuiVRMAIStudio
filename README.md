@@ -6,7 +6,7 @@
 
 Yui VRM AI Studioは、自分のVRMキャラクターをデスクトップ上のAIアバターとして動かし、テキスト・音声・画像・画面コンテキストを使って会話できるアプリです。VRChatで使っているキャラクター、創作キャラ、推しアバターを、ただ眺めるだけではなく、話し、覚え、調べ、日常作業を手伝ってくれる存在にすることを目指しています。
 
-現在公開しているのは、Windows / macOS向けのデスクトップ版ベータです。アプリ本体は小さめに保ち、不足している最小構成のLocal Gemma SLM、Local VOICEVOX、Yui Backend bundleを初回起動時にGitHub Releasesから取得する方針です。そのため、手動でバックエンドサーバーを構築しなくてもまず試せる形へ移行しています。より高品質な会話、リアルタイム会話/翻訳、会話DB、追加TTSを使いたい場合は、OpenAI APIキーや任意のTTS runtimeを追加します。
+現在公開しているのは、Windows / macOS向けのデスクトップ版ベータです。アプリ本体ZIPを展開して起動すると、初回ダウンロードでLocal Gemma SLM、Local VOICEVOX、Yui Backend bundleが揃います。手動でバックエンドサーバーやPython環境を作らなくても試せます。より高品質な会話、リアルタイム会話/翻訳、会話DB、追加TTSを使いたい場合は、OpenAI APIキーや任意のTTS runtimeを追加します。
 
 ## 主な特徴
 
@@ -26,22 +26,22 @@ Yui VRM AI Studioは、自分のVRMキャラクターをデスクトップ上の
 
 実行ファイルと大型Local AI/TTSデータは [GitHub Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases) で配布します。GitHubの `Code > Download ZIP` はソースコード用で、実行ファイルや大型AI/TTSデータは含まれません。
 
-現在の配布版は `v0.2.0-beta.3` です。このReleaseには、Windows/macOSの実行用アプリZIP、初回ダウンローダー用manifest、Desktop Local AI asset pack、Windows/macOS Backend bundleをまとめて置く方針です。
+現在の配布版は `v0.2.0-beta.3` です。通常はWindows/macOSのアプリ本体ZIPだけをダウンロードしてください。その他の大きなデータは、初回起動時にアプリが自動で取得します。
 
 ## インストール
 
-GitHub Releasesから、お使いのOSに対応した `v0.2.0-beta.3` の配布ファイルだけをダウンロードしてください。
+GitHub Releasesから、お使いのOSに対応したアプリ本体ZIPをダウンロードして展開し、起動してください。
 
-- macOS: `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip` と `.sha256`
-- Windows: `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3_windows.zip` と `.sha256`
+- macOS: `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip`
+- Windows: `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3_windows.zip`
 
-容量が大きいZIPは `.part-*` に分割している場合があります。ReleaseにフルZIPがある場合はそれを使い、`.part-*` だけがある場合はRelease本文またはOS別ガイドの手順で1つのZIPに戻してから展開してください。初回起動時に不足しているLocal AI/TTSデータやBackend bundleがあれば、アプリ内ダウンローダーがGitHub Releasesのmanifestを参照して取得します。現在の目安はLocal AIが約2GB台、macOS Backend bundle本体が約10MB台です。追加TTS runtimeを含む場合は別途大きくなります。
+初回起動時にダウンロード画面が表示されます。開始すると、基本動作に必要なLocal AI/TTSデータとYui Backend bundleが自動で揃います。ユーザーがPythonやバックエンドを手動で構築する必要はありません。
 
-ソースコードを読みたい、または自分でビルドしたい場合は `Code > Download ZIP` や `git clone` を使います。ソースからUnityでビルドする場合は、Releaseの `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` または旧 `LocalAIAssets_Minimum` をリポジトリ直下へ展開してください。
+Releaseにある `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` や `YuiVRMAIStudio_BackendBundle_*` は、通常はアプリが自動取得するデータです。手動で落とす必要があるのは、ソースからビルドする場合、個別検証する場合、またはダウンロード済みデータを手動復旧したい場合だけです。
+
+`.sha256` はダウンロード破損を確認したい人向けです。ソースコードを読みたい、または自分でビルドしたい場合は `Code > Download ZIP` や `git clone` を使います。ソースZIPには実行ファイルや大型モデルは含まれません。
 
 AivisSpeech HDやIrodori TTSなどの高品質音声は任意の追加ランタイムです。なくてもアプリは動きますが、バックエンド接続時の声の選択肢を増やせます。リアルタイム会話/翻訳、会話DB、Backend TTSを使う場合、PC版は同梱または初回取得したYui Backendを優先して使います。
-
-PC版ベータには、GitHub Releasesのmanifestを見て不足しているLocal AI/TTSデータとBackend bundleを初回起動時に取得するためのダウンローダー基盤を入れています。今後の追加データや更新データも、このmanifestベースの取得経路へ寄せていきます。
 
 ## 主な機能
 

@@ -2,30 +2,23 @@
 
 このページはWindows版を試す人向けの入口です。まずはGitHub ReleasesのWindows Beta配布物を使ってください。GitHubの `Code > Download ZIP` はソースコード用で、実行ファイルや大型AI/TTSデータを含まないため、そのままでは完成アプリとして動きません。
 
-現在のWindows実行用ZIPは `v0.2.0-beta.3` です。この版には初回ダウンローダーも含まれており、不足しているLocal AI/TTSデータとWindows Backend bundleがあればGitHub Releasesのmanifestから取得します。
+現在のWindows実行用ZIPは `v0.2.0-beta.3` です。この版では、初回起動時に不足しているLocal AI/TTSデータとWindows Backend bundleをアプリが自動で取得します。
 
 macOS版は [`MAC_PUBLIC_BETA.md`](MAC_PUBLIC_BETA.md) を見てください。
 
 ## まず動かす
 
-1. GitHub Releasesの `v0.2.0-beta.3` で、名前に `WindowsPublicBeta` が入っている次のファイルを同じフォルダへダウンロードします。
+1. GitHub Releasesの `v0.2.0-beta.3` で、名前に `WindowsPublicBeta` が入っているアプリ本体ZIPをダウンロードします。
    - `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3_windows.zip`
-   - `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3_windows.zip.sha256`
-2. PowerShellでそのフォルダを開き、sha256を確認します。
-3. 作成されたZIPを展開します。
-4. `Yui VRM AI Studio.exe` を起動します。
-
-```powershell
-$expected = (Get-Content .\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3_windows.zip.sha256).Split()[0]
-$actual = (Get-FileHash .\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3_windows.zip -Algorithm SHA256).Hash.ToLowerInvariant()
-if ($actual -ne $expected) { throw "SHA256 mismatch" }
-```
+2. ZIPを展開します。
+3. `Yui VRM AI Studio.exe` を起動します。
+4. 初回ダウンロード画面で開始すると、基本動作に必要なLocal AI/TTSデータとWindows Backend bundleが自動で入ります。
 
 WindowsのSmartScreenが表示された場合は、信頼できる配布物であることを確認してから `詳細情報` -> `実行` を選びます。
 
-同じフォルダに `YuiFilePickerHelper.exe` が必要です。これは画像やVRMファイルを選ぶための補助ツールです。
+`YuiFilePickerHelper.exe` は画像やVRMファイルを選ぶための補助ツールで、アプリZIPに同梱されています。展開後にファイル構成を崩さず、そのまま使ってください。
 
-初回起動時にLocal AI/TTSデータが不足している場合は、アプリ内のダウンローダーがGitHub Releasesから必要なデータを取得します。
+`.sha256` はダウンロード破損を確認したい場合だけ使います。通常はアプリ本体ZIPだけで始められます。
 
 `MacOSPublicBeta` はmacOS用、`YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `YuiVRMAIStudio_BackendBundle` / `LocalAIAssets_Minimum` は通常アプリ内の初回ダウンローダーが取得します。Windowsアプリを試すだけなら手動ダウンロード不要です。
 
@@ -33,11 +26,11 @@ WindowsのSmartScreenが表示された場合は、信頼できる配布物で�
 
 | 入手方法 | 用途 |
 | --- | --- |
-| ReleaseのWindows ZIP / `.part-*` | すぐ使う人向け。実行ファイルを含みます。分割されている場合は結合してから展開します。 |
-| `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` | 初回起動時にアプリが取得する最小ローカルAI/TTSデータです。 |
+| ReleaseのWindowsアプリZIP | すぐ使う人向け。通常はこれだけ落として展開します。 |
+| `.sha256` | ダウンロード破損を確認したい人向けです。 |
+| `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` | 初回起動時にアプリが取得する最小ローカルAI/TTSデータです。手動取得は通常不要です。 |
 | `YuiVRMAIStudio_BackendBundle_*_windows` | 初回起動時にアプリが取得するWindows Backend bundleです。portable Python runtimeを含むため、通常ユーザーがPythonを別途入れる必要はありません。 |
 | `Code > Download ZIP` | ソースを読む/改造する人向け。実行ファイルや大型モデルは含みません。 |
-| `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | ソースからUnityビルドする人向け、または初回ダウンローダー検証用の最小asset packです。 |
 | Optional voice / 外部runtime | AivisSpeech HDやIrodori TTSなど、声の選択肢を増やすための任意追加です。 |
 
 ## できることの目安
