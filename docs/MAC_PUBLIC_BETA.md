@@ -2,36 +2,32 @@
 
 このページはmacOS版を試す人向けの入口です。まずはGitHub ReleasesのmacOS Beta配布物を使ってください。GitHubの `Code > Download ZIP` はソースコード用で、実行済みアプリや大型AI/TTSデータは含まれません。
 
-現在のmacOS実行用ZIPは `v0.2.0-beta.3` です。この版には初回ダウンローダーも含まれており、不足しているLocal AI/TTSデータとmacOS Backend bundleがあればGitHub Releasesのmanifestから取得します。
+現在のmacOS実行用ZIPは `v0.2.0-beta.3` です。この版では、初回起動時に不足しているLocal AI/TTSデータとmacOS Backend bundleをアプリが自動で取得します。
 
 - English guide: [`MAC_PUBLIC_BETA.en.md`](MAC_PUBLIC_BETA.en.md)
 
 ## まず動かす
 
-1. GitHub Releasesの `v0.2.0-beta.3` で、名前に `MacOSPublicBeta` が入っている次のファイルを同じフォルダへダウンロードします。
+1. GitHub Releasesの `v0.2.0-beta.3` で、名前に `MacOSPublicBeta` が入っているアプリ本体ZIPをダウンロードします。
    - `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip`
-   - `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip.sha256`
-2. Terminalでそのフォルダを開き、sha256を確認します。
-3. ZIPを展開し、`Yui VRM AI Studio.app` を起動します。
-
-```bash
-shasum -a 256 -c YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip.sha256
-```
+2. ZIPを展開し、`Yui VRM AI Studio.app` を起動します。
+3. 初回ダウンロード画面で開始すると、基本動作に必要なLocal AI/TTSデータとmacOS Backend bundleが自動で入ります。
 
 このBetaはまだ署名・notarizationの整備前です。macOSで警告が出た場合は、信頼できる配布物であることを確認してからシステム設定または右クリックメニューから許可してください。
 
-初回起動時にLocal AI/TTSデータやBackend bundleが不足している場合は、アプリ内のダウンローダーがGitHub Releasesから必要なデータを取得します。目安はLocal AIが約2GB台、macOS Backend bundle本体が約10MB台です。AivisSpeech HDやIrodori TTSなどの追加runtimeは別扱いです。
+`.sha256` はダウンロード破損を確認したい場合だけ使います。通常はアプリ本体ZIPだけで始められます。AivisSpeech HDやIrodori TTSなどの追加runtimeは別扱いです。
 
-`WindowsPublicBeta` はWindows用、`YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` はソースからUnityでビルドする人向けです。macOSアプリを試すだけならダウンロード不要です。
+`WindowsPublicBeta` はWindows用、`YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` は通常アプリ内の初回ダウンローダーが取得します。macOSアプリを試すだけなら手動ダウンロード不要です。
 
 ## ダウンロードの違い
 
 | 入手方法 | 用途 |
 | --- | --- |
-| ReleaseのmacOS ZIP / `.part-*` | すぐ使う人向けのアプリ本体です。大型データは初回起動時にmanifestから取得します。分割されている場合は結合してから展開します。 |
+| ReleaseのmacOSアプリZIP | すぐ使う人向け。通常はこれだけ落として展開します。 |
+| `.sha256` | ダウンロード破損を確認したい人向けです。 |
 | `Code > Download ZIP` | ソースを読む/改造する人向け。`.app` や大型モデルは含みません。 |
-| `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | ソースからUnityビルドする人向け、または初回ダウンローダー検証用の最小asset packです。通常ユーザーはアプリ内で取得します。 |
-| `YuiVRMAIStudio_BackendBundle_*_macos` | macOS Backend bundleです。通常ユーザーはアプリ内で取得します。 |
+| `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | 初回起動時にアプリが取得する最小ローカルAI/TTSデータです。手動取得は通常不要です。 |
+| `YuiVRMAIStudio_BackendBundle_*_macos` | 初回起動時にアプリが取得するmacOS Backend bundleです。手動取得は通常不要です。 |
 | Optional voice / 外部runtime | AivisSpeech HDやIrodori TTSなど、声の選択肢を増やすための任意追加です。 |
 
 ## できることの目安

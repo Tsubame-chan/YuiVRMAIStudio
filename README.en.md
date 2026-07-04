@@ -6,14 +6,14 @@
 
 Yui VRM AI Studio turns your own VRM character into a desktop AI avatar that can talk through text, voice, images, and screen context. It is for people who want their VRChat/VRM character, original character, or favorite avatar to become something they can speak with, remember with, search with, and keep around while working or playing.
 
-The project is now a Desktop Public Beta for Windows and macOS. Release app ZIPs stay relatively small, then the first-run downloader fetches the required Local Gemma / VOICEVOX data and the desktop backend bundle from GitHub Releases. OpenAI API keys and optional higher-quality TTS runtimes can be added later.
+The project is now a Desktop Public Beta for Windows and macOS. Download the app ZIP, unzip it, and launch it; the required Local Gemma / VOICEVOX data and desktop backend bundle are downloaded on first launch. OpenAI API keys and optional higher-quality TTS runtimes can be added later.
 
 ## What The Experience Is
 
 - Show your own `.vrm` character on screen and talk with that character.
 - Use text input, voice input, image input, and selected camera/screen context.
 - Keep conversation history and local memory as the app grows toward a persistent AI avatar.
-- Try the app after the first-run download, then add BYOK settings or optional voice runtimes for the richer feature set.
+- Try the app after the first launch download, then add BYOK settings or optional voice runtimes for the richer feature set.
 - Use VOICEVOX as the standard Japanese voice fallback, with optional AivisSpeech HD and Irodori TTS paths.
 
 ## Where To Start
@@ -26,18 +26,20 @@ The project is now a Desktop Public Beta for Windows and macOS. Release app ZIPs
 
 Windows and macOS setup docs now follow the same design model. Runnable builds and large Local AI/TTS assets are distributed through [GitHub Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases).
 
-Current packaging note: `v0.2.0-beta.3` is the current Desktop Public Beta Release. It hosts the Windows/macOS runnable app ZIPs, the first-run downloader manifest, the Desktop Local AI asset pack, and the Windows/macOS backend bundles.
+`v0.2.0-beta.3` is the current Desktop Public Beta Release. Normal users should download only the Windows or macOS app ZIP. The app downloads the larger required data on first launch.
 
 ## Which Download To Use
 
-- To run the app now: download only the `v0.2.0-beta.3` app ZIP and matching `.sha256` for your OS.
-- Large ZIPs may also be uploaded as `.part-*` files. If the full ZIP is present, use it directly. If only parts are present, join them first using the Release notes or the platform setup guide, then unzip the result. Missing Local AI/TTS/backend data is fetched by the first-run downloader from the GitHub Releases manifest.
-- To inspect or modify source: `Code > Download ZIP` and `git clone` are source-code paths. They do not include generated app builds or large models, so they are incomplete as a runnable app by themselves.
-- To build from source: restore the `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` asset pack, or the older `LocalAIAssets_Minimum` pack, into the repository root before building in Unity.
-- To add optional higher-quality voices: install extra runtimes such as AivisSpeech HD or Irodori TTS. The app works without them, but they add backend voice choices.
-- To use the full PC feature set: install the app ZIP and let the first-run downloader install the backend bundle. The app can auto-start the local backend; manual start/stop scripts are included in the downloaded `YuiBackend` folder.
+Download the app ZIP for your OS from GitHub Releases, unzip it, and launch it.
 
-The Desktop Beta now includes the first-run downloader for checking a GitHub Releases manifest and fetching missing Local AI/TTS/backend data. Missing data and future optional packs can move toward in-app downloads.
+- macOS: `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip`
+- Windows: `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3_windows.zip`
+
+On first launch, the app shows a download screen. Start it and the required Local AI/TTS data and Yui Backend bundle are installed automatically. Normal users do not need to install Python or set up the backend by hand.
+
+Release assets such as `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` and `YuiVRMAIStudio_BackendBundle_*` are normally downloaded by the app. Download them manually only for source builds, downloader validation, or manual recovery.
+
+The `.sha256` files are optional integrity checks. `Code > Download ZIP` and `git clone` are source-code paths; they do not include generated app builds or large models.
 
 ## What It Does
 
