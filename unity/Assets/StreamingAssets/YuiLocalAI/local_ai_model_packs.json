@@ -49,9 +49,11 @@
       "startup_policy": "WarmTextOnly",
       "platforms": [
         "ios",
-        "android"
+        "android",
+        "macos",
+        "windows"
       ],
-      "notes": "Mobile offline default. Desktop public beta builds use the higher-quality E4B asset as the bundled minimum SLM."
+      "notes": "Mobile offline default and desktop fallback when the higher-quality E4B asset is not included in the current release asset set."
     },
     {
       "id": "vision_gemma4_e2b",

@@ -2,7 +2,7 @@
 
 このページはWindows版を試す人向けの入口です。まずはGitHub ReleasesのWindows Beta配布物を使ってください。GitHubの `Code > Download ZIP` はソースコード用で、実行ファイルや大型AI/TTSデータを含まないため、そのままでは完成アプリとして動きません。
 
-現在のWindows実行用ZIPは `v0.2.0-beta.3` です。この版には初回ダウンローダーも含まれており、不足しているLocal AI/TTSデータがあればGitHub Releasesのmanifestから取得します。
+現在のWindows実行用ZIPは `v0.2.0-beta.3` です。この版には初回ダウンローダーも含まれており、不足しているLocal AI/TTSデータとWindows Backend bundleがあればGitHub Releasesのmanifestから取得します。
 
 macOS版は [`MAC_PUBLIC_BETA.md`](MAC_PUBLIC_BETA.md) を見てください。
 
@@ -27,13 +27,15 @@ WindowsのSmartScreenが表示された場合は、信頼できる配布物で�
 
 初回起動時にLocal AI/TTSデータが不足している場合は、アプリ内のダウンローダーがGitHub Releasesから必要なデータを取得します。
 
-`MacOSPublicBeta` はmacOS用、`YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` はソースからUnityでビルドする人向けです。Windowsアプリを試すだけならダウンロード不要です。
+`MacOSPublicBeta` はmacOS用、`YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `YuiVRMAIStudio_BackendBundle` / `LocalAIAssets_Minimum` は通常アプリ内の初回ダウンローダーが取得します。Windowsアプリを試すだけなら手動ダウンロード不要です。
 
 ## ダウンロードの違い
 
 | 入手方法 | 用途 |
 | --- | --- |
-| ReleaseのWindows ZIP / `.part-*` | すぐ使う人向け。実行ファイルと最小ローカルAI/TTSを含みます。分割されている場合は結合してから展開します。 |
+| ReleaseのWindows ZIP / `.part-*` | すぐ使う人向け。実行ファイルを含みます。分割されている場合は結合してから展開します。 |
+| `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` | 初回起動時にアプリが取得する最小ローカルAI/TTSデータです。 |
+| `YuiVRMAIStudio_BackendBundle_*_windows` | 初回起動時にアプリが取得するWindows Backend bundleです。初回backend起動時にWindows側でPython仮想環境を作成します。 |
 | `Code > Download ZIP` | ソースを読む/改造する人向け。実行ファイルや大型モデルは含みません。 |
 | `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | ソースからUnityビルドする人向け、または初回ダウンローダー検証用の最小asset packです。 |
 | Optional voice / 外部runtime | AivisSpeech HDやIrodori TTSなど、声の選択肢を増やすための任意追加です。 |

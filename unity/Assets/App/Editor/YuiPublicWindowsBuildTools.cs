@@ -75,6 +75,7 @@ namespace YuiPhysicalAI.Editor
             if (summary.result == BuildResult.Succeeded)
             {
                 RemoveBurstDebugInformation(outputDirectory);
+                RemovePublicDesktopLocalAiAssets(outputDirectory, fileName, target);
                 Debug.Log($"Yui build: {label} succeeded: {outputPath} ({summary.totalSize} bytes)");
             }
             else
@@ -90,6 +91,41 @@ namespace YuiPhysicalAI.Editor
             {
                 Directory.Delete(directory, true);
                 Debug.Log($"Yui build: removed non-shipping Burst debug folder: {directory}");
+            }
+        }
+
+        private static void RemovePublicDesktopLocalAiAssets(string outputDirectory, string fileName, BuildTarget target)
+        {
+            var candidates = new List<string>();
+            if (target == BuildTarget.StandaloneWindows || target == BuildTarget.StandaloneWindows64)
+            {
+                candidates.Add(Path.Combine(
+                    outputDirectory,
+                    Path.GetFileNameWithoutExtension(fileName) + "_Data",
+                    "StreamingAssets",
+                    "YuiLocalAI"));
+            }
+            else if (target == BuildTarget.StandaloneOSX)
+            {
+                candidates.Add(Path.Combine(
+                    outputDirectory,
+                    fileName,
+                    "Contents",
+                    "Resources",
+                    "Data",
+                    "StreamingAssets",
+                    "YuiLocalAI"));
+            }
+
+            foreach (var candidate in candidates)
+            {
+                if (!Directory.Exists(candidate))
+                {
+                    continue;
+                }
+
+                Directory.Delete(candidate, true);
+                Debug.Log($"Yui build: removed first-run downloadable LocalAI payload from public desktop build: {candidate}");
             }
         }
 
@@ -186,7 +222,9 @@ namespace YuiPhysicalAI.Editor
                 Directory.CreateDirectory(excludedDirectory);
                 if (IsDesktopPlatform(platform))
                 {
-                    MoveDirectoryOut(Path.Combine(Application.dataPath, "StreamingAssets/YuiLocalAI/Aivis"));
+                    MoveDirectoryOut(Path.Combine(Application.dataPath, "StreamingAssets/YuiLocalAI"));
+                    AssetDatabase.Refresh();
+                    return;
                 }
 
                 var modelsDirectory = Path.Combine(Application.dataPath, "StreamingAssets/YuiLocalAI/Models");

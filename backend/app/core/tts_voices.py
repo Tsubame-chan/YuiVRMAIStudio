@@ -43,14 +43,6 @@ AIVIS_VOICE_OPTIONS: tuple[TTSVoiceOption, ...] = (
     ),
     TTSVoiceOption(
         provider="aivis",
-        id=1920374593,
-        label="女性ボイス③",
-        gender="female",
-        style="negative",
-        release_review="custom_license",
-    ),
-    TTSVoiceOption(
-        provider="aivis",
         id=1310138976,
         label="男性ボイス①",
         gender="male",

@@ -60,6 +60,9 @@ namespace YuiPhysicalAI.Tests.Editor
             Assert.AreEqual("core_text", registry.BestFor(YuiLocalAiCapability.Chat, "windows").Id);
             Assert.AreEqual("core_text_e2b", registry.BestFor(YuiLocalAiCapability.Chat, "ios").Id);
             Assert.AreEqual("core_text_e2b", registry.BestFor(YuiLocalAiCapability.Chat, "android").Id);
+            Assert.IsTrue(YuiLocalAiModelRegistry.SupportsPlatform(
+                registry.Packs.First(pack => pack.Id == "core_text_e2b"),
+                "macos"));
             Assert.AreEqual("vision_gemma4_e2b", registry.BestFor(YuiLocalAiCapability.Vision, "ios").Id);
             Assert.AreEqual(
                 "gemma-4-E2B-it.litertlm",
@@ -1121,16 +1124,14 @@ namespace YuiPhysicalAI.Tests.Editor
 
             Assert.AreEqual(YuiTtsModeOptions.LocalAiVoiceLabel, labels[0]);
             Assert.AreEqual(YuiTtsModeOptions.BackendVoicevoxLabel, labels[1]);
-            Assert.AreEqual(YuiTtsModeOptions.OfflineAivisLabel, labels[2]);
-            Assert.AreEqual(YuiTtsModeOptions.AivisLabel, labels[3]);
-            Assert.AreEqual(YuiTtsModeOptions.IrodoriLabel, labels[4]);
-            Assert.AreEqual(YuiTtsModeOptions.SilentLabel, labels[5]);
+            Assert.AreEqual(YuiTtsModeOptions.AivisLabel, labels[2]);
+            Assert.AreEqual(YuiTtsModeOptions.IrodoriLabel, labels[3]);
+            Assert.AreEqual(YuiTtsModeOptions.SilentLabel, labels[4]);
             Assert.AreEqual("local-ai", YuiTtsModeOptions.ModeFromIndex(0, true, true, true));
             Assert.AreEqual("server", YuiTtsModeOptions.ModeFromIndex(1, true, true, true));
-            Assert.AreEqual("aivis-native", YuiTtsModeOptions.ModeFromIndex(2, true, true, true));
-            Assert.AreEqual("aivis", YuiTtsModeOptions.ModeFromIndex(3, true, true, true));
-            Assert.AreEqual("server-http", YuiTtsModeOptions.ModeFromIndex(4, true, true, true));
-            Assert.AreEqual("silent", YuiTtsModeOptions.ModeFromIndex(5, true, true, true));
+            Assert.AreEqual("aivis", YuiTtsModeOptions.ModeFromIndex(2, true, true, true));
+            Assert.AreEqual("server-http", YuiTtsModeOptions.ModeFromIndex(3, true, true, true));
+            Assert.AreEqual("silent", YuiTtsModeOptions.ModeFromIndex(4, true, true, true));
             Assert.AreEqual(2, YuiTtsModeOptions.IndexFromMode("aivis-native", true, true, true));
         }
 

@@ -2,7 +2,7 @@
 
 This page is the entry point for trying the macOS build. Start from the macOS Beta release files on GitHub Releases. GitHub `Code > Download ZIP` is source code only and does not include the built app or large local AI/TTS data.
 
-Current packaging note: `v0.2.0-beta.3` is the current macOS runnable app Release. It includes the first-run downloader, which fetches missing Local AI/TTS data from the GitHub Releases manifest.
+Current packaging note: `v0.2.0-beta.3` is the current macOS runnable app Release. It includes the first-run downloader, which fetches missing Local AI/TTS data and the macOS backend bundle from the GitHub Releases manifest.
 
 - Japanese guide: [`MAC_PUBLIC_BETA.md`](MAC_PUBLIC_BETA.md)
 
@@ -20,30 +20,31 @@ shasum -a 256 -c YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip.sha256
 
 This beta is not fully signed/notarized yet. If macOS blocks the first launch, confirm that you trust the downloaded artifact, then allow it from System Settings or the right-click open flow.
 
-If Local AI/TTS data is missing on first launch, the in-app downloader fetches the required data from GitHub Releases.
+If Local AI/TTS/backend data is missing on first launch, the in-app downloader fetches the required data from GitHub Releases.
 
-`WindowsPublicBeta` is for Windows. `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` is for people building from source in Unity or validating the first-run downloader. You do not need either one just to try the macOS app.
+`WindowsPublicBeta` is for Windows. `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum`, `YuiVRMAIStudio_BackendBundle`, and older `LocalAIAssets_Minimum` downloads are normally fetched by the app or used by people validating the first-run downloader. You do not need to download them manually just to try the macOS app.
 
 ## Download Types
 
 | Download | Use |
 | --- | --- |
-| macOS ZIP / `.part-*` from Releases | For normal users. Includes the `.app` and minimum local AI/TTS set. Join split files before unzipping. |
+| macOS ZIP / `.part-*` from Releases | For normal users. Includes the `.app`; first launch downloads required Local AI/TTS/backend data. Join split files before unzipping if the app ZIP itself is split. |
 | `Code > Download ZIP` | Source code only. Does not include the app bundle or large models. |
 | `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | For source builders or first-run downloader validation. |
+| `YuiVRMAIStudio_BackendBundle` | Downloaded by the app for full PC features; source builders can inspect it manually. |
 | Optional voice/runtime | Extra voice choices such as AivisSpeech HD or Irodori TTS. Not required for the app to run. |
 
 ## What Works
 
 - No backend: Local Gemma SLM, Local VOICEVOX, VRM display, basic chat.
 - With an OpenAI API key: Direct OpenAI API, stronger chat/vision/STT paths.
-- With the backend: realtime talk, realtime translation, memory DB, Backend VOICEVOX, AivisSpeech HD, and Irodori TTS.
+- With the downloaded backend: realtime talk, realtime translation, memory DB, web search, Backend VOICEVOX, AivisSpeech HD, and Irodori TTS.
 
 The default `Auto Select` mode is recommended. It prefers the backend when healthy and falls back to local/direct modes when the backend is unavailable.
 
 ## Backend Setup
 
-Only set this up when you want the full feature set. Backend scripts live in the source repository, not inside the app ZIP.
+Normally the first-run downloader installs `YuiBackend` and the app auto-starts it for the full PC feature set. Manual setup is mainly for source builds, debugging, or replacing the downloaded backend.
 
 Requirements:
 
@@ -78,7 +79,17 @@ OPENAI_API_KEY=sk-...
 
 ## Start And Stop Backend
 
-Start:
+If the first-run downloader installed `YuiBackend`, use the downloaded commands:
+
+```text
+YuiBackend/Start_Yui_Backend.command
+```
+
+```text
+YuiBackend/Stop_Yui_Backend.command
+```
+
+For source checkouts, start:
 
 ```bash
 ./scripts/start_local_services_macos.sh
