@@ -113,7 +113,7 @@ PC版ベータには、GitHub Releasesのmanifestを見て不足しているLoca
 追加機能:
 
 - OpenAI APIや高品質な画像理解/STTを使う場合はOpenAI APIキー
-- リアルタイム会話/翻訳、会話DB、Backend TTSを使う場合はPython 3.12+とローカルバックエンド
+- リアルタイム会話/翻訳、会話DB、Backend TTSを使う場合は初回ダウンロード済みのYui Backend bundle
 - 日本語音声を拡張する場合はVOICEVOX Engine、AivisSpeech HD、Irodori TTSなどの外部TTSランタイム
 
 OS別の詳細:

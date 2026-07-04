@@ -65,13 +65,12 @@ When the backend is installed by first-launch download, install it to:
 Unity may also look for `YuiBackend` next to the app bundle/executable when a
 release intentionally ships the backend inside the app ZIP.
 
-The macOS public bundle can include a ready-to-run `.venv` because it is built on
-macOS. The Windows public bundle is currently produced from macOS, so it ships
-backend source plus setup/start/stop scripts. On first backend start, Windows
-creates `backend\.venv` locally through `scripts\setup_backend_byok.ps1`. A
-future Windows build machine can replace this with a prebuilt Windows Python
-runtime or wheelhouse if fully offline first-run setup becomes a release
-requirement.
+The macOS public bundle includes a ready-to-run `.venv` built from the macOS
+backend environment. The Windows public bundle includes a portable Windows
+Python runtime under `backend\.venv\Scripts` plus Windows wheels under
+`backend\.venv\Lib\site-packages`. Source builds may still fall back to
+`scripts\setup_backend_byok.ps1` if the bundled runtime is missing, but normal
+public users should not need to install Python separately.
 
 ## Desktop And Mobile Roles
 

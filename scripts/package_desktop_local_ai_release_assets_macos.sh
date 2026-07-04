@@ -159,6 +159,7 @@ $BACKEND_PARTS_JSON
         \"Stop_Yui_Backend.command\",
         \"scripts/start_local_services_detached_macos.sh\",
         \"scripts/stop_local_services_macos.sh\",
+        \"backend/.venv/bin/python\",
         \"backend/main.py\",
         \"backend/app/main.py\"
       ]
@@ -206,6 +207,7 @@ $WINDOWS_BACKEND_PARTS_JSON
         \"scripts/start_local_services.ps1\",
         \"scripts/setup_backend_byok.ps1\",
         \"scripts/stop_local_services.ps1\",
+        \"backend/.venv/Scripts/python.exe\",
         \"backend/main.py\",
         \"backend/app/main.py\"
       ]
