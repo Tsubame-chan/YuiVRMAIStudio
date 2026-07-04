@@ -50,11 +50,10 @@ shasum -a 256 -c YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip.sha256
 
 - Apple Silicon Mac
 - 初回ダウンロード済みの `YuiBackend`
-- 初回セットアップが必要な場合はPython 3.12+
 - OpenAI APIキー
 - VOICEVOX Engine、AivisSpeech HD、Irodori TTSなど、使いたい外部TTS runtime
 
-ソースから起動する場合やBackend bundleにvenvがない場合は、HomebrewとPythonを用意します。
+macOS Backend bundleには実行用 `.venv` が同梱されています。ソースから起動する場合やBackend bundleにvenvがない場合だけ、HomebrewとPythonを用意します。
 
 ```bash
 brew install python@3.12 git git-lfs

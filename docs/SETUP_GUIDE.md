@@ -35,7 +35,7 @@ WindowsのSmartScreenが表示された場合は、信頼できる配布物で�
 | --- | --- |
 | ReleaseのWindows ZIP / `.part-*` | すぐ使う人向け。実行ファイルを含みます。分割されている場合は結合してから展開します。 |
 | `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` | 初回起動時にアプリが取得する最小ローカルAI/TTSデータです。 |
-| `YuiVRMAIStudio_BackendBundle_*_windows` | 初回起動時にアプリが取得するWindows Backend bundleです。初回backend起動時にWindows側でPython仮想環境を作成します。 |
+| `YuiVRMAIStudio_BackendBundle_*_windows` | 初回起動時にアプリが取得するWindows Backend bundleです。portable Python runtimeを含むため、通常ユーザーがPythonを別途入れる必要はありません。 |
 | `Code > Download ZIP` | ソースを読む/改造する人向け。実行ファイルや大型モデルは含みません。 |
 | `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | ソースからUnityビルドする人向け、または初回ダウンローダー検証用の最小asset packです。 |
 | Optional voice / 外部runtime | AivisSpeech HDやIrodori TTSなど、声の選択肢を増やすための任意追加です。 |
@@ -50,23 +50,23 @@ WindowsのSmartScreenが表示された場合は、信頼できる配布物で�
 
 ## バックエンドを使う場合
 
-フル機能を使いたい場合だけ、以下をセットアップします。
+Release版でフル機能を使う場合、通常は初回ダウンローダーが取得したWindows Backend bundleをアプリが自動起動します。
 
-バックエンドの起動スクリプトはアプリZIPではなく、このリポジトリのソース側に入っています。Releaseアプリだけを試す場合、この章は飛ばして構いません。
+手動で起動・停止したい場合は、ユーザーデータ領域に展開された `YuiBackend` 内の `Start_Yui_Backend.bat` / `Stop_Yui_Backend.bat` を使います。
 
 必要なもの:
 
-- Python 3.12+
+- 初回ダウンロード済みの `YuiBackend`
 - OpenAI APIキー
 - VOICEVOX Engine、AivisSpeech HD、Irodori TTSなど、使いたい外部TTS runtime
 
-Pythonは公式サイトからインストールし、`Add python.exe to PATH` を有効にしてください。
+PythonはWindows Backend bundleに同梱されています。以下のPython導入と `setup_backend_byok.ps1` は、ソースから起動する場合や、bundle内の `backend\.venv\Scripts\python.exe` が欠けている場合だけ必要です。
 
 ```text
 https://www.python.org/downloads/windows/
 ```
 
-PowerShellでリポジトリフォルダを開き、初期化します。
+ソースから起動する場合は、PowerShellでリポジトリフォルダを開き、初期化します。
 
 ```powershell
 .\scripts\setup_backend_byok.ps1
@@ -93,7 +93,7 @@ OPENAI_API_KEY=sk-...
 起動:
 
 ```text
-Start_Yui_Backend_And_VOICEVOX.bat
+YuiBackend\Start_Yui_Backend.bat
 ```
 
 このウィンドウはアプリ使用中は開いたままにします。終了するときは、起動ウィンドウでEnterを押します。
@@ -101,7 +101,7 @@ Start_Yui_Backend_And_VOICEVOX.bat
 うまく止まらない場合:
 
 ```text
-Stop_Yui_Backend_And_VOICEVOX.bat
+YuiBackend\Stop_Yui_Backend.bat
 ```
 
 古いバックエンドが残っていると、別のコピーの会話履歴や設定を見てしまうことがあります。新しく展開したZIPを試す前に、必要ならStop BATで止めてから起動し直してください。

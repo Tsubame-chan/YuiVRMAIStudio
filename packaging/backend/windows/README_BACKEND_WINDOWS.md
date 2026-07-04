@@ -7,8 +7,8 @@ This folder is the local backend bundled with Yui VRM AI Studio for Windows.
 Open the Yui app. The app checks `http://127.0.0.1:8000/health` and starts
 this backend automatically when no healthy backend is already running.
 
-On Windows, the first backend start creates `backend\.venv` if it is missing.
-That setup requires Python 3.12+ and internet access for Python packages.
+The public bundle includes a portable Python runtime under `backend\.venv`, so
+normal users do not need to install Python separately.
 
 ## Manual Start
 
@@ -18,8 +18,8 @@ Run:
 Start_Yui_Backend.bat
 ```
 
-The command creates the backend virtual environment if needed, then starts Yui
-local services. Keep the window open while using the backend manually.
+The command uses the bundled Python runtime and starts Yui local services. Keep
+the window open while using the backend manually.
 
 ## Manual Stop
 

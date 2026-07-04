@@ -49,12 +49,13 @@ Normally the first-run downloader installs `YuiBackend` and the app auto-starts 
 Requirements:
 
 - Apple Silicon Mac
-- Homebrew
-- Python 3.12+
+- Downloaded `YuiBackend`
 - OpenAI API key
 - Optional external TTS runtimes such as VOICEVOX Engine, AivisSpeech HD, or Irodori TTS
 
-Install tools:
+The macOS backend bundle includes a runnable `.venv`. Install Homebrew and
+Python only for source builds or fallback setup when the bundled venv is
+missing.
 
 ```bash
 brew install python@3.12 git git-lfs
