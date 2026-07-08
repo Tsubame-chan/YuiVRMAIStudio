@@ -21,6 +21,7 @@ rsync -a --delete \
 
 mkdir -p "$BUNDLE_DIR/scripts"
 for script in \
+  aivis_model_sync_macos.sh \
   setup_backend_byok_macos.sh \
   start_local_services_macos.sh \
   start_local_services_detached_macos.sh \

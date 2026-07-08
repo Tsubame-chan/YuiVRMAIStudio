@@ -9,6 +9,8 @@ RUNTIME_DIR="$REPO_ROOT/runtime"
 PYTHONHOME_CANDIDATE="$BACKEND_DIR/.venv"
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 
+source "$SCRIPT_DIR/aivis_model_sync_macos.sh"
+
 load_env_file() {
   local env_file="$REPO_ROOT/.env"
   [[ -f "$env_file" ]] || return 0
@@ -302,6 +304,7 @@ if is_aivis_configured; then
     AIVIS_OUT="$LOG_DIR/aivis-service-$RUN_ID.out.log"
     AIVIS_ERR="$LOG_DIR/aivis-service-$RUN_ID.err.log"
     echo "[Yui services] Starting AivisSpeech Engine on $AIVIS_BASE_URL"
+    prepare_aivis_addon_runtime
     "$AIVIS_ENGINE_PATH" --host "$AIVIS_HOST" --port "$AIVIS_PORT" --output_log_utf8 --disable_sentry >"$AIVIS_OUT" 2>"$AIVIS_ERR" &
     AIVIS_PID=$!
     wait_http_ok "AivisSpeech Engine" "$AIVIS_BASE_URL/version" 90 || true

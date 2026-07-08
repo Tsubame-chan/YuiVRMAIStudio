@@ -15,12 +15,20 @@ ENGINE_ROOT="$ROOT_DIR/tools/tts/aivis-engine/extracted/macOS-arm64"
 MODEL_ROOT="$ROOT_DIR/tools/tts/aivis-models"
 SELECTED_MODEL_ROOT="$MODEL_ROOT/selected"
 MODEL_METADATA_ROOT="$MODEL_ROOT/metadata"
+BERT_ROOT="$ENGINE_ROOT/engine_internal/style_bert_vits2/bert/deberta-v2-large-japanese-char-wwm-onnx"
 
 REQUIRED_PATHS=(
   "$ENGINE_ROOT/run"
   "$ENGINE_ROOT/engine_manifest.json"
   "$ENGINE_ROOT/resources/engine_manifest_assets/terms_of_service.md"
   "$ENGINE_ROOT/resources/engine_manifest_assets/dependency_licenses.json"
+  "$BERT_ROOT/config.json"
+  "$BERT_ROOT/model_fp16.onnx"
+  "$BERT_ROOT/special_tokens_map.json"
+  "$BERT_ROOT/tokenizer.json"
+  "$BERT_ROOT/tokenizer_config.json"
+  "$BERT_ROOT/vocab.txt"
+  "$BERT_ROOT/README_YUI_BERT_ONNX.md"
   "$SELECTED_MODEL_ROOT/female_voice_1.aivmx"
   "$SELECTED_MODEL_ROOT/female_voice_2.aivmx"
   "$SELECTED_MODEL_ROOT/male_voice_1.aivmx"
@@ -71,6 +79,10 @@ This optional package contains redistributable AivisSpeech HD model files select
 
 The restricted female_voice_3 model is intentionally not included.
 Model license metadata is kept next to each model under `tools/tts/aivis-models/metadata/`.
+
+The package also includes the Japanese ONNX BERT dependency used by AivisSpeech Engine:
+`tsukumijima/deberta-v2-large-japanese-char-wwm-onnx` (CC BY-SA 4.0 as shown on Hugging Face).
+Yui prepares this dependency in AivisSpeech's `BertModelCaches` directory before starting the engine.
 EOF
 
 find "$PAYLOAD_DIR" -name '*.meta' -type f -delete
@@ -132,6 +144,13 @@ cat > "$OUT_DIR/$ASSET_JSON_NAME" <<JSON
     "tools/tts/aivis-engine/extracted/macOS-arm64/engine_manifest.json",
     "tools/tts/aivis-engine/extracted/macOS-arm64/resources/engine_manifest_assets/terms_of_service.md",
     "tools/tts/aivis-engine/extracted/macOS-arm64/resources/engine_manifest_assets/dependency_licenses.json",
+    "tools/tts/aivis-engine/extracted/macOS-arm64/engine_internal/style_bert_vits2/bert/deberta-v2-large-japanese-char-wwm-onnx/config.json",
+    "tools/tts/aivis-engine/extracted/macOS-arm64/engine_internal/style_bert_vits2/bert/deberta-v2-large-japanese-char-wwm-onnx/model_fp16.onnx",
+    "tools/tts/aivis-engine/extracted/macOS-arm64/engine_internal/style_bert_vits2/bert/deberta-v2-large-japanese-char-wwm-onnx/special_tokens_map.json",
+    "tools/tts/aivis-engine/extracted/macOS-arm64/engine_internal/style_bert_vits2/bert/deberta-v2-large-japanese-char-wwm-onnx/tokenizer.json",
+    "tools/tts/aivis-engine/extracted/macOS-arm64/engine_internal/style_bert_vits2/bert/deberta-v2-large-japanese-char-wwm-onnx/tokenizer_config.json",
+    "tools/tts/aivis-engine/extracted/macOS-arm64/engine_internal/style_bert_vits2/bert/deberta-v2-large-japanese-char-wwm-onnx/vocab.txt",
+    "tools/tts/aivis-engine/extracted/macOS-arm64/engine_internal/style_bert_vits2/bert/deberta-v2-large-japanese-char-wwm-onnx/README_YUI_BERT_ONNX.md",
     "tools/tts/aivis-models/selected/female_voice_1.aivmx",
     "tools/tts/aivis-models/selected/female_voice_2.aivmx",
     "tools/tts/aivis-models/selected/male_voice_1.aivmx",

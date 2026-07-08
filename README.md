@@ -43,7 +43,7 @@ Releaseにある `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` や `YuiVRMAIStud
 
 AivisSpeech HDやIrodori TTSなどの高品質音声は任意の追加ランタイムです。なくてもアプリは動きますが、バックエンド接続時の声の選択肢を増やせます。リアルタイム会話/翻訳、会話DB、Backend TTSを使う場合、PC版は同梱または初回取得したYui Backendを優先して使います。
 
-TTS配布の方針として、初回必須データはVOICEVOXの最小構成に絞り、AivisSpeech HDやIrodori TTSは高品質な追加音声パックとして扱います。対応している追加音声は、Settingsの `Additional Voices` からアプリ内で取得できます。現時点のReleaseではmacOS向けAivisSpeech HD add-onを配布し、Windows向け追加音声やIrodori TTSは検証済みランタイムが揃い次第、同じ導線へ追加する方針です。
+TTS配布の方針として、初回必須データはVOICEVOXの最小構成に絞り、AivisSpeech HDやIrodori TTSは高品質な追加音声パックとして扱います。対応している追加音声は、Settingsの `Additional Voices` からアプリ内で取得できます。現時点のReleaseではmacOS向けAivisSpeech HD add-onを配布します。このパックにはAivis本体、選定済みAIVMXモデル、Aivisが必要とする日本語BERT依存が含まれるため大きめです。Windows向け追加音声やIrodori TTSは検証済みランタイムが揃い次第、同じ導線へ追加する方針です。
 
 ## 主な機能
 
