@@ -202,6 +202,7 @@ namespace YuiPhysicalAI.Avatar
             if (consoleVisibilityController != null)
             {
                 var shouldFrameCamera = ActiveSlot == YuiAvatarSlots.UnityChanDefault
+                    || ActiveSlot == YuiAvatarSlots.DemoAvatar
                     || YuiAvatarSlots.IsCustomVrm(ActiveSlot);
                 consoleVisibilityController.SetAvatarRoot(activeAvatar.transform, shouldFrameCamera);
             }
@@ -491,5 +492,4 @@ namespace YuiPhysicalAI.Avatar
         }
     }
 }
-
 
