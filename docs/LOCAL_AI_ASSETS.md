@@ -10,7 +10,7 @@ GitHub Release assets or prepared locally before building.
 | Case | What to download |
 | --- | --- |
 | I want to run the app now | Download the current `v0.2.0-beta.3` Desktop Public Beta app ZIP and checksum for your OS from GitHub Releases. |
-| I want optional/high-quality voices | Install the matching backend runtime, such as AivisSpeech HD or Irodori TTS, or download optional voice asset ZIPs if a Release provides them. |
+| I want optional/high-quality voices | Use the in-app add-on voice flow when available, or install/download the matching backend runtime such as AivisSpeech HD or Irodori TTS. |
 | I downloaded `Code > Download ZIP` | That is source code only. It does not include generated app builds or large local AI/TTS assets. |
 | I want to build from source | Clone the repo, then restore the local AI/TTS assets before building. |
 
@@ -72,6 +72,26 @@ Optional voice packs may be added in future Releases for larger or more
 experimental embedded runtimes. Backend AivisSpeech HD and Irodori TTS are
 usually installed as separate local runtimes instead of being bundled into the
 minimum app ZIP.
+
+## Optional TTS Add-On Policy
+
+The first-run download should stay focused on the minimum useful experience:
+Local Gemma, Local VOICEVOX, and the desktop backend bundle. Higher-quality TTS
+engines such as AivisSpeech HD and Irodori TTS should be distributed as optional
+add-on packs or runtime installers after their exact assets pass redistribution
+checks.
+
+The user-facing entry point should live near voice selection, for example
+`Download additional voices`, because that is where users discover that a better
+voice exists. Advanced settings should remain the place for diagnostics, manual
+paths, provider URLs, and experimental overrides.
+
+Each optional TTS pack must include:
+
+- a manifest entry with platform, size, sha256, provider id, and install path;
+- license, notice, attribution, and source-reference files;
+- an install health check that falls back to VOICEVOX if the provider fails; and
+- no restricted voices, including the removed Aivis `female_voice_3` model.
 
 ## Restore Assets For A Source Build
 

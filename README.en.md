@@ -41,6 +41,8 @@ Release assets such as `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` and `YuiVRM
 
 The `.sha256` files are optional integrity checks. `Code > Download ZIP` and `git clone` are source-code paths; they do not include generated app builds or large models.
 
+TTS distribution is intentionally split. The required first-run download stays focused on the minimum VOICEVOX path, while AivisSpeech HD and Irodori TTS should be offered as higher-quality optional voice add-ons. The normal discovery point should be near voice selection, such as a `Download additional voices` action; Advanced Settings should remain for diagnostics, manual runtime paths, provider URLs, and experimental overrides.
+
 ## What It Does
 
 - Load VRM 1.0 / VRM 0.x `.vrm` avatars and talk with them as AI characters.
@@ -176,6 +178,7 @@ Be careful with sensitive screen or audio content when using screen context or r
 ### Next
 
 - improve Windows / macOS Release distribution flow
+- add an in-app optional voice download flow for AivisSpeech HD and Irodori TTS near the voice-selection UI
 - verify the first-run downloader on real desktop installs and extend it toward update checks
 - continue viewer-mode and desktop usability improvements
 - test Irodori TTS and other services through the generic HTTP TTS adapter

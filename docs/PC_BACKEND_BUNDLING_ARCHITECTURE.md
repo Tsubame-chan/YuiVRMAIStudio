@@ -132,6 +132,27 @@ Every redistributed third-party runtime or model pack must include the matching
 license, notice, attribution, and source-reference material required by that
 component.
 
+## Optional TTS Download UX
+
+The desktop app should ship with only the minimum required TTS path in the
+first-run download: Local VOICEVOX plus the bundled backend. AivisSpeech HD and
+Irodori TTS are strategically important voices, but they should be optional
+add-ons so the first launch stays small and predictable.
+
+The normal user path should be:
+
+1. Start the app and complete the first-run minimum download.
+2. Open the voice/TTS selection area and choose `Download additional voices`.
+3. Let the backend download, verify, and install the selected TTS add-on from a
+   GitHub Release manifest.
+4. Keep VOICEVOX as the fallback if the add-on is missing, still downloading, or
+   fails a health check.
+
+Detailed settings should show provider status and allow manual runtime paths or
+URLs, but they should not be the only place a user can discover Aivis or Irodori.
+The voice selection surface is the primary discovery point; advanced settings
+are the repair and verification surface.
+
 ## Implementation Phases
 
 1. Remove restricted Aivis voice assets and stop advertising them.

@@ -43,6 +43,8 @@ Releaseにある `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` や `YuiVRMAIStud
 
 AivisSpeech HDやIrodori TTSなどの高品質音声は任意の追加ランタイムです。なくてもアプリは動きますが、バックエンド接続時の声の選択肢を増やせます。リアルタイム会話/翻訳、会話DB、Backend TTSを使う場合、PC版は同梱または初回取得したYui Backendを優先して使います。
 
+TTS配布の方針として、初回必須データはVOICEVOXの最小構成に絞り、AivisSpeech HDやIrodori TTSは高品質な追加音声パックとして扱います。通常ユーザーには声選択まわりの「追加音声を取得」導線から案内し、詳細設定は状態確認、手動ランタイム指定、検証用の逃げ道として使う方針です。
+
 ## 主な機能
 
 - VRM 1.0 / VRM 0.x の `.vrm` アバターをAIキャラクターとして表示・会話
@@ -88,6 +90,7 @@ AivisSpeech HDやIrodori TTSなどの高品質音声は任意の追加ランタ�
 ### 次に進めたいこと
 
 - Windows / macOSの配布手順をさらに簡単にする
+- AivisSpeech HD / Irodori TTSの追加ダウンロード導線を、声選択UIから使える形で整える
 - 初回起動ダウンローダーの実機検証と更新確認への拡張
 - 設定画面からの更新確認
 - 鑑賞モードとデスクトップ操作性の継続改善

@@ -27,6 +27,31 @@ namespace YuiPhysicalAI.Tests.Editor
         }
 
         [Test]
+        public void WindowsStandaloneBuildProfile_UsesPublicUnityChanDefault()
+        {
+            var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            Assert.IsFalse(string.IsNullOrWhiteSpace(projectRoot));
+            var projectSettingsPath = Path.Combine(projectRoot, "ProjectSettings", "ProjectSettings.asset");
+
+            var projectSettings = File.ReadAllText(projectSettingsPath);
+
+            StringAssert.Contains("Standalone: YUI_PROFILE_PUBLIC", projectSettings);
+        }
+
+        [Test]
+        public void AvatarSwitcher_FramesBundledDemoAvatarAsDefaultCamera()
+        {
+            var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            Assert.IsFalse(string.IsNullOrWhiteSpace(projectRoot));
+            var switcherPath = Path.Combine(projectRoot, "Assets", "App", "Scripts", "Avatar", "YuiAvatarSwitcher.cs");
+
+            var source = File.ReadAllText(switcherPath);
+
+            StringAssert.Contains("ActiveSlot == YuiAvatarSlots.DemoAvatar", source);
+            StringAssert.Contains("SetAvatarRoot(activeAvatar.transform, shouldFrameCamera)", source);
+        }
+
+        [Test]
         public void WindowsForegroundAppMonitor_IsDisabledInMacEditor()
         {
 #if UNITY_EDITOR_OSX
