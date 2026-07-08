@@ -24,12 +24,28 @@ namespace YuiPhysicalAI.UI
             localAiDownloadOverlay?.ShowRepairDownload();
         }
 
+        public void RequestOptionalTtsAssetDownload()
+        {
+            EnsureLocalAiDownloadOverlay();
+            localAiDownloadOverlay?.ShowOptionalTtsDownload();
+        }
+
         public void RefreshLocalAiRuntimeAfterAssetInstall()
         {
             ConfigureAiRuntimeRouter();
             localAiUnavailableWarningShown = false;
             AppendLog("System", "ローカルAIデータの準備が完了しました。Local Gemmaを使用できます。");
             SetStatus("Local AI ready");
+        }
+
+        public void RefreshAfterOptionalTtsAssetInstall()
+        {
+            AppendLog("System", "追加音声データの準備が完了しました。Backend再起動後にAivisSpeech HDなどの追加TTSを確認できます。");
+            SetStatus("Additional voices ready");
+            if (cancellationTokenSource != null)
+            {
+                _ = CheckBackendOnceAsync(cancellationTokenSource.Token);
+            }
         }
 
         private void EnsureLocalAiDownloadOverlay()

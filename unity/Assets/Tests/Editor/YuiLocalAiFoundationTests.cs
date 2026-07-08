@@ -216,6 +216,42 @@ namespace YuiPhysicalAI.Tests.Editor
         }
 
         [Test]
+        public void AssetManifest_ReturnsOptionalTtsAddonsForPlatform()
+        {
+            var manifest = YuiLocalAiAssetManifest.FromJson(@"{
+  ""schema_version"": 1,
+  ""assets"": [
+    {
+      ""id"": ""desktop-local-ai-minimum"",
+      ""kind"": ""desktop_local_ai_minimum"",
+      ""platforms"": [""windows""],
+      ""optional"": false
+    },
+    {
+      ""id"": ""tts-addon-aivis-macos"",
+      ""kind"": ""optional_tts_addon"",
+      ""platforms"": [""macos-arm64""],
+      ""required_for"": [""backend_tts"", ""aivis""],
+      ""optional"": true
+    },
+    {
+      ""id"": ""tts-addon-irodori-linux"",
+      ""kind"": ""optional_tts_addon"",
+      ""platforms"": [""linux""],
+      ""required_for"": [""backend_tts"", ""irodori""],
+      ""optional"": true
+    }
+  ]
+}");
+
+            var addons = manifest.OptionalAssetsFor("macos", "optional_tts_addon").ToArray();
+
+            Assert.AreEqual(1, addons.Length);
+            Assert.AreEqual("tts-addon-aivis-macos", addons[0].Id);
+            Assert.IsFalse(manifest.RequiredAssetsFor("macos").Any(asset => asset.Optional));
+        }
+
+        [Test]
         public void AssetInstallProbe_ReportsMissingAndInstalledRequiredPaths()
         {
             var tempRoot = Path.Combine(Path.GetTempPath(), "yui-local-ai-assets-test-" + Guid.NewGuid().ToString("N"));
@@ -315,6 +351,83 @@ namespace YuiPhysicalAI.Tests.Editor
             Assert.AreEqual("desktop-local-voicevox-core", plan.AssetsToDownload[1].Id);
             Assert.AreEqual(YuiLocalAiAssetNeedReason.OutdatedVersion, plan.Items[1].NeedReason);
             Assert.AreEqual(YuiLocalAiAssetPlanState.NeedsDownload, plan.State);
+        }
+
+        [Test]
+        public void AssetStore_PlansOptionalTtsDownloadsForMissingAssets()
+        {
+            var tempRoot = Path.Combine(Path.GetTempPath(), "yui-optional-tts-assets-test-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                var manifest = YuiLocalAiAssetManifest.FromJson(@"{
+  ""schema_version"": 1,
+  ""release_version"": ""v0.2.0-beta.3"",
+  ""assets"": [
+    {
+      ""id"": ""desktop-local-ai-minimum"",
+      ""display_name"": ""Required"",
+      ""kind"": ""desktop_local_ai_minimum"",
+      ""platforms"": [""macos""],
+      ""optional"": false,
+      ""version"": ""2026.07.02"",
+      ""install_root"": ""YuiLocalAI"",
+      ""installed_paths"": [""local_ai_model_packs.json""]
+    },
+    {
+      ""id"": ""tts-addon-aivis-macos"",
+      ""display_name"": ""AivisSpeech HD add-on"",
+      ""kind"": ""optional_tts_addon"",
+      ""platforms"": [""macos""],
+      ""required_for"": [""backend_tts"", ""aivis""],
+      ""optional"": true,
+      ""version"": ""2026.07.08"",
+      ""filename"": ""aivis.zip"",
+      ""sha256"": ""aivis-sha"",
+      ""install_root"": ""YuiBackend"",
+      ""installed_paths"": [""tools/tts/aivis-engine/extracted/macOS-arm64/run""]
+    }
+  ]
+}");
+
+                var ledger = new YuiLocalAiInstalledAssetLedger();
+                var plan = YuiLocalAiAssetStore.PlanOptionalDownloads(
+                    manifest,
+                    ledger,
+                    tempRoot,
+                    "macos",
+                    "optional_tts_addon");
+
+                Assert.AreEqual(YuiLocalAiAssetPlanState.NeedsDownload, plan.State);
+                Assert.AreEqual(1, plan.AssetsToDownload.Count);
+                Assert.AreEqual("tts-addon-aivis-macos", plan.AssetsToDownload[0].Id);
+                Assert.AreEqual(YuiLocalAiAssetNeedReason.MissingFiles, plan.Items[0].NeedReason);
+            }
+            finally
+            {
+                if (Directory.Exists(tempRoot))
+                {
+                    Directory.Delete(tempRoot, recursive: true);
+                }
+            }
+        }
+
+        [Test]
+        public void SettingsUi_ExposesAdditionalTtsDownloadAction()
+        {
+            var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            var runtimeUiPath = Path.Combine(projectRoot, "Assets", "App", "Scripts", "UI", "YuiSettingsOverlay.RuntimeUi.cs");
+            var localAiPath = Path.Combine(projectRoot, "Assets", "App", "Scripts", "UI", "YuiChatPanel.LocalAI.cs");
+            var overlayPath = Path.Combine(projectRoot, "Assets", "App", "Scripts", "UI", "YuiLocalAiDownloadOverlay.cs");
+
+            var runtimeUi = File.ReadAllText(runtimeUiPath);
+            var localAi = File.ReadAllText(localAiPath);
+            var overlay = File.ReadAllText(overlayPath);
+
+            StringAssert.Contains("OptionalTtsDownloadButton", runtimeUi);
+            StringAssert.Contains("Additional Voices", runtimeUi);
+            StringAssert.Contains("RequestOptionalTtsAssetDownload", localAi);
+            StringAssert.Contains("ShowOptionalTtsDownload", overlay);
+            StringAssert.Contains("optional_tts_addon", overlay);
         }
 
         [Test]

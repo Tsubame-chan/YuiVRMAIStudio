@@ -71,6 +71,7 @@ namespace YuiPhysicalAI.UI
         private Text microphoneTestStatusText;
         private Text localAiAssetStatusText;
         private Button localAiAssetRepairButton;
+        private Button optionalTtsDownloadButton;
         private YuiMicrophoneDeviceSelector microphoneTestDeviceSelector;
         private YuiUnityMicrophoneRecorder microphoneTestRecorder;
         private YuiMacEditorMicrophoneRecorder microphoneTestMacFallback;

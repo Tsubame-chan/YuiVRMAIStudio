@@ -15,7 +15,7 @@ This page is the entry point for trying the macOS build. Start from the macOS Be
 
 This beta is not fully signed/notarized yet. If macOS blocks the first launch, confirm that you trust the downloaded artifact, then allow it from System Settings or the right-click open flow.
 
-The `.sha256` file is optional and only needed if you want to verify download integrity.
+The `.sha256` file is optional and only needed if you want to verify download integrity. Optional voices such as AivisSpeech HD can be installed later from Settings through `Additional Voices`.
 
 `WindowsPublicBeta` is for Windows. `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum`, `YuiVRMAIStudio_BackendBundle`, and older `LocalAIAssets_Minimum` downloads are normally fetched by the app or used by people validating the first-run downloader. You do not need to download them manually just to try the macOS app.
 
@@ -28,7 +28,7 @@ The `.sha256` file is optional and only needed if you want to verify download in
 | `Code > Download ZIP` | Source code only. Does not include the app bundle or large models. |
 | `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | Normally downloaded by the app. Manual use is for source builds, validation, or recovery. |
 | `YuiVRMAIStudio_BackendBundle` | Normally downloaded by the app for full PC features; source builders can inspect it manually. |
-| Optional voice/runtime | Extra voice choices such as AivisSpeech HD or Irodori TTS. Not required for the app to run. |
+| Optional voice/runtime | Extra voice choices such as AivisSpeech HD or Irodori TTS. Supported add-ons are installed from Settings through `Additional Voices`. Not required for the app to run. |
 
 ## What Works
 

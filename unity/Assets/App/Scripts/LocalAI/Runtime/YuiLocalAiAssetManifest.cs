@@ -40,6 +40,15 @@ namespace YuiPhysicalAI.LocalAI
         {
             return Assets.Where(asset => !asset.Optional && asset.SupportsPlatform(platform));
         }
+
+        public IEnumerable<YuiLocalAiReleaseAsset> OptionalAssetsFor(string platform, string kind = null)
+        {
+            return Assets.Where(asset =>
+                asset.Optional
+                && asset.SupportsPlatform(platform)
+                && (string.IsNullOrWhiteSpace(kind)
+                    || string.Equals(asset.Kind, kind, StringComparison.OrdinalIgnoreCase)));
+        }
     }
 
     [Serializable]

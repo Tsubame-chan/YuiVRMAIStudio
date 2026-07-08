@@ -12,6 +12,7 @@ namespace YuiPhysicalAI.UI
     public sealed class YuiLocalAiDownloadOverlay : MonoBehaviour
     {
         public const string DefaultManifestUrl = "https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/latest/download/YuiVRMAIStudio_AssetManifest.json";
+        private const string OptionalTtsAddonKind = "optional_tts_addon";
 
         [SerializeField] private string manifestUrl = DefaultManifestUrl;
 
@@ -28,6 +29,7 @@ namespace YuiPhysicalAI.UI
         private Button retryButton;
         private Button cancelButton;
         private bool checkInProgress;
+        private bool optionalTtsDownloadMode;
 
         public string CurrentStatusText { get; private set; } = "Local AI data: not checked";
 
@@ -58,6 +60,7 @@ namespace YuiPhysicalAI.UI
             checkInProgress = true;
             try
             {
+                optionalTtsDownloadMode = false;
                 await RefreshPlanAsync(cancellationToken);
                 if (currentPlan == null || currentPlan.State != YuiLocalAiAssetPlanState.NeedsDownload)
                 {
@@ -87,6 +90,7 @@ namespace YuiPhysicalAI.UI
 
             try
             {
+                optionalTtsDownloadMode = false;
                 await RefreshPlanAsync(CancellationToken.None);
                 ShowDownloadPrompt(force: true);
             }
@@ -95,6 +99,29 @@ namespace YuiPhysicalAI.UI
                 EnsureUi();
                 Show();
                 SetBody("ローカルAIデータの確認に失敗しました。", ex.Message);
+                SetButtons(download: false, retry: true, cancel: false);
+            }
+        }
+
+        public async void ShowOptionalTtsDownload()
+        {
+            if (!IsDesktopSupported)
+            {
+                return;
+            }
+
+            try
+            {
+                await RefreshOptionalTtsPlanAsync(CancellationToken.None);
+                ShowDownloadPrompt(force: true);
+            }
+            catch (Exception ex)
+            {
+                EnsureUi();
+                Show();
+                optionalTtsDownloadMode = true;
+                SetTitle("追加音声ダウンロード");
+                SetBody("追加音声データの確認に失敗しました。", ex.Message);
                 SetButtons(download: false, retry: true, cancel: false);
             }
         }
@@ -120,21 +147,65 @@ namespace YuiPhysicalAI.UI
             CurrentStatusText = FormatPlanStatus(currentPlan);
         }
 
+        private async Task RefreshOptionalTtsPlanAsync(CancellationToken cancellationToken)
+        {
+            if (!IsDesktopSupported)
+            {
+                CurrentStatusText = "Additional voices: managed by platform store";
+                currentPlan = null;
+                return;
+            }
+
+            optionalTtsDownloadMode = true;
+            CurrentStatusText = "Additional voices: checking...";
+            var downloader = CreateDownloader();
+            manifest = await downloader.FetchManifestAsync(manifestUrl, cancellationToken);
+            var ledger = YuiLocalAiInstalledAssetLedger.Load(downloader.LedgerPath);
+            currentPlan = YuiLocalAiAssetStore.PlanOptionalDownloads(
+                manifest,
+                ledger,
+                AssetStorageRoot(),
+                YuiLocalAiModelRegistry.CurrentPlatformKey(),
+                OptionalTtsAddonKind);
+            CurrentStatusText = FormatOptionalTtsPlanStatus(currentPlan);
+        }
+
         private void ShowDownloadPrompt(bool force = false)
         {
             EnsureUi();
             Show();
+            SetTitle(optionalTtsDownloadMode ? "追加音声ダウンロード" : "初回データダウンロード");
             if (currentPlan == null || currentPlan.State != YuiLocalAiAssetPlanState.NeedsDownload)
             {
-                SetBody("ローカルAIデータは準備できています。", CurrentStatusText);
+                if (optionalTtsDownloadMode && currentPlan != null && currentPlan.State == YuiLocalAiAssetPlanState.NoRequiredAssets)
+                {
+                    SetBody(
+                        "このOS向けの追加音声パックはまだありません。",
+                        CurrentStatusText);
+                    SetButtons(download: false, retry: false, cancel: false);
+                    return;
+                }
+
+                SetBody(
+                    optionalTtsDownloadMode ? "追加音声データは準備できています。" : "ローカルAIデータは準備できています。",
+                    CurrentStatusText);
                 SetButtons(download: false, retry: false, cancel: false);
                 return;
             }
 
             var count = currentPlan.AssetsToDownload.Count;
-            SetBody(
-                "初回のデータダウンロードを開始します。",
-                $"対象: {count}件。必要なデータをGitHub Releasesから取得します。");
+            if (optionalTtsDownloadMode)
+            {
+                SetBody(
+                    "追加音声データをダウンロードします。",
+                    $"対象: {count}件。AivisSpeech HDなどの追加TTSデータをGitHub Releasesから取得します。");
+            }
+            else
+            {
+                SetBody(
+                    "初回のデータダウンロードを開始します。",
+                    $"対象: {count}件。必要なデータをGitHub Releasesから取得します。");
+            }
             SetButtons(download: true, retry: false, cancel: false);
             SetProgress(0f, "待機中");
         }
@@ -149,8 +220,11 @@ namespace YuiPhysicalAI.UI
 
             downloadCancellation?.Cancel();
             downloadCancellation = new CancellationTokenSource();
+            var optionalMode = optionalTtsDownloadMode;
             SetButtons(download: false, retry: false, cancel: true);
-            SetBody("初回データをダウンロードしています。", "完了までアプリを閉じずにお待ちください。");
+            SetBody(
+                optionalMode ? "追加音声データをダウンロードしています。" : "初回データをダウンロードしています。",
+                "完了までアプリを閉じずにお待ちください。");
             try
             {
                 var downloader = CreateDownloader();
@@ -162,18 +236,32 @@ namespace YuiPhysicalAI.UI
                     downloadCancellation.Token);
                 if (!result.Success)
                 {
-                    SetBody("ローカルAIデータのインストールに失敗しました。", result.ErrorMessage);
+                    SetBody(
+                        optionalMode ? "追加音声データのインストールに失敗しました。" : "ローカルAIデータのインストールに失敗しました。",
+                        result.ErrorMessage);
                     SetButtons(download: false, retry: true, cancel: false);
-                    CurrentStatusText = $"Local AI data: failed ({result.ErrorMessage})";
+                    CurrentStatusText = optionalMode
+                        ? $"Additional voices: failed ({result.ErrorMessage})"
+                        : $"Local AI data: failed ({result.ErrorMessage})";
                     return;
                 }
 
-                await RefreshPlanAsync(CancellationToken.None);
-                chatPanel?.RefreshLocalAiRuntimeAfterAssetInstall();
+                if (optionalMode)
+                {
+                    await RefreshOptionalTtsPlanAsync(CancellationToken.None);
+                    chatPanel?.RefreshAfterOptionalTtsAssetInstall();
+                }
+                else
+                {
+                    await RefreshPlanAsync(CancellationToken.None);
+                    chatPanel?.RefreshLocalAiRuntimeAfterAssetInstall();
+                }
                 var backendSupervisor = GetComponent<YuiDesktopBackendSupervisor>();
                 backendSupervisor?.RequestEnsureBackend();
                 SetProgress(1f, "完了");
-                SetBody("ローカルAIデータの準備が完了しました。", "Local Gemmaを使用できます。");
+                SetBody(
+                    optionalMode ? "追加音声データの準備が完了しました。" : "ローカルAIデータの準備が完了しました。",
+                    optionalMode ? "必要に応じてBackendを再起動すると追加TTSが有効になります。" : "Local Gemmaを使用できます。");
                 SetButtons(download: false, retry: false, cancel: false);
                 await Task.Delay(1200);
                 Hide();
@@ -182,13 +270,19 @@ namespace YuiPhysicalAI.UI
             {
                 SetBody("ダウンロードを中断しました。", "準備できたらもう一度開始してください。");
                 SetButtons(download: true, retry: false, cancel: false);
-                CurrentStatusText = "Local AI data: download cancelled";
+                CurrentStatusText = optionalMode
+                    ? "Additional voices: download cancelled"
+                    : "Local AI data: download cancelled";
             }
             catch (Exception ex)
             {
-                SetBody("ローカルAIデータのダウンロードに失敗しました。", ex.Message);
+                SetBody(
+                    optionalMode ? "追加音声データのダウンロードに失敗しました。" : "ローカルAIデータのダウンロードに失敗しました。",
+                    ex.Message);
                 SetButtons(download: false, retry: true, cancel: false);
-                CurrentStatusText = $"Local AI data: failed ({ex.Message})";
+                CurrentStatusText = optionalMode
+                    ? $"Additional voices: failed ({ex.Message})"
+                    : $"Local AI data: failed ({ex.Message})";
             }
         }
 
@@ -230,6 +324,24 @@ namespace YuiPhysicalAI.UI
                     return "Local AI data: no required desktop assets";
                 default:
                     return $"Local AI data: {plan.AssetsToDownload.Count} download(s) required";
+            }
+        }
+
+        private static string FormatOptionalTtsPlanStatus(YuiLocalAiAssetPlan plan)
+        {
+            if (plan == null)
+            {
+                return "Additional voices: not checked";
+            }
+
+            switch (plan.State)
+            {
+                case YuiLocalAiAssetPlanState.UpToDate:
+                    return "Additional voices: ready";
+                case YuiLocalAiAssetPlanState.NoRequiredAssets:
+                    return "Additional voices: no add-on assets for this platform";
+                default:
+                    return $"Additional voices: {plan.AssetsToDownload.Count} download(s) available";
             }
         }
 
@@ -288,9 +400,29 @@ namespace YuiPhysicalAI.UI
             SetRect(cancelButton.transform, 552f, 312f, 36f, 44f);
 
             downloadButton.onClick.AddListener(StartDownload);
-            retryButton.onClick.AddListener(StartDownload);
+            retryButton.onClick.AddListener(RetryDownloadCheck);
             cancelButton.onClick.AddListener(CancelDownload);
             Hide();
+        }
+
+        private void RetryDownloadCheck()
+        {
+            if (optionalTtsDownloadMode)
+            {
+                ShowOptionalTtsDownload();
+            }
+            else
+            {
+                ShowRepairDownload();
+            }
+        }
+
+        private void SetTitle(string title)
+        {
+            if (titleText != null)
+            {
+                titleText.text = title ?? string.Empty;
+            }
         }
 
         private void Show()

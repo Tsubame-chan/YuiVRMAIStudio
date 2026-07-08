@@ -6,7 +6,7 @@
 
 Yui VRM AI Studioは、自分のVRMキャラクターをデスクトップ上のAIアバターとして動かし、テキスト・音声・画像・画面コンテキストを使って会話できるアプリです。VRChatで使っているキャラクター、創作キャラ、推しアバターを、ただ眺めるだけではなく、話し、覚え、調べ、日常作業を手伝ってくれる存在にすることを目指しています。
 
-現在公開しているのは、Windows / macOS向けのデスクトップ版ベータです。アプリ本体ZIPを展開して起動すると、初回ダウンロードでLocal Gemma SLM、Local VOICEVOX、Yui Backend bundleが揃います。手動でバックエンドサーバーやPython環境を作らなくても試せます。より高品質な会話、リアルタイム会話/翻訳、会話DB、追加TTSを使いたい場合は、OpenAI APIキーや任意のTTS runtimeを追加します。
+現在公開しているのは、Windows / macOS向けのデスクトップ版ベータです。アプリ本体ZIPを展開して起動すると、初回ダウンロードでLocal Gemma SLM、Local VOICEVOX、Yui Backend bundleが揃います。手動でバックエンドサーバーやPython環境を作らなくても試せます。より高品質な会話、リアルタイム会話/翻訳、会話DB、追加TTSを使いたい場合は、OpenAI APIキーやアプリ内の追加音声ダウンロードを使います。
 
 ## 主な特徴
 
@@ -43,7 +43,7 @@ Releaseにある `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` や `YuiVRMAIStud
 
 AivisSpeech HDやIrodori TTSなどの高品質音声は任意の追加ランタイムです。なくてもアプリは動きますが、バックエンド接続時の声の選択肢を増やせます。リアルタイム会話/翻訳、会話DB、Backend TTSを使う場合、PC版は同梱または初回取得したYui Backendを優先して使います。
 
-TTS配布の方針として、初回必須データはVOICEVOXの最小構成に絞り、AivisSpeech HDやIrodori TTSは高品質な追加音声パックとして扱います。通常ユーザーには声選択まわりの「追加音声を取得」導線から案内し、詳細設定は状態確認、手動ランタイム指定、検証用の逃げ道として使う方針です。
+TTS配布の方針として、初回必須データはVOICEVOXの最小構成に絞り、AivisSpeech HDやIrodori TTSは高品質な追加音声パックとして扱います。対応している追加音声は、Settingsの `Additional Voices` からアプリ内で取得できます。現時点のReleaseではmacOS向けAivisSpeech HD add-onを配布し、Windows向け追加音声やIrodori TTSは検証済みランタイムが揃い次第、同じ導線へ追加する方針です。
 
 ## 主な機能
 
@@ -90,7 +90,7 @@ TTS配布の方針として、初回必須データはVOICEVOXの最小構成に
 ### 次に進めたいこと
 
 - Windows / macOSの配布手順をさらに簡単にする
-- AivisSpeech HD / Irodori TTSの追加ダウンロード導線を、声選択UIから使える形で整える
+- AivisSpeech HD / Irodori TTSの追加ダウンロード導線を、声選択UIへさらに近づける
 - 初回起動ダウンローダーの実機検証と更新確認への拡張
 - 設定画面からの更新確認
 - 鑑賞モードとデスクトップ操作性の継続改善

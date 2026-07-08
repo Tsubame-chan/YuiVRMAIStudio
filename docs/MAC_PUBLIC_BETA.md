@@ -15,7 +15,7 @@
 
 このBetaはまだ署名・notarizationの整備前です。macOSで警告が出た場合は、信頼できる配布物であることを確認してからシステム設定または右クリックメニューから許可してください。
 
-`.sha256` はダウンロード破損を確認したい場合だけ使います。通常はアプリ本体ZIPだけで始められます。AivisSpeech HDやIrodori TTSなどの追加runtimeは別扱いです。
+`.sha256` はダウンロード破損を確認したい場合だけ使います。通常はアプリ本体ZIPだけで始められます。AivisSpeech HDなどの追加音声は、Settingsの `Additional Voices` から必要な人だけ取得します。
 
 `WindowsPublicBeta` はWindows用、`YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` は通常アプリ内の初回ダウンローダーが取得します。macOSアプリを試すだけなら手動ダウンロード不要です。
 
@@ -28,7 +28,7 @@
 | `Code > Download ZIP` | ソースを読む/改造する人向け。`.app` や大型モデルは含みません。 |
 | `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | 初回起動時にアプリが取得する最小ローカルAI/TTSデータです。手動取得は通常不要です。 |
 | `YuiVRMAIStudio_BackendBundle_*_macos` | 初回起動時にアプリが取得するmacOS Backend bundleです。手動取得は通常不要です。 |
-| Optional voice / 外部runtime | AivisSpeech HDやIrodori TTSなど、声の選択肢を増やすための任意追加です。 |
+| Optional voice / 外部runtime | AivisSpeech HDやIrodori TTSなど、声の選択肢を増やすための任意追加です。対応パックはSettingsの `Additional Voices` から取得します。 |
 
 ## できることの目安
 
