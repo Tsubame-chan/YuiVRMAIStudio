@@ -10,7 +10,7 @@ GitHub Release assets or prepared locally before building.
 | Case | What to download |
 | --- | --- |
 | I want to run the app now | Download the current `v0.2.0-beta.3` Desktop Public Beta app ZIP and checksum for your OS from GitHub Releases. |
-| I want optional/high-quality voices | Use the in-app add-on voice flow when available, or install/download the matching backend runtime such as AivisSpeech HD or Irodori TTS. |
+| I want optional/high-quality voices | Use Settings > `Additional Voices` when a matching add-on exists, or install/download the matching backend runtime such as AivisSpeech HD or Irodori TTS. |
 | I downloaded `Code > Download ZIP` | That is source code only. It does not include generated app builds or large local AI/TTS assets. |
 | I want to build from source | Clone the repo, then restore the local AI/TTS assets before building. |
 
@@ -59,6 +59,8 @@ YuiVRMAIStudio_BackendBundle_<version>_macos.zip.part-*
 YuiVRMAIStudio_BackendBundle_<version>_macos.zip.sha256
 YuiVRMAIStudio_BackendBundle_<version>_windows.zip.part-*
 YuiVRMAIStudio_BackendBundle_<version>_windows.zip.sha256
+YuiVRMAIStudio_TTSAddon_AivisSpeechHD_<version>_macos.zip
+YuiVRMAIStudio_TTSAddon_AivisSpeechHD_<version>_macos.zip.sha256
 ```
 
 The app ZIP is for normal users and contains the Unity app. Large runtime data
@@ -68,23 +70,24 @@ The `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` ZIP, and the older
 `LocalAIAssets_Minimum` ZIP naming, are mainly for source builders, first-run
 download installs, or as a fallback distribution when a platform artifact must
 be split because of hosting limits.
-Optional voice packs may be added in future Releases for larger or more
-experimental embedded runtimes. Backend AivisSpeech HD and Irodori TTS are
-usually installed as separate local runtimes instead of being bundled into the
-minimum app ZIP.
+Optional voice packs are separate from the first-run minimum. The current
+macOS AivisSpeech HD add-on is downloaded by the app from the Release manifest
+when the user chooses Settings > `Additional Voices`. Irodori TTS and Windows
+voice add-ons should follow the same manifest path once their redistributable
+runtime assets are ready.
 
 ## Optional TTS Add-On Policy
 
-The first-run download should stay focused on the minimum useful experience:
+The first-run download stays focused on the minimum useful experience:
 Local Gemma, Local VOICEVOX, and the desktop backend bundle. Higher-quality TTS
 engines such as AivisSpeech HD and Irodori TTS should be distributed as optional
 add-on packs or runtime installers after their exact assets pass redistribution
 checks.
 
-The user-facing entry point should live near voice selection, for example
-`Download additional voices`, because that is where users discover that a better
-voice exists. Advanced settings should remain the place for diagnostics, manual
-paths, provider URLs, and experimental overrides.
+The first shipped entry point is Settings > `Additional Voices`. The longer-term
+UI should move this closer to voice selection, because that is where users
+discover that a better voice exists. Advanced settings should remain the place
+for diagnostics, manual paths, provider URLs, and experimental overrides.
 
 Each optional TTS pack must include:
 
@@ -170,6 +173,13 @@ Create the minimum source-build asset pack with:
 
 ```bash
 YUI_RELEASE_VERSION=v0.2.0-beta.3 ./scripts/package_minimum_local_ai_assets_macos.sh
+```
+
+Create the optional macOS AivisSpeech HD add-on and merge it into the Release
+manifest with:
+
+```bash
+YUI_RELEASE_VERSION=v0.2.0-beta.3 ./scripts/package_optional_tts_addons_macos.sh
 ```
 
 By default the script also creates `.part-000`, `.part-001`, ... files beside

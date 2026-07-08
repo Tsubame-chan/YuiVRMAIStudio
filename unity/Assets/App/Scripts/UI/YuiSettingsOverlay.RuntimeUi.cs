@@ -424,9 +424,13 @@ namespace YuiPhysicalAI.UI
             SetTopRectRuntime(localAiAssetStatusText.transform, 176f, 1604f, 22f, 42f);
 
             localAiAssetRepairButton = EnsureRuntimeButton(content, localAiAssetRepairButton, "LocalAiAssetRepairButton", "Repair / Download", true);
-            SetTopRectRuntime(localAiAssetRepairButton.transform, 176f, 1654f, 22f, 42f);
+            optionalTtsDownloadButton = EnsureRuntimeButton(content, optionalTtsDownloadButton, "OptionalTtsDownloadButton", "Additional Voices", true);
+            SetTopRectColumnRuntime(localAiAssetRepairButton.transform, 176f, 22f, 1654f, 42f, 0f, 0.50f, 8f);
+            SetTopRectColumnRuntime(optionalTtsDownloadButton.transform, 176f, 22f, 1654f, 42f, 0.50f, 1f, 8f);
             localAiAssetRepairButton.onClick.RemoveListener(RequestLocalAiAssetRepair);
             localAiAssetRepairButton.onClick.AddListener(RequestLocalAiAssetRepair);
+            optionalTtsDownloadButton.onClick.RemoveListener(RequestOptionalTtsDownload);
+            optionalTtsDownloadButton.onClick.AddListener(RequestOptionalTtsDownload);
             RefreshLocalAiAssetStatus();
         }
 
@@ -457,6 +461,12 @@ namespace YuiPhysicalAI.UI
         private void RequestLocalAiAssetRepair()
         {
             chatPanel?.RequestLocalAiAssetRepairDownload();
+            RefreshLocalAiAssetStatus();
+        }
+
+        private void RequestOptionalTtsDownload()
+        {
+            chatPanel?.RequestOptionalTtsAssetDownload();
             RefreshLocalAiAssetStatus();
         }
 

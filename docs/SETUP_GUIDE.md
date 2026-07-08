@@ -31,7 +31,7 @@ WindowsのSmartScreenが表示された場合は、信頼できる配布物で�
 | `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` | 初回起動時にアプリが取得する最小ローカルAI/TTSデータです。手動取得は通常不要です。 |
 | `YuiVRMAIStudio_BackendBundle_*_windows` | 初回起動時にアプリが取得するWindows Backend bundleです。portable Python runtimeを含むため、通常ユーザーがPythonを別途入れる必要はありません。 |
 | `Code > Download ZIP` | ソースを読む/改造する人向け。実行ファイルや大型モデルは含みません。 |
-| Optional voice / 外部runtime | AivisSpeech HDやIrodori TTSなど、声の選択肢を増やすための任意追加です。 |
+| Optional voice / 外部runtime | AivisSpeech HDやIrodori TTSなど、声の選択肢を増やすための任意追加です。対応パックはSettingsの `Additional Voices` から取得します。 |
 
 ## できることの目安
 
@@ -130,7 +130,7 @@ https://voicevox.hiroshiba.jp/
 
 - `Auto Select` のまま再度試してください。
 - API機能を使う場合は `.env` の `OPENAI_API_KEY` を確認してください。
-- バックエンド機能を使う場合は `Start_Yui_Backend_And_VOICEVOX.bat` が起動中か確認してください。
+- バックエンド機能を使う場合は、アプリが自動起動したYui Backend、または `YuiBackend\Start_Yui_Backend.bat` が起動中か確認してください。
 
 音声が出ない:
 

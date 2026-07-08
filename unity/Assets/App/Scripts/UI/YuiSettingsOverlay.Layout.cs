@@ -169,6 +169,15 @@ namespace YuiPhysicalAI.UI
                 row += 110f;
             }
 
+            SetTopRectRuntime(content.Find("LocalAiAssetSectionLabel"), 18f, row, 22f, 34f);
+            SetLabelTextRuntime(content.Find("LocalAiAssetSectionLabel"), "Downloads");
+            row += 48f;
+            SetTopRectRuntime(content.Find("LocalAiAssetStatusText"), 18f, row, 22f, 42f);
+            row += 54f;
+            SetTopRectColumnRuntime(content.Find("LocalAiAssetRepairButton"), 176f, 22f, row - 10f, 42f, 0f, 0.50f, 8f);
+            SetTopRectColumnRuntime(content.Find("OptionalTtsDownloadButton"), 176f, 22f, row - 10f, 42f, 0.50f, 1f, 8f);
+            row += 70f;
+
             SetTopRectRuntime(content.Find("MicSection"), 18f, row, 22f, 34f);
             SetLabelTextRuntime(content.Find("MicSection"), "Input");
             row += 54f;

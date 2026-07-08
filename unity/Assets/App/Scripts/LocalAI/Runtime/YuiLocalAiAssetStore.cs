@@ -156,9 +156,33 @@ namespace YuiPhysicalAI.LocalAI
                 return new YuiLocalAiAssetPlan(Array.Empty<YuiLocalAiAssetPlanItem>());
             }
 
+            return PlanDownloads(manifest.RequiredAssetsFor(platform), ledger, assetStorageRoot, platform);
+        }
+
+        public static YuiLocalAiAssetPlan PlanOptionalDownloads(
+            YuiLocalAiAssetManifest manifest,
+            YuiLocalAiInstalledAssetLedger ledger,
+            string assetStorageRoot,
+            string platform,
+            string kind = null)
+        {
+            if (manifest == null)
+            {
+                return new YuiLocalAiAssetPlan(Array.Empty<YuiLocalAiAssetPlanItem>());
+            }
+
+            return PlanDownloads(manifest.OptionalAssetsFor(platform, kind), ledger, assetStorageRoot, platform);
+        }
+
+        private static YuiLocalAiAssetPlan PlanDownloads(
+            IEnumerable<YuiLocalAiReleaseAsset> assets,
+            YuiLocalAiInstalledAssetLedger ledger,
+            string assetStorageRoot,
+            string platform)
+        {
             ledger ??= new YuiLocalAiInstalledAssetLedger();
             var items = new List<YuiLocalAiAssetPlanItem>();
-            foreach (var asset in manifest.RequiredAssetsFor(platform))
+            foreach (var asset in assets ?? Array.Empty<YuiLocalAiReleaseAsset>())
             {
                 var installStatus = YuiLocalAiAssetInstallProbe.Check(asset, assetStorageRoot, platform);
                 if (installStatus.State == YuiLocalAiAssetInstallState.UnsupportedPlatform)

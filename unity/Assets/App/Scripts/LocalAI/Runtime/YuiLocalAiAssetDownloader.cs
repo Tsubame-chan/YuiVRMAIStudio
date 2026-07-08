@@ -311,17 +311,31 @@ namespace YuiPhysicalAI.LocalAI
         {
 #if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
             if (asset == null
-                || !string.Equals(asset.Kind, "desktop_backend_bundle", StringComparison.OrdinalIgnoreCase)
                 || string.IsNullOrWhiteSpace(installRoot)
                 || !Directory.Exists(installRoot))
             {
                 return;
             }
 
-            ChmodIfExists(Path.Combine(installRoot, "Start_Yui_Backend.command"), "+x");
-            ChmodIfExists(Path.Combine(installRoot, "Stop_Yui_Backend.command"), "+x");
-            ChmodIfExists(Path.Combine(installRoot, "scripts"), "-R", "+x");
-            ChmodIfExists(Path.Combine(installRoot, "backend", ".venv", "bin"), "-R", "+x");
+            if (string.Equals(asset.Kind, "desktop_backend_bundle", StringComparison.OrdinalIgnoreCase))
+            {
+                ChmodIfExists(Path.Combine(installRoot, "Start_Yui_Backend.command"), "+x");
+                ChmodIfExists(Path.Combine(installRoot, "Stop_Yui_Backend.command"), "+x");
+                ChmodIfExists(Path.Combine(installRoot, "scripts"), "-R", "+x");
+                ChmodIfExists(Path.Combine(installRoot, "backend", ".venv", "bin"), "-R", "+x");
+            }
+
+            if (string.Equals(asset.Kind, "optional_tts_addon", StringComparison.OrdinalIgnoreCase))
+            {
+                ChmodIfExists(Path.Combine(
+                    installRoot,
+                    "tools",
+                    "tts",
+                    "aivis-engine",
+                    "extracted",
+                    "macOS-arm64",
+                    "run"), "+x");
+            }
 #endif
         }
 

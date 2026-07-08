@@ -6,7 +6,7 @@
 
 Yui VRM AI Studio turns your own VRM character into a desktop AI avatar that can talk through text, voice, images, and screen context. It is for people who want their VRChat/VRM character, original character, or favorite avatar to become something they can speak with, remember with, search with, and keep around while working or playing.
 
-The project is now a Desktop Public Beta for Windows and macOS. Download the app ZIP, unzip it, and launch it; the required Local Gemma / VOICEVOX data and desktop backend bundle are downloaded on first launch. OpenAI API keys and optional higher-quality TTS runtimes can be added later.
+The project is now a Desktop Public Beta for Windows and macOS. Download the app ZIP, unzip it, and launch it; the required Local Gemma / VOICEVOX data and desktop backend bundle are downloaded on first launch. OpenAI API keys and optional higher-quality voice add-ons can be added later from inside the app.
 
 ## What The Experience Is
 
@@ -41,7 +41,7 @@ Release assets such as `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` and `YuiVRM
 
 The `.sha256` files are optional integrity checks. `Code > Download ZIP` and `git clone` are source-code paths; they do not include generated app builds or large models.
 
-TTS distribution is intentionally split. The required first-run download stays focused on the minimum VOICEVOX path, while AivisSpeech HD and Irodori TTS should be offered as higher-quality optional voice add-ons. The normal discovery point should be near voice selection, such as a `Download additional voices` action; Advanced Settings should remain for diagnostics, manual runtime paths, provider URLs, and experimental overrides.
+TTS distribution is intentionally split. The required first-run download stays focused on the minimum VOICEVOX path, while AivisSpeech HD and Irodori TTS are treated as higher-quality optional voice add-ons. Supported add-ons can be installed from Settings through `Additional Voices`. The current Release includes a macOS AivisSpeech HD add-on; Windows add-ons and Irodori TTS will use the same flow once their redistributable runtimes are ready.
 
 ## What It Does
 
@@ -178,7 +178,7 @@ Be careful with sensitive screen or audio content when using screen context or r
 ### Next
 
 - improve Windows / macOS Release distribution flow
-- add an in-app optional voice download flow for AivisSpeech HD and Irodori TTS near the voice-selection UI
+- move the in-app optional voice download flow closer to voice selection
 - verify the first-run downloader on real desktop installs and extend it toward update checks
 - continue viewer-mode and desktop usability improvements
 - test Irodori TTS and other services through the generic HTTP TTS adapter
