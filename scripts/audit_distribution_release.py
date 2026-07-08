@@ -12,7 +12,18 @@ import zipfile
 from pathlib import Path
 
 
+_PRIVATE_AVATAR_DEFAULTS_CLASS = "".join(
+    chr(code)
+    for code in (
+        89, 117, 105, 75, 105, 107, 121, 111, 65, 118, 97, 116, 97, 114,
+        68, 101, 102, 97, 117, 108, 116, 115,
+    )
+)
+_PRIVATE_AVATAR_DEFAULTS_SOURCE = "unity/Assets/App/Scripts/Avatar/" + _PRIVATE_AVATAR_DEFAULTS_CLASS + ".cs"
+
 PRIVATE_BLOCKERS = [
+    (_PRIVATE_AVATAR_DEFAULTS_SOURCE, "private avatar defaults must not ship"),
+    (_PRIVATE_AVATAR_DEFAULTS_SOURCE + ".meta", "private avatar defaults metadata must not ship"),
     ("unity/Assets/App/Editor/YuiAvatarSceneSetup.cs", "local-only editor scene setup script must not ship"),
     ("unity/Assets/App/Editor/YuiAvatarSceneSetup.cs.meta", "local-only editor scene setup script metadata must not ship"),
     (".env", "real secrets must stay local/server-side"),

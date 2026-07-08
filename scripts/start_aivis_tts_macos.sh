@@ -6,6 +6,10 @@ set -euo pipefail
 # mobile runtime. Do not treat this path as satisfying the iOS/Android
 # airplane-mode requirement.
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+source "$SCRIPT_DIR/aivis_model_sync_macos.sh"
+
 HOST="${AIVIS_HOST:-127.0.0.1}"
 PORT="${AIVIS_PORT:-10101}"
 ENGINE_EXE="${AIVIS_ENGINE_EXE:-}"
@@ -35,6 +39,7 @@ EOF
 fi
 
 echo "[Yui Aivis] Starting AivisSpeech Engine at http://$HOST:$PORT"
+prepare_aivis_addon_runtime
 exec "$ENGINE_EXE" \
   --host "$HOST" \
   --port "$PORT" \

@@ -72,9 +72,11 @@ download installs, or as a fallback distribution when a platform artifact must
 be split because of hosting limits.
 Optional voice packs are separate from the first-run minimum. The current
 macOS AivisSpeech HD add-on is downloaded by the app from the Release manifest
-when the user chooses Settings > `Additional Voices`. Irodori TTS and Windows
-voice add-ons should follow the same manifest path once their redistributable
-runtime assets are ready.
+when the user chooses Settings > `Additional Voices`. It includes the Aivis
+runtime, selected AIVMX files, and the Japanese ONNX BERT dependency used by
+AivisSpeech Engine, so it is intentionally much larger than a voice-only pack.
+Irodori TTS and Windows voice add-ons should follow the same manifest path once
+their redistributable runtime assets are ready.
 
 ## Optional TTS Add-On Policy
 
@@ -93,6 +95,7 @@ Each optional TTS pack must include:
 
 - a manifest entry with platform, size, sha256, provider id, and install path;
 - license, notice, attribution, and source-reference files;
+- runtime dependencies that the provider otherwise downloads on startup;
 - an install health check that falls back to VOICEVOX if the provider fails; and
 - no restricted voices, including the removed Aivis `female_voice_3` model.
 

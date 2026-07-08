@@ -41,7 +41,7 @@ Release assets such as `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` and `YuiVRM
 
 The `.sha256` files are optional integrity checks. `Code > Download ZIP` and `git clone` are source-code paths; they do not include generated app builds or large models.
 
-TTS distribution is intentionally split. The required first-run download stays focused on the minimum VOICEVOX path, while AivisSpeech HD and Irodori TTS are treated as higher-quality optional voice add-ons. Supported add-ons can be installed from Settings through `Additional Voices`. The current Release includes a macOS AivisSpeech HD add-on; Windows add-ons and Irodori TTS will use the same flow once their redistributable runtimes are ready.
+TTS distribution is intentionally split. The required first-run download stays focused on the minimum VOICEVOX path, while AivisSpeech HD and Irodori TTS are treated as higher-quality optional voice add-ons. Supported add-ons can be installed from Settings through `Additional Voices`. The current Release includes a macOS AivisSpeech HD add-on. It is large because it includes the Aivis runtime, selected AIVMX models, and the Japanese BERT dependency Aivis needs at startup. Windows add-ons and Irodori TTS will use the same flow once their redistributable runtimes are ready.
 
 ## What It Does
 

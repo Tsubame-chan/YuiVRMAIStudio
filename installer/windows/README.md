@@ -1,19 +1,19 @@
 # Windows Installer Skeleton
 
-This folder contains the first Inno Setup script for a Windows alpha installer.
+This folder contains the Inno Setup script for a Windows desktop beta installer.
 
-The installer is intentionally BYOK:
+The installer is intentionally BYOK and local-first:
 
 - it installs Yui files;
-- it does not install VOICEVOX;
+- the first launch downloads required local AI/backend data from GitHub Releases;
 - it does not ask for or store API keys;
-- users run `scripts\setup_backend_byok.ps1` and edit `.env`.
+- advanced users can still run backend setup scripts manually when working from source.
 
 Expected source layout before compiling:
 
 ```text
 public/YuiVRMAIStudio_Public/
-  builds/YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1/Yui VRM AI Studio.exe
+  builds/YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3/Yui VRM AI Studio.exe
   backend/
   scripts/
   docs/

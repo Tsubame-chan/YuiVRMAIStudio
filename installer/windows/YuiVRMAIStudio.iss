@@ -1,5 +1,5 @@
 #define MyAppName "Yui VRM AI Studio"
-#define MyAppVersion "0.1.0-alpha.1"
+#define MyAppVersion "0.2.0-beta.3"
 #define MyAppPublisher "Yui VRM AI Studio"
 #define SourceRoot "..\..\public\YuiVRMAIStudio_Public"
 
@@ -26,7 +26,7 @@ Name: "{group}\Start Yui Backend + VOICEVOX"; Filename: "{app}\Start_Yui_Backend
 Name: "{group}\Stop Yui Services"; Filename: "{app}\Stop_Yui_Backend_And_VOICEVOX.bat"; WorkingDir: "{app}"
 Name: "{group}\Setup Backend BYOK"; Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\scripts\setup_backend_byok.ps1"""; WorkingDir: "{app}"
 Name: "{group}\BYOK Setup Guide"; Filename: "{app}\docs\PUBLIC_BYOK_SETUP.md"
-Name: "{group}\Yui VRM AI Studio"; Filename: "{app}\builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1\Yui VRM AI Studio.exe"; WorkingDir: "{app}\builds\YuiVRMAIStudio_PublicAlpha_v0.1.0-alpha.1"
+Name: "{group}\Yui VRM AI Studio"; Filename: "{app}\builds\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3\Yui VRM AI Studio.exe"; WorkingDir: "{app}\builds\YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3"
 
 [Run]
 Filename: "{app}\docs\PUBLIC_BYOK_SETUP.md"; Description: "Open BYOK setup guide"; Flags: postinstall shellexec skipifsilent unchecked
