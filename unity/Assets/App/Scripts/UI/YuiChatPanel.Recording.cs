@@ -125,7 +125,7 @@ namespace YuiPhysicalAI.UI
             {
                 isSending = true;
                 SetInteractable(false);
-                SetRecordButtonText("Rec");
+                SetRecordButtonText("Mic");
                 UpdateMicrophoneLevel(0f);
                 SetMicrophoneDeviceText("Mic: Android speech");
                 SetStatus("Listening...");
@@ -313,7 +313,7 @@ namespace YuiPhysicalAI.UI
             var samplePosition = stopResult.SamplePosition;
             var macEditorWavBytesTask = StopMacEditorMicrophoneFallbackAsync();
             isRecording = false;
-            SetRecordButtonText("Rec");
+            SetRecordButtonText("Mic");
             UpdateMicrophoneLevel(0f);
 
             if (IsRealtimeConversationMode())

@@ -733,7 +733,10 @@
           },
           "mode": {
             "type": "string",
-            "const": "standard",
+            "enum": [
+              "standard",
+              "work"
+            ],
             "title": "Mode",
             "default": "standard"
           },
@@ -765,6 +768,11 @@
           "text": {
             "type": "string",
             "title": "Text"
+          },
+          "spoken_text": {
+            "type": "string",
+            "title": "Spoken Text",
+            "default": ""
           },
           "face": {
             "type": "string",
@@ -853,6 +861,33 @@
             },
             "type": "object",
             "title": "Tts Recommendation"
+          },
+          "tts_voice_options": {
+            "additionalProperties": {
+              "items": {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "integer"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Tts Voice Options"
+          },
+          "tts_default_voice": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Tts Default Voice"
           },
           "stt_provider": {
             "type": "string",

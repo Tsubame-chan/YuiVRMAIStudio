@@ -4,7 +4,7 @@ Yui VRM AI StudioはDesktop Public Betaです。まず「Release ZIPを落とし
 
 ## Betaで重視していること
 
-- ReleaseアプリZIPに最小構成のLocal Gemma SLMとLocal VOICEVOXを含めること。
+- ReleaseアプリZIPを起動すると、初回ダウンローダーが最小構成のLocal Gemma SLM、Local VOICEVOX、OS別Backend bundleを取得・検証・展開できること。
 - GitHubの `Code > Download ZIP` が完成アプリではなくソースコードだと明確に案内すること。
 - SettingsとHelpの接続状態を同じCapability判定で表示すること。
 - `.env`、会話DB、音声キャッシュ、ローカルアセット、巨大モデルをGit履歴へ混ぜないこと。
@@ -14,8 +14,8 @@ Yui VRM AI StudioはDesktop Public Betaです。まず「Release ZIPを落とし
 
 - Publication Guard: 公開してはいけないローカル情報や秘密情報が混ざっていないこと。
 - Distribution Audit: 公開コピーに必要なREADME、セットアップガイド、backend source、Unity baseline assetsが揃っていること。
-- Desktop build audit: Windows/macOSのアプリ成果物、Windows file picker helper、最小Local AI/TTS assetが揃っていること。
-- GitHub Release assets: 分割ZIP、sha256、Release本文の復元手順が揃っていること。
+- Desktop build audit: Windows/macOSのアプリ成果物、Windows file picker helper、初回取得manifestが揃っていること。
+- GitHub Release assets: アプリZIP、初回取得用Local AI/TTS/Backend bundle、sha256、Release本文の案内が揃っていること。
 
 ## 今後増やしたいテスト
 

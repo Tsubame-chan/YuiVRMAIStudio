@@ -105,17 +105,18 @@ namespace YuiPhysicalAI.UI
                 return;
             }
 
+            var speechSource = ResolveSpeechText(chat);
             var shouldSpeak = chat.ShouldTts
-                || (forceTtsForNonEmptyReplies && !string.IsNullOrWhiteSpace(chat.Text));
+                || (forceTtsForNonEmptyReplies && !string.IsNullOrWhiteSpace(speechSource));
             Debug.Log(
-                $"Yui TTS decision: should_tts={chat.ShouldTts}, force_non_empty={forceTtsForNonEmptyReplies}, should_speak={shouldSpeak}, text_length={(chat.Text ?? string.Empty).Length}");
+                $"Yui TTS decision: should_tts={chat.ShouldTts}, force_non_empty={forceTtsForNonEmptyReplies}, should_speak={shouldSpeak}, display_length={(chat.Text ?? string.Empty).Length}, speech_length={speechSource.Length}");
 
             if (!shouldSpeak)
             {
                 return;
             }
 
-            var speechText = YuiSpeechTextUtility.CleanSpeechText(chat.Text);
+            var speechText = YuiSpeechTextUtility.CleanSpeechText(speechSource);
             if (string.IsNullOrWhiteSpace(speechText))
             {
                 return;
@@ -175,6 +176,42 @@ namespace YuiPhysicalAI.UI
             await WaitForCurrentPlaybackToFinishAsync(cancellationToken);
             ReleaseCurrentPlaybackClip();
             SetStatus("Connected");
+        }
+
+        private string ResolveSpeechText(ChatResponse chat)
+        {
+            if (chat == null)
+            {
+                return string.Empty;
+            }
+
+            if (!string.IsNullOrWhiteSpace(chat.SpokenText))
+            {
+                return chat.SpokenText;
+            }
+
+            if (!YuiChatRequestModes.IsWork(chatInteractionMode))
+            {
+                return chat.Text ?? string.Empty;
+            }
+
+            var compact = string.Join(
+                " ",
+                (chat.Text ?? string.Empty).Split(
+                    new[] { ' ', '\r', '\n', '\t' },
+                    StringSplitOptions.RemoveEmptyEntries));
+            if (string.IsNullOrWhiteSpace(compact))
+            {
+                return "作業結果を画面にまとめたよ。";
+            }
+
+            var end = compact.IndexOfAny(new[] { '。', '！', '？', '!', '?' });
+            if (end >= 0)
+            {
+                compact = compact.Substring(0, end + 1);
+            }
+
+            return compact.Length > 160 ? compact.Substring(0, 157).TrimEnd() + "..." : compact;
         }
 
         private async Task SpeakResponseWithPrefetchAsync(

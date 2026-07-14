@@ -37,6 +37,7 @@ namespace YuiPhysicalAI.Core
 
         // Session / mode
         public const string SecretMode = "Yui.Session.SecretMode";
+        public const string ChatInteractionMode = "Yui.Settings.ChatInteractionMode";
         public const string RealtimeVerboseLogging = "Yui.Settings.RealtimeVerboseLogging";
 
         // User-facing context

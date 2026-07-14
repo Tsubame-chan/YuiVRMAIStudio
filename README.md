@@ -4,14 +4,15 @@
 
 **お気に入りのVRMキャラクターを、話し、見て、調べて、覚えるAIエージェントへ。**
 
-Yui VRM AI Studioは、自分のVRMキャラクターをデスクトップ上のAIアバターとして動かし、テキスト・音声・画像・画面コンテキストを使って会話できるアプリです。VRChatで使っているキャラクター、創作キャラ、推しアバターを、ただ眺めるだけではなく、話し、覚え、調べ、日常作業を手伝ってくれる存在にすることを目指しています。
+Yui VRM AI Studioは、自分のVRMキャラクターをデスクトップ上のAIアバターとして動かし、テキスト・音声・画像・カメラを使って会話や作業を頼めるアプリです。VRChatで使っているキャラクター、創作キャラ、推しアバターを、ただ眺めるだけではなく、話し、覚え、調べ、PCでの作業を手伝い、外出時もモバイルから同じ環境へつながる存在にすることを目指しています。
 
 現在公開しているのは、Windows / macOS向けのデスクトップ版ベータです。アプリ本体ZIPを展開して起動すると、初回ダウンロードでLocal Gemma SLM、Local VOICEVOX、Yui Backend bundleが揃います。手動でバックエンドサーバーやPython環境を作らなくても試せます。より高品質な会話、リアルタイム会話/翻訳、会話DB、追加TTSを使いたい場合は、OpenAI APIキーやアプリ内の追加音声ダウンロードを使います。
 
 ## 主な特徴
 
 - 自分の `.vrm` キャラクターを画面に表示し、そのキャラと会話できます。
-- メッセージ入力、音声入力、画像入力、選択中カメラ/画面コンテキストを会話に使えます。
+- メッセージ入力、音声入力、画像入力、選択中のカメラ画像を会話に使えます。
+- `Talk` は短く自然に会話し、`Work` は詳しい作業結果を画面に出して結論だけを読み上げます。
 - ローカルメモリと会話履歴を使い、継続的に会話できるAIアバターとして扱えます。
 - バックエンドを用意しなくても、基本的な会話と日本語音声を試せます。
 - 日本語音声はVOICEVOXを標準の音声エンジンとして扱い、AivisSpeech HDやIrodori TTSなどを任意で追加できます。
@@ -49,7 +50,8 @@ TTS配布の方針として、初回必須データはVOICEVOXの最小構成に
 
 - VRM 1.0 / VRM 0.x の `.vrm` アバターをAIキャラクターとして表示・会話
 - テキストチャット、音声入力、日本語音声応答
-- 画像入力 / Vision、画面コンテキスト
+- 画像入力 / Vision、選択中カメラの画像理解
+- 短い会話用の `Talk` と、詳しい画面出力を作る `Work`
 - 会話履歴とローカルメモリ
 - 天気、イベント、ニュース、場所などの現在情報に対するweb search支援
 - OpenAI Realtime APIを使う低遅延会話の実験
@@ -76,7 +78,7 @@ TTS配布の方針として、初回必須データはVOICEVOXの最小構成に
 - Auto SelectによるBackend優先 / Localへの自動切り替え
 - Backend VOICEVOX / AivisSpeech HD / Irodori TTSの選択
 - 会話履歴・メモリ
-- 画像/画面コンテキスト
+- 画像入力 / Vision、選択中カメラの画像理解
 - Realtime系の実験機能
 
 ### 検証中の機能
@@ -89,14 +91,11 @@ TTS配布の方針として、初回必須データはVOICEVOXの最小構成に
 
 ### 次に進めたいこと
 
-- Windows / macOSの配布手順をさらに簡単にする
-- AivisSpeech HD / Irodori TTSの追加ダウンロード導線を、声選択UIへさらに近づける
-- 初回起動ダウンローダーの実機検証と更新確認への拡張
-- 設定画面からの更新確認
-- 鑑賞モードとデスクトップ操作性の継続改善
-- LM Studioを中心としたOpenAI互換ローカルLLM providerの実機疎通
-- Grok / xAI API providerの実キー疎通
-- 専用の天気APIのチャット統合、地図・カレンダー等のAPI連携
+- VCCのUnityプロジェクトから自分のVRChatアバターを簡単に書き出す `Yui Avatar Bridge`
+- 画像、画面範囲、ウィンドウ、ファイルを一つの入力欄へ渡し、説明・翻訳・要約・下書きを完成させる作業導線
+- PCに頼んだ長い処理をモバイルで確認し、同じキャラクター・記憶・作業を引き継ぐ端末連続性
+- 記憶した内容をユーザーが確認・修正・固定・削除できるメモリ管理
+- 初回ダウンロードの復旧性、アプリ更新確認、Windows / macOS配布品質の継続改善
 
 ### 将来的な構想
 
@@ -142,9 +141,9 @@ Unityアプリ側のBackend URLは、VOICEVOXやIrodoriのURLではなく、常�
 
 ## 自分のVRMキャラクターを使う
 
-このベータ版が直接読み込めるのは `.vrm` ファイルです。VRChat SDKのアバター、Unityシーン、Unity prefab、`.unitypackage`、VRChatにアップロード済みのアバターそのものは直接読み込めません。
+このベータ版が直接読み込めるのは `.vrm` ファイルです。VRChat SDKのアバター、Unityシーン、Unity prefab、`.unitypackage`、VRChatにアップロード済みのアバターそのものは、現在の配布版では直接読み込めません。
 
-VRChat用のUnityプロジェクトで管理しているアバターを使いたい場合は、元のBOOTH/配布パッケージに `.vrm` が含まれていないか確認してください。ない場合は、Unity/UniVRMやBlender/VRMのワークフローで別途VRMとして書き出してから読み込んでください。
+VRChat用のUnityプロジェクトで管理しているアバターを使いたい場合は、元のBOOTH/配布パッケージに `.vrm` が含まれていないか確認してください。ない場合は、Unity/UniVRMやBlender/VRMのワークフローで別途VRMとして書き出してから読み込んでください。この手順をVCC内の数クリックへ短縮する `Yui Avatar Bridge` を優先開発項目にしています。設計は [`docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md`](docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md) を参照してください。
 
 ## Privacy / Data Flow
 
@@ -155,7 +154,7 @@ Yui VRM AI StudioはBYOK方式です。APIキーはユーザー自身のPC/Mac�
 - チャット本文
 - 音声入力
 - アップロード画像
-- スクリーンショット / 画面コンテキスト
+- ユーザーが選んだ画像 / カメラ画像
 - 翻訳対象の音声・テキスト
 - web searchが必要な質問内容
 
@@ -166,7 +165,7 @@ Yui VRM AI StudioはBYOK方式です。APIキーはユーザー自身のPC/Mac�
 - VOICEVOX生成音声キャッシュ
 - ログ
 
-画面コンテキストやリアルタイム翻訳を使う場合は、画面上・音声経路上の機密情報に注意してください。
+画像理解やリアルタイム翻訳を使う場合は、画像・カメラ・音声経路上の機密情報に注意してください。
 
 ## 詳細ドキュメント
 
@@ -178,6 +177,8 @@ Yui VRM AI StudioはBYOK方式です。APIキーはユーザー自身のPC/Mac�
 - 外部情報 / web search方針: [`docs/LLM_EXTERNAL_INFO.md`](docs/LLM_EXTERNAL_INFO.md)
 - ローカルAI/TTS asset配布: [`docs/LOCAL_AI_ASSETS.md`](docs/LOCAL_AI_ASSETS.md)
 - 品質と検証方針: [`docs/QUALITY_AND_VALIDATION.md`](docs/QUALITY_AND_VALIDATION.md)
+- 製品方針と優先機能: [`docs/PRODUCT_DIRECTION_20260714.md`](docs/PRODUCT_DIRECTION_20260714.md)
+- VCCアバター導入設計: [`docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md`](docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md)
 
 ## トラブルシューティング
 

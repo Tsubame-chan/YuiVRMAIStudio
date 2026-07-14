@@ -190,7 +190,7 @@ namespace YuiPhysicalAI.UI
                 {
                     realtimeStreamActive = false;
                     isRecording = false;
-                    SetRecordButtonText("Rec");
+                    SetRecordButtonText("Mic");
                     SetInteractable(true);
                     UpdateMicrophoneLevel(0f);
                     AppendLog("System", "Mac EditorのRealtime用マイク入力を開始できませんでした。通常の音声入力を使ってください。");
@@ -248,7 +248,7 @@ namespace YuiPhysicalAI.UI
                 {
                     realtimeStreamActive = false;
                     isRecording = false;
-                    SetRecordButtonText("Rec");
+                    SetRecordButtonText("Mic");
                     SetInteractable(true);
                     UpdateMicrophoneLevel(0f);
                     AppendLog("System", "Mac EditorのRealtime用マイク入力を開始できませんでした。通常の音声入力を使ってください。");
@@ -726,7 +726,7 @@ namespace YuiPhysicalAI.UI
             recordingClip = null;
             StopRealtimeAudioPlayback();
             UpdateMicrophoneLevel(0f);
-            SetRecordButtonText("Rec");
+            SetRecordButtonText("Mic");
             SetInteractable(true);
         }
 
@@ -743,9 +743,9 @@ namespace YuiPhysicalAI.UI
             realtimeTranslatePcmBuffer.Clear();
             ResetRealtimeClientVadState();
             UpdateMicrophoneLevel(0f);
-            SetRecordButtonText("Rec");
+            SetRecordButtonText("Mic");
             SetInteractable(true);
-            AppendLog("System", "Realtimeモードを変更したため、現在のRealtime録音を停止しました。もう一度Recを押してください。");
+            AppendLog("System", "Realtimeモードを変更したため、現在のRealtime録音を停止しました。もう一度Micを押してください。");
             _ = CloseRealtimeStreamAsync();
         }
 

@@ -54,7 +54,7 @@ namespace YuiPhysicalAI.Api
 
             await SendAsync(webRequest, cancellationToken);
             var responseJson = webRequest.downloadHandler != null ? webRequest.downloadHandler.text : string.Empty;
-            return NormalizeResponse(ParseChatResponse(responseJson));
+            return NormalizeResponse(ParseChatResponse(responseJson), request);
         }
 
         public static JObject BuildResponsesPayload(ChatRequest request, string model)
@@ -84,7 +84,7 @@ namespace YuiPhysicalAI.Api
                         ["schema"] = ChatResponseJsonSchema()
                     }
                 },
-                ["max_output_tokens"] = 700
+                ["max_output_tokens"] = IsWorkMode(request) ? 2200 : 700
             };
         }
 
@@ -223,15 +223,20 @@ namespace YuiPhysicalAI.Api
                 characterName = characterName.Substring(0, 40);
             }
 
+            var responseModeInstructions = IsWorkMode(request)
+                ? "This is Work mode. Put a complete, directly usable result in text. Use readable plain-text sections and numbered steps when helpful, and include source names and URLs when useful. Put only a natural one- or two-sentence conclusion or progress update in spoken_text, without raw URLs, code, or decorative formatting. "
+                : "This is Talk mode. Keep text concise but useful: usually 2 to 4 short sentences. Put the same natural spoken answer in spoken_text. ";
+
             return
                 $"You are {characterName}, a friendly Japanese VRM embodied AI assistant. " +
-                "Reply in natural Japanese as the character. Keep replies concise but useful: usually 2 to 4 short sentences. " +
-                "For complex questions, answer enough to be useful without becoming a lecture. Start with the answer itself. " +
+                "Reply in natural Japanese as the character. " +
+                responseModeInstructions +
+                "Start with the answer itself. " +
                 "Do not announce that you will summarize, organize, keep it brief, or explain your style. " +
                 "Natural roleplay, warmth, and light characterful reactions are welcome when they fit the user, but do not invent facts. " +
                 "When the current user message includes an attached image, inspect the image directly and answer based on visible details. " +
                 "For follow-up questions about that image, use the attached image and the prior visual context. " +
-                "Because the reply will be spoken aloud, avoid Markdown, bold markers, code fences, decorative bullets, and raw URLs unless explicitly requested. " +
+                "Never put Markdown, raw URLs, or code in spoken_text. " +
                 "Return only the structured output requested by the schema.";
         }
 
@@ -244,6 +249,7 @@ namespace YuiPhysicalAI.Api
                 ["properties"] = new JObject
                 {
                     ["text"] = new JObject { ["type"] = "string" },
+                    ["spoken_text"] = new JObject { ["type"] = "string" },
                     ["face"] = new JObject { ["type"] = "string" },
                     ["animation"] = new JObject { ["type"] = "string" },
                     ["voice_style"] = new JObject { ["type"] = "string" },
@@ -253,6 +259,7 @@ namespace YuiPhysicalAI.Api
                 },
                 ["required"] = new JArray(
                     "text",
+                    "spoken_text",
                     "face",
                     "animation",
                     "voice_style",
@@ -262,7 +269,7 @@ namespace YuiPhysicalAI.Api
             };
         }
 
-        private static ChatResponse NormalizeResponse(ChatResponse response)
+        private static ChatResponse NormalizeResponse(ChatResponse response, ChatRequest request)
         {
             response ??= new ChatResponse();
             response.Text = string.IsNullOrWhiteSpace(response.Text)
@@ -272,8 +279,33 @@ namespace YuiPhysicalAI.Api
             response.Animation = string.IsNullOrWhiteSpace(response.Animation) ? "idle" : response.Animation.Trim();
             response.VoiceStyle = string.IsNullOrWhiteSpace(response.VoiceStyle) ? "normal" : response.VoiceStyle.Trim();
             response.MemoryAction = string.IsNullOrWhiteSpace(response.MemoryAction) ? "none" : response.MemoryAction.Trim();
-            response.ShouldTts = response.ShouldTts || !string.IsNullOrWhiteSpace(response.Text);
+            response.SpokenText = string.IsNullOrWhiteSpace(response.SpokenText)
+                ? (IsWorkMode(request) ? BuildWorkSpeechFallback(response.Text) : response.Text)
+                : response.SpokenText.Trim();
+            response.ShouldTts = response.ShouldTts || !string.IsNullOrWhiteSpace(response.SpokenText);
             return response;
+        }
+
+        private static bool IsWorkMode(ChatRequest request)
+        {
+            return string.Equals(request?.Mode, "work", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string BuildWorkSpeechFallback(string text)
+        {
+            var compact = string.Join(" ", (text ?? string.Empty).Split((char[])null, StringSplitOptions.RemoveEmptyEntries));
+            if (string.IsNullOrWhiteSpace(compact))
+            {
+                return "作業結果を画面にまとめたよ。";
+            }
+
+            var end = compact.IndexOfAny(new[] { '。', '！', '？', '!', '?' });
+            if (end >= 0)
+            {
+                compact = compact.Substring(0, end + 1);
+            }
+
+            return compact.Length > 160 ? compact.Substring(0, 157).TrimEnd() + "..." : compact;
         }
 
         private static async Task SendAsync(UnityWebRequest request, CancellationToken cancellationToken)

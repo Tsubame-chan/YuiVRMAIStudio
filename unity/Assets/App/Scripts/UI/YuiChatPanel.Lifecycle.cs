@@ -361,6 +361,16 @@ namespace YuiPhysicalAI.UI
                 secretModeButton.onClick.RemoveListener(ToggleSecretMode);
             }
 
+            if (talkModeButton != null)
+            {
+                talkModeButton.onClick.RemoveListener(SelectTalkMode);
+            }
+
+            if (workModeButton != null)
+            {
+                workModeButton.onClick.RemoveListener(SelectWorkMode);
+            }
+
             if (isRecording)
             {
                 unityMicrophoneRecorder?.Stop();
