@@ -177,4 +177,4 @@ Track activation to first completed loop, repeated loop use, avatar-import compl
 
 - VCC is the supported manager for VRChat Unity avatar projects and VPM packages: [VCC overview](https://vcc.docs.vrchat.com/), [VPM packages](https://vcc.docs.vrchat.com/vpm/packages/), [community repositories](https://vcc.docs.vrchat.com/guides/community-repositories/).
 - UniVRM supports VRM 0.x/1.0 import and export in Unity and across Windows, macOS, iOS, and Android: [UniVRM repository](https://github.com/vrm-c/UniVRM).
-- Detailed competitive evidence and beta findings are preserved in [`reports/beta_readiness_product_direction_20260714/evidence_snapshot.md`](reports/beta_readiness_product_direction_20260714/evidence_snapshot.md).
+- The dated evidence snapshot is retained in the private development workspace; public product decisions and primary sources are summarized here.
