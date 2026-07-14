@@ -47,6 +47,7 @@ namespace YuiPhysicalAI.UI
                         UserId = userId,
                         Message = message,
                         Context = CreateChatContext(),
+                        Mode = chatInteractionMode,
                         Secret = secretMode,
                         CustomInstruction = customInstruction,
                         CharacterName = characterName

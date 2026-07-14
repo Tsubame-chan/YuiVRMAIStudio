@@ -292,6 +292,9 @@ namespace YuiPhysicalAI.Api
         [JsonProperty("text")]
         public string Text { get; set; }
 
+        [JsonProperty("spoken_text")]
+        public string SpokenText { get; set; }
+
         [JsonProperty("face")]
         public string Face { get; set; }
 

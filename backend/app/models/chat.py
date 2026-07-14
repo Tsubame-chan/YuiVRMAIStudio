@@ -11,7 +11,7 @@ class ChatRequest(BaseModel):
     user_id: str = "local_user"
     message: str
     context: RequestContext = Field(default_factory=RequestContext)
-    mode: Literal["standard"] = "standard"
+    mode: Literal["standard", "work"] = "standard"
     secret: bool = False
     custom_instruction: str = ""
     character_name: str = ""
@@ -19,6 +19,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     text: str
+    spoken_text: str = ""
     face: str = "Neutral"
     animation: str = "idle_normal"
     voice_style: str = "normal"
@@ -29,6 +30,7 @@ class ChatResponse(BaseModel):
 
 class OpenAIChatOutput(BaseModel):
     text: str
+    spoken_text: str = ""
     face: str
     animation: str
     voice_style: Literal["normal", "excited", "sad"] = "normal"

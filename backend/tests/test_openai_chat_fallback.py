@@ -1,5 +1,5 @@
 from app.core.config import Settings
-from app.models.chat import ChatRequest
+from app.models.chat import ChatRequest, OpenAIChatOutput
 from app.models.common import RequestContext
 from app.providers.openai_chat import OpenAIChatProvider
 
@@ -101,6 +101,39 @@ def test_instructions_require_concrete_search_results_without_raw_urls() -> None
     assert "concrete results" in instructions
     assert "3 to 6 useful candidates" in instructions
     assert "Do not include raw URLs" in instructions
+
+
+def test_work_mode_uses_long_output_budget_and_short_spoken_fallback() -> None:
+    provider = make_provider()
+    request = ChatRequest(request_id="test", message="詳しく整理して", mode="work")
+    output = OpenAIChatOutput(
+        text="結論です。\nここから詳しい手順が続きます。" * 20,
+        spoken_text="",
+        face="Neutral",
+        animation="idle_normal",
+        voice_style="normal",
+        should_use_vision=False,
+        memory_action="none",
+        should_tts=True,
+    )
+
+    response = provider._normalize_response(output, request)
+
+    assert provider._max_output_tokens(request) == provider.settings.openai_work_max_output_tokens
+    assert response.text.startswith("結論です。")
+    assert response.spoken_text == "結論です。"
+    assert len(response.spoken_text) < len(response.text)
+
+
+def test_talk_mode_keeps_low_latency_output_budget() -> None:
+    provider = make_provider()
+    request = ChatRequest(request_id="test", message="こんにちは")
+
+    assert provider._max_output_tokens(request) == provider.settings.openai_max_output_tokens
+    assert "This is Talk mode" in provider._instructions(request)
+    assert "This is Work mode" in provider._instructions(
+        ChatRequest(request_id="work", message="調べて", mode="work")
+    )
 
 
 def test_web_search_tools_disabled_by_default_when_message_is_general() -> None:

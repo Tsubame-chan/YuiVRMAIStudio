@@ -45,7 +45,7 @@ namespace YuiPhysicalAI.UI
 
             if (sendButtonText != null)
             {
-                sendButtonText.text = interactable ? "Go" : "...";
+                sendButtonText.text = interactable ? "Send" : "...";
             }
 
             if (recordButton != null)

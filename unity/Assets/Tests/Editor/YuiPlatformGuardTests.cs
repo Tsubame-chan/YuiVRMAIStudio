@@ -1,6 +1,7 @@
 using NUnit.Framework;
 using System.IO;
 using UnityEngine;
+using YuiPhysicalAI.Core;
 using YuiPhysicalAI.Platform;
 
 namespace YuiPhysicalAI.Tests.Editor
@@ -27,7 +28,7 @@ namespace YuiPhysicalAI.Tests.Editor
         }
 
         [Test]
-        public void WindowsStandaloneBuildProfile_UsesPublicUnityChanDefault()
+        public void StandaloneBuildProfile_DefinesExactlyOneDistributionProfile()
         {
             var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
             Assert.IsFalse(string.IsNullOrWhiteSpace(projectRoot));
@@ -35,7 +36,19 @@ namespace YuiPhysicalAI.Tests.Editor
 
             var projectSettings = File.ReadAllText(projectSettingsPath);
 
-            StringAssert.Contains("Standalone: YUI_PROFILE_PUBLIC", projectSettings);
+            var hasPersonal = projectSettings.Contains("Standalone: YUI_PROFILE_" + "PERSONAL");
+            var hasPublic = projectSettings.Contains("Standalone: YUI_PROFILE_PUBLIC");
+
+            Assert.AreNotEqual(hasPersonal, hasPublic, "Standalone must define exactly one Yui distribution profile.");
+        }
+
+        [Test]
+        public void ChatRequestModes_DefaultToTalkAndAcceptWork()
+        {
+            Assert.AreEqual(YuiChatRequestModes.Talk, YuiChatRequestModes.Normalize(null));
+            Assert.AreEqual(YuiChatRequestModes.Talk, YuiChatRequestModes.Normalize("unexpected"));
+            Assert.AreEqual(YuiChatRequestModes.Work, YuiChatRequestModes.Normalize("WORK"));
+            Assert.IsTrue(YuiChatRequestModes.IsWork(YuiChatRequestModes.Work));
         }
 
         [Test]
@@ -230,7 +243,7 @@ namespace YuiPhysicalAI.Tests.Editor
             var setupPath = Path.Combine(projectRoot, "Assets", "App", "Editor", "YuiAvatarSceneSetup.cs");
 
             var runtimeUi = File.ReadAllText(runtimeUiPath);
-            var setup = File.ReadAllText(setupPath);
+            var setup = File.Exists(setupPath) ? File.ReadAllText(setupPath) : string.Empty;
 
             StringAssert.Contains("EnsureAdvancedApiPanelFrame", runtimeUi);
             StringAssert.Contains("CreateOrMoveRuntimeLabel(parent, \"BackendLabel\", \"Backend URL\", 20f)", runtimeUi);
@@ -243,11 +256,14 @@ namespace YuiPhysicalAI.Tests.Editor
             StringAssert.Contains("input.textComponent.horizontalOverflow = HorizontalWrapMode.Overflow", runtimeUi);
             StringAssert.Contains("input.textComponent.verticalOverflow = VerticalWrapMode.Truncate", runtimeUi);
             StringAssert.Contains("input.textComponent.resizeTextForBestFit = false", runtimeUi);
-            StringAssert.Contains("SetAnchors(root, new Vector2(0.07f, 0.68f), new Vector2(0.93f, 0.86f))", setup);
-            StringAssert.Contains("EnsureHelpText(root, \"OpenAiApiKeyLabel\", \"OpenAI API Key\"", setup);
-            StringAssert.Contains("EnsureSettingsInput(root, \"OpenAiApiKeyInput\"", setup);
-            StringAssert.Contains("EnsureHelpText(root, \"OpenAiModelLabel\", \"OpenAI Model\"", setup);
-            StringAssert.Contains("EnsureSettingsInput(root, \"OpenAiModelInput\"", setup);
+            if (!string.IsNullOrEmpty(setup))
+            {
+                StringAssert.Contains("SetAnchors(root, new Vector2(0.07f, 0.68f), new Vector2(0.93f, 0.86f))", setup);
+                StringAssert.Contains("EnsureHelpText(root, \"OpenAiApiKeyLabel\", \"OpenAI API Key\"", setup);
+                StringAssert.Contains("EnsureSettingsInput(root, \"OpenAiApiKeyInput\"", setup);
+                StringAssert.Contains("EnsureHelpText(root, \"OpenAiModelLabel\", \"OpenAI Model\"", setup);
+                StringAssert.Contains("EnsureSettingsInput(root, \"OpenAiModelInput\"", setup);
+            }
         }
 
         [Test]

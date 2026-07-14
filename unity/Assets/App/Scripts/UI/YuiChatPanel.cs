@@ -33,6 +33,7 @@ namespace YuiPhysicalAI.UI
         private const string VoicePrePhonemeLengthKey = YuiPrefsKeys.VoicePrePhonemeLength;
         private const string VoicePostPhonemeLengthKey = YuiPrefsKeys.VoicePostPhonemeLength;
         private const string ConversationModeKey = YuiPrefsKeys.ConversationMode;
+        private const string ChatInteractionModeKey = YuiPrefsKeys.ChatInteractionMode;
         private const string TtsModeKey = YuiPrefsKeys.TtsMode;
         private const string VoiceTuningSchemaVersionKey = YuiPrefsKeys.VoiceTuningSchemaVersion;
         private const string IrodoriVoiceGenderKey = YuiPrefsKeys.IrodoriVoiceGender;
@@ -62,6 +63,7 @@ namespace YuiPhysicalAI.UI
         [SerializeField] private float prePhonemeLength = 0.1f;
         [SerializeField] private float postPhonemeLength = 0.1f;
         [SerializeField] private string conversationMode = "stable";
+        [SerializeField] private string chatInteractionMode = YuiChatRequestModes.Talk;
         [SerializeField] private string ttsMode = "server";
         [SerializeField] private string irodoriVoiceGender = "female";
         [SerializeField] private string irodoriVoiceInstruct = "若い女性の、明るく可愛いアニメ調の声で話してください。";
@@ -79,6 +81,10 @@ namespace YuiPhysicalAI.UI
         [SerializeField] private Text importImageButtonText;
         [SerializeField] private Button recordButton;
         [SerializeField] private Text recordButtonText;
+        [SerializeField] private Button talkModeButton;
+        [SerializeField] private Text talkModeButtonText;
+        [SerializeField] private Button workModeButton;
+        [SerializeField] private Text workModeButtonText;
         [SerializeField] private Image microphoneLevelFill;
         [SerializeField] private Text microphoneDeviceText;
         [SerializeField] private Button secretModeButton;
@@ -190,6 +196,7 @@ namespace YuiPhysicalAI.UI
         public float VoicePrePhonemeLength => prePhonemeLength;
         public float VoicePostPhonemeLength => postPhonemeLength;
         public string ConversationMode => conversationMode;
+        public string ChatInteractionMode => chatInteractionMode;
         public string TtsMode => ttsMode;
         public string IrodoriVoiceGender => irodoriVoiceGender;
         public string IrodoriVoiceInstruct => irodoriVoiceInstruct;
@@ -276,10 +283,21 @@ namespace YuiPhysicalAI.UI
                 secretModeButton.onClick.AddListener(ToggleSecretMode);
             }
 
+            if (talkModeButton != null)
+            {
+                talkModeButton.onClick.AddListener(SelectTalkMode);
+            }
+
+            if (workModeButton != null)
+            {
+                workModeButton.onClick.AddListener(SelectWorkMode);
+            }
+
             SelectMicrophoneDevice();
             UpdateMicrophoneLevel(0f);
             YuiToolbarIconUtility.ApplySecretIcon(secretModeButton);
             UpdateSecretModeUi();
+            UpdateChatInteractionModeUi();
             SetStatus("Ready");
         }
 

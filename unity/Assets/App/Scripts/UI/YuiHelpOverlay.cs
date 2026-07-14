@@ -154,7 +154,7 @@ namespace YuiPhysicalAI.UI
                 "Direct API", "BackendなしでAPIチャットとAPI画像理解を使えます。声はTTS Modeで別に選びます。",
                 "できないこと: Realtime会話/翻訳、メモリDB、Web検索、外部ツール、Backend TTSにはBackendが必要です。");
             ReflowCard(panel, "ViewerCard", new Vector2(0.06f, 0.18f), new Vector2(0.94f, 0.32f),
-                "話す/見せる", "Messageに入力してGo。Recは音声入力、Imgは画像、Lookは選択中のカメラ画像です。",
+                "話す/見せる", "Message or taskに入力してSend。Micは音声入力、Imageは画像、Cameraは選択中のカメラ画像です。",
                 "API Modeでは画像をAPI LLMへ直接渡します。Local AIでは端末内の軽量Visionを使います。");
             ReflowCard(panel, "SettingsCard", new Vector2(0.06f, 0.045f), new Vector2(0.94f, 0.16f),
                 "VRMと声", "AvatarでUnityChanまたはCustom VRMを選びます。声はTTS ModeでAIモードとは別に選べます。",

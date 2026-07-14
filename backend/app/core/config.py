@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     openai_realtime_voice: str = "coral"
     openai_realtime_translation_language: str = "en"
     openai_max_output_tokens: int = 420
+    openai_work_max_output_tokens: int = 2200
     openai_vision_max_output_tokens: int = 1200
     openai_web_search_enabled: bool = True
     openai_web_search_mode: str = "auto"

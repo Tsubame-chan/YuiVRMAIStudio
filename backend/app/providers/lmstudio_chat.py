@@ -42,7 +42,7 @@ class LMStudioChatProvider(ChatProvider):
                 self._current_user_message(request),
             ],
             "temperature": 0.7,
-            "max_tokens": self.settings.openai_max_output_tokens,
+            "max_tokens": self._openai_helpers._max_output_tokens(request),
             "stream": False,
         }
 
@@ -54,6 +54,7 @@ class LMStudioChatProvider(ChatProvider):
             if parsed is None:
                 parsed = OpenAIChatOutput(
                     text=text.strip() or "ローカルモデルから空の返答が返ってきました。",
+                    spoken_text="",
                     face="Neutral",
                     animation="idle_normal",
                     voice_style="normal",
@@ -61,7 +62,7 @@ class LMStudioChatProvider(ChatProvider):
                     memory_action="none",
                     should_tts=True,
                 )
-            return self._openai_helpers._normalize_response(parsed)
+            return self._openai_helpers._normalize_response(parsed, request)
         except httpx.HTTPError as exc:
             raise ChatProviderError(str(exc)) from exc
         except Exception as exc:

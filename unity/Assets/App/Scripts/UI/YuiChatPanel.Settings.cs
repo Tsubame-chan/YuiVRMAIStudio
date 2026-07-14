@@ -152,6 +152,8 @@ namespace YuiPhysicalAI.UI
             prePhonemeLength = PlayerPrefs.GetFloat(VoicePrePhonemeLengthKey, prePhonemeLength);
             postPhonemeLength = PlayerPrefs.GetFloat(VoicePostPhonemeLengthKey, postPhonemeLength);
             conversationMode = NormalizeConversationMode(PlayerPrefs.GetString(ConversationModeKey, DefaultConversationMode()));
+            chatInteractionMode = YuiChatRequestModes.Normalize(
+                PlayerPrefs.GetString(ChatInteractionModeKey, YuiChatRequestModes.Talk));
             SyncRealtimeActiveBackendModeWithConversation();
             ttsMode = NormalizeTtsMode(PlayerPrefs.GetString(TtsModeKey, DefaultTtsMode()));
             MigrateVoiceTuningIfNeeded();

@@ -32,6 +32,8 @@ namespace YuiPhysicalAI.UI
             ResolveAvatarReferences();
             ResolveButtonReferences();
             ResolveTextReferences();
+            EnsureChatInteractionModeControls();
+            ApplyPrimaryCommandLabels();
             NormalizeLogView();
             EnsureChatLogView();
         }

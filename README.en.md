@@ -4,14 +4,15 @@
 
 **Turn your favorite VRM character into an AI agent that can talk, see, search, and remember.**
 
-Yui VRM AI Studio turns your own VRM character into a desktop AI avatar that can talk through text, voice, images, and screen context. It is for people who want their VRChat/VRM character, original character, or favorite avatar to become something they can speak with, remember with, search with, and keep around while working or playing.
+Yui VRM AI Studio turns your own VRM character into a desktop AI avatar that can handle conversation and work through text, voice, images, and a selected camera. It is for people who want their VRChat/VRM character, original character, or favorite avatar to become something they can speak with, remember with, ask for help, and reconnect to from mobile when away from the PC.
 
 The project is now a Desktop Public Beta for Windows and macOS. Download the app ZIP, unzip it, and launch it; the required Local Gemma / VOICEVOX data and desktop backend bundle are downloaded on first launch. OpenAI API keys and optional higher-quality voice add-ons can be added later from inside the app.
 
 ## What The Experience Is
 
 - Show your own `.vrm` character on screen and talk with that character.
-- Use text input, voice input, image input, and selected camera/screen context.
+- Use text input, voice input, image input, and the selected camera image.
+- Use `Talk` for short natural replies and `Work` for detailed on-screen results with only the conclusion spoken aloud.
 - Keep conversation history and local memory as the app grows toward a persistent AI avatar.
 - Try the app after the first launch download, then add BYOK settings or optional voice runtimes for the richer feature set.
 - Use VOICEVOX as the standard Japanese voice fallback, with optional AivisSpeech HD and Irodori TTS paths.
@@ -47,7 +48,8 @@ TTS distribution is intentionally split. The required first-run download stays f
 
 - Load VRM 1.0 / VRM 0.x `.vrm` avatars and talk with them as AI characters.
 - Use text chat, voice input, and Japanese voice responses.
-- Use image input / vision and screen context.
+- Use image input / vision and selected-camera understanding.
+- Switch between short `Talk` replies and detailed `Work` output.
 - Keep conversation history and local memory.
 - Ask current-information questions with web-search assistance for weather, events, news, places, and similar queries.
 - Try low-latency conversation experiments through the OpenAI Realtime API.
@@ -134,10 +136,10 @@ Large model files and TTS server runtimes are not committed to git because of si
 ## Use Your Own VRM Character
 
 This beta imports `.vrm` files only.
-It cannot directly load a VRChat SDK avatar, Unity scene, Unity prefab, `.unitypackage`, or an avatar that only exists as an uploaded VRChat avatar.
+The current release cannot directly load a VRChat SDK avatar, Unity scene, Unity prefab, `.unitypackage`, or an avatar that only exists as an uploaded VRChat avatar.
 
 If your avatar is managed in a VRChat Unity project, check whether the original BOOTH/distribution package includes a `.vrm` file.
-If not, export or convert a separate VRM copy through a Unity/UniVRM or Blender/VRM workflow first.
+If not, export or convert a separate VRM copy through a Unity/UniVRM or Blender/VRM workflow first. `Yui Avatar Bridge`, a VCC package intended to reduce this to a few clicks inside the avatar project, is now a priority. See [`docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md`](docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md).
 
 ## Privacy / Data Flow
 
@@ -148,7 +150,7 @@ Depending on enabled features, the following data may be sent to configured exte
 - chat messages
 - voice input
 - uploaded images
-- screenshots / screen context
+- user-selected images / camera images
 - translation audio or text
 - prompts that need web search
 
@@ -159,7 +161,7 @@ The following data is stored locally:
 - generated VOICEVOX audio cache
 - logs
 
-Be careful with sensitive screen or audio content when using screen context or realtime translation.
+Be careful with sensitive image, camera, or audio content when using vision or realtime translation.
 
 ## Roadmap
 
@@ -172,20 +174,16 @@ Be careful with sensitive screen or audio content when using screen context or r
 - Auto Select with backend preference and local fallback
 - Backend VOICEVOX / AivisSpeech HD / Irodori TTS selection
 - conversation history and memory
-- image and screen context
+- image input / vision and selected-camera understanding
 - realtime experimental modes
 
 ### Next
 
-- improve Windows / macOS Release distribution flow
-- move the in-app optional voice download flow closer to voice selection
-- verify the first-run downloader on real desktop installs and extend it toward update checks
-- continue viewer-mode and desktop usability improvements
-- test Irodori TTS and other services through the generic HTTP TTS adapter
-- provider selection UI
-- real-key verification for the Grok / xAI API provider
-- device verification for OpenAI-compatible local LLM providers, starting with LM Studio
-- chat integration for the dedicated weather API, plus map, calendar, or other structured APIs
+- ship `Yui Avatar Bridge` for exporting a user-owned VRChat avatar from its VCC Unity project
+- unify image, future screen/window capture, and files in one task composer for explain/translate/summarize/draft workflows
+- continue PC work from mobile with the same character, memory, and task state
+- add user-visible memory review, correction, pin, and forget controls
+- keep improving first-run recovery, update checks, and Windows/macOS release quality
 
 ### Future
 
@@ -204,6 +202,8 @@ Be careful with sensitive screen or audio content when using screen context or r
 - external information / web search policy: [`docs/LLM_EXTERNAL_INFO.md`](docs/LLM_EXTERNAL_INFO.md)
 - local AI/TTS asset distribution: [`docs/LOCAL_AI_ASSETS.md`](docs/LOCAL_AI_ASSETS.md)
 - quality and validation policy: [`docs/QUALITY_AND_VALIDATION.md`](docs/QUALITY_AND_VALIDATION.md)
+- product direction and prioritized features: [`docs/PRODUCT_DIRECTION_20260714.md`](docs/PRODUCT_DIRECTION_20260714.md)
+- VCC avatar import architecture: [`docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md`](docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md)
 
 ## Troubleshooting
 

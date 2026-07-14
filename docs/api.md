@@ -24,6 +24,8 @@ can distinguish `missing_key`, `configured`, `ok`, `offline`, `disabled`, and
 
 `/chat` stores recent turns in SQLite and uses `request_id` as an idempotency key. If the same `request_id` is sent again, the cached response is returned without a second provider call.
 
+`mode=standard` is the low-latency Talk path and uses `OPENAI_MAX_OUTPUT_TOKENS` (420 by default). `mode=work` uses `OPENAI_WORK_MAX_OUTPUT_TOKENS` (2200 by default) for a complete on-screen result. `ChatResponse.text` is the display result; `spoken_text` is the shorter speech payload. In Work mode the provider is instructed to keep `spoken_text` to one or two sentences so TTS latency does not grow with the document-sized result.
+
 When `OPENAI_API_KEY` is missing, `/chat` returns `503` and does not call OpenAI.
 
 Set `CHAT_PROVIDER=lmstudio` to use a local LM Studio server through

@@ -1,6 +1,7 @@
 using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using YuiPhysicalAI.Api;
+using YuiPhysicalAI.Core;
 
 namespace YuiPhysicalAI.Tests.Editor
 {
@@ -30,6 +31,8 @@ namespace YuiPhysicalAI.Tests.Editor
             Assert.AreEqual("gpt-test", payload["model"]?.Value<string>());
             Assert.AreEqual("json_schema", payload["text"]?["format"]?["type"]?.Value<string>());
             Assert.AreEqual(false, payload["text"]?["format"]?["schema"]?["additionalProperties"]?.Value<bool>());
+            Assert.IsNotNull(payload["text"]?["format"]?["schema"]?["properties"]?["spoken_text"]);
+            Assert.AreEqual(700, payload["max_output_tokens"]?.Value<int>());
             var content = payload["input"]?[0]?["content"] as JArray;
             Assert.IsNotNull(content);
             Assert.AreEqual("input_text", content[0]?["type"]?.Value<string>());
@@ -59,6 +62,22 @@ namespace YuiPhysicalAI.Tests.Editor
             Assert.AreEqual("猫ちゃんですね。ふわふわで可愛いです。", parsed.Text);
             Assert.AreEqual("Joy", parsed.Face);
             Assert.IsTrue(parsed.ShouldTts);
+        }
+
+        [Test]
+        public void BuildResponsesPayload_WorkModeUsesLongOutputBudgetAndSpeechSummarySchema()
+        {
+            var payload = YuiDirectOpenAiClient.BuildResponsesPayload(
+                new ChatRequest
+                {
+                    Message = "詳しい作業結果を作って",
+                    Mode = YuiChatRequestModes.Work
+                },
+                "gpt-test");
+
+            Assert.AreEqual(2200, payload["max_output_tokens"]?.Value<int>());
+            StringAssert.Contains("This is Work mode", payload["instructions"]?.Value<string>());
+            StringAssert.Contains("spoken_text", payload["instructions"]?.Value<string>());
         }
     }
 }
