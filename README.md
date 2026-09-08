@@ -42,9 +42,17 @@ Releaseにある `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` や `YuiVRMAIStud
 
 `.sha256` はダウンロード破損を確認したい人向けです。ソースコードを読みたい、または自分でビルドしたい場合は `Code > Download ZIP` や `git clone` を使います。ソースZIPには実行ファイルや大型モデルは含まれません。
 
-AivisSpeech HDやIrodori TTSなどの高品質音声は任意の追加ランタイムです。なくてもアプリは動きますが、バックエンド接続時の声の選択肢を増やせます。リアルタイム会話/翻訳、会話DB、Backend TTSを使う場合、PC版は同梱または初回取得したYui Backendを優先して使います。
+日本語音声の配布状態は次のとおりです。通常利用ではVOICEVOXやPythonを別途探してインストールする必要はありません。
 
-TTS配布の方針として、初回必須データはVOICEVOXの最小構成に絞り、AivisSpeech HDやIrodori TTSは高品質な追加音声パックとして扱います。対応している追加音声は、Settingsの `Additional Voices` からアプリ内で取得できます。現時点のReleaseではmacOS向けAivisSpeech HD add-onを配布します。このパックにはAivis本体、選定済みAIVMXモデル、Aivisが必要とする日本語BERT依存が含まれるため大きめです。Windows向け追加音声やIrodori TTSは検証済みランタイムが揃い次第、同じ導線へ追加する方針です。
+| TTS | 現在の入手方法 | 手動導入 |
+| --- | --- | --- |
+| Local VOICEVOX（標準） | アプリ本体にVOICEVOX Core、初回必須ダウンロードに冥鳴ひまりモデルと辞書を収録 | 不要 |
+| AivisSpeech HD（macOS） | Settingsの `Additional Voices` から任意ダウンロード。ランタイム、選定済みモデル、日本語BERTをまとめて取得 | 不要 |
+| Backend VOICEVOX Engine | 既存のVOICEVOXアプリを使いたい上級者向け。標準音声には不要 | 任意 |
+| Irodori TTS | 外部HTTP TTSの開発者向け検証経路。現在のRelease manifestには未収録 | 現時点では必要 |
+| Windows向けAivis / Irodori | 再配布可能なランタイムを検証中。現在のRelease manifestには未収録 | 現時点では提供なし |
+
+初回必須データはVOICEVOXの最小構成に絞り、高品質音声は任意パックとして扱います。`Additional Voices` に表示されるのは、そのOS向けパックが現在のRelease manifestに存在する場合だけです。macOS向けAivisSpeech HDパックは大容量ですが、必要物をまとめて配布するため、ユーザーが個別に検索・展開する必要はありません。Irodori TTSとWindows向け追加音声も、再配布条件と実行品質が揃い次第この導線へ追加します。
 
 ## 主な機能
 
@@ -116,7 +124,7 @@ TTS配布の方針として、初回必須データはVOICEVOXの最小構成に
 
 - OpenAI APIや高品質な画像理解/STTを使う場合はOpenAI APIキー
 - リアルタイム会話/翻訳、会話DB、Backend TTSを使う場合は初回ダウンロード済みのYui Backend bundle
-- 日本語音声を拡張する場合はVOICEVOX Engine、AivisSpeech HD、Irodori TTSなどの外部TTSランタイム
+- 日本語音声を拡張する場合は、macOSではアプリ内取得できるAivisSpeech HD。VOICEVOX EngineやIrodori TTSの手動導入は上級者向けで、標準音声には不要
 
 OS別の詳細:
 
@@ -135,7 +143,7 @@ GitHubの通常リポジトリには、巨大なGemmaモデル本体、音声モ
 - Windows NVIDIA: [`docs/IRODORI_TTS_WINDOWS_NVIDIA.md`](docs/IRODORI_TTS_WINDOWS_NVIDIA.md) の Irodori-TTS-Server 経路
 - Windows CPU / GPUなし: VOICEVOX推奨
 
-大型モデル本体やTTSサーバー本体は、ライセンスと容量の都合でGit管理には入れません。必要なランタイムはユーザー環境で導入するか、GitHub Releasesの配布物として分けて扱います。Irodoriが失敗した場合は `TTS_FALLBACK_PROVIDER=voicevox` でVOICEVOXへ戻せる構成にしています。
+大型モデル本体やTTSサーバー本体は、ライセンスと容量の都合でGit管理には入れません。再配布確認済みのものはGitHub Releasesからアプリが取得し、未収録のIrodoriは現時点では開発者が手動で構成します。Irodoriが失敗した場合は `TTS_FALLBACK_PROVIDER=voicevox` でVOICEVOXへ戻せる構成にしています。
 
 Unityアプリ側のBackend URLは、VOICEVOXやIrodoriのURLではなく、常にYui backendを指定します。通常は `http://127.0.0.1:8000`、iPhoneなど別端末から同じPC/Macのバックエンドへ接続する場合は `http://<PCまたはMacのLAN/VPN IP>:8000` です。VOICEVOXやIrodoriのURLは `.env` と起動スクリプト側で管理します。
 

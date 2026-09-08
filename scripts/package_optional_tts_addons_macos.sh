@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${YUI_RELEASE_VERSION:-v0.2.0-beta.3}"
+VERSION="${YUI_RELEASE_VERSION:-v0.2.0-beta.4}"
 OUT_DIR="${YUI_RELEASE_OUT_DIR:-$ROOT_DIR/releases/$VERSION}"
 DOWNLOAD_BASE="${YUI_RELEASE_DOWNLOAD_BASE:-https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/$VERSION}"
 MANIFEST_NAME="YuiVRMAIStudio_AssetManifest.json"

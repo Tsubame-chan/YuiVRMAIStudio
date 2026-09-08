@@ -28,13 +28,14 @@
 | `Code > Download ZIP` | ソースを読む/改造する人向け。`.app` や大型モデルは含みません。 |
 | `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | 初回起動時にアプリが取得する最小ローカルAI/TTSデータです。手動取得は通常不要です。 |
 | `YuiVRMAIStudio_BackendBundle_*_macos` | 初回起動時にアプリが取得するmacOS Backend bundleです。手動取得は通常不要です。 |
-| Optional voice / 外部runtime | AivisSpeech HDやIrodori TTSなど、声の選択肢を増やすための任意追加です。対応パックはSettingsの `Additional Voices` から取得します。 |
+| macOS AivisSpeech HD add-on | Settingsの `Additional Voices` からランタイムとモデル一式を任意取得します。手動導入は不要です。 |
+| Irodori / その他の外部runtime | 現在のReleaseには未収録の開発者向け検証経路です。標準音声には不要です。 |
 
 ## できることの目安
 
 - バックエンドなし: Local Gemma SLM、Local VOICEVOX、VRM表示、基本チャット。
 - OpenAI APIキーあり: Direct OpenAI API、より高品質な会話/画像理解/STT。
-- バックエンドあり: リアルタイム会話、リアルタイム翻訳、会話DB、Backend VOICEVOX、AivisSpeech HD、Irodori TTS。
+- バックエンドあり: リアルタイム会話、リアルタイム翻訳、会話DB、Backend TTS。AivisSpeech HDは追加取得後、Irodoriは手動構成した場合に利用できます。
 
 初回は `Auto Select` のままで大丈夫です。バックエンドが動いていればBackendを優先し、なければLocal/Directへ戻ります。
 
@@ -47,7 +48,7 @@
 - Apple Silicon Mac
 - 初回ダウンロード済みの `YuiBackend`
 - OpenAI APIキー
-- VOICEVOX Engine、AivisSpeech HD、Irodori TTSなど、使いたい外部TTS runtime
+- 追加音声を使う場合のみ、そのランタイム。macOS AivisSpeech HDはアプリ内取得でき、標準のLocal VOICEVOXには外部ランタイム不要
 
 macOS Backend bundleには実行用 `.venv` が同梱されています。ソースから起動する場合やBackend bundleにvenvがない場合だけ、HomebrewとPythonを用意します。
 

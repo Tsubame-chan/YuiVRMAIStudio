@@ -10,7 +10,7 @@ GitHub Release assets or prepared locally before building.
 | Case | What to download |
 | --- | --- |
 | I want to run the app now | Download the current `v0.2.0-beta.3` Desktop Public Beta app ZIP and checksum for your OS from GitHub Releases. |
-| I want optional/high-quality voices | Use Settings > `Additional Voices` when a matching add-on exists, or install/download the matching backend runtime such as AivisSpeech HD or Irodori TTS. |
+| I want optional/high-quality voices | On macOS, use Settings > `Additional Voices` for the packaged AivisSpeech HD add-on. Irodori and Windows add-ons are not in the current manifest and remain developer-preview paths. |
 | I downloaded `Code > Download ZIP` | That is source code only. It does not include generated app builds or large local AI/TTS assets. |
 | I want to build from source | Clone the repo, then restore the local AI/TTS assets before building. |
 
@@ -28,11 +28,11 @@ The source repository intentionally keeps only files such as:
 - capability diagnostics
 - setup scripts and documentation
 
-The first-run downloader uses the Release manifest to restore the minimum user-facing local set when it is missing:
+The first-run downloader uses the Release manifest to restore the minimum user-facing local set when it is missing. Normal users do not install VOICEVOX separately:
 
 - one desktop Local Gemma SLM pack
 - local VOICEVOX voice model and OpenJTalk dictionary
-- macOS Yui Backend bundle, when the manifest includes it
+- the platform Yui Backend bundle, when the manifest includes it
 
 The source repository intentionally does not commit:
 
@@ -75,8 +75,10 @@ macOS AivisSpeech HD add-on is downloaded by the app from the Release manifest
 when the user chooses Settings > `Additional Voices`. It includes the Aivis
 runtime, selected AIVMX files, and the Japanese ONNX BERT dependency used by
 AivisSpeech Engine, so it is intentionally much larger than a voice-only pack.
-Irodori TTS and Windows voice add-ons should follow the same manifest path once
-their redistributable runtime assets are ready.
+Irodori TTS and Windows voice add-ons are not currently present in the Release
+manifest. They should follow the same manifest path once their redistributable
+runtime assets and health checks are ready; until then Irodori is a manual,
+developer-preview integration rather than an end-user installation promise.
 
 ## Optional TTS Add-On Policy
 

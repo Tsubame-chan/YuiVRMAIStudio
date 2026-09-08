@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${YUI_RELEASE_VERSION:-v0.2.0-beta.2}"
+VERSION="${YUI_RELEASE_VERSION:-v0.2.0-beta.4}"
 OUT_DIR="${YUI_RELEASE_OUT_DIR:-$ROOT_DIR/releases/$VERSION}"
 PACKAGE_NAME="YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_${VERSION}.zip"
 BACKEND_PACKAGE_NAME="YuiVRMAIStudio_BackendBundle_${VERSION}_macos.zip"
@@ -218,7 +218,7 @@ cat > "$OUT_DIR/$MANIFEST_NAME" <<JSON
 {
   "schema_version": 1,
   "release_version": "$VERSION",
-  "minimum_app_version": "${YUI_MINIMUM_APP_VERSION:-0.2.0-beta.2}",
+  "minimum_app_version": "${YUI_MINIMUM_APP_VERSION:-0.2.0-beta.4}",
   "assets": [
     {
       "id": "desktop-local-ai-minimum",

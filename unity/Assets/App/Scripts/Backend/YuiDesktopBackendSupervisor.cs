@@ -5,6 +5,7 @@ using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using YuiPhysicalAI.Core;
 
@@ -40,16 +41,16 @@ namespace YuiPhysicalAI.Backend
         private void Start()
         {
 #if (UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN) && !UNITY_EDITOR
-            _ = EnsureBackendAsync(cancellationTokenSource.Token);
+            _ = EnsureBackendAsync(false, cancellationTokenSource.Token);
 #endif
         }
 
-        public void RequestEnsureBackend()
+        public void RequestEnsureBackend(bool forceRestart = false)
         {
 #if (UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN) && !UNITY_EDITOR
             if (cancellationTokenSource != null)
             {
-                _ = EnsureBackendAsync(cancellationTokenSource.Token);
+                _ = EnsureBackendAsync(forceRestart, cancellationTokenSource.Token);
             }
 #endif
         }
@@ -66,10 +67,10 @@ namespace YuiPhysicalAI.Backend
             Application.quitting -= StopOwnedBackendProcesses;
         }
 
-        private async Task EnsureBackendAsync(CancellationToken cancellationToken)
+        private async Task EnsureBackendAsync(bool forceRestart, CancellationToken cancellationToken)
         {
             var configuredBackendUrl = PlayerPrefs.GetString(YuiPrefsKeys.BackendUrl, backendUrl);
-            if (await IsHealthyAsync(configuredBackendUrl, cancellationToken))
+            if (!forceRestart && await IsHealthyAsync(configuredBackendUrl, cancellationToken))
             {
                 return;
             }
@@ -90,7 +91,7 @@ namespace YuiPhysicalAI.Backend
                 }
 
                 var startInfo = CreateStartInfo(backendRoot);
-                startInfo.Environment["YUI_REUSE_EXISTING_BACKEND"] = "1";
+                startInfo.Environment["YUI_REUSE_EXISTING_BACKEND"] = ShouldReuseExistingBackend(forceRestart) ? "1" : "0";
                 startInfo.Environment["YUI_BACKEND_OWNERSHIP_FILE"] = ownershipFile;
 
                 using (var process = Process.Start(startInfo))
@@ -128,13 +129,42 @@ namespace YuiPhysicalAI.Backend
                 using (var request = new HttpRequestMessage(HttpMethod.Get, CombineUrl(url, "/health")))
                 using (var response = await HttpClient.SendAsync(request, cancellationToken))
                 {
-                    return response.IsSuccessStatusCode;
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        return false;
+                    }
+
+                    return IsHealthyPayload(await response.Content.ReadAsStringAsync());
                 }
             }
             catch
             {
                 return false;
             }
+        }
+
+        public static bool IsHealthyPayload(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return false;
+            }
+
+            try
+            {
+                var payload = JObject.Parse(json);
+                return string.Equals((string)payload["status"], "ok", StringComparison.OrdinalIgnoreCase)
+                    && string.Equals((string)payload["database"], "ok", StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static bool ShouldReuseExistingBackend(bool forceRestart)
+        {
+            return !forceRestart;
         }
 
         private static async Task WaitUntilHealthyAsync(string url, TimeSpan timeout, CancellationToken cancellationToken)
