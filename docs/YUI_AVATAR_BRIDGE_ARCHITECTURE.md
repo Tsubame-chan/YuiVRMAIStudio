@@ -204,3 +204,15 @@ Imported private avatars stay in the user data directory and are never copied in
 - A failed/cancelled export leaves no temporary assets.
 - The same portable avatar opens in current Windows and macOS Yui builds.
 - Public and private avatar assets never cross repository boundaries.
+
+## Validation update — 2026-09-09
+
+The macOS AssetBundle load blocker was traced to missing built-in module dependencies in the Bridge project. A build could produce a ZIP with valid SHA-256 while logging that AssetBundle support was disabled. The Bridge package now declares assetbundle, animation and jsonserialize modules, checks the required module before export, uses StrictMode and validates a host-platform staged bundle before publishing the ZIP.
+
+A minimal primitive producer/consumer isolated the failure. After the fix, the SDK Robot sample and a privately owned unmodified avatar each loaded in an actual Unity 2022.3.62f3 macOS Yui Player: rendering, supported shaders, humanoid and five writable mapped vowel shapes passed. Initial native-avatar facing now uses the same 180-degree yaw as VRM; existing saved user transforms remain authoritative. Editor tests are not a substitute for this Player gate.
+
+Windows cross-compilation succeeded; native Windows execution remains unverified. Audio-driven lipsync, expressions, clothing toggles, physics and arbitrary avatar compatibility remain separate gates. A customized baked avatar was identified and rendered locally, but that does not establish a VCC source → Bridge ZIP → Player round trip for its modified animation/clothing setup.
+
+ZIP loading also rejects traversal segments, normalized duplicate paths, oversized manifests, invalid declared payload sizes and malformed SHA-256 values. Editor platform detection now uses the host platform even after cross-compiling for Windows.
+
+See `PUBLIC_PLAYER_ASSET_VALIDATION.md` before creating any distributable Player.
