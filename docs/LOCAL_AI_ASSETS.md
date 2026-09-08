@@ -196,3 +196,13 @@ on macOS/Linux with:
 cat YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.3.zip.part-* > YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.3.zip
 shasum -a 256 -c YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.3.zip.sha256
 ```
+
+## Local model verification — 2026-09-09
+
+The installed normal E2B artifact matches the current upstream normal artifact (2,588,147,712 bytes; SHA-256 `181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c`). A distinct GPU artifact was identified at upstream revision `6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94` (2,008,432,640 bytes; SHA-256 `a53a59001894c58e6bdb5b9b227709f91a2e3e556baa7d85acf9c55402ba5cf5`). This is a candidate, not confirmation of which artifact the user originally meant.
+
+On Apple M5 with isolated LiteRT-LM 0.17.0, short GPU benchmarks measured normal/GPU-candidate decode at 81.83/76.64 tokens per second and initialization at 2.10/1.59 seconds. Seven Japanese prompts and ten successive turns per artifact completed; strict JSON-only and concise-summary fidelity still had issues. Process RSS is not total GPU memory. No manifest or user model was replaced. Native embedded-runtime, Windows/mobile, sustained-load and E4B tests remain open.
+
+The macOS LiteRT server launcher now requires Python 3.10+, selects a suitable existing interpreter, separates its new virtual environment from legacy Python 3.9, and pins new LiteRT-LM installations to 0.17.0 unless explicitly overridden.
+
+Source: https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm
