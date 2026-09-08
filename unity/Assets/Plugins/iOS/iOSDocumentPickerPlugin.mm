@@ -38,15 +38,20 @@ static NSString *YuiDocumentPickerSafeExtension(NSURL *url, NSString *mode)
     {
         return extension;
     }
-    return [mode isEqualToString:@"vrm"] ? @"vrm" : @"jpg";
+    if ([mode isEqualToString:@"vrm"])
+    {
+        return @"vrm";
+    }
+    return [mode isEqualToString:@"avatar"] ? @"zip" : @"jpg";
 }
 
 static NSString *YuiDocumentPickerTargetRoot(NSString *mode)
 {
-    if ([mode isEqualToString:@"vrm"])
+    if ([mode isEqualToString:@"vrm"] || [mode isEqualToString:@"avatar"])
     {
         NSArray<NSString *> *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-        return [[paths firstObject] stringByAppendingPathComponent:@"YuiImportedFiles/VRM"];
+        NSString *folder = [mode isEqualToString:@"avatar"] ? @"Avatar" : @"VRM";
+        return [[[paths firstObject] stringByAppendingPathComponent:@"YuiImportedFiles"] stringByAppendingPathComponent:folder];
     }
 
     return [NSTemporaryDirectory() stringByAppendingPathComponent:@"YuiPickedFiles/Image"];
@@ -62,7 +67,15 @@ static NSString *YuiDocumentPickerCopyURL(NSURL *url, NSString *mode, NSError **
     }
 
     NSString *extension = YuiDocumentPickerSafeExtension(url, mode);
-    NSString *prefix = [mode isEqualToString:@"vrm"] ? @"yui-imported-vrm" : @"yui-picked-image";
+    NSString *prefix = @"yui-picked-image";
+    if ([mode isEqualToString:@"vrm"])
+    {
+        prefix = @"yui-imported-vrm";
+    }
+    else if ([mode isEqualToString:@"avatar"])
+    {
+        prefix = @"yui-imported-avatar";
+    }
     NSString *filename = [NSString stringWithFormat:@"%@-%@.%@", prefix, NSUUID.UUID.UUIDString, extension];
     NSString *target = [root stringByAppendingPathComponent:filename];
 
@@ -261,6 +274,16 @@ static void YuiDocumentPicker_OpenDocument(NSString *mode, NSString *objectName)
         {
             UTType *vrmType = [UTType typeWithFilenameExtension:@"vrm"];
             types = vrmType != nil ? @[vrmType, UTTypeData] : @[UTTypeData];
+        }
+        else if ([mode isEqualToString:@"avatar"])
+        {
+            UTType *zipType = [UTType typeWithFilenameExtension:@"zip"];
+            UTType *vrmType = [UTType typeWithFilenameExtension:@"vrm"];
+            NSMutableArray<UTType *> *avatarTypes = [NSMutableArray array];
+            if (zipType != nil) [avatarTypes addObject:zipType];
+            if (vrmType != nil) [avatarTypes addObject:vrmType];
+            [avatarTypes addObject:UTTypeData];
+            types = avatarTypes;
         }
         else
         {

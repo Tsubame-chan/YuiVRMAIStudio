@@ -139,7 +139,16 @@ namespace YuiPhysicalAI.Avatar
 
             if (avatarRoot != null && target == LipSyncTarget.DirectBlendShape)
             {
-                faceRenderer = FindFaceRenderer(avatarRoot);
+                var packageMetadata = avatarRoot.GetComponent<YuiAvatarPackageMetadata>();
+                if (packageMetadata != null)
+                {
+                    ApplyPackageViseme(packageMetadata, "aa", ref aaBlendShape, ref faceRenderer);
+                    ApplyPackageViseme(packageMetadata, "ih", ref ihBlendShape, ref faceRenderer);
+                    ApplyPackageViseme(packageMetadata, "ou", ref ouBlendShape, ref faceRenderer);
+                    ApplyPackageViseme(packageMetadata, "ee", ref eBlendShape, ref faceRenderer);
+                    ApplyPackageViseme(packageMetadata, "oh", ref ohBlendShape, ref faceRenderer);
+                }
+                faceRenderer = faceRenderer != null ? faceRenderer : FindFaceRenderer(avatarRoot);
             }
 
             RebuildBlendShapeIndices();
@@ -156,6 +165,22 @@ namespace YuiPhysicalAI.Avatar
         public void SetSpeechAudioSource(AudioSource audioSource)
         {
             speechAudioSource = audioSource;
+        }
+
+        private static void ApplyPackageViseme(
+            YuiAvatarPackageMetadata metadata,
+            string vowel,
+            ref string blendShapeName,
+            ref SkinnedMeshRenderer renderer)
+        {
+            if (metadata != null && metadata.TryGetViseme(vowel, out var mappedRenderer, out var mappedBlendShape))
+            {
+                blendShapeName = mappedBlendShape;
+                if (renderer == null || renderer == mappedRenderer)
+                {
+                    renderer = mappedRenderer;
+                }
+            }
         }
 
         private float ReadVolume()

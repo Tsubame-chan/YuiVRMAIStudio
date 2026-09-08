@@ -81,7 +81,7 @@ namespace YuiPhysicalAI.UI
                 if (!string.Equals(requestedSlot, avatarSwitcher.ActiveSlot, StringComparison.OrdinalIgnoreCase))
                 {
                     SetStatus(YuiAvatarSlots.IsCustomVrm(requestedSlot)
-                        ? "Load a Custom VRM first; using the default avatar."
+                        ? "Load a custom avatar first; using the default avatar."
                         : "Selected avatar is not available; using the default avatar.");
                 }
                 else

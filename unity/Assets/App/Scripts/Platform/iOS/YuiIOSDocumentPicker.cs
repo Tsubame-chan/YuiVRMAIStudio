@@ -25,6 +25,11 @@ namespace YuiPhysicalAI.Platform
             return OpenAsync("vrm");
         }
 
+        public static Task<YuiFilePicker.Result> OpenAvatarAsync()
+        {
+            return OpenAsync("avatar");
+        }
+
         private static Task<YuiFilePicker.Result> OpenAsync(string mode)
         {
 #if UNITY_IOS && !UNITY_EDITOR

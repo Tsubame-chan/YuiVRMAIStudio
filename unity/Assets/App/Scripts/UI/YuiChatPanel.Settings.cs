@@ -305,11 +305,11 @@ namespace YuiPhysicalAI.UI
 
             if (runtimeVrmImporter == null)
             {
-                SetStatus("Custom VRM importer is not configured");
+                SetStatus("Custom avatar importer is not configured");
                 return;
             }
 
-            SetStatus("Opening VRM...");
+            SetStatus("Opening avatar file...");
             var targetSlot = YuiAvatarSlots.IsCustomVrm(avatarSlot)
                 ? avatarSlot
                 : YuiAvatarSlots.CustomVrm1;
@@ -317,7 +317,7 @@ namespace YuiPhysicalAI.UI
             if (!imported)
             {
                 SetStatus(string.IsNullOrWhiteSpace(runtimeVrmImporter.LastImportMessage)
-                    ? "Custom VRM import canceled or failed"
+                    ? "Avatar import canceled or failed"
                     : runtimeVrmImporter.LastImportMessage);
                 return;
             }
@@ -326,7 +326,7 @@ namespace YuiPhysicalAI.UI
             PlayerPrefs.SetString(AvatarSlotPrefsKey, avatarSlot);
             PlayerPrefs.Save();
             SetStatus(string.IsNullOrWhiteSpace(runtimeVrmImporter.LastImportMessage)
-                ? "Custom VRM loaded"
+                ? "Avatar loaded"
                 : runtimeVrmImporter.LastImportMessage);
         }
 

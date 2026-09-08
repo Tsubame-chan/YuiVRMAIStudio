@@ -41,13 +41,20 @@ public final class YuiFilePickerActivity extends Activity {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-        if ("vrm".equals(mode)) {
+        if ("vrm".equals(mode) || "avatar".equals(mode)) {
             intent.setType("*/*");
-            intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] {
-                "application/octet-stream",
-                "application/x-vrm",
-                "model/gltf-binary"
-            });
+            intent.putExtra(Intent.EXTRA_MIME_TYPES, "avatar".equals(mode)
+                ? new String[] {
+                    "application/zip",
+                    "application/octet-stream",
+                    "application/x-vrm",
+                    "model/gltf-binary"
+                }
+                : new String[] {
+                    "application/octet-stream",
+                    "application/x-vrm",
+                    "model/gltf-binary"
+                });
         } else {
             intent.setType("image/*");
         }
@@ -92,15 +99,17 @@ public final class YuiFilePickerActivity extends Activity {
     }
 
     private String copyToAppStorage(Uri uri, String mode) throws Exception {
-        File root = "vrm".equals(mode)
-            ? new File(getFilesDir(), "YuiImportedFiles/VRM")
+        boolean avatarMode = "avatar".equals(mode);
+        boolean documentMode = "vrm".equals(mode) || avatarMode;
+        File root = documentMode
+            ? new File(getFilesDir(), avatarMode ? "YuiImportedFiles/Avatar" : "YuiImportedFiles/VRM")
             : new File(getCacheDir(), "YuiPickedFiles/Image");
         if (!root.isDirectory() && !root.mkdirs()) {
             throw new IllegalStateException("Failed to create directory: " + root.getAbsolutePath());
         }
 
         String extension = extensionFor(uri, mode);
-        String prefix = "vrm".equals(mode) ? "yui-imported-vrm" : "yui-picked-image";
+        String prefix = avatarMode ? "yui-imported-avatar" : "vrm".equals(mode) ? "yui-imported-vrm" : "yui-picked-image";
         File target = new File(root, prefix + "-" + UUID.randomUUID().toString() + "." + extension);
         try (InputStream input = getContentResolver().openInputStream(uri);
              FileOutputStream output = new FileOutputStream(target, false)) {
@@ -132,7 +141,7 @@ public final class YuiFilePickerActivity extends Activity {
             return fromMime.toLowerCase(Locale.US);
         }
 
-        return "vrm".equals(mode) ? "vrm" : "jpg";
+        return "avatar".equals(mode) ? "zip" : "vrm".equals(mode) ? "vrm" : "jpg";
     }
 
     private String displayNameFor(Uri uri) {
