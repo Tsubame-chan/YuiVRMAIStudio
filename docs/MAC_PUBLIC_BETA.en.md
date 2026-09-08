@@ -28,13 +28,14 @@ The `.sha256` file is optional and only needed if you want to verify download in
 | `Code > Download ZIP` | Source code only. Does not include the app bundle or large models. |
 | `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | Normally downloaded by the app. Manual use is for source builds, validation, or recovery. |
 | `YuiVRMAIStudio_BackendBundle` | Normally downloaded by the app for full PC features; source builders can inspect it manually. |
-| Optional voice/runtime | Extra voice choices such as AivisSpeech HD or Irodori TTS. Supported add-ons are installed from Settings through `Additional Voices`. Not required for the app to run. |
+| macOS AivisSpeech HD add-on | Optional runtime and model bundle installed from Settings through `Additional Voices`; no manual installation required. |
+| Irodori / other external runtimes | Developer-preview integrations not included in the current Release. Not required for default speech. |
 
 ## What Works
 
 - No backend: Local Gemma SLM, Local VOICEVOX, VRM display, basic chat.
 - With an OpenAI API key: Direct OpenAI API, stronger chat/vision/STT paths.
-- With the downloaded backend: realtime talk, realtime translation, memory DB, web search, Backend VOICEVOX, AivisSpeech HD, and Irodori TTS.
+- With the downloaded backend: realtime talk, realtime translation, memory DB, web search, and backend TTS. AivisSpeech HD works after its optional download; Irodori requires manual developer configuration.
 
 The default `Auto Select` mode is recommended. It prefers the backend when healthy and falls back to local/direct modes when the backend is unavailable.
 
@@ -47,7 +48,7 @@ Requirements:
 - Apple Silicon Mac
 - Downloaded `YuiBackend`
 - OpenAI API key
-- Optional external TTS runtimes such as VOICEVOX Engine, AivisSpeech HD, or Irodori TTS
+- A separate runtime only for optional voices. macOS AivisSpeech HD is available in-app; default Local VOICEVOX needs no external runtime
 
 The macOS backend bundle includes a runnable `.venv`. Install Homebrew and
 Python only for source builds or fallback setup when the bundled venv is

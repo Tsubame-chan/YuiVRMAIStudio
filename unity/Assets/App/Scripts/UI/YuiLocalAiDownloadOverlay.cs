@@ -12,6 +12,7 @@ namespace YuiPhysicalAI.UI
     public sealed class YuiLocalAiDownloadOverlay : MonoBehaviour
     {
         public const string DefaultManifestUrl = "https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/latest/download/YuiVRMAIStudio_AssetManifest.json";
+        public const string ManifestUrlEnvironmentVariable = "YUI_ASSET_MANIFEST_URL";
         private const string OptionalTtsAddonKind = "optional_tts_addon";
 
         [SerializeField] private string manifestUrl = DefaultManifestUrl;
@@ -137,7 +138,7 @@ namespace YuiPhysicalAI.UI
 
             CurrentStatusText = "Local AI data: checking...";
             var downloader = CreateDownloader();
-            manifest = await downloader.FetchManifestAsync(manifestUrl, cancellationToken);
+            manifest = await downloader.FetchManifestAsync(ResolveManifestUrl(manifestUrl), cancellationToken);
             var ledger = YuiLocalAiInstalledAssetLedger.Load(downloader.LedgerPath);
             currentPlan = YuiLocalAiAssetStore.PlanRequiredDownloads(
                 manifest,
@@ -159,7 +160,7 @@ namespace YuiPhysicalAI.UI
             optionalTtsDownloadMode = true;
             CurrentStatusText = "Additional voices: checking...";
             var downloader = CreateDownloader();
-            manifest = await downloader.FetchManifestAsync(manifestUrl, cancellationToken);
+            manifest = await downloader.FetchManifestAsync(ResolveManifestUrl(manifestUrl), cancellationToken);
             var ledger = YuiLocalAiInstalledAssetLedger.Load(downloader.LedgerPath);
             currentPlan = YuiLocalAiAssetStore.PlanOptionalDownloads(
                 manifest,
@@ -257,7 +258,7 @@ namespace YuiPhysicalAI.UI
                     chatPanel?.RefreshLocalAiRuntimeAfterAssetInstall();
                 }
                 var backendSupervisor = GetComponent<YuiDesktopBackendSupervisor>();
-                backendSupervisor?.RequestEnsureBackend();
+                backendSupervisor?.RequestEnsureBackend(forceRestart: true);
                 SetProgress(1f, "完了");
                 SetBody(
                     optionalMode ? "追加音声データの準備が完了しました。" : "ローカルAIデータの準備が完了しました。",
@@ -297,6 +298,19 @@ namespace YuiPhysicalAI.UI
                 new YuiUnityAssetHttpClient(),
                 AssetStorageRoot(),
                 CacheRoot());
+        }
+
+        public static string ResolveManifestUrl(string configuredUrl = null)
+        {
+            var overrideUrl = Environment.GetEnvironmentVariable(ManifestUrlEnvironmentVariable);
+            if (!string.IsNullOrWhiteSpace(overrideUrl))
+            {
+                return overrideUrl.Trim();
+            }
+
+            return string.IsNullOrWhiteSpace(configuredUrl)
+                ? DefaultManifestUrl
+                : configuredUrl.Trim();
         }
 
         private static string AssetStorageRoot()

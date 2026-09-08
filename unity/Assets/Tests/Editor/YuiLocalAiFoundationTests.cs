@@ -18,6 +18,40 @@ namespace YuiPhysicalAI.Tests.Editor
     public sealed class YuiLocalAiFoundationTests
     {
         [Test]
+        public void DownloadOverlay_ResolveManifestUrlUsesEnvironmentOverride()
+        {
+            const string overrideUrl = "http://127.0.0.1:8765/YuiVRMAIStudio_AssetManifest.json";
+            var previous = Environment.GetEnvironmentVariable(YuiLocalAiDownloadOverlay.ManifestUrlEnvironmentVariable);
+            try
+            {
+                Environment.SetEnvironmentVariable(YuiLocalAiDownloadOverlay.ManifestUrlEnvironmentVariable, overrideUrl);
+
+                Assert.AreEqual(overrideUrl, YuiLocalAiDownloadOverlay.ResolveManifestUrl("https://example.invalid/default.json"));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(YuiLocalAiDownloadOverlay.ManifestUrlEnvironmentVariable, previous);
+            }
+        }
+
+        [Test]
+        public void DownloadOverlay_ResolveManifestUrlFallsBackToConfiguredAndDefaultUrls()
+        {
+            var previous = Environment.GetEnvironmentVariable(YuiLocalAiDownloadOverlay.ManifestUrlEnvironmentVariable);
+            try
+            {
+                Environment.SetEnvironmentVariable(YuiLocalAiDownloadOverlay.ManifestUrlEnvironmentVariable, null);
+
+                Assert.AreEqual("https://example.invalid/custom.json", YuiLocalAiDownloadOverlay.ResolveManifestUrl(" https://example.invalid/custom.json "));
+                Assert.AreEqual(YuiLocalAiDownloadOverlay.DefaultManifestUrl, YuiLocalAiDownloadOverlay.ResolveManifestUrl(" "));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable(YuiLocalAiDownloadOverlay.ManifestUrlEnvironmentVariable, previous);
+            }
+        }
+
+        [Test]
         public void Registry_ReturnsEnabledPacksForCapabilityByPriority()
         {
             var registry = new YuiLocalAiModelRegistry(

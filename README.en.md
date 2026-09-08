@@ -42,7 +42,17 @@ Release assets such as `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` and `YuiVRM
 
 The `.sha256` files are optional integrity checks. `Code > Download ZIP` and `git clone` are source-code paths; they do not include generated app builds or large models.
 
-TTS distribution is intentionally split. The required first-run download stays focused on the minimum VOICEVOX path, while AivisSpeech HD and Irodori TTS are treated as higher-quality optional voice add-ons. Supported add-ons can be installed from Settings through `Additional Voices`. The current Release includes a macOS AivisSpeech HD add-on. It is large because it includes the Aivis runtime, selected AIVMX models, and the Japanese BERT dependency Aivis needs at startup. Windows add-ons and Irodori TTS will use the same flow once their redistributable runtimes are ready.
+Normal users do not need to find or install VOICEVOX or Python separately.
+
+| TTS | Current delivery path | Manual installation |
+| --- | --- | --- |
+| Local VOICEVOX (default) | VOICEVOX Core ships in the app; the required first-run download supplies the Meimei Himari model and dictionary | Not required |
+| AivisSpeech HD (macOS) | Optional download from Settings > `Additional Voices`, including runtime, selected models, and Japanese BERT | Not required |
+| Backend VOICEVOX Engine | Advanced path for using an existing VOICEVOX app; not needed for default speech | Optional |
+| Irodori TTS | Developer-preview external HTTP TTS path; not present in the current Release manifest | Currently required |
+| Aivis / Irodori on Windows | Redistributable runtimes are still being validated; not present in the current Release manifest | Not currently provided |
+
+The required first-run set stays focused on the minimum VOICEVOX path, while higher-quality voices use optional packs. `Additional Voices` only offers a pack when the current Release manifest contains one for the user's OS. The macOS AivisSpeech HD pack is large, but it avoids separate searches and manual extraction. Irodori TTS and Windows add-ons will move to the same flow after redistribution and runtime checks are complete.
 
 ## What It Does
 
@@ -106,7 +116,7 @@ Optional:
 
 - An OpenAI API key for Direct API, higher-quality vision, or STT paths
 - The downloaded local backend bundle for realtime talk/translation, memory DB, web search, and backend TTS
-- VOICEVOX Engine, AivisSpeech HD, Irodori TTS, or another supported runtime when extending Japanese voice playback
+- On macOS, the in-app AivisSpeech HD download when extending Japanese voice playback. Manual VOICEVOX Engine or Irodori setup is advanced and is not required for default speech
 
 Platform details:
 
@@ -131,7 +141,7 @@ VOICEVOX is the standard Japanese TTS fallback. On desktop, local VOICEVOX is th
 - Windows NVIDIA: Irodori-TTS-Server path in [`docs/IRODORI_TTS_WINDOWS_NVIDIA.md`](docs/IRODORI_TTS_WINDOWS_NVIDIA.md)
 - Windows CPU / no GPU: VOICEVOX is recommended
 
-Large model files and TTS server runtimes are not committed to git because of size and license boundaries. They are either installed by users or distributed separately through GitHub Release assets when appropriate. If Irodori fails, `TTS_FALLBACK_PROVIDER=voicevox` can return speech generation to VOICEVOX.
+Large model files and TTS server runtimes are not committed to git because of size and license boundaries. Redistribution-approved assets are fetched by the app from GitHub Releases; Irodori is not yet included and remains a developer-configured path. If Irodori fails, `TTS_FALLBACK_PROVIDER=voicevox` can return speech generation to VOICEVOX.
 
 ## Use Your Own VRM Character
 

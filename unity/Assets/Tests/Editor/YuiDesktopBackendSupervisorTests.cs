@@ -72,5 +72,31 @@ namespace YuiPhysicalAI.Tests
             Assert.IsFalse(YuiDesktopBackendSupervisor.ShouldAutoStart("http://127.0.0.1:8000", false, root));
             Assert.IsFalse(YuiDesktopBackendSupervisor.ShouldAutoStart("http://127.0.0.1:8000", true, Path.Combine(root, "missing")));
         }
+
+        [Test]
+        public void IsHealthyPayload_RequiresHealthyDatabase()
+        {
+            Assert.IsTrue(YuiDesktopBackendSupervisor.IsHealthyPayload(@"{
+  ""status"": ""ok"",
+  ""database"": ""ok""
+}"));
+            Assert.IsFalse(YuiDesktopBackendSupervisor.IsHealthyPayload(@"{
+  ""status"": ""degraded"",
+  ""database"": ""error""
+}"));
+            Assert.IsFalse(YuiDesktopBackendSupervisor.IsHealthyPayload(@"{
+  ""status"": ""ok"",
+  ""database"": ""error""
+}"));
+            Assert.IsFalse(YuiDesktopBackendSupervisor.IsHealthyPayload("not-json"));
+            Assert.IsFalse(YuiDesktopBackendSupervisor.IsHealthyPayload(null));
+        }
+
+        [Test]
+        public void ShouldReuseExistingBackend_DisablesReuseForAssetUpdateRestart()
+        {
+            Assert.IsTrue(YuiDesktopBackendSupervisor.ShouldReuseExistingBackend(forceRestart: false));
+            Assert.IsFalse(YuiDesktopBackendSupervisor.ShouldReuseExistingBackend(forceRestart: true));
+        }
     }
 }
