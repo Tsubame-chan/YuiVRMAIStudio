@@ -36,6 +36,11 @@ namespace YuiPhysicalAI.Platform
             return OpenFileAsync("vrm");
         }
 
+        public static Task<Result> OpenAvatarFileAsync()
+        {
+            return OpenFileAsync("avatar");
+        }
+
         public static bool TryOpenImageFile(out string path, out string userMessage)
         {
             var result = OpenImageFileAsync().GetAwaiter().GetResult();
@@ -55,8 +60,8 @@ namespace YuiPhysicalAI.Platform
         private static Task<Result> OpenFileAsync(string mode)
         {
 #if UNITY_EDITOR
-            var path = mode == "vrm"
-                ? EditorUtility.OpenFilePanel("Open Custom VRM", "", "vrm")
+            var path = mode == "vrm" || mode == "avatar"
+                ? EditorUtility.OpenFilePanel(mode == "avatar" ? "Open VRM or Unity Avatar Package ZIP" : "Open Custom VRM", "", mode == "avatar" ? "vrm,zip" : "vrm")
                 : EditorUtility.OpenFilePanel(
                     "Analyze image with Yui Vision",
                     "",
@@ -67,15 +72,19 @@ namespace YuiPhysicalAI.Platform
 #elif UNITY_STANDALONE_OSX
             return OpenMacFilePanelAsync(mode);
 #elif UNITY_ANDROID
-            return mode == "vrm"
+            return mode == "avatar"
+                ? YuiAndroidFilePicker.OpenAvatarAsync()
+                : mode == "vrm"
                 ? YuiAndroidFilePicker.OpenVrmAsync()
                 : YuiAndroidFilePicker.OpenImageAsync();
 #elif UNITY_IOS
-            return mode == "vrm"
+            return mode == "avatar"
+                ? YuiIOSDocumentPicker.OpenAvatarAsync()
+                : mode == "vrm"
                 ? YuiIOSDocumentPicker.OpenVrmAsync()
                 : YuiIOSDocumentPicker.OpenImageAsync();
 #elif UNITY_WEBGL
-            var message = mode == "vrm"
+            var message = mode == "vrm" || mode == "avatar"
                 ? "WebGL版のVRM選択にはブラウザの<input type=file>連携とメモリ上ロード経路が必要です。"
                 : "WebGL版の画像選択にはブラウザの<input type=file>連携が必要です。";
             return Task.FromResult(new Result(false, null, message));
@@ -87,8 +96,8 @@ namespace YuiPhysicalAI.Platform
 #if UNITY_STANDALONE_OSX && !UNITY_EDITOR
         private static async Task<Result> OpenMacFilePanelAsync(string mode)
         {
-            var prompt = mode == "vrm" ? "Open Custom VRM" : "Analyze image with Yui Vision";
-            var script = mode == "vrm"
+            var prompt = mode == "avatar" ? "Open VRM or Unity Avatar Package ZIP" : mode == "vrm" ? "Open Custom VRM" : "Analyze image with Yui Vision";
+            var script = mode == "vrm" || mode == "avatar"
                 ? $"POSIX path of (choose file with prompt \"{EscapeAppleScript(prompt)}\")"
                 : $"POSIX path of (choose file of type {{\"public.image\"}} with prompt \"{EscapeAppleScript(prompt)}\")";
 

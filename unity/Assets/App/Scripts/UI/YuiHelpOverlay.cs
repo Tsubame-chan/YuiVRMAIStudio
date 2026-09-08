@@ -158,7 +158,7 @@ namespace YuiPhysicalAI.UI
                 "API Modeでは画像をAPI LLMへ直接渡します。Local AIでは端末内の軽量Visionを使います。");
             ReflowCard(panel, "SettingsCard", new Vector2(0.06f, 0.045f), new Vector2(0.94f, 0.16f),
                 "VRMと声", "AvatarでUnityChanまたはCustom VRMを選びます。声はTTS ModeでAIモードとは別に選べます。",
-                "Load VRMは.vrmファイル向けです。Backend URLはYui backendだけを指定します。");
+                "Load Avatarは.vrmまたはAvatar Bridgeの標準ZIP向けです。Backend URLはYui backendだけを指定します。");
             var oldFooter = panel.Find("Footer");
             if (oldFooter != null)
             {

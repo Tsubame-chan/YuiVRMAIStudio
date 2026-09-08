@@ -40,7 +40,7 @@ namespace YuiPhysicalAI.Platform
         {
             get
             {
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN || (UNITY_STANDALONE_WIN && !UNITY_EDITOR)
                 return true;
 #else
                 return false;
@@ -50,7 +50,7 @@ namespace YuiPhysicalAI.Platform
 
         public YuiForegroundAppInfo GetForegroundApp()
         {
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN || (UNITY_STANDALONE_WIN && !UNITY_EDITOR)
             var foregroundWindow = GetForegroundWindow();
             if (foregroundWindow == IntPtr.Zero)
             {
@@ -85,7 +85,7 @@ namespace YuiPhysicalAI.Platform
 #endif
         }
 
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN || (UNITY_STANDALONE_WIN && !UNITY_EDITOR)
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
 

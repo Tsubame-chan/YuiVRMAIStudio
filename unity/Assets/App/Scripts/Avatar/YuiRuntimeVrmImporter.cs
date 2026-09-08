@@ -14,7 +14,7 @@ namespace YuiPhysicalAI.Avatar
     {
         private const string CustomVrmPathKey = YuiPrefsKeys.CustomVrmPath;
         private const string CustomVrmTransformKeyPrefix = "Yui.Settings.CustomVrmTransform.v4.";
-        private const string CustomAvatarName = "Yui Custom VRM Avatar";
+        private const string CustomAvatarName = "Yui Custom Avatar";
         private const float TargetAvatarHeightMeters = 1.58f;
         private const float RuntimeVrmFacingYawDegrees = 180f;
 
@@ -68,14 +68,14 @@ namespace YuiPhysicalAI.Avatar
 
         public async Task<bool> ImportFromFilePickerAsync(string slot = null)
         {
-            LogImport("Opening VRM file picker.");
-            var result = await YuiFilePicker.OpenVrmFileAsync();
+            LogImport("Opening avatar file picker.");
+            var result = await YuiFilePicker.OpenAvatarFileAsync();
             LogImport($"File picker result: opened={result.Opened} path={result.Path} message={result.UserMessage}");
             if (!result.Opened)
             {
                 LastImportMessage = !string.IsNullOrWhiteSpace(result.UserMessage)
                     ? result.UserMessage
-                    : "VRM selection was canceled.";
+                    : "Avatar selection was canceled.";
                 if (!string.IsNullOrWhiteSpace(result.UserMessage))
                 {
                     Debug.LogWarning($"Yui custom VRM import: {result.UserMessage}");
@@ -92,22 +92,25 @@ namespace YuiPhysicalAI.Avatar
             slot = YuiAvatarSlots.IsCustomVrm(slot) ? YuiAvatarSlots.Normalize(slot) : YuiAvatarSlots.CustomVrm1;
             if (IsImporting)
             {
-                LastImportMessage = "Another VRM import is already running.";
-                Debug.LogWarning("Yui custom VRM import: import is already running.");
+                LastImportMessage = "Another avatar import is already running.";
+                Debug.LogWarning("Yui custom avatar import: import is already running.");
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
             {
-                LastImportMessage = "The selected VRM file was not found.";
-                Debug.LogWarning($"Yui custom VRM import: file not found: {path}");
+                LastImportMessage = "The selected avatar file was not found.";
+                Debug.LogWarning($"Yui custom avatar import: file not found: {path}");
                 LogImport($"File not found: {path}");
                 return false;
             }
 
-            if (!string.Equals(Path.GetExtension(path), ".vrm", StringComparison.OrdinalIgnoreCase))
+            var extension = Path.GetExtension(path);
+            var isVrm = string.Equals(extension, ".vrm", StringComparison.OrdinalIgnoreCase);
+            var isAvatarPackage = string.Equals(extension, ".zip", StringComparison.OrdinalIgnoreCase);
+            if (!isVrm && !isAvatarPackage)
             {
-                LastImportMessage = "Please choose a .vrm file.";
+                LastImportMessage = "Please choose a .vrm file or Unity avatar package .zip.";
                 Debug.LogWarning($"Yui custom VRM import: unsupported file extension: {path}");
                 LogImport($"Unsupported extension: {path}");
                 return false;
@@ -118,35 +121,49 @@ namespace YuiPhysicalAI.Avatar
             GameObject root = null;
             try
             {
-                LogImport($"Begin loading VRM: {path} size={new FileInfo(path).Length} bytes");
-                using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(90));
-                var instance = await Vrm10.LoadPathAsync(
-                    path,
-                    canLoadVrm0X: true,
-                    controlRigGenerationOption: ControlRigGenerationOption.None,
-                    showMeshes: true,
-                    awaitCaller: new RuntimeOnlyAwaitCaller(),
-                    materialGenerator: new BuiltInVrm10MaterialDescriptorGenerator(),
-                    vrmMetaInformationCallback: (thumbnail, vrm10Meta, vrm0Meta) =>
-                    {
-                        var title = vrm10Meta != null ? vrm10Meta.Name : vrm0Meta?.title;
-                        LogImport($"VRM metadata loaded: title={title} vrm10={vrm10Meta != null} vrm0={vrm0Meta != null}");
-                    },
-                    ct: cancellation.Token);
-
-                if (instance == null)
+                LogImport($"Begin loading avatar: {path} size={new FileInfo(path).Length} bytes");
+                if (isAvatarPackage)
                 {
-                    LastImportMessage = "UniVRM returned no avatar instance.";
-                    Debug.LogWarning("Yui custom VRM import: UniVRM returned no instance.");
-                    LogImport("UniVRM returned no instance.");
-                    return false;
+                    var package = await YuiAvatarPackageLoader.LoadAsync(path, ResolveAvatarParent());
+                    root = package.Root;
+                    if (root == null)
+                    {
+                        LastImportMessage = "Avatar package returned no avatar instance.";
+                        return false;
+                    }
+                }
+                else
+                {
+                    using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(90));
+                    var instance = await Vrm10.LoadPathAsync(
+                        path,
+                        canLoadVrm0X: true,
+                        controlRigGenerationOption: ControlRigGenerationOption.None,
+                        showMeshes: true,
+                        awaitCaller: new RuntimeOnlyAwaitCaller(),
+                        materialGenerator: new BuiltInVrm10MaterialDescriptorGenerator(),
+                        vrmMetaInformationCallback: (thumbnail, vrm10Meta, vrm0Meta) =>
+                        {
+                            var title = vrm10Meta != null ? vrm10Meta.Name : vrm0Meta?.title;
+                            LogImport($"VRM metadata loaded: title={title} vrm10={vrm10Meta != null} vrm0={vrm0Meta != null}");
+                        },
+                        ct: cancellation.Token);
+                    if (instance == null)
+                    {
+                        LastImportMessage = "UniVRM returned no avatar instance.";
+                        Debug.LogWarning("Yui custom VRM import: UniVRM returned no instance.");
+                        LogImport("UniVRM returned no instance.");
+                        return false;
+                    }
+                    root = instance.gameObject;
                 }
 
-                root = instance.gameObject;
                 root.name = CustomAvatarName;
                 var parent = ResolveAvatarParent();
                 root.transform.SetParent(parent, false);
                 root.transform.localPosition = Vector3.zero;
+                // Both VRM and Bridge humanoids use the source avatar's +Z front.
+                // Yui's stage camera is on -Z; saved user transforms still take precedence below.
                 root.transform.localRotation = Quaternion.Euler(0f, RuntimeVrmFacingYawDegrees, 0f);
                 root.transform.localScale = Vector3.one;
                 ApplySavedOrAutoTransform(root, path);
@@ -181,7 +198,7 @@ namespace YuiPhysicalAI.Avatar
                     LogImport("Avatar switcher not found; custom avatar root activated directly.");
                 }
 
-                Debug.Log($"Yui custom VRM import: loaded {Path.GetFileName(path)}");
+                Debug.Log($"Yui custom avatar import: loaded {Path.GetFileName(path)}");
                 LastImportMessage = $"Loaded {Path.GetFileName(path)}";
                 LogImport(LastImportMessage);
                 return true;
@@ -193,8 +210,8 @@ namespace YuiPhysicalAI.Avatar
                     Destroy(root);
                 }
 
-                LastImportMessage = $"Custom VRM import failed: {ex.Message}";
-                Debug.LogError($"Yui custom VRM import failed: {ex.Message}");
+                LastImportMessage = $"Custom avatar import failed: {ex.Message}";
+                Debug.LogError($"Yui custom avatar import failed: {ex.Message}");
                 LogImport($"{LastImportMessage}\n{ex}");
                 return false;
             }
@@ -498,8 +515,6 @@ namespace YuiPhysicalAI.Avatar
 
     }
 }
-
-
 
 
 
