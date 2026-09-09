@@ -65,7 +65,7 @@ namespace YuiPhysicalAI.UI
 
             if (inputField != null)
             {
-                inputField.interactable = interactable;
+                inputField.interactable = true;
             }
         }
 

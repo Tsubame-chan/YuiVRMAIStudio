@@ -1,0 +1,8 @@
+{
+  "name": "Yui.AvatarBridge.Editor",
+  "rootNamespace": "Yui.AvatarBridge.Editor",
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": true
+}

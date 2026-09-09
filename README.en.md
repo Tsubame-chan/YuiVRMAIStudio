@@ -8,6 +8,10 @@ Yui VRM AI Studio turns your own VRM character into a desktop AI avatar that can
 
 The project is now a Desktop Public Beta for Windows and macOS. Download the app ZIP, unzip it, and launch it; the required Local Gemma / VOICEVOX data and desktop backend bundle are downloaded on first launch. OpenAI API keys and optional higher-quality voice add-ons can be added later from inside the app.
 
+## Bring your own avatar
+
+Import VRM directly, or install the experimental **Yui Avatar Bridge** in your Unity / VRChat avatar project and export a ZIP for your target device. See the [avatar import and mobile transfer guide](docs/AVATAR_IMPORT.md). Mobile device validation and full shader/outfit compatibility are still in progress.
+
 ## What The Experience Is
 
 - Show your own `.vrm` character on screen and talk with that character.
@@ -27,14 +31,14 @@ The project is now a Desktop Public Beta for Windows and macOS. Download the app
 
 Windows and macOS setup docs now follow the same design model. Runnable builds and large Local AI/TTS assets are distributed through [GitHub Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases).
 
-`v0.2.0-beta.3` is the current Desktop Public Beta Release. Normal users should download only the Windows or macOS app ZIP. The app downloads the larger required data on first launch.
+`v0.2.0-beta.5` is the current Desktop Public Beta Release. Normal users should download only the Windows or macOS app ZIP. The app downloads the larger required data on first launch.
 
 ## Which Download To Use
 
 Download the app ZIP for your OS from GitHub Releases, unzip it, and launch it.
 
-- macOS: `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip`
-- Windows: `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3_windows.zip`
+- macOS: `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.5_macos.zip`
+- Windows: `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.5_windows.zip`
 
 On first launch, the app shows a download screen. Start it and the required Local AI/TTS data and Yui Backend bundle are installed automatically. Normal users do not need to install Python or set up the backend by hand.
 

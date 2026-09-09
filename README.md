@@ -8,6 +8,10 @@ Yui VRM AI Studioは、自分のVRMキャラクターをデスクトップ上の
 
 現在公開しているのは、Windows / macOS向けのデスクトップ版ベータです。アプリ本体ZIPを展開して起動すると、初回ダウンロードでLocal Gemma SLM、Local VOICEVOX、Yui Backend bundleが揃います。手動でバックエンドサーバーやPython環境を作らなくても試せます。より高品質な会話、リアルタイム会話/翻訳、会話DB、追加TTSを使いたい場合は、OpenAI APIキーやアプリ内の追加音声ダウンロードを使います。
 
+## アバターを持ち込む
+
+VRMは直接読み込めます。Unity / VRChat用アバターには、別途導入する **Yui Avatar Bridge（実験版）** を使い、利用端末向けZIPを書き出します。VCCへの追加、Unityからの書き出し、スマホへの転送は[アバター導入ガイド](docs/AVATAR_IMPORT.md)を参照してください。モバイル実機や任意の衣装・Shaderの完全互換性はまだ検証中です。
+
 ## 主な特徴
 
 - 自分の `.vrm` キャラクターを画面に表示し、そのキャラと会話できます。
@@ -27,14 +31,14 @@ Yui VRM AI Studioは、自分のVRMキャラクターをデスクトップ上の
 
 実行ファイルと大型Local AI/TTSデータは [GitHub Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases) で配布します。GitHubの `Code > Download ZIP` はソースコード用で、実行ファイルや大型AI/TTSデータは含まれません。
 
-現在の配布版は `v0.2.0-beta.3` です。通常はWindows/macOSのアプリ本体ZIPだけをダウンロードしてください。その他の大きなデータは、初回起動時にアプリが自動で取得します。
+現在の配布版は `v0.2.0-beta.5` です。通常はWindows/macOSのアプリ本体ZIPだけをダウンロードしてください。その他の大きなデータは、初回起動時にアプリが自動で取得します。
 
 ## インストール
 
 GitHub Releasesから、お使いのOSに対応したアプリ本体ZIPをダウンロードして展開し、起動してください。
 
-- macOS: `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip`
-- Windows: `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3_windows.zip`
+- macOS: `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.5_macos.zip`
+- Windows: `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.5_windows.zip`
 
 初回起動時にダウンロード画面が表示されます。開始すると、基本動作に必要なLocal AI/TTSデータとYui Backend bundleが自動で揃います。ユーザーがPythonやバックエンドを手動で構築する必要はありません。
 
@@ -151,7 +155,7 @@ Unityアプリ側のBackend URLは、VOICEVOXやIrodoriのURLではなく、常�
 
 このベータ版が直接読み込めるのは `.vrm` ファイルです。VRChat SDKのアバター、Unityシーン、Unity prefab、`.unitypackage`、VRChatにアップロード済みのアバターそのものは、現在の配布版では直接読み込めません。
 
-VRChat用のUnityプロジェクトで管理しているアバターを使いたい場合は、元のBOOTH/配布パッケージに `.vrm` が含まれていないか確認してください。ない場合は、Unity/UniVRMやBlender/VRMのワークフローで別途VRMとして書き出してから読み込んでください。この手順をVCC内の数クリックへ短縮する `Yui Avatar Bridge` を優先開発項目にしています。設計は [`docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md`](docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md) を参照してください。
+VRChat用のUnity/VCCプロジェクトで管理しているアバターは、開発中の `Yui Avatar Bridge` で選択中のアバターを標準ZIPへ書き出し、Yuiへ読み込む方向へ移行しています。VRM変換を必須にしないため、メッシュ、マテリアル、BlendShape、Humanoid骨格、表情候補、PhysBone変換元情報をより多く保持できます。現段階の導入・実機確認は [`docs/YUI_AVATAR_BRIDGE_USER_TEST_GUIDE.md`](docs/YUI_AVATAR_BRIDGE_USER_TEST_GUIDE.md)、設計は [`docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md`](docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md) を参照してください。
 
 ## Privacy / Data Flow
 

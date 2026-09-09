@@ -1,5 +1,5 @@
 {
-  "schema_version": "2026-06-28",
+  "schema_version": "2026-09-09",
   "packs": [
     {
       "id": "core_text",
@@ -15,7 +15,7 @@
         "Translation",
         "Extraction"
       ],
-      "enabled_by_default": true,
+      "enabled_by_default": false,
       "download_required": true,
       "memory_budget_mb": 2600,
       "disk_budget_mb": 3400,
@@ -25,7 +25,7 @@
         "macos",
         "windows"
       ],
-      "notes": "Desktop offline default chat candidate for Mac/Windows. Keep out of the mobile default package because its memory footprint can prevent repeated local TTS/chat turns."
+      "notes": "Optional higher-memory desktop model; not included in the standard E2B pack."
     },
     {
       "id": "core_text_e2b",
@@ -44,7 +44,7 @@
       "enabled_by_default": true,
       "download_required": true,
       "memory_budget_mb": 1200,
-      "disk_budget_mb": 2400,
+      "disk_budget_mb": 2600,
       "priority": 10,
       "startup_policy": "WarmTextOnly",
       "platforms": [
@@ -53,7 +53,7 @@
         "macos",
         "windows"
       ],
-      "notes": "Mobile offline default and desktop fallback when the higher-quality E4B asset is not included in the current release asset set."
+      "notes": "Standard desktop and mobile model. Official revision b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1; SHA-256 181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c. macOS LiteRT-LM 0.17.0 enables GPU MTP."
     },
     {
       "id": "vision_gemma4_e2b",

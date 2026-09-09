@@ -174,6 +174,9 @@ namespace YuiPhysicalAI.Avatar
                     runtimeGltf.ShowMeshes();
                 }
 
+                var libraryEntry = YuiAvatarLibrary.Register(path);
+                path = YuiAvatarLibrary.Resolve(libraryEntry);
+                SaveTransform(path, root.transform);
                 LastCustomVrmPath = path;
                 PlayerPrefs.SetString(CustomVrmPathPrefsKey(slot), path);
                 if (slot == YuiAvatarSlots.CustomVrm1)
@@ -198,8 +201,9 @@ namespace YuiPhysicalAI.Avatar
                     LogImport("Avatar switcher not found; custom avatar root activated directly.");
                 }
 
+                YuiAvatarLibrary.CaptureThumbnail(libraryEntry);
                 Debug.Log($"Yui custom avatar import: loaded {Path.GetFileName(path)}");
-                LastImportMessage = $"Loaded {Path.GetFileName(path)}";
+                LastImportMessage = $"読み込み完了: {libraryEntry.name}";
                 LogImport(LastImportMessage);
                 return true;
             }
