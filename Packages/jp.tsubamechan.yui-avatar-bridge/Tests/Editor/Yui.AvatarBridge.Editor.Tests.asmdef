@@ -1,0 +1,13 @@
+{
+  "name": "Yui.AvatarBridge.Editor.Tests",
+  "rootNamespace": "Yui.AvatarBridge.Editor.Tests",
+  "references": [
+    "Yui.AvatarBridge.Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ]
+}

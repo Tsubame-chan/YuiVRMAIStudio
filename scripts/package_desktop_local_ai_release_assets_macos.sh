@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${YUI_RELEASE_VERSION:-v0.2.0-beta.4}"
+VERSION="${YUI_RELEASE_VERSION:-v0.2.0-beta.5}"
 OUT_DIR="${YUI_RELEASE_OUT_DIR:-$ROOT_DIR/releases/$VERSION}"
 PACKAGE_NAME="YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_${VERSION}.zip"
 BACKEND_PACKAGE_NAME="YuiVRMAIStudio_BackendBundle_${VERSION}_macos.zip"
@@ -14,10 +14,7 @@ FULL_ZIP_URL="${YUI_FULL_ZIP_URL:-}"
 INCLUDE_BACKEND_ASSET="${YUI_INCLUDE_BACKEND_RELEASE_ASSET:-1}"
 
 ASSET_ROOT="$ROOT_DIR/unity/Assets/StreamingAssets/YuiLocalAI"
-DESKTOP_GEMMA_MODEL="gemma-4-E4B-it.litertlm"
-if [[ ! -f "$ASSET_ROOT/Models/$DESKTOP_GEMMA_MODEL" && -f "$ASSET_ROOT/Models/gemma-4-E2B-it.litertlm" ]]; then
-  DESKTOP_GEMMA_MODEL="gemma-4-E2B-it.litertlm"
-fi
+DESKTOP_GEMMA_MODEL="gemma-4-E2B-it.litertlm"
 REQUIRED_PATHS=(
   "$ASSET_ROOT/local_ai_model_packs.json"
   "$ASSET_ROOT/Models/$DESKTOP_GEMMA_MODEL"
@@ -145,7 +142,7 @@ if [[ "$INCLUDE_BACKEND_ASSET" == "1" ]]; then
       \"platforms\": [\"macos\"],
       \"required_for\": [\"desktop_backend\", \"web_search\", \"backend_tts\", \"memory\"],
       \"optional\": false,
-      \"version\": \"${YUI_BACKEND_ASSET_VERSION:-2026.07.04}\",
+      \"version\": \"${YUI_BACKEND_ASSET_VERSION:-2026.09.09}\",
       \"filename\": \"$(json_escape "$BACKEND_PACKAGE_NAME")\",
       \"url\": \"$(json_escape "$DOWNLOAD_BASE/$BACKEND_PACKAGE_NAME")\",
       \"parts\": [
@@ -192,7 +189,7 @@ $BACKEND_PARTS_JSON
       \"platforms\": [\"windows\"],
       \"required_for\": [\"desktop_backend\", \"web_search\", \"backend_tts\", \"memory\"],
       \"optional\": false,
-      \"version\": \"${YUI_BACKEND_ASSET_VERSION:-2026.07.04}\",
+      \"version\": \"${YUI_BACKEND_ASSET_VERSION:-2026.09.09}\",
       \"filename\": \"$(json_escape "$WINDOWS_BACKEND_PACKAGE_NAME")\",
       \"url\": \"$(json_escape "$DOWNLOAD_BASE/$WINDOWS_BACKEND_PACKAGE_NAME")\",
       \"parts\": [
@@ -227,7 +224,7 @@ cat > "$OUT_DIR/$MANIFEST_NAME" <<JSON
       "platforms": ["macos", "windows"],
       "required_for": ["local_chat", "local_tts"],
       "optional": false,
-      "version": "${YUI_LOCAL_AI_ASSET_VERSION:-2026.07.02}",
+      "version": "${YUI_LOCAL_AI_ASSET_VERSION:-2026.09.09}",
       "filename": "$(json_escape "$PACKAGE_NAME")",
       "url": "$(json_escape "$FULL_ZIP_URL")",
       "parts": [

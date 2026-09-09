@@ -36,6 +36,7 @@ namespace YuiPhysicalAI.UI
             ApplyPrimaryCommandLabels();
             NormalizeLogView();
             EnsureChatLogView();
+            EnsureUnifiedComposer();
         }
 
         private void ResolveAvatarReferences()

@@ -1,0 +1,39 @@
+{
+  "name": "Yui Avatar Bridge",
+  "id": "jp.tsubamechan.yui.vpm",
+  "url": "https://raw.githubusercontent.com/Tsubame-chan/YuiVRMAIStudio/main/vpm/index.json",
+  "author": "Tsubame-chan",
+  "packages": {
+    "jp.tsubamechan.yui-avatar-bridge": {
+      "versions": {
+        "0.1.1": {
+          "name": "jp.tsubamechan.yui-avatar-bridge",
+          "displayName": "Yui Avatar Bridge",
+          "version": "0.1.1",
+          "unity": "2022.3",
+          "description": "Export a user-owned VCC avatar as a sanitized, high-fidelity Unity avatar package ZIP.",
+          "author": {
+            "name": "Tsubame-chan"
+          },
+          "license": "MIT",
+          "vpmDependencies": {
+            "com.vrchat.avatars": "3.x"
+          },
+          "keywords": [
+            "vrchat",
+            "avatar",
+            "vpm",
+            "yui"
+          ],
+          "dependencies": {
+            "com.unity.modules.assetbundle": "1.0.0",
+            "com.unity.modules.animation": "1.0.0",
+            "com.unity.modules.jsonserialize": "1.0.0"
+          },
+          "url": "https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/avatar-bridge-v0.1.1/jp.tsubamechan.yui-avatar-bridge-0.1.1.zip",
+          "zipSHA256": "d7227baa66e6cf7ab57576f80564ef19b4e4d3d42a4dee26a1daa5d46a980d0f"
+        }
+      }
+    }
+  }
+}

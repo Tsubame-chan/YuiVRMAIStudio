@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${YUI_RELEASE_VERSION:-v0.2.0-beta.3}"
+VERSION="${YUI_RELEASE_VERSION:-v0.2.0-beta.5}"
 APP_SOURCE="${YUI_WINDOWS_APP_SOURCE:-$ROOT_DIR/builds/YuiVRMAIStudio_WindowsPublicBeta_$VERSION}"
 OUT_DIR="${YUI_RELEASE_OUT_DIR:-$ROOT_DIR/releases/$VERSION}"
 PACKAGE_NAME="YuiVRMAIStudio_WindowsPublicBeta_${VERSION}_windows.zip"

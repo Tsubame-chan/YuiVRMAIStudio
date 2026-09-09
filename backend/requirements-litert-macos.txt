@@ -1,0 +1,2 @@
+# Optional macOS embedded chat CLI bundled with desktop releases.
+litert-lm==0.17.0

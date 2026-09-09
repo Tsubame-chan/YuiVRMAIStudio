@@ -21,6 +21,7 @@ namespace YuiPhysicalAI.UI
         private readonly List<GameObject> linkRows = new List<GameObject>();
         private static Sprite pillSprite;
         private bool linksExpanded;
+        private Button saveButton;
         private string copyText = string.Empty;
         private IReadOnlyList<YuiChatLink> currentLinks = System.Array.Empty<YuiChatLink>();
 
@@ -249,6 +250,9 @@ namespace YuiPhysicalAI.UI
                     new Color(1f, 1f, 1f, 0.08f),
                     new Color(0.86f, 0.9f, 1f, 0.92f));
             }
+            if(saveButton==null)saveButton=FindChildButton(actionsRect,"SaveButton");
+            if(saveButton==null)saveButton=CreateActionButton("SaveButton",actionsRect,"Save",font,64f,new Color(1f,1f,1f,.08f),Color.white);
+            saveButton.onClick.RemoveAllListeners();saveButton.onClick.AddListener(SaveCurrentText);
             copyButtonText = copyButtonText != null ? copyButtonText : copyButton.GetComponentInChildren<Text>(true);
 
             linksButton = linksButton != null ? linksButton : FindChildButton(actionsRect, "LinksButton");
@@ -292,6 +296,7 @@ namespace YuiPhysicalAI.UI
 
         private void BindActionButtons(Font font)
         {
+            if(saveButton!=null)saveButton.GetComponentInChildren<Text>().text="Save";
             var hasText = !string.IsNullOrWhiteSpace(copyText);
             var hasLinks = currentLinks != null && currentLinks.Count > 0;
 
@@ -336,6 +341,20 @@ namespace YuiPhysicalAI.UI
             {
                 copyButtonText.text = "Done";
             }
+        }
+
+        private void SaveCurrentText()
+        {
+            try {
+                var directory=System.IO.Path.Combine(Application.persistentDataPath,"SavedResults");
+                System.IO.Directory.CreateDirectory(directory);
+                var name="Yui_"+System.DateTime.Now.ToString("yyyyMMdd_HHmmss_fff")+"_"+System.Guid.NewGuid().ToString("N").Substring(0,6)+".md";
+                System.IO.File.WriteAllText(System.IO.Path.Combine(directory,name),copyText??string.Empty);
+                saveButton.GetComponentInChildren<Text>().text="Saved";
+#if UNITY_STANDALONE || UNITY_EDITOR
+                Application.OpenURL(new System.Uri(directory+System.IO.Path.DirectorySeparatorChar).AbsoluteUri);
+#endif
+            } catch(System.Exception ex) {Debug.LogWarning("Could not save result: "+ex.Message);saveButton.GetComponentInChildren<Text>().text="Retry";}
         }
 
         private void ToggleLinks()

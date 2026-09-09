@@ -183,6 +183,8 @@ namespace YuiPhysicalAI.LocalAI
                     QuoteArgument(prompt),
                     "--backend",
                     backend,
+                    "--speculative-decoding",
+                    backend == "gpu" ? "true" : "false",
                     "--temperature",
                     "0.45",
                     "--top-k",
@@ -208,8 +210,8 @@ namespace YuiPhysicalAI.LocalAI
                     return Error("runtime_start_failed", "Failed to start litert-lm.");
                 }
 
-                var stdout = process.StandardOutput.ReadToEnd();
-                var stderr = process.StandardError.ReadToEnd();
+                var stdoutTask = process.StandardOutput.ReadToEndAsync();
+                var stderrTask = process.StandardError.ReadToEndAsync();
                 if (!process.WaitForExit(120000))
                 {
                     try
@@ -224,6 +226,8 @@ namespace YuiPhysicalAI.LocalAI
                     return Error("runtime_timeout", "litert-lm did not finish within 120 seconds.");
                 }
 
+                var stdout = stdoutTask.GetAwaiter().GetResult();
+                var stderr = stderrTask.GetAwaiter().GetResult();
                 if (process.ExitCode != 0)
                 {
                     return Error("runtime_error", string.IsNullOrWhiteSpace(stderr) ? $"litert-lm exited with {process.ExitCode}." : stderr.Trim());
@@ -361,7 +365,8 @@ namespace YuiPhysicalAI.LocalAI
             var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             var candidates = new[]
             {
-                "/private/tmp/yui-litert-lm-venv/bin/litert-lm",
+                Path.Combine(YuiPhysicalAI.Backend.YuiDesktopBackendPaths.ResolveMacBackendRoot(Application.dataPath, Application.persistentDataPath), "scripts/run_litert_cli_macos.sh"),
+                Path.Combine(home, ".cache/yui-vrm-ai-studio/litert-lm-venv-py3/bin/litert-lm"),
                 Path.Combine(home, ".cache/yui-vrm-ai-studio/litert-lm-venv/bin/litert-lm"),
                 "/opt/homebrew/bin/litert-lm",
                 "/usr/local/bin/litert-lm"
