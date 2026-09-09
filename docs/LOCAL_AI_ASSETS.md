@@ -206,3 +206,12 @@ On Apple M5 with isolated LiteRT-LM 0.17.0, short GPU benchmarks measured normal
 The macOS LiteRT server launcher now requires Python 3.10+, selects a suitable existing interpreter, separates its new virtual environment from legacy Python 3.9, and pins new LiteRT-LM installations to 0.17.0 unless explicitly overridden.
 
 Source: https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm
+
+
+## beta.5 source and runtime update (2026-09-09)
+
+The earlier candidate comparison above is historical. The current standard E2B file was downloaded and verified again at revision `b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1`; its weights are unchanged. beta.5 updates the macOS bundled runtime to LiteRT-LM 0.17.0 and explicitly enables GPU speculative decoding. CPU fallback disables speculative decoding. GPU-specific E2B is not the selected default. Mobile native runtimes have not received this macOS CLI setting.
+
+For source preparation, run `scripts/setup_backend_byok_macos.sh` with Python 3.12+, then `scripts/prepare_desktop_local_ai_assets_macos.sh`. The latter defaults to the verified standard E2B revision, stages the download in a temporary directory, verifies SHA-256, atomically replaces the model and removes temporary files. Custom repositories must set `YUI_DESKTOP_LITERT_LM_REPO`, `YUI_DESKTOP_LITERT_LM_FILE`, and `YUI_DESKTOP_LITERT_LM_REVISION` together. Packaging checks the pinned macOS runtime before copying files.
+
+Application downloads use the beta.5 release manifest; the existing optional Aivis asset remains at its earlier version. Historical release assets may still reference older packs. UI/library changes are described in `docs/AVATAR_IMPORT.md`.

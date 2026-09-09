@@ -23,6 +23,9 @@ echo "[Yui setup] Using Python $PY_VERSION"
 "$PYTHON_BIN" -m venv .venv
 "$BACKEND_DIR/.venv/bin/python" -m pip install --upgrade pip
 "$BACKEND_DIR/.venv/bin/python" -m pip install -r requirements.txt
+if [[ "$(uname -s)" == "Darwin" && "$(uname -m)" == "arm64" ]]; then
+  "$BACKEND_DIR/.venv/bin/python" -m pip install -r requirements-litert-macos.txt
+fi
 
 if [[ ! -f "$REPO_ROOT/.env" ]]; then
   cp "$REPO_ROOT/.env.example" "$REPO_ROOT/.env"

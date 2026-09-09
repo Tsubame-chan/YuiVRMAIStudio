@@ -7,6 +7,10 @@ BUNDLE_DIR="$OUT_PARENT/YuiBackend"
 INCLUDE_VENV="${YUI_INCLUDE_BACKEND_VENV:-1}"
 INCLUDE_TTS_TOOLS="${YUI_INCLUDE_BACKEND_TTS_TOOLS:-1}"
 
+if [[ "$INCLUDE_VENV" == "1" ]]; then
+  "$ROOT_DIR/backend/.venv/bin/python" -c 'from importlib.metadata import version; assert version("litert-lm") == "0.17.0", "Install backend/requirements-litert-macos.txt before packaging"'
+fi
+
 rm -rf "$BUNDLE_DIR"
 mkdir -p "$BUNDLE_DIR"
 
