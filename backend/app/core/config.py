@@ -33,7 +33,7 @@ class Settings(BaseSettings):
         frozen=True,
     )
 
-    app_version: str = "0.2.0-beta.4"
+    app_version: str = "0.2.0-beta.5"
     character_name: str = "Yui"
 
     database_url: str = "sqlite:///./data/yui.db"
@@ -92,7 +92,7 @@ class Settings(BaseSettings):
     lmstudio_base_url: str = "http://127.0.0.1:1234/v1"
     lmstudio_chat_model: str = "local-model"
     litert_lm_base_url: str = "http://127.0.0.1:9379/v1"
-    litert_lm_chat_model: str = "gemma4-e4b,gpu"
+    litert_lm_chat_model: str = "gemma4-e2b,gpu"
     open_meteo_geocoding_base_url: str = "https://geocoding-api.open-meteo.com/v1"
     open_meteo_forecast_base_url: str = "https://api.open-meteo.com/v1"
 

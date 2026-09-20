@@ -261,6 +261,9 @@ namespace YuiPhysicalAI.Api
     [Serializable]
     public sealed class ChatRequest
     {
+        [JsonProperty("character_id")] public string CharacterId;
+        [JsonProperty("session_id")] public string SessionId;
+        [JsonProperty("task_id")] public string TaskId;
         [JsonProperty("request_id")]
         public string RequestId { get; set; }
 

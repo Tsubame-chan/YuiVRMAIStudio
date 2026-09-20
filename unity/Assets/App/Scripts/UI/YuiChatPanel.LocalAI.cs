@@ -34,8 +34,16 @@ namespace YuiPhysicalAI.UI
         {
             ConfigureAiRuntimeRouter();
             localAiUnavailableWarningShown = false;
-            AppendLog("System", "ローカルAIデータの準備が完了しました。Local Gemmaを使用できます。");
-            SetStatus("Local AI ready");
+            if (LocalChatRuntimeAvailable())
+            {
+                AppendLog("System", "ローカルAIデータの準備が完了しました。Local Gemmaの起動を試せます。");
+                SetStatus("Local AI data ready");
+            }
+            else
+            {
+                AppendLog("System", "データの準備は完了しましたが、この環境の端末内Gemmaは利用できません。APIまたは設定済みBackendを選択してください。");
+                SetStatus("データ取得完了 · API / Backendを使用してください");
+            }
         }
 
         public void RefreshAfterOptionalTtsAssetInstall()

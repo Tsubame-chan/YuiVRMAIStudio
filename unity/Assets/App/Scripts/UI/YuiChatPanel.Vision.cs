@@ -103,23 +103,8 @@ namespace YuiPhysicalAI.UI
                 pendingVisionImageAttachment.SetImageDataUrl(YuiVisionImageUtility.ToImageDataUrl(
                     imageBytes,
                     "image/jpeg"));
-                if (ShouldAttachImageForApiChat())
-                {
-                    latestVision = CreateApiAttachedVision("camera");
-                    AppendLog("Vision", latestVision.Summary);
-                    SetStatus("Ready");
-                    return true;
-                }
-
-                latestVision = await AnalyzeImageViaRuntimeAsync(
-                    imageBytes,
-                    "camera.jpg",
-                    "camera",
-                    "image/jpeg",
-                    cancellationTokenSource.Token);
-
-                AppendLog("Vision", latestVision.Summary);
-                SetStatus("Ready");
+                latestVision = null;
+                SetStatus("画像を確認して送信してください");
                 return true;
             }
             catch (YuiBackendException ex)
@@ -368,8 +353,8 @@ namespace YuiPhysicalAI.UI
             {
                 isSending = true;
                 SetInteractable(false);
-                SetStatus("Analyzing image...");
-                AppendLog("System", $"画像を見ています... {Path.GetFileName(path)}");
+                SetStatus("画像を準備しています…");
+                AppendLog("System", $"画像を添付します: {Path.GetFileName(path)}");
 
                 var mimeType = YuiVisionImageUtility.ResolveImageMimeType(path);
                 if (string.IsNullOrEmpty(mimeType))
@@ -392,23 +377,8 @@ namespace YuiPhysicalAI.UI
                     mimeType = "image/jpeg";
                 }
                 pendingVisionImageAttachment.SetImageDataUrl(YuiVisionImageUtility.ToImageDataUrl(imageBytes, mimeType));
-                if (ShouldAttachImageForApiChat())
-                {
-                    latestVision = CreateApiAttachedVision("general");
-                    AppendLog("Vision", latestVision.Summary);
-                    SetStatus("Ready");
-                    return;
-                }
-
-                latestVision = await AnalyzeImageViaRuntimeAsync(
-                    imageBytes,
-                    Path.GetFileName(path),
-                    "general",
-                    mimeType,
-                    cancellationTokenSource.Token);
-
-                AppendLog("Vision", latestVision.Summary);
-                SetStatus("Ready");
+                latestVision = null;
+                SetStatus("画像を確認して送信してください");
             }
             catch (YuiBackendException ex)
             {

@@ -224,10 +224,57 @@ namespace YuiPhysicalAI.LocalAI
             VerifyFileSha256(asset.Sha256, zipPath, asset.Filename ?? asset.Id);
             var zipSize = File.Exists(zipPath) ? new FileInfo(zipPath).Length : 0L;
             progress?.Report(new YuiLocalAiAssetDownloadProgress(asset.DisplayName ?? asset.Id, zipSize, asset.SizeBytes, 1f, "verify"));
-            var installRoot = Path.Combine(assetStorageRoot, NormalizeRelativePath(asset.InstallRoot));
-            Directory.CreateDirectory(installRoot);
-            ExtractZipSafely(zipPath, installRoot);
-            ApplyPostInstallPermissions(asset, installRoot);
+            var storageRoot = Path.GetFullPath(assetStorageRoot).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var installRoot = Path.GetFullPath(Path.Combine(storageRoot, NormalizeRelativePath(asset.InstallRoot)));
+            if (!installRoot.StartsWith(storageRoot, StringComparison.Ordinal) && installRoot != storageRoot.TrimEnd(Path.DirectorySeparatorChar))
+                throw new InvalidDataException("Install root escapes asset storage.");
+            var staging = Path.Combine(storageRoot, ".install-" + Guid.NewGuid().ToString("N"));
+            var stagedRoot = Path.Combine(staging, "new");
+            var backupRoot = Path.Combine(staging, "old");
+            var committed = new List<string>();
+            try
+            {
+                Directory.CreateDirectory(stagedRoot);
+                ExtractZipSafely(zipPath, stagedRoot, cancellationToken);
+                foreach (var required in asset.InstalledPaths ?? Array.Empty<string>())
+                {
+                    var candidate = Path.GetFullPath(Path.Combine(stagedRoot, NormalizeRelativePath(required)));
+                    if (!candidate.StartsWith(stagedRoot + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+                        || (!File.Exists(candidate) && !Directory.Exists(candidate)))
+                        throw new InvalidDataException("Downloaded archive lacks required path: " + required);
+                }
+                foreach (var file in Directory.GetFiles(stagedRoot, "*", SearchOption.AllDirectories))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var relative = file.Substring(stagedRoot.Length + 1);
+                    var target = Path.Combine(installRoot, relative);
+                    var backup = Path.Combine(backupRoot, relative);
+                    Directory.CreateDirectory(Path.GetDirectoryName(target));
+                    if (File.Exists(target))
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(backup));
+                        File.Move(target, backup);
+                    }
+                    committed.Add(relative);
+                    File.Move(file, target);
+                }
+                ApplyPostInstallPermissions(asset, installRoot);
+            }
+            catch
+            {
+                for (var i = committed.Count - 1; i >= 0; i--)
+                {
+                    var target = Path.Combine(installRoot, committed[i]);
+                    var backup = Path.Combine(backupRoot, committed[i]);
+                    if (File.Exists(target)) File.Delete(target);
+                    if (File.Exists(backup)) File.Move(backup, target);
+                }
+                throw;
+            }
+            finally
+            {
+                if (Directory.Exists(staging)) Directory.Delete(staging, true);
+            }
             progress?.Report(new YuiLocalAiAssetDownloadProgress(asset.DisplayName ?? asset.Id, zipSize, asset.SizeBytes, 1f, "install"));
         }
 
@@ -280,7 +327,7 @@ namespace YuiPhysicalAI.LocalAI
             }
         }
 
-        private static void ExtractZipSafely(string zipPath, string destinationDirectory)
+        private static void ExtractZipSafely(string zipPath, string destinationDirectory, CancellationToken cancellationToken)
         {
             var destinationRoot = Path.GetFullPath(destinationDirectory);
             if (!destinationRoot.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
@@ -290,6 +337,7 @@ namespace YuiPhysicalAI.LocalAI
             using var archive = ZipFile.OpenRead(zipPath);
             foreach (var entry in archive.Entries)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (string.IsNullOrWhiteSpace(entry.FullName) || entry.FullName.EndsWith("/", StringComparison.Ordinal))
                 {
                     continue;

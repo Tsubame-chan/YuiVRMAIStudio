@@ -2,14 +2,14 @@
 
 このページはmacOS版を試す人向けの入口です。まずはGitHub ReleasesのmacOS Beta配布物を使ってください。GitHubの `Code > Download ZIP` はソースコード用で、実行済みアプリや大型AI/TTSデータは含まれません。
 
-現在のmacOS実行用ZIPは `v0.2.0-beta.3` です。この版では、初回起動時に不足しているLocal AI/TTSデータとmacOS Backend bundleをアプリが自動で取得します。
+現在のmacOS実行用ZIPは `v0.2.0-beta.5` です。この版では、初回起動時に不足しているLocal AI/TTSデータとmacOS Backend bundleをアプリが自動で取得します。
 
 - English guide: [`MAC_PUBLIC_BETA.en.md`](MAC_PUBLIC_BETA.en.md)
 
 ## まず動かす
 
-1. GitHub Releasesの `v0.2.0-beta.3` で、名前に `MacOSPublicBeta` が入っているアプリ本体ZIPをダウンロードします。
-   - `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip`
+1. GitHub Releasesの `v0.2.0-beta.5` で、名前に `MacOSPublicBeta` が入っているアプリ本体ZIPをダウンロードします。
+   - `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.5_macos.zip`
 2. ZIPを展開し、`Yui VRM AI Studio.app` を起動します。
 3. 初回ダウンロード画面で開始すると、基本動作に必要なLocal AI/TTSデータとmacOS Backend bundleが自動で入ります。
 
@@ -146,3 +146,7 @@ Releaseの `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` または旧 `LocalAIAs
 - English README: [`../README.en.md`](../README.en.md)
 - API: [`api.md`](api.md)
 - 外部情報 / web search方針: [`LLM_EXTERNAL_INFO.md`](LLM_EXTERNAL_INFO.md)
+
+## ソース更新と配布版の違い
+
+Release beta.5は2026-09-09のバイナリです。それ以降のソース改修（送信前画像確認、停止・再試行、保存ID、取得失敗時の保護）は、次の検証候補に含まれます。既存のbeta.5 ZIPへ反映されたとは扱わないでください。OS別経路と制限は [対応状況](RUNTIME_SUPPORT.md) を参照してください。

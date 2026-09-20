@@ -67,14 +67,14 @@ These projects overlap with parts of Yui but are not treated as identical produc
 
 | Priority | Source | Useful observation | Yui adaptation | Status |
 | --- | --- | --- | --- | --- |
-| P0 | [Webcam Motion Capture beta](https://webcammotioncapture.info/ja/beta.php) | A Unity/VCC tool exports the selected VRChat avatar into a runtime-loadable form. | VPM-distributed Yui Avatar Bridge, initially exporting portable VRM plus diagnostics. | Architecture defined |
-| P0 | [Utsuwa](https://github.com/The-Lab-by-Ordinary-Company/utsuwa) | Character-first screen, one composer for text/image/voice, whole-window drop state, removable attachments, explicit listening/transcribing state. | Replace fragmented task inputs with one attachment-aware composer and visible processing state. | Command labels improved; unified composer pending |
+| P0 | [Webcam Motion Capture beta](https://webcammotioncapture.info/ja/beta.php) | A Unity/VCC tool exports the selected VRChat avatar into a runtime-loadable form. | VPM-distributed Yui Avatar Bridge exporting a standard ZIP with native platform payloads; VRM remains a portable fallback. | Mac load foundation validated; consumer onboarding pending |
+| P0 | [Utsuwa](https://github.com/The-Lab-by-Ordinary-Company/utsuwa) | Character-first screen, one composer for text/image/voice, whole-window drop state, removable attachments, explicit listening/transcribing state. | Replace fragmented task inputs with one attachment-aware composer and visible processing state. | Unified composer, image preview, route label and standard-chat stop/retry implemented; device/Realtime acceptance pending |
 | P0 | [AIRI](https://github.com/moeru-ai/airi) | Compact status/control islands, expandable advanced controls, detailed loading only on demand, desktop-to-pocket connection. | Keep the character dominant; expose connection/routing state compactly and expand details only when needed. | Capability foundation exists; UI pending |
 | P0 | Internal need | Spoken responses and work documents require different lengths. | `Talk / Work`, separate `text` and `spoken_text`, 420 vs 2200 token budgets. | Implemented |
 | P1 | [AITuberKit](https://github.com/tegnike/aituber-kit) | Everyday actions stay visible; screen/camera/image tools live in a small contextual tools menu; Quick Start is separate from detailed settings. | Keep Message/Mic/Send immediate; move less frequent context tools into one `Attach` menu; split Basic and Advanced settings. | Pending |
-| P1 | [Amica](https://github.com/semperai/amica) | Avatar choice and `Load VRM` are first-class visual actions. | Add an avatar library with thumbnails, import state, rename, replace, and delete. | Pending |
+| P1 | [Amica](https://github.com/semperai/amica) | Avatar choice and `Load VRM` are first-class visual actions. | Add an avatar library with thumbnails, import state, rename, replace, and delete. | Thumbnails, rename, switch and removal implemented; cross-device acceptance pending |
 | P1 | [AIRI](https://github.com/moeru-ai/airi) | Screen source selection distinguishes applications, displays, and devices with clear empty/loading states. | Add `Window / Display / Region / Camera` source tabs and a persistent shared-context indicator. | Pending |
-| P1 | Utsuwa | Privacy text changes based on whether media stays local or is sent to a provider. | Show a route badge on every attachment and before a remote upload. | Pending |
+| P1 | Utsuwa | Privacy text changes based on whether media stays local or is sent to a provider. | Show a route badge on every attachment and before a remote upload. | Image route label and explicit send implemented; fallback/Realtime device acceptance pending |
 | P1 | AIRI Pocket and current Yui backend | A mobile stage can connect to a desktop runtime through a secure channel. | Device pairing, authenticated task inbox, reconnect state, same memory/task IDs. | Foundation only |
 | P2 | AIRI/Utsuwa memory work | Persistent memory is useful only when its behavior is visible. | Review, edit, pin, forget, export, and approve durable facts; semantic retrieval later. | Pending |
 | P2 | AITuberKit tools | Active tools are visibly highlighted and only relevant tools are shown. | Capability-aware action menu and explicit active-capture state. | Pending |
@@ -141,7 +141,7 @@ These may exist as opt-in experiments later, but they do not define the product.
 - Ship Talk/Work end to end.
 - Build Yui Avatar Bridge MVP and avatar library.
 - Unify composer attachments and drag/drop.
-- Add copy/save result actions and clear working state.
+- Copy is already implemented in message bubbles; add a coherent save/result workflow and clear working state.
 
 ### Phase 2: Intentional context
 

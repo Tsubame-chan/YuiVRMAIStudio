@@ -154,10 +154,10 @@ namespace YuiPhysicalAI.UI
                 "Direct API", "BackendなしでAPIチャットとAPI画像理解を使えます。声はTTS Modeで別に選びます。",
                 "できないこと: Realtime会話/翻訳、メモリDB、Web検索、外部ツール、Backend TTSにはBackendが必要です。");
             ReflowCard(panel, "ViewerCard", new Vector2(0.06f, 0.18f), new Vector2(0.94f, 0.32f),
-                "話す/見せる", "Message or taskに入力してSend。Micは音声入力、Imageは画像、Cameraは選択中のカメラ画像です。",
-                "API Modeでは画像をAPI LLMへ直接渡します。Local AIでは端末内の軽量Visionを使います。");
+                "話す/見せる", "Message or taskに入力してSend。Micは音声入力、画像・カメラ・アバターは「添付」から選びます。",
+                "画像は送信前に確認・解除できます。添付欄の処理先を確認してください。停止後や失敗後は再試行できます。");
             ReflowCard(panel, "SettingsCard", new Vector2(0.06f, 0.045f), new Vector2(0.94f, 0.16f),
-                "VRMと声", "AvatarでUnityChanまたはCustom VRMを選びます。声はTTS ModeでAIモードとは別に選べます。",
+                "Avatarと声", "AvatarでUnityChanまたはCustom Avatarを選びます。声はTTS ModeでAIモードとは別に選べます。",
                 "Load Avatarは.vrmまたはAvatar Bridgeの標準ZIP向けです。Backend URLはYui backendだけを指定します。");
             var oldFooter = panel.Find("Footer");
             if (oldFooter != null)

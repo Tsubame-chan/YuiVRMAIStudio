@@ -39,7 +39,7 @@ namespace YuiPhysicalAI.UI
             RenderAll();
         }
 
-        public void AppendLog(string speaker, string text)
+        public void AppendLog(string speaker, string text, string resultMetadata = null)
         {
             var safeSpeaker = string.IsNullOrWhiteSpace(speaker) ? "System" : speaker.Trim();
             var safeText = text ?? string.Empty;
@@ -51,7 +51,7 @@ namespace YuiPhysicalAI.UI
                 return;
             }
 
-            messages.Add(CreateBubble(safeSpeaker, safeText, pending: false));
+            messages.Add(CreateBubble(safeSpeaker, safeText, pending: false, resultMetadata: resultMetadata));
             TrimOldMessages();
             RebuildLayoutAndScroll();
         }
@@ -290,10 +290,11 @@ namespace YuiPhysicalAI.UI
             ScrollToBottom();
         }
 
-        private MessageEntry CreateBubble(string speaker, string text, bool pending)
+        private MessageEntry CreateBubble(string speaker, string text, bool pending, string resultMetadata = null)
         {
             var entry = new MessageEntry
             {
+                ResultMetadata = resultMetadata,
                 Speaker = speaker,
                 Text = text,
             };
@@ -340,7 +341,7 @@ namespace YuiPhysicalAI.UI
                 chatFont,
                 bubbleSprite,
                 entry.Text,
-                parsedText.Links);
+                parsedText.Links, entry.ResultMetadata);
         }
 
         private void TrimOldMessages()
@@ -453,6 +454,7 @@ namespace YuiPhysicalAI.UI
 
         private sealed class MessageEntry
         {
+            public string ResultMetadata;
             public string Speaker;
             public string Text;
             public GameObject Root;

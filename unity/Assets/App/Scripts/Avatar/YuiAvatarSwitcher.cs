@@ -161,7 +161,7 @@ namespace YuiPhysicalAI.Avatar
             customAvatar = avatar;
             if (customAvatar != null)
             {
-                customAvatar.name = "Yui Custom VRM Avatar";
+                customAvatar.name = "Yui Custom Avatar";
                 SanitizeAvatar(customAvatar);
                 ConfigureCustomVrmIdlePose(customAvatar);
                 if (activate)
@@ -492,4 +492,3 @@ namespace YuiPhysicalAI.Avatar
         }
     }
 }
-

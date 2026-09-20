@@ -2,14 +2,14 @@
 
 This page is the entry point for trying the macOS build. Start from the macOS Beta release files on GitHub Releases. GitHub `Code > Download ZIP` is source code only and does not include the built app or large local AI/TTS data.
 
-`v0.2.0-beta.3` is the current macOS runnable app Release. On first launch, the app downloads missing Local AI/TTS data and the macOS backend bundle automatically.
+`v0.2.0-beta.5` is the current macOS runnable app Release. On first launch, the app downloads missing Local AI/TTS data and the macOS backend bundle automatically.
 
 - Japanese guide: [`MAC_PUBLIC_BETA.md`](MAC_PUBLIC_BETA.md)
 
 ## Run It First
 
-1. From the `v0.2.0-beta.3` GitHub Release, download the app ZIP whose name includes `MacOSPublicBeta`.
-   - `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.3_macos.zip`
+1. From the `v0.2.0-beta.5` GitHub Release, download the app ZIP whose name includes `MacOSPublicBeta`.
+   - `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.5_macos.zip`
 2. Extract the ZIP and launch `Yui VRM AI Studio.app`.
 3. Start the first-run download when prompted. The required Local AI/TTS data and macOS backend bundle are installed automatically.
 

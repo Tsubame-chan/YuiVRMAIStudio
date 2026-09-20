@@ -27,7 +27,7 @@ namespace YuiPhysicalAI.LocalAI
         {
             get
             {
-#if (UNITY_IOS || UNITY_STANDALONE_OSX) && !UNITY_EDITOR
+#if (UNITY_IOS || UNITY_STANDALONE_OSX || UNITY_ANDROID) && !UNITY_EDITOR
                 return true;
 #else
                 return false;
@@ -65,7 +65,9 @@ namespace YuiPhysicalAI.LocalAI
                 model_path = Path.Combine(root, "Models", "meimei_himari_1.vvm")
             });
 
-#if (UNITY_IOS || UNITY_STANDALONE_OSX) && !UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
+            return YuiAndroidVoicevoxCore.Synthesize(payload);
+#elif (UNITY_IOS || UNITY_STANDALONE_OSX) && !UNITY_EDITOR
             try
             {
                 return JsonConvert.DeserializeObject<YuiVoicevoxCoreSynthesisResult>(
