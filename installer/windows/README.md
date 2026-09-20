@@ -13,7 +13,7 @@ Expected source layout before compiling:
 
 ```text
 public/YuiVRMAIStudio_Public/
-  builds/YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3/Yui VRM AI Studio.exe
+  builds/YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.5/Yui VRM AI Studio.exe
   backend/
   scripts/
   docs/

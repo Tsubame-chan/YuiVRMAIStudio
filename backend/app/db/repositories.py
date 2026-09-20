@@ -18,28 +18,29 @@ class ChatRepository:
         connection.row_factory = sqlite3.Row
         return connection
 
-    def get_cached_response(self, request_id: str) -> ChatResponse | None:
+    def get_cached_response(self, request_id: str, user_id: str | None = None, character_id: str | None = None, session_id: str | None = None, task_id: str | None = None) -> ChatResponse | None:
         with self._connect() as connection:
             row = connection.execute(
-                "SELECT response_json FROM chat_responses WHERE request_id = ?",
-                (request_id,),
+                """SELECT response_json FROM chat_responses WHERE request_id = ?
+                AND (? IS NULL OR user_id = ?) AND character_id IS ? AND session_id IS ? AND task_id IS ?""",
+                (request_id, user_id, user_id, character_id, session_id, task_id),
             ).fetchone()
 
         if row is None:
             return None
         return ChatResponse.model_validate_json(row["response_json"])
 
-    def list_recent_messages(self, user_id: str, limit: int = 12) -> list[dict[str, str]]:
+    def list_recent_messages(self, user_id: str, limit: int = 12, character_id: str | None = None, session_id: str | None = None) -> list[dict[str, str]]:
         with self._connect() as connection:
             rows = connection.execute(
                 """
                 SELECT role, message
                 FROM conversations
-                WHERE user_id = ?
+                WHERE user_id = ? AND character_id IS ? AND session_id IS ?
                 ORDER BY id DESC
                 LIMIT ?
                 """,
-                (user_id, limit),
+                (user_id, character_id, session_id, limit),
             ).fetchall()
 
         return [
@@ -108,21 +109,27 @@ class ChatRepository:
         provider: str,
         model: str,
         usage_metadata: dict[str, Any] | None = None,
+        character_id: str | None = None,
+        session_id: str | None = None,
+        task_id: str | None = None,
     ) -> None:
         response_json = response.model_dump_json()
         metadata_json = json.dumps(usage_metadata or {}, ensure_ascii=False)
 
         with self._connect() as connection:
             connection.execute("PRAGMA foreign_keys=ON;")
+            connection.execute("BEGIN IMMEDIATE")
+            if connection.execute("SELECT 1 FROM chat_responses WHERE request_id = ?", (request_id,)).fetchone():
+                return
             try:
                 connection.execute(
                     """
                     INSERT INTO conversations (
-                        request_id, user_id, role, message, provider, model, metadata_json
+                        request_id, user_id, role, message, provider, model, metadata_json, character_id, session_id, task_id
                     )
-                    VALUES (?, ?, 'user', ?, ?, ?, ?)
+                    VALUES (?, ?, 'user', ?, ?, ?, ?, ?, ?, ?)
                     """,
-                    (request_id, user_id, user_message, provider, model, metadata_json),
+                    (request_id, user_id, user_message, provider, model, metadata_json, character_id, session_id, task_id),
                 )
             except sqlite3.IntegrityError:
                 pass
@@ -130,9 +137,9 @@ class ChatRepository:
             connection.execute(
                 """
                 INSERT INTO conversations (
-                    request_id, user_id, role, message, provider, model, face, animation, metadata_json
+                    request_id, user_id, role, message, provider, model, face, animation, metadata_json, character_id, session_id, task_id
                 )
-                VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, 'assistant', ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     None,
@@ -142,17 +149,17 @@ class ChatRepository:
                     model,
                     response.face,
                     response.animation,
-                    metadata_json,
+                    metadata_json, character_id, session_id, task_id,
                 ),
             )
             connection.execute(
                 """
                 INSERT OR REPLACE INTO chat_responses (
-                    request_id, user_id, response_json, provider, model
+                    request_id, user_id, response_json, provider, model, character_id, session_id, task_id
                 )
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (request_id, user_id, response_json, provider, model),
+                (request_id, user_id, response_json, provider, model, character_id, session_id, task_id),
             )
             connection.execute(
                 """

@@ -7,7 +7,7 @@ namespace Yui.AvatarBridge.Editor
     {
         public int schemaVersion = 1;
         public string format = "unity-avatar-package";
-        public string exporterVersion = "0.1.0";
+        public string exporterVersion = "0.1.1";
         public string minimumYuiVersion = "0.2.0-beta.4";
         public string avatarId;
         public string displayName;

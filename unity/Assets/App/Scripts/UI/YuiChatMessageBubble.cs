@@ -22,6 +22,7 @@ namespace YuiPhysicalAI.UI
         private static Sprite pillSprite;
         private bool linksExpanded;
         private Button saveButton;
+        private string resultMetadata;
         private string copyText = string.Empty;
         private IReadOnlyList<YuiChatLink> currentLinks = System.Array.Empty<YuiChatLink>();
 
@@ -47,9 +48,11 @@ namespace YuiPhysicalAI.UI
             Font font,
             Sprite bubbleSprite,
             string originalText = null,
-            IReadOnlyList<YuiChatLink> links = null)
+            IReadOnlyList<YuiChatLink> links = null,
+            string resultMetadata = null)
         {
             EnsureStructure(font, bubbleSprite);
+            this.resultMetadata = resultMetadata;
             copyText = originalText ?? text ?? string.Empty;
             currentLinks = links ?? System.Array.Empty<YuiChatLink>();
             linksExpanded = false;
@@ -350,6 +353,8 @@ namespace YuiPhysicalAI.UI
                 System.IO.Directory.CreateDirectory(directory);
                 var name="Yui_"+System.DateTime.Now.ToString("yyyyMMdd_HHmmss_fff")+"_"+System.Guid.NewGuid().ToString("N").Substring(0,6)+".md";
                 System.IO.File.WriteAllText(System.IO.Path.Combine(directory,name),copyText??string.Empty);
+                if (!string.IsNullOrEmpty(resultMetadata))
+                    System.IO.File.WriteAllText(System.IO.Path.Combine(directory,name+".json"),resultMetadata);
                 saveButton.GetComponentInChildren<Text>().text="Saved";
 #if UNITY_STANDALONE || UNITY_EDITOR
                 Application.OpenURL(new System.Uri(directory+System.IO.Path.DirectorySeparatorChar).AbsoluteUri);

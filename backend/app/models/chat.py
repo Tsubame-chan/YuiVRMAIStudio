@@ -15,6 +15,9 @@ class ChatRequest(BaseModel):
     secret: bool = False
     custom_instruction: str = ""
     character_name: str = ""
+    character_id: str | None = Field(default=None, max_length=128, pattern=r"^[A-Za-z0-9_.:-]+$")
+    session_id: str | None = Field(default=None, max_length=128, pattern=r"^[A-Za-z0-9_.:-]+$")
+    task_id: str | None = Field(default=None, max_length=128, pattern=r"^[A-Za-z0-9_.:-]+$")
 
 
 class ChatResponse(BaseModel):

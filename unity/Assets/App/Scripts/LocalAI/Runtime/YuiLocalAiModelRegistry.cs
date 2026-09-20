@@ -71,13 +71,13 @@ namespace YuiPhysicalAI.LocalAI
                             YuiLocalAiCapability.Translation,
                             YuiLocalAiCapability.Extraction
                         },
-                        EnabledByDefault = true,
+                        EnabledByDefault = false,
                         DownloadRequired = true,
                         MemoryBudgetMb = 2600,
                         DiskBudgetMb = 3400,
                         Priority = 8,
                         StartupPolicy = YuiLocalAiStartupPolicy.WarmTextOnly,
-                        Platforms = new[] { "macos", "windows" },
+                        Platforms = new[] { "macos" },
                         Notes = "Desktop offline default chat candidate for Mac/Windows. Keep out of the mobile default package because its memory footprint can prevent repeated local TTS/chat turns."
                     },
                     new YuiLocalAiModelPack
@@ -99,11 +99,11 @@ namespace YuiPhysicalAI.LocalAI
                         EnabledByDefault = true,
                         DownloadRequired = true,
                         MemoryBudgetMb = 1200,
-                        DiskBudgetMb = 2400,
+                        DiskBudgetMb = 2600,
                         Priority = 10,
                         StartupPolicy = YuiLocalAiStartupPolicy.WarmTextOnly,
-                        Platforms = new[] { "ios", "android", "macos", "windows" },
-                        Notes = "Mobile offline default and desktop fallback when the higher-quality E4B asset is not included in the current release asset set."
+                        Platforms = new[] { "ios", "android", "macos" },
+                        Notes = "Standard E2B model for iOS, Android and macOS. Windows embedded runtime is unavailable; use API or Backend."
                     },
                     new YuiLocalAiModelPack
                     {
@@ -255,7 +255,11 @@ namespace YuiPhysicalAI.LocalAI
 
         public static string CurrentPlatformKey()
         {
-#if UNITY_IOS
+#if UNITY_EDITOR_OSX
+            return "macos";
+#elif UNITY_EDITOR_WIN
+            return "windows";
+#elif UNITY_IOS
             return "ios";
 #elif UNITY_ANDROID
             return "android";

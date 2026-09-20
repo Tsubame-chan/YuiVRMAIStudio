@@ -2,14 +2,14 @@
 
 このページはWindows版を試す人向けの入口です。まずはGitHub ReleasesのWindows Beta配布物を使ってください。GitHubの `Code > Download ZIP` はソースコード用で、実行ファイルや大型AI/TTSデータを含まないため、そのままでは完成アプリとして動きません。
 
-現在のWindows実行用ZIPは `v0.2.0-beta.3` です。この版では、初回起動時に不足しているLocal AI/TTSデータとWindows Backend bundleをアプリが自動で取得します。
+現在のWindows実行用ZIPは `v0.2.0-beta.5` です。この版では、初回起動時に不足しているLocal AI/TTSデータとWindows Backend bundleをアプリが自動で取得します。
 
 macOS版は [`MAC_PUBLIC_BETA.md`](MAC_PUBLIC_BETA.md) を見てください。
 
 ## まず動かす
 
-1. GitHub Releasesの `v0.2.0-beta.3` で、名前に `WindowsPublicBeta` が入っているアプリ本体ZIPをダウンロードします。
-   - `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.3_windows.zip`
+1. GitHub Releasesの `v0.2.0-beta.5` で、名前に `WindowsPublicBeta` が入っているアプリ本体ZIPをダウンロードします。
+   - `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.5_windows.zip`
 2. ZIPを展開します。
 3. `Yui VRM AI Studio.exe` を起動します。
 4. 初回ダウンロード画面で開始すると、基本動作に必要なLocal AI/TTSデータとWindows Backend bundleが自動で入ります。
@@ -35,11 +35,11 @@ WindowsのSmartScreenが表示された場合は、信頼できる配布物で�
 
 ## できることの目安
 
-- バックエンドなし: Local Gemma SLM、Local VOICEVOX、VRM表示、基本チャット。
+- バックエンドなし: VRM / Avatar Bridge ZIP表示、設定済みキーによるDirect OpenAI API。Windowsの端末内GemmaとネイティブVOICEVOX Coreは未対応です。
 - OpenAI APIキーあり: Direct OpenAI API、より高品質な会話/画像理解/STT。
 - バックエンドあり: リアルタイム会話、リアルタイム翻訳、会話DB、Backend VOICEVOX、AivisSpeech HD、Irodori TTS。
 
-初回は `Auto Select` のままで大丈夫です。バックエンドが動いていればBackendを優先し、なければLocal/Directへ戻ります。
+Windowsの会話にはDirect OpenAI API、または設定済みBackendを使ってください。音声合成にはBackend経由のVOICEVOX Engineが必要です。データの取得成功だけでは端末内Gemmaを実行できません。
 
 ## バックエンドを使う場合
 
@@ -148,3 +148,7 @@ Release ZIPではなくCode ZIPを落としてしまった:
 ## ソースからビルドする場合
 
 Releaseの `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` または旧 `LocalAIAssets_Minimum` をリポジトリ直下へ展開してからUnityで開きます。詳しくは [`LOCAL_AI_ASSETS.md`](LOCAL_AI_ASSETS.md) を参照してください。
+
+## ソース更新と配布版の違い
+
+Release beta.5は2026-09-09のバイナリです。それ以降のソース改修（送信前画像確認、停止・再試行、保存ID、取得失敗時の保護）は、次の検証候補に含まれます。既存のbeta.5 ZIPへ反映されたとは扱わないでください。OS別経路と制限は [対応状況](RUNTIME_SUPPORT.md) を参照してください。

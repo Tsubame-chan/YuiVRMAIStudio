@@ -90,8 +90,8 @@ namespace YuiPhysicalAI.Tests.Editor
         {
             var registry = YuiLocalAiModelRegistry.CreateDefaultLocalAi();
 
-            Assert.AreEqual("core_text", registry.BestFor(YuiLocalAiCapability.Chat, "macos").Id);
-            Assert.AreEqual("core_text", registry.BestFor(YuiLocalAiCapability.Chat, "windows").Id);
+            Assert.AreEqual("core_text_e2b", registry.BestFor(YuiLocalAiCapability.Chat, "macos").Id);
+            Assert.IsNull(registry.BestFor(YuiLocalAiCapability.Chat, "windows"));
             Assert.AreEqual("core_text_e2b", registry.BestFor(YuiLocalAiCapability.Chat, "ios").Id);
             Assert.AreEqual("core_text_e2b", registry.BestFor(YuiLocalAiCapability.Chat, "android").Id);
             Assert.IsTrue(YuiLocalAiModelRegistry.SupportsPlatform(
@@ -146,7 +146,7 @@ namespace YuiPhysicalAI.Tests.Editor
                 "ios",
                 pack => pack.Provider == "google-litert-lm");
 
-            Assert.AreEqual("core_text", googleText.Id);
+            Assert.AreEqual("core_text_e2b", googleText.Id);
             Assert.AreEqual("core_text_e2b", googleMobileText.Id);
             Assert.AreEqual("vision_gemma4_e2b", googleVision.Id);
         }
@@ -462,6 +462,38 @@ namespace YuiPhysicalAI.Tests.Editor
             StringAssert.Contains("RequestOptionalTtsAssetDownload", localAi);
             StringAssert.Contains("ShowOptionalTtsDownload", overlay);
             StringAssert.Contains("optional_tts_addon", overlay);
+        }
+
+        [TestCase("../escape.txt")]
+        [TestCase("unrelated.txt")]
+        public void AssetDownloader_FailedUpdatePreservesInstalledModel(string secondEntry)
+        {
+            var root = Path.Combine(Path.GetTempPath(), "yui-safe-update-" + Guid.NewGuid().ToString("N"));
+            try
+            {
+                Directory.CreateDirectory(Path.Combine(root, "YuiLocalAI", "Models"));
+                var installed = Path.Combine(root, "YuiLocalAI", "Models", "old.bin");
+                File.WriteAllText(installed, "known-good");
+                var zip = Path.Combine(root, "update.zip");
+                using (var archive = ZipFile.Open(zip, ZipArchiveMode.Create))
+                {
+                    using (var writer = new StreamWriter(archive.CreateEntry("Models/old.bin").Open())) writer.Write("replacement");
+                    using (var writer = new StreamWriter(archive.CreateEntry(secondEntry).Open())) writer.Write("bad");
+                }
+                var bytes = File.ReadAllBytes(zip);
+                var asset = new YuiLocalAiReleaseAsset {
+                    Id = "update", Filename = "update.zip", Url = "memory://update", Sha256 = Sha256(bytes),
+                    InstallRoot = "YuiLocalAI", InstalledPaths = new[] { "Models/required.bin" }, Platforms = new[] { "macos" }
+                };
+                var client = new InMemoryAssetHttpClient("{}", new Dictionary<string, byte[]> { [asset.Url] = bytes });
+                var result = new YuiLocalAiAssetDownloader(client, root, Path.Combine(root, "cache"))
+                    .InstallAssetsAsync(new YuiLocalAiAssetManifest(), new[] { asset }, null, CancellationToken.None).GetAwaiter().GetResult();
+                Assert.IsFalse(result.Success);
+                Assert.AreEqual("known-good", File.ReadAllText(installed));
+                Assert.IsFalse(File.Exists(Path.Combine(root, "escape.txt")));
+                Assert.IsFalse(File.Exists(Path.Combine(root, YuiLocalAiInstalledAssetLedger.DefaultFileName)));
+            }
+            finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
         }
 
         [Test]
@@ -1245,8 +1277,8 @@ namespace YuiPhysicalAI.Tests.Editor
             Assert.AreEqual(YuiConversationModes.LocalAi, selectedMode);
             Assert.IsTrue(preferences.PreferLocalChat);
             Assert.IsFalse(preferences.FallbackToBackend);
-            Assert.AreEqual("core_text", pack.Id);
-            Assert.AreEqual("gemma-4-E4B-it.litertlm", pack.RuntimeModelRef);
+            Assert.AreEqual("core_text_e2b", pack.Id);
+            Assert.AreEqual("gemma-4-E2B-it.litertlm", pack.RuntimeModelRef);
         }
 
         [Test]

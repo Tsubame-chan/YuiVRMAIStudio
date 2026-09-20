@@ -223,14 +223,14 @@ async def chat(
     repository: ChatRepository = Depends(get_chat_repository),
     memory_repository: MemoryRepository = Depends(get_memory_repository),
 ) -> ChatResponse:
-    cached = None if request.secret else repository.get_cached_response(request.request_id)
+    cached = None if request.secret else repository.get_cached_response(request.request_id, request.user_id, request.character_id, request.session_id, request.task_id)
     if cached is not None:
         return cached
 
     provider_router = ProviderRouter(settings)
     try:
         provider = provider_router.chat()
-        history = [] if request.secret else repository.list_recent_messages(request.user_id)
+        history = [] if request.secret else repository.list_recent_messages(request.user_id, character_id=request.character_id, session_id=request.session_id)
         if not request.secret:
             if request.context.extra is None:
                 request.context.extra = {}
@@ -267,6 +267,10 @@ async def chat(
             response=response,
             provider=provider.name,
             model=_chat_model_name(settings, provider.name),
+            character_id=request.character_id,
+            session_id=request.session_id,
+            task_id=request.task_id,
+            usage_metadata={"mode": request.mode},
         )
     if not request.secret and response.memory_action == "save":
         memory_repository.save(

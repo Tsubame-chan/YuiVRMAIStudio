@@ -3,7 +3,7 @@
   "info": {
     "title": "Yui VRM AI Studio Backend",
     "description": "Local BYOK backend for Yui VRM AI Studio.",
-    "version": "0.1.0-alpha.1"
+    "version": "0.2.0-beta.5"
   },
   "paths": {
     "/health": {
@@ -754,6 +754,45 @@
             "type": "string",
             "title": "Character Name",
             "default": ""
+          },
+          "character_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Character Id"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
           }
         },
         "type": "object",

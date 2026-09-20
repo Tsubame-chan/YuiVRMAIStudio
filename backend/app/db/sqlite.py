@@ -96,6 +96,12 @@ def initialize_database(database_url: str) -> None:
             ON usage_logs(user_id, created_at);
             """
         )
+        for table in ("conversations", "chat_responses"):
+            existing = {row[1] for row in connection.execute(f"PRAGMA table_info({table})")}
+            for column in ("character_id", "session_id", "task_id"):
+                if column not in existing:
+                    connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_conversations_identity ON conversations(user_id, character_id, session_id, id)")
         connection.commit()
 
 

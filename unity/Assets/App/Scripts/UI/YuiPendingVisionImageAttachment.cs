@@ -5,6 +5,7 @@ namespace YuiPhysicalAI.UI
     public sealed class YuiPendingVisionImageAttachment
     {
         private string imageDataUrl;
+        public string ImageDataUrl => imageDataUrl;
         public bool HasImage => !string.IsNullOrWhiteSpace(imageDataUrl);
 
         public void SetImageDataUrl(string value)
