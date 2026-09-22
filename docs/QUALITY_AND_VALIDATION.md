@@ -1,5 +1,7 @@
 # 品質と検証方針
 
+2026-09-22: 公開版はbeta.5のままです。現在の改修版はMac検証とiOS候補の検証段階で、App Store公開の合格判定は出していません。[ストア公開の受入基準](STORE_RELEASE_GATE.md)を満たしてから配布します。
+
 Yui VRM AI StudioはDesktop Public Betaです。まず「Release ZIPを落とした人が、余計な準備なしで起動して試せること」を最優先にしています。その上で、バックエンド、OpenAI API、追加TTS runtimeを入れるほど機能が増える設計です。
 
 ## Betaで重視していること
@@ -17,19 +19,12 @@ Yui VRM AI StudioはDesktop Public Betaです。まず「Release ZIPを落とし
 - Desktop build audit: Windows/macOSのアプリ成果物、Windows file picker helper、初回取得manifestが揃っていること。
 - GitHub Release assets: アプリZIP、初回取得用Local AI/TTS/Backend bundle、sha256、Release本文の案内が揃っていること。
 
-## 今後増やしたいテスト
+## 自動テストと実機確認
 
-Public Betaとして配布範囲が広がるほど、以下の自動テストを増やしていきます。
+Backendには接続状態・設定・会話ID・音声ファイル・入力検査などの回帰テストがあります。Unityでは経路選択、履歴、アバター、ファイル選択、同意拒否・取消、モバイル必須データの検査を行います。これらの成功を、新規端末でのインストール・権限・音声品質・長時間動作の確認に読み替えないでください。
 
-| 領域 | 追加したい検証 |
-| --- | --- |
-| `/health`, `/config`, `/providers/status` | APIレスポンス基本形、秘密情報を出さないこと |
-| `/chat` | APIキーなし、provider failure、重複request_id |
-| `/audio/{filename}` | traversal拒否、拡張子拒否、存在しないファイル |
-| `/vision`, `/stt` | 空ファイル、サイズ超過、content-type拒否 |
-| setup scripts | dry-runまたは最低限の存在確認 |
-| Unity UI | AI/TTS選択肢のReady/Unavailable表示、Auto Select fallback |
+公開用ソースにはモデルやBackend実行環境が同梱されません。クリーンなソースのテストは、開発者の端末にインストール済みのモデルやworkerがあることを前提にしません。配布時には、必要なデータを別途準備した実Playerでも確認します。
 
 ## Provider/modelについて
 
-外部AI providerやモデル名は、サービス側の提供状況によって動作が変わることがあります。Betaでは、設定画面とHelp画面の接続状態を優先して確認してください。将来的には「APIキーありだが疎通未確認」「モデル名未検証」「Backend未接続だが選択肢として案内中」のような状態表示をさらに細かくしていきます。
+外部AI providerやモデル名は、サービス側の提供状況によって動作が変わることがあります。Betaでは、設定画面とHelp画面の接続状態を優先して確認してください。接続状態やAPIキーの存在だけで、実際の応答やモデル利用権が確認済みとは扱いません。

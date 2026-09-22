@@ -230,6 +230,7 @@ namespace YuiPhysicalAI.UI
             cancellationTokenSource = new CancellationTokenSource();
             EnsureUiReferences();
             ApplyReadableFont();
+            YuiUiLocalization.Changed += RenderStatus;
             if (avatarSwitcher == null)
             {
                 avatarSwitcher = GetComponent<YuiAvatarSwitcher>() ?? YuiSceneObjectFinder.FindFirst<YuiAvatarSwitcher>();

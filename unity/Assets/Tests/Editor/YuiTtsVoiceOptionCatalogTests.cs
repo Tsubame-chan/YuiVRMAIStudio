@@ -7,6 +7,13 @@ namespace YuiPhysicalAI.Tests.Editor
 {
     public sealed class YuiTtsVoiceOptionCatalogTests
     {
+        [TestCase(45,43)] [TestCase(44,43)] [TestCase(0,2)] [TestCase(76,3)] [TestCase(14,14)]
+        public void ExistingVoicePresetKeepsCharacterWithStandardDelivery(int oldId, int standardId)
+        {
+            var tuning = new YuiSavedTtsTuning(oldId, 1f, 0f, 1f, 1f, .1f, .1f);
+            Assert.AreEqual(standardId, YuiTtsTuningPrefs.Sanitize("server", tuning).SpeakerId);
+        }
+
         [Test]
         public void OptionsForMode_UsesAllBackendAivisVoices()
         {
@@ -63,7 +70,8 @@ namespace YuiPhysicalAI.Tests.Editor
                     new TtsVoiceOption { Id = 1431611904, Label = "女性ボイス①" },
                 });
 
-            Assert.Greater(options.Count, 10);
+            Assert.AreEqual(7, options.Count);
+            foreach (var voice in options) StringAssert.EndsWith(" / ノーマル", voice.Label);
             Assert.AreEqual(14, options[0].Id);
         }
     }

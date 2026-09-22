@@ -36,7 +36,7 @@ namespace YuiPhysicalAI.Avatar
         private int ohIndex = -1;
         private bool warnedMissingRenderer;
         private LipSyncTarget target = LipSyncTarget.DirectBlendShape;
-        private static readonly string[] AaBlendShapeCandidates = { "vrc.v_aa", "MTH_A", "blendShape1.MTH_A", "Fcl_MTH_A", "Fcl_MTH_Angry", "mouth_a", "mouthA", "A", "あ", "aa" };
+        private static readonly string[] AaBlendShapeCandidates = { "vrc.v_aa", "MTH_A", "blendShape1.MTH_A", "Fcl_MTH_A", "mouth_a", "mouthA", "A", "あ", "aa" };
         private static readonly string[] IhBlendShapeCandidates = { "vrc.v_ih", "MTH_I", "blendShape1.MTH_I", "Fcl_MTH_I", "mouth_i", "mouthI", "I", "い", "ih" };
         private static readonly string[] OuBlendShapeCandidates = { "vrc.v_ou", "MTH_U", "blendShape1.MTH_U", "Fcl_MTH_U", "mouth_u", "mouthU", "U", "う", "ou" };
         private static readonly string[] EBlendShapeCandidates = { "vrc.v_e", "MTH_E", "blendShape1.MTH_E", "Fcl_MTH_E", "mouth_e", "mouthE", "E", "え" };
@@ -118,6 +118,7 @@ namespace YuiPhysicalAI.Avatar
             vrm10Instance = null;
             vrm0BlendShapeProxy = null;
             target = LipSyncTarget.DirectBlendShape;
+            faceRenderer = null;
             if (avatarRoot != null)
             {
                 vrm10Instance = avatarRoot.GetComponentInChildren<Vrm10Instance>(true);
@@ -218,7 +219,7 @@ namespace YuiPhysicalAI.Avatar
                 return best;
             }
 
-            return FindBestFaceRenderer(YuiSceneObjectFinder.FindAll<SkinnedMeshRenderer>(true));
+            return null; // Never drive a different character because this one has no mouth.
         }
 
         private SkinnedMeshRenderer FindBestFaceRenderer(SkinnedMeshRenderer[] renderers)
@@ -385,10 +386,7 @@ namespace YuiPhysicalAI.Avatar
                 var currentName = mesh.GetBlendShapeName(i);
                 var normalizedCurrent = NormalizeBlendShapeName(currentName);
                 if (string.Equals(currentName, blendShapeName, StringComparison.OrdinalIgnoreCase)
-                    || currentName.EndsWith("." + blendShapeName, StringComparison.OrdinalIgnoreCase)
-                    || normalizedCurrent == normalizedTarget
-                    || (normalizedTarget.Length > 1
-                        && normalizedCurrent.EndsWith(normalizedTarget, StringComparison.OrdinalIgnoreCase)))
+                    || normalizedCurrent == normalizedTarget)
                 {
                     index = i;
                     return true;
@@ -400,13 +398,8 @@ namespace YuiPhysicalAI.Avatar
 
         private static string NormalizeBlendShapeName(string value)
         {
-            return string.IsNullOrWhiteSpace(value)
-                ? string.Empty
-                : value.Replace("blendShape", string.Empty)
-                    .Replace("_", string.Empty)
-                    .Replace(".", string.Empty)
-                    .Replace(" ", string.Empty)
-                    .ToLowerInvariant();
+            var name = System.Text.RegularExpressions.Regex.Replace(value ?? "", @"^blendShape\d*[._ ]", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            return name.Replace("_", "").Replace(".", "").Replace(" ", "").ToLowerInvariant();
         }
 
         private void SetVisemes(float aa, float ih, float ou, float e, float oh)
@@ -431,11 +424,24 @@ namespace YuiPhysicalAI.Avatar
                 return;
             }
 
-            SetBlendShape(aaIndex, aa);
-            SetBlendShape(ihIndex, ih);
-            SetBlendShape(ouIndex, ou);
-            SetBlendShape(eIndex, e);
-            SetBlendShape(ohIndex, oh);
+            // Several vowels may use one mouth-open shape. A later, smaller vowel
+            // must not overwrite the open mouth driven by the first vowel.
+            SetBlendShape(aaIndex, SharedWeight(aaIndex, aa, ih, ou, e, oh));
+            if (ihIndex != aaIndex) SetBlendShape(ihIndex, SharedWeight(ihIndex, aa, ih, ou, e, oh));
+            if (ouIndex != aaIndex && ouIndex != ihIndex) SetBlendShape(ouIndex, SharedWeight(ouIndex, aa, ih, ou, e, oh));
+            if (eIndex != aaIndex && eIndex != ihIndex && eIndex != ouIndex) SetBlendShape(eIndex, SharedWeight(eIndex, aa, ih, ou, e, oh));
+            if (ohIndex != aaIndex && ohIndex != ihIndex && ohIndex != ouIndex && ohIndex != eIndex) SetBlendShape(ohIndex, SharedWeight(ohIndex, aa, ih, ou, e, oh));
+        }
+
+        private float SharedWeight(int index, float aa, float ih, float ou, float e, float oh)
+        {
+            var weight = 0f;
+            if (index == aaIndex) weight = Mathf.Max(weight, aa);
+            if (index == ihIndex) weight = Mathf.Max(weight, ih);
+            if (index == ouIndex) weight = Mathf.Max(weight, ou);
+            if (index == eIndex) weight = Mathf.Max(weight, e);
+            if (index == ohIndex) weight = Mathf.Max(weight, oh);
+            return weight;
         }
 
         private void SetBlendShape(int index, float weight)

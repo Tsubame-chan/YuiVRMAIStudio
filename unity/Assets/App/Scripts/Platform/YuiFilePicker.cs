@@ -12,60 +12,73 @@ namespace YuiPhysicalAI.Platform
 {
     public static class YuiFilePicker
     {
-        public readonly struct Result
+        public readonly struct Result : IDisposable
         {
-            public Result(bool opened, string path, string userMessage)
+            public Result(bool opened, string path, string userMessage, bool temporaryCopy = false)
             {
                 Opened = opened;
                 Path = path;
                 UserMessage = userMessage;
+                TemporaryCopy = temporaryCopy;
             }
 
             public bool Opened { get; }
             public string Path { get; }
             public string UserMessage { get; }
+            public bool TemporaryCopy { get; }
+            public void Dispose()
+            {
+                if (!TemporaryCopy || string.IsNullOrEmpty(Path)) return;
+                try { File.Delete(Path); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+            }
         }
 
         public static Task<Result> OpenImageFileAsync()
         {
-            return OpenFileAsync("image");
+            return OpenFileAsync(YuiFilePurpose.Image);
         }
 
         public static Task<Result> OpenVrmFileAsync()
         {
-            return OpenFileAsync("vrm");
+            return OpenFileAsync(YuiFilePurpose.Vrm);
         }
 
         public static Task<Result> OpenAvatarFileAsync()
         {
-            return OpenFileAsync("avatar");
+            return OpenFileAsync(YuiFilePurpose.Avatar);
         }
 
-        public static bool TryOpenImageFile(out string path, out string userMessage)
+        private static bool pickerOpen;
+        public static bool IsOpen => pickerOpen;
+        private static async Task<Result> OpenFileAsync(YuiFilePurpose purpose)
         {
-            var result = OpenImageFileAsync().GetAwaiter().GetResult();
-            path = result.Path;
-            userMessage = result.UserMessage;
-            return result.Opened;
+            if (pickerOpen) return new Result(false,null,"A file picker is already open.");
+            pickerOpen=true;
+            Result result = default;
+            try
+            {
+                result=await OpenPlatformFileAsync(purpose.ToString().ToLowerInvariant());
+                if (!result.Opened) return result;
+                var error=YuiPickedFilePolicy.Validate(result.Path,purpose);
+                if (error==null) return result;
+                result.Dispose();
+                return new Result(false,null,error);
+            }
+            catch(Exception ex)
+            {
+                result.Dispose();
+                UnityEngine.Debug.LogWarning("File selection failed: "+ex.GetType().Name);
+                return new Result(false,null,"Could not read the selected file. Please select it again.");
+            }
+            finally { pickerOpen=false; }
         }
 
-        public static bool TryOpenVrmFile(out string path, out string userMessage)
-        {
-            var result = OpenVrmFileAsync().GetAwaiter().GetResult();
-            path = result.Path;
-            userMessage = result.UserMessage;
-            return result.Opened;
-        }
-
-        private static Task<Result> OpenFileAsync(string mode)
+        private static Task<Result> OpenPlatformFileAsync(string mode)
         {
 #if UNITY_EDITOR
-            var path = mode == "vrm" || mode == "avatar"
-                ? EditorUtility.OpenFilePanel(mode == "avatar" ? "Open VRM or Unity Avatar Package ZIP" : "Open Custom VRM", "", mode == "avatar" ? "vrm,zip" : "vrm")
-                : EditorUtility.OpenFilePanel(
-                    "Analyze image with Yui Vision",
-                    "",
-                    "png,jpg,jpeg,webp,heic,heif");
+            var path = EditorUtility.OpenFilePanelWithFilters(
+                YuiPhysicalAI.UI.YuiUiLocalization.Text(mode == "image" ? "Choose image" : "Open Custom VRM"), "",
+                new[] { mode == "image" ? "Images" : "Avatars", mode == "image" ? "png,jpg,jpeg" : mode == "avatar" ? "vrm,zip" : "vrm" });
             return Task.FromResult(new Result(!string.IsNullOrWhiteSpace(path), path, null));
 #elif UNITY_STANDALONE_WIN
             return OpenWindowsHelperFilePanelAsync(mode);
@@ -94,61 +107,36 @@ namespace YuiPhysicalAI.Platform
         }
 
 #if UNITY_STANDALONE_OSX && !UNITY_EDITOR
+        private static bool macPickerOpen;
+        [System.Runtime.InteropServices.DllImport("YuiMacFilePicker")]
+        private static extern int YuiMacFilePicker_Open(string mode, string title);
+        [System.Runtime.InteropServices.DllImport("YuiMacFilePicker")]
+        private static extern int YuiMacFilePicker_Status();
+        [System.Runtime.InteropServices.DllImport("YuiMacFilePicker")]
+        private static extern IntPtr YuiMacFilePicker_Result();
+
         private static async Task<Result> OpenMacFilePanelAsync(string mode)
         {
-            var prompt = mode == "avatar" ? "Open VRM or Unity Avatar Package ZIP" : mode == "vrm" ? "Open Custom VRM" : "Analyze image with Yui Vision";
-            var script = mode == "vrm" || mode == "avatar"
-                ? $"POSIX path of (choose file with prompt \"{EscapeAppleScript(prompt)}\")"
-                : $"POSIX path of (choose file of type {{\"public.image\"}} with prompt \"{EscapeAppleScript(prompt)}\")";
-
+            if (macPickerOpen) return new Result(false, null, "A file picker is already open.");
+            macPickerOpen = true;
             try
             {
-                var startInfo = new ProcessStartInfo
-                {
-                    FileName = "/usr/bin/osascript",
-                    Arguments = "-e " + QuoteProcessArgument(script),
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    StandardOutputEncoding = Encoding.UTF8,
-                    StandardErrorEncoding = Encoding.UTF8
-                };
-
-                using (var process = Process.Start(startInfo))
-                {
-                    if (process == null)
-                    {
-                        return new Result(false, null, "macOSファイル選択を起動できませんでした。");
-                    }
-
-                    var outputTask = process.StandardOutput.ReadToEndAsync();
-                    var errorTask = process.StandardError.ReadToEndAsync();
-                    await Task.Run(() => process.WaitForExit());
-                    var output = (await outputTask).Trim();
-                    var error = (await errorTask).Trim();
-                    if (process.ExitCode != 0)
-                    {
-                        return new Result(false, null, string.IsNullOrWhiteSpace(error) ? null : error);
-                    }
-
-                    return new Result(!string.IsNullOrWhiteSpace(output) && File.Exists(output), output, null);
-                }
+                var prompt = mode == "avatar" ? "Open VRM or Unity Avatar Package ZIP" : mode == "vrm" ? "Open Custom VRM" : "Choose image";
+                var started = YuiMacFilePicker_Open(mode, YuiPhysicalAI.UI.YuiUiLocalization.Text(prompt));
+                if (started != 1) return new Result(false, null, "Could not open the file picker.");
+                // Captures Unity's main-thread context; Cocoa must never be polled on Task.Run.
+                while (YuiMacFilePicker_Status() == 0) await Task.Delay(40);
+                if (YuiMacFilePicker_Status() == 3) return new Result(false, null, "Could not decode this image. Try PNG or JPEG.");
+                if (YuiMacFilePicker_Status() != 1) return new Result(false, null, null);
+                var path = System.Runtime.InteropServices.Marshal.PtrToStringAnsi(YuiMacFilePicker_Result());
+                return new Result(!string.IsNullOrWhiteSpace(path) && File.Exists(path), path, null, mode == "image");
             }
             catch (Exception ex)
             {
-                return new Result(false, null, $"macOSファイル選択でエラーが発生しました: {ex.Message}");
+                UnityEngine.Debug.LogWarning("macOS file picker failed: " + ex.GetType().Name);
+                return new Result(false, null, "Could not open the file picker.");
             }
-        }
-
-        private static string EscapeAppleScript(string value)
-        {
-            return (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
-        }
-
-        private static string QuoteProcessArgument(string value)
-        {
-            return "\"" + (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+            finally { macPickerOpen = false; }
         }
 
 #endif
@@ -156,7 +144,7 @@ namespace YuiPhysicalAI.Platform
 #if UNITY_STANDALONE_WIN && !UNITY_EDITOR
         private static async Task<Result> OpenWindowsHelperFilePanelAsync(string mode)
         {
-            var helperPath = Path.Combine(AppContext.BaseDirectory, "YuiFilePickerHelper.exe");
+            var helperPath = Path.Combine(Directory.GetParent(UnityEngine.Application.dataPath).FullName, "YuiFilePickerHelper.exe");
             if (!File.Exists(helperPath))
             {
                 return new Result(false, null, $"Windowsファイル選択ヘルパーが見つかりません: {helperPath}");
@@ -176,6 +164,7 @@ namespace YuiPhysicalAI.Platform
                     CreateNoWindow = true
                 };
 
+                var exitCode = 0;
                 using (var process = Process.Start(startInfo))
                 {
                     if (process == null)
@@ -184,6 +173,7 @@ namespace YuiPhysicalAI.Platform
                     }
 
                     await Task.Run(() => process.WaitForExit());
+                    exitCode = process.ExitCode;
                 }
 
                 if (!File.Exists(resultPath))
@@ -194,7 +184,8 @@ namespace YuiPhysicalAI.Platform
                 // Force UTF-8 so Japanese paths returned by the helper survive on Windows
                 // hosts where the default ANSI code page is CP932/Shift-JIS.
                 var path = File.ReadAllText(resultPath, Encoding.UTF8).Trim();
-                return new Result(!string.IsNullOrWhiteSpace(path) && File.Exists(path), path, null);
+                if (exitCode == 3) return new Result(false, null, path);
+                return new Result(!string.IsNullOrWhiteSpace(path) && File.Exists(path), path, null, mode == "image");
             }
             catch (Exception ex)
             {

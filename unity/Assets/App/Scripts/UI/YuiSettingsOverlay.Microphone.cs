@@ -7,9 +7,14 @@ namespace YuiPhysicalAI.UI
 {
     public sealed partial class YuiSettingsOverlay
     {
-        private void StartMicrophoneMonitor()
+        private int microphonePermissionGeneration;
+        private async void StartMicrophoneMonitor()
         {
             StopMicrophoneMonitor();
+            var generation = microphonePermissionGeneration;
+            if (!await YuiMicrophonePermission.EnsureAsync(System.Threading.CancellationToken.None))
+            { if (this != null) SetMicrophoneTestStatus("Microphone permission required"); return; }
+            if (this == null || generation != microphonePermissionGeneration) return;
             var device = MicrophoneValue();
             if (microphoneTestDeviceSelector == null)
             {
@@ -57,6 +62,7 @@ namespace YuiPhysicalAI.UI
 
         private void StopMicrophoneMonitor()
         {
+            microphonePermissionGeneration++;
             microphoneTestRecorder?.Stop();
             microphoneTestRecorder = null;
             microphoneTestMacFallback?.Dispose();
@@ -104,7 +110,7 @@ namespace YuiPhysicalAI.UI
         {
             if (microphoneTestStatusText != null)
             {
-                microphoneTestStatusText.text = text;
+                YuiUiLocalization.Set(microphoneTestStatusText,text);
             }
         }
     }

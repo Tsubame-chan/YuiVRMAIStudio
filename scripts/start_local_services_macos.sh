@@ -19,6 +19,14 @@ load_env_file() {
     [[ -z "$line" || "$line" == \#* || "$line" != *=* ]] && continue
     key="${line%%=*}"
     value="${line#*=}"
+    # .env files commonly quote values. Do not pass their delimiters to the
+    # service, and never source/eval a file that can contain arbitrary text.
+    value="${value%$'\r'}"
+    if [[ "$value" == \"*\" && "$value" == *\" ]]; then
+      value="${value:1:${#value}-2}"
+    elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
+      value="${value:1:${#value}-2}"
+    fi
     [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
     [[ -n "${!key:-}" ]] && continue
     export "$key=$value"
@@ -189,7 +197,7 @@ start_irodori_if_configured() {
 
   if [[ -n "${IRODORI_START_COMMAND:-}" ]]; then
     echo "[Yui services] Starting Irodori TTS with IRODORI_START_COMMAND"
-    /bin/bash -lc "$IRODORI_START_COMMAND" >"$out_log" 2>"$err_log" &
+    /usr/bin/env -u PYTHONHOME -u PYTHONPATH /bin/bash -lc "$IRODORI_START_COMMAND" >"$out_log" 2>"$err_log" &
     IRODORI_PID=$!
     wait_http_ok "Irodori TTS" "$health_url" 180 || true
     return 0
@@ -201,7 +209,7 @@ start_irodori_if_configured() {
     echo "[Yui services] Starting Irodori MLX TTS on $base_url"
     (
       cd "$base_dir"
-      "$python_bin" -m mlx_audio.server --host "$host" --port "$port"
+      /usr/bin/env -u PYTHONHOME -u PYTHONPATH "$python_bin" -m mlx_audio.server --host "$host" --port "$port"
     ) >"$out_log" 2>"$err_log" &
     IRODORI_PID=$!
     wait_http_ok "Irodori TTS" "$health_url" 180 || true
@@ -233,7 +241,7 @@ resolve_voicevox_engine() {
 is_aivis_configured() {
   [[ "$AIVIS_ENABLE" == "0" || "$AIVIS_ENABLE" == "false" || "$AIVIS_ENABLE" == "False" ]] && return 1
   [[ "$AIVIS_ENABLE" == "1" || "$AIVIS_ENABLE" == "true" || "$AIVIS_ENABLE" == "True" ]] && return 0
-  [[ -x "$REPO_ROOT/tools/tts/aivis-engine/extracted/macOS-arm64/run" ]]
+  resolve_aivis_engine >/dev/null
 }
 
 resolve_aivis_engine() {

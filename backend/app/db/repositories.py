@@ -77,17 +77,20 @@ class ChatRepository:
         self,
         user_id: str,
         limit: int = 20,
+        character_id: str | None = None,
+        session_id: str | None = None,
+        offset: int = 0,
     ) -> list[ConversationItem]:
         with self._connect() as connection:
             rows = connection.execute(
                 """
                 SELECT role, message, created_at
                 FROM conversations
-                WHERE user_id = ?
+                WHERE user_id = ? AND character_id IS ? AND session_id IS ?
                 ORDER BY id DESC
-                LIMIT ?
+                LIMIT ? OFFSET ?
                 """,
-                (user_id, limit),
+                (user_id, character_id, session_id, limit, max(0, offset)),
             ).fetchall()
 
         return [
@@ -206,10 +209,10 @@ class MemoryRepository:
         with self._connect() as connection:
             cursor = connection.execute(
                 """
-                INSERT INTO memories (user_id, content, importance, tags_json)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO memories (user_id, content, importance, tags_json, character_id)
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                (request.user_id, request.content, request.importance, tags_json),
+                (request.user_id, request.content, request.importance, tags_json, request.character_id),
             )
             connection.commit()
             memory_id = cursor.lastrowid
@@ -228,12 +231,12 @@ class MemoryRepository:
                 """
                 SELECT id, content, importance, tags_json
                 FROM memories
-                WHERE user_id = ?
+                WHERE user_id = ? AND character_id IS ?
                   AND (content LIKE ? OR tags_json LIKE ?)
                 ORDER BY importance DESC, updated_at DESC, id DESC
-                LIMIT ?
+                LIMIT ? OFFSET ?
                 """,
-                (request.user_id, pattern, pattern, request.limit),
+                (request.user_id, request.character_id, pattern, pattern, request.limit, request.offset),
             ).fetchall()
 
         return [
@@ -246,17 +249,17 @@ class MemoryRepository:
             for row in rows
         ]
 
-    def list_recent(self, user_id: str, limit: int = 5) -> list[MemoryItem]:
+    def list_recent(self, user_id: str, limit: int = 5, character_id: str | None = None) -> list[MemoryItem]:
         with self._connect() as connection:
             rows = connection.execute(
                 """
                 SELECT id, content, importance, tags_json
                 FROM memories
-                WHERE user_id = ?
+                WHERE user_id = ? AND character_id IS ?
                 ORDER BY importance DESC, updated_at DESC, id DESC
                 LIMIT ?
                 """,
-                (user_id, limit),
+                (user_id, character_id, limit),
             ).fetchall()
 
         return [
@@ -268,6 +271,25 @@ class MemoryRepository:
             )
             for row in rows
         ]
+
+    def update(self, memory_id: int, request: MemorySaveRequest) -> MemoryItem | None:
+        with self._connect() as connection:
+            cursor = connection.execute(
+                "UPDATE memories SET content=?, importance=?, tags_json=?, updated_at=datetime('now') "
+                "WHERE id=? AND user_id=? AND character_id IS ?",
+                (request.content, request.importance, json.dumps(request.tags, ensure_ascii=False),
+                 memory_id, request.user_id, request.character_id),
+            )
+            if cursor.rowcount == 0:
+                return None
+        return MemoryItem(id=str(memory_id), content=request.content, importance=request.importance, tags=request.tags)
+
+    def delete(self, memory_id: int, user_id: str, character_id: str | None = None) -> bool:
+        with self._connect() as connection:
+            return connection.execute(
+                "DELETE FROM memories WHERE id=? AND user_id=? AND character_id IS ?",
+                (memory_id, user_id, character_id),
+            ).rowcount > 0
 
     def clear_user_memories(self, user_id: str) -> int:
         with self._connect() as connection:

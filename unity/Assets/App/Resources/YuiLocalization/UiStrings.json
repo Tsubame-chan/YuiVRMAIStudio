@@ -1,0 +1,2642 @@
+{
+  "entries": [
+    {
+      "en": "Custom VRM {0} · File missing",
+      "ja": "カスタムVRM {0} · ファイルなし"
+    },
+    {
+      "en": "Settings",
+      "ja": "設定"
+    },
+    {
+      "en": "Save",
+      "ja": "保存"
+    },
+    {
+      "en": "Voice",
+      "ja": "音声"
+    },
+    {
+      "en": "Character",
+      "ja": "キャラクター"
+    },
+    {
+      "en": "Display",
+      "ja": "表示"
+    },
+    {
+      "en": "Advanced",
+      "ja": "詳細"
+    },
+    {
+      "en": "Language",
+      "ja": "言語"
+    },
+    {
+      "en": "Choose how Yui thinks",
+      "ja": "AIの接続方法"
+    },
+    {
+      "en": "Automatic",
+      "ja": "自動選択"
+    },
+    {
+      "en": "On this device",
+      "ja": "この端末で実行"
+    },
+    {
+      "en": "OpenAI API",
+      "ja": "OpenAI API"
+    },
+    {
+      "en": "Configured backend → OpenAI API → on-device AI",
+      "ja": "接続済みBackend → OpenAI API → 端末内AI",
+      "aliases": [
+        "接続済みバックエンド → OpenAI API → 端末内AI"
+      ]
+    },
+    {
+      "en": "Use downloaded models on this device",
+      "ja": "ダウンロードしたモデルを端末内で使用"
+    },
+    {
+      "en": "Voice, text and images — no PC required",
+      "ja": "音声・テキスト・画像に対応。PC不要"
+    },
+    {
+      "en": "Choose a connection to get started.",
+      "ja": "接続方法を選んでください。"
+    },
+    {
+      "en": "OpenAI API key",
+      "ja": "OpenAI APIキー"
+    },
+    {
+      "en": "For direct OpenAI access. The backend uses its own key.",
+      "ja": "OpenAIへの直接接続に使います。Backendのキーとは別です。",
+      "aliases": [
+        "Used by this app only. Backend credentials stay separate.",
+        "このアプリ専用のキーです。バックエンドのキーとは別に管理します。",
+        "OpenAIへの直接接続に使います。バックエンドのキーとは別です。"
+      ]
+    },
+    {
+      "en": "Model",
+      "ja": "モデル"
+    },
+    {
+      "en": "Microphone",
+      "ja": "マイク"
+    },
+    {
+      "en": "Test microphone",
+      "ja": "マイクをテスト"
+    },
+    {
+      "en": "A voice for your character",
+      "ja": "キャラクターの声"
+    },
+    {
+      "en": "Realtime uses the voice selected in Advanced.",
+      "ja": "リアルタイム音声は「詳細」で選びます。",
+      "aliases": [
+        "This Realtime mode uses its own voice engine. Change the mode in Advanced.",
+        "このリアルタイムモードは専用の音声を使います。変更は「詳細」から行えます。"
+      ]
+    },
+    {
+      "en": "Voice engine",
+      "ja": "音声エンジン"
+    },
+    {
+      "en": "Volume",
+      "ja": "音量"
+    },
+    {
+      "en": "Preview voice",
+      "ja": "試聴"
+    },
+    {
+      "en": "Speed",
+      "ja": "話す速さ"
+    },
+    {
+      "en": "Pitch",
+      "ja": "声の高さ"
+    },
+    {
+      "en": "Expression",
+      "ja": "抑揚"
+    },
+    {
+      "en": "Saved voice",
+      "ja": "保存した音声設定"
+    },
+    {
+      "en": "Preset name",
+      "ja": "設定の名前"
+    },
+    {
+      "en": "Save voice preset",
+      "ja": "音声設定を保存"
+    },
+    {
+      "en": "Delete voice preset",
+      "ja": "音声設定を削除"
+    },
+    {
+      "en": "Voice base",
+      "ja": "声のベース"
+    },
+    {
+      "en": "Voice direction",
+      "ja": "声のイメージ"
+    },
+    {
+      "en": "Your character",
+      "ja": "あなたのキャラクター"
+    },
+    {
+      "en": "Appearance",
+      "ja": "アバター"
+    },
+    {
+      "en": "Appearance name",
+      "ja": "アバター名"
+    },
+    {
+      "en": "Import avatar",
+      "ja": "アバターを読み込む",
+      "aliases": [
+        "VRM / ZIPを追加",
+        "Add VRM / ZIP"
+      ]
+    },
+    {
+      "en": "Remove appearance",
+      "ja": "アバターを削除"
+    },
+    {
+      "en": "Character name",
+      "ja": "キャラクター名"
+    },
+    {
+      "en": "Personality",
+      "ja": "性格・話し方"
+    },
+    {
+      "en": "Camera view",
+      "ja": "カメラ位置"
+    },
+    {
+      "en": "Adjust view",
+      "ja": "手動調整",
+      "aliases": [
+        "表示位置を調整"
+      ]
+    },
+    {
+      "en": "Auto frame",
+      "ja": "自動調整",
+      "aliases": [
+        "自動で収める"
+      ]
+    },
+    {
+      "en": "Save view",
+      "ja": "カメラ位置を保存"
+    },
+    {
+      "en": "Delete saved view",
+      "ja": "保存した位置を削除"
+    },
+    {
+      "en": "Your space",
+      "ja": "画面の設定"
+    },
+    {
+      "en": "Background",
+      "ja": "背景"
+    },
+    {
+      "en": "Window size",
+      "ja": "ウィンドウサイズ"
+    },
+    {
+      "en": "Image camera",
+      "ja": "画像入力用カメラ"
+    },
+    {
+      "en": "Backend & experiments",
+      "ja": "Backend・試験機能",
+      "aliases": [
+        "バックエンド・試験機能"
+      ]
+    },
+    {
+      "en": "Requires a backend. Skip this for phone-only use.",
+      "ja": "Backendを使う場合のみ設定してください。",
+      "aliases": [
+        "These modes require a configured backend. They are optional for phone-only use.",
+        "以下のモードにはバックエンドが必要です。スマートフォン単体で使う場合は設定不要です。",
+        "バックエンドを使う場合のみ設定してください。"
+      ]
+    },
+    {
+      "en": "Keep current AI mode",
+      "ja": "現在のAIモードを維持"
+    },
+    {
+      "en": "Backend conversation",
+      "ja": "Backendで会話",
+      "aliases": [
+        "バックエンドで会話"
+      ]
+    },
+    {
+      "en": "Realtime · OpenAI voice",
+      "ja": "リアルタイム · OpenAI音声"
+    },
+    {
+      "en": "Realtime · VOICEVOX",
+      "ja": "リアルタイム · VOICEVOX"
+    },
+    {
+      "en": "Realtime · AivisSpeech",
+      "ja": "リアルタイム · AivisSpeech"
+    },
+    {
+      "en": "Realtime · Translation",
+      "ja": "リアルタイム · 翻訳"
+    },
+    {
+      "en": "Backend URL",
+      "ja": "Backend URL",
+      "aliases": [
+        "バックエンドURL"
+      ]
+    },
+    {
+      "en": "Uses the backend’s own key. Your app key is not sent to it.",
+      "ja": "Backend側のキーを使います。アプリのキーは送信しません。",
+      "aliases": [
+        "Backend modes read the backend's own .env. The app API key is never sent to it.",
+        "バックエンドは自身の.envにあるキーを使います。アプリのキーは送信しません。",
+        "バックエンド側のキーを使います。アプリのキーは送信しません。"
+      ]
+    },
+    {
+      "en": "Recovery",
+      "ja": "接続が切れたとき"
+    },
+    {
+      "en": "Use local AI if a request loses its connection",
+      "ja": "通信に失敗したら端末内AIを使う"
+    },
+    {
+      "en": "Downloads",
+      "ja": "ダウンロード"
+    },
+    {
+      "en": "Manage on-device models",
+      "ja": "端末内モデルを管理"
+    },
+    {
+      "en": "Download additional voices",
+      "ja": "追加の音声をダウンロード",
+      "aliases": [
+        "追加音声ダウンロード"
+      ]
+    },
+    {
+      "en": "Conversation data",
+      "ja": "会話データ"
+    },
+    {
+      "en": "Clear conversation history",
+      "ja": "会話履歴を消去"
+    },
+    {
+      "en": "Help",
+      "ja": "ヘルプ"
+    },
+    {
+      "en": "Close",
+      "ja": "閉じる"
+    },
+    {
+      "en": "Connections",
+      "ja": "接続状態"
+    },
+    {
+      "en": "Quick guide",
+      "ja": "使い方"
+    },
+    {
+      "en": "Checking connections…",
+      "ja": "接続を確認中…"
+    },
+    {
+      "en": "Updated {0} · auto-refresh",
+      "ja": "更新 {0} · 自動更新",
+      "aliases": [
+        "Updated {0} · refreshes automatically",
+        "最終更新 {0} · 自動更新"
+      ]
+    },
+    {
+      "en": "Talk & Work",
+      "ja": "会話と作業"
+    },
+    {
+      "en": "Talk keeps replies brief. Work shows the full answer and reads a short summary. Use Copy or Save to keep the answer.",
+      "ja": "Talkは短い返答、Workは詳しい回答と要点の読み上げ。回答はコピー・保存できます。",
+      "aliases": [
+        "Talk keeps replies brief. Work shows a fuller answer and speaks only the key points. Copy or save the full result from its message.",
+        "Talkは短い応答、Workは詳しい回答を表示し、要点だけ読み上げます。回答はコピーや保存ができます。"
+      ]
+    },
+    {
+      "en": "Ask, show, listen",
+      "ja": "話す・見せる・聞く"
+    },
+    {
+      "en": "Type or use Mic. The paperclip opens images, camera, avatars and saved conversations. Use Stop to interrupt a reply or voice playback.",
+      "ja": "文字入力かMicで話しかけます。クリップから画像・カメラ・アバター・保存済みの会話を開けます。応答や読み上げはStopで中断します。",
+      "aliases": [
+        "Type a message or use Mic. The paperclip opens images, camera, avatar import and saved conversations. Send becomes Stop while a request or voice is active.",
+        "文字入力やMicで話しかけられます。クリップから画像・カメラ・アバター・保存済みの会話を開けます。応答中や再生中はStopで中断できます。"
+      ]
+    },
+    {
+      "en": "Bring your avatar",
+      "ja": "自分のアバターを使う"
+    },
+    {
+      "en": "Open Settings → Character → Import avatar. For VRChat avatars, export a VRM from your Unity project with an existing converter such as NDMF VRM Exporter.",
+      "ja": "設定 → キャラクター → アバターを読み込む。VRChat用アバターは、元のUnityプロジェクトからNDMF VRM Exporterなどの既存ツールでVRMを書き出します。",
+      "aliases": [
+        "In Settings → Character, select an empty Custom VRM slot, then Import avatar. For VRChat avatars, export a VRM with Yui Avatar Bridge in Unity and copy it to this device.",
+        "設定 → キャラクターで空のカスタムVRMを選び、「アバターを読み込む」。VRChat用アバターはUnityのYui Avatar BridgeでVRMを書き出し、この端末へコピーします。",
+        "In Settings → Character, choose an empty Custom VRM slot and Import avatar. VRM files work across platforms. For a VRChat Unity project, use the Yui Avatar Bridge exporter, then transfer its file to this device.",
+        "設定 → キャラクターで空のカスタムVRMを選び、アバターを読み込みます。VRMは各OS共通です。VRChatのUnityプロジェクトからはYui Avatar Bridgeで書き出し、そのファイルを端末にコピーしてください。"
+      ]
+    },
+    {
+      "en": "Search & sources",
+      "ja": "検索と出典"
+    },
+    {
+      "en": "With OpenAI API or an OpenAI backend, ask to search the web or check the weather in a city. Open links with Sources. On-device AI cannot search the web.",
+      "ja": "OpenAI APIやOpenAIのBackendでは、Web検索や都市を指定した天気の質問ができます。参照先はSourcesから開けます。端末内AIはWeb検索に非対応です。",
+      "aliases": [
+        "With OpenAI API or an OpenAI backend, ask Yui to search the web or check today's weather in a named city. Sources opens the returned links. On-device AI works offline and does not search the web.",
+        "OpenAI API、またはOpenAIを使うバックエンドでは、Web検索や指定した都市の天気を調べられます。Sources（出典）から参照ページを開けます。端末内AIはオフライン動作のためWeb検索はできません。",
+        "OpenAI APIやOpenAIのバックエンドでは、Web検索や都市を指定した天気の質問ができます。参照先はSourcesから開けます。端末内AIはWeb検索に非対応です。"
+      ]
+    },
+    {
+      "en": "Connection & voice",
+      "ja": "AIの接続と音声"
+    },
+    {
+      "en": "Choose AI and voice separately in Settings. The app key connects directly to OpenAI; the backend uses its own key. Only available voice engines are shown.",
+      "ja": "AIと音声は別々に選べます。アプリのキーはOpenAIへの直接接続用。Backendは自身のキーを使います。音声は利用できるものだけ表示します。",
+      "aliases": [
+        "AI and voice are separate choices in Settings. This app's API key is for direct OpenAI access; a backend uses its own key. Voice engines appear when available in your environment.",
+        "AIと音声は設定で別々に選べます。アプリのAPIキーはOpenAIへの直接接続用です。バックエンドは自身のキーを使用します。音声は利用環境に合わせて表示されます。",
+        "AIと音声は別々に選べます。アプリのキーはOpenAIへの直接接続用。バックエンドは自身のキーを使います。音声は利用できるものだけ表示します。"
+      ]
+    },
+    {
+      "en": "Advanced features",
+      "ja": "詳細な機能"
+    },
+    {
+      "en": "Realtime voice, translation and long-term memory need a backend. Direct OpenAI supports text, microphone input, images and web search without one.",
+      "ja": "リアルタイム会話・翻訳・長期記憶にはBackendが必要です。OpenAIへの直接接続なら、PCなしで文字・音声・画像の入力とWeb検索が使えます。",
+      "aliases": [
+        "Realtime voice and translation, plus the memory database, require a configured backend. Direct OpenAI supports text, microphone transcription, images and web search without a PC.",
+        "リアルタイム音声・翻訳・記憶用データベースにはバックエンドが必要です。OpenAIへの直接接続では、PCなしでテキスト・音声認識・画像・Web検索が使えます。",
+        "リアルタイム会話・翻訳・長期記憶にはバックエンドが必要です。OpenAIへの直接接続なら、PCなしで文字・音声・画像の入力とWeb検索が使えます。"
+      ]
+    },
+    {
+      "en": "Private conversation",
+      "ja": "履歴を残さない会話"
+    },
+    {
+      "en": "The crossed-eye button turns on Secret Mode, which does not save conversation history. Requests still go to your selected AI service.",
+      "ja": "目に斜線のボタンでSecret Modeにすると、会話履歴を保存しません。選択中のAIへの通信は行われます。",
+      "aliases": [
+        "The crossed-eye button enables Secret mode: Yui does not save conversation history. Requests still use the AI connection you selected.",
+        "目に斜線のボタンでシークレットモードにすると、会話履歴を保存しません。AIへの通信は選択中の接続方法で行われます。"
+      ]
+    },
+    {
+      "en": "Your connections",
+      "ja": "利用環境の状態"
+    },
+    {
+      "en": "Installed: local data found. Configured: settings found; API access and credit are not checked.",
+      "ja": "「導入済み」はデータあり、「設定済み」は設定あり。APIの利用権限・残高は未確認です。",
+      "aliases": [
+        "Installed = local data is present. Configured = settings exist; API access and credit are not verified here.",
+        "「導入済み」は端末内のデータを確認済み。「設定済み」は設定がある状態です。APIの利用権限や残高までは確認していません。"
+      ]
+    },
+    {
+      "en": "On-device AI",
+      "ja": "端末内AI"
+    },
+    {
+      "en": "On-device VOICEVOX",
+      "ja": "端末内VOICEVOX"
+    },
+    {
+      "en": "App OpenAI key",
+      "ja": "アプリのOpenAIキー"
+    },
+    {
+      "en": "Backend",
+      "ja": "Backend",
+      "aliases": [
+        "バックエンド"
+      ]
+    },
+    {
+      "en": "Database",
+      "ja": "データベース"
+    },
+    {
+      "en": "Backend OpenAI",
+      "ja": "BackendのOpenAI",
+      "aliases": [
+        "バックエンドのOpenAI"
+      ]
+    },
+    {
+      "en": "Backend VOICEVOX",
+      "ja": "BackendのVOICEVOX",
+      "aliases": [
+        "バックエンドのVOICEVOX"
+      ]
+    },
+    {
+      "en": "Backend AivisSpeech",
+      "ja": "BackendのAivisSpeech",
+      "aliases": [
+        "バックエンドのAivisSpeech"
+      ]
+    },
+    {
+      "en": "Backend Irodori / HTTP TTS",
+      "ja": "BackendのIrodori / HTTP TTS",
+      "aliases": [
+        "バックエンドのIrodori / HTTP TTS"
+      ]
+    },
+    {
+      "en": "Online",
+      "ja": "接続済み"
+    },
+    {
+      "en": "Installed",
+      "ja": "導入済み"
+    },
+    {
+      "en": "Configured",
+      "ja": "設定済み"
+    },
+    {
+      "en": "No key",
+      "ja": "キー未設定"
+    },
+    {
+      "en": "Offline",
+      "ja": "未接続"
+    },
+    {
+      "en": "Error",
+      "ja": "エラー"
+    },
+    {
+      "en": "Not installed",
+      "ja": "未導入"
+    },
+    {
+      "en": "Not configured",
+      "ja": "未設定"
+    },
+    {
+      "en": "Disabled",
+      "ja": "無効"
+    },
+    {
+      "en": "Limited",
+      "ja": "一部利用可能"
+    },
+    {
+      "en": "Unavailable",
+      "ja": "利用不可"
+    },
+    {
+      "en": "Not checked",
+      "ja": "未確認"
+    },
+    {
+      "en": "Talk",
+      "ja": "Talk"
+    },
+    {
+      "en": "Work",
+      "ja": "Work"
+    },
+    {
+      "en": "Talk mode",
+      "ja": "会話モード"
+    },
+    {
+      "en": "Work mode",
+      "ja": "作業モード"
+    },
+    {
+      "en": "Ready",
+      "ja": "Ready"
+    },
+    {
+      "en": "Connected",
+      "ja": "Connected"
+    },
+    {
+      "en": "Settings saved",
+      "ja": "設定を保存しました"
+    },
+    {
+      "en": "API Mode ON",
+      "ja": "API Mode ON"
+    },
+    {
+      "en": "Local AI ON",
+      "ja": "Local AI ON"
+    },
+    {
+      "en": "Secret Mode",
+      "ja": "Secret Mode"
+    },
+    {
+      "en": "Send",
+      "ja": "Send"
+    },
+    {
+      "en": "Stop",
+      "ja": "Stop"
+    },
+    {
+      "en": "Mic",
+      "ja": "Mic"
+    },
+    {
+      "en": "Image",
+      "ja": "画像"
+    },
+    {
+      "en": "Camera",
+      "ja": "カメラ"
+    },
+    {
+      "en": "Message or task",
+      "ja": "メッセージや依頼を入力"
+    },
+    {
+      "en": "Choose image",
+      "ja": "画像を選ぶ"
+    },
+    {
+      "en": "Use camera",
+      "ja": "カメラを使う"
+    },
+    {
+      "en": "My characters",
+      "ja": "マイキャラクター",
+      "aliases": [
+        "アバター一覧"
+      ]
+    },
+    {
+      "en": "Saved results",
+      "ja": "保存した回答"
+    },
+    {
+      "en": "Recent conversations",
+      "ja": "最近の会話"
+    },
+    {
+      "en": "Avatar import guide",
+      "ja": "アバターの導入方法"
+    },
+    {
+      "en": "Remove image",
+      "ja": "画像を外す"
+    },
+    {
+      "en": "Copy",
+      "ja": "コピー"
+    },
+    {
+      "en": "Done",
+      "ja": "完了"
+    },
+    {
+      "en": "Saved",
+      "ja": "保存済み"
+    },
+    {
+      "en": "Retry",
+      "ja": "再試行"
+    },
+    {
+      "en": "Sources",
+      "ja": "Sources"
+    },
+    {
+      "en": "Sources {0}",
+      "ja": "Sources {0}"
+    },
+    {
+      "en": "Demo Avatar",
+      "ja": "デモアバター"
+    },
+    {
+      "en": "Demo Avatar (Default)",
+      "ja": "デモアバター（標準）"
+    },
+    {
+      "en": "Custom VRM {0} · Empty",
+      "ja": "カスタムVRM {0} · 空き"
+    },
+    {
+      "en": "Custom VRM {0}",
+      "ja": "カスタムVRM {0}"
+    },
+    {
+      "en": "Female base",
+      "ja": "女性の声"
+    },
+    {
+      "en": "Male base",
+      "ja": "男性の声"
+    },
+    {
+      "en": "On-device features",
+      "ja": "端末内の機能",
+      "aliases": [
+        "This device",
+        "この端末"
+      ]
+    },
+    {
+      "en": "External voice",
+      "ja": "外部の音声"
+    },
+    {
+      "en": "Device voice",
+      "ja": "端末標準の音声"
+    },
+    {
+      "en": "Silent",
+      "ja": "音声なし"
+    },
+    {
+      "en": "Setup required",
+      "ja": "設定が必要"
+    },
+    {
+      "en": "Auto",
+      "ja": "自動"
+    },
+    {
+      "en": "Default",
+      "ja": "標準"
+    },
+    {
+      "en": "Manual",
+      "ja": "手動設定"
+    },
+    {
+      "en": "Clear",
+      "ja": "消去"
+    },
+    {
+      "en": "Cancel",
+      "ja": "Cancel",
+      "aliases": [
+        "中断"
+      ]
+    },
+    {
+      "en": "Delete",
+      "ja": "削除"
+    },
+    {
+      "en": "Confirm",
+      "ja": "確認"
+    },
+    {
+      "en": "Import",
+      "ja": "読み込む"
+    },
+    {
+      "en": "Open",
+      "ja": "開く"
+    },
+    {
+      "en": "Download",
+      "ja": "ダウンロード"
+    },
+    {
+      "en": "Recording...",
+      "ja": "録音中…"
+    },
+    {
+      "en": "Listening...",
+      "ja": "聞き取り中…"
+    },
+    {
+      "en": "Thinking...",
+      "ja": "考え中…",
+      "aliases": [
+        "考え中..."
+      ]
+    },
+    {
+      "en": "Speaking...",
+      "ja": "再生中…"
+    },
+    {
+      "en": "Connecting...",
+      "ja": "接続中…"
+    },
+    {
+      "en": "Connecting",
+      "ja": "接続中"
+    },
+    {
+      "en": "Transcribing...",
+      "ja": "文字起こし中…"
+    },
+    {
+      "en": "Processing...",
+      "ja": "処理中…"
+    },
+    {
+      "en": "Stopping…",
+      "ja": "停止しています…"
+    },
+    {
+      "en": "Stopped",
+      "ja": "停止しました"
+    },
+    {
+      "en": "Backend preferred. On-device fallback is available.",
+      "ja": "Backendを優先。接続できない場合は端末内AIを使えます。",
+      "aliases": [
+        "Backend is preferred; local fallback remains available.",
+        "バックエンドを優先します。接続が切れた場合は端末内AIも利用できます。",
+        "バックエンドを優先。接続できない場合は端末内AIを使えます。"
+      ]
+    },
+    {
+      "en": "Uses the OpenAI key on this device.",
+      "ja": "この端末のOpenAIキーを使います。",
+      "aliases": [
+        "Uses the OpenAI key saved on this device.",
+        "この端末に保存したOpenAIキーを使います。"
+      ]
+    },
+    {
+      "en": "Backend AI is unavailable; local AI is ready.",
+      "ja": "BackendAIは利用できません。端末内AIで会話できます。",
+      "aliases": [
+        "バックエンドAIは利用できません。端末内AIで会話できます。"
+      ]
+    },
+    {
+      "en": "Set up a backend or on-device AI to continue.",
+      "ja": "Backendか端末内AIを準備してください。",
+      "aliases": [
+        "Backend is required until local AI is available.",
+        "端末内AIを準備するまではバックエンドが必要です。",
+        "バックエンドか端末内AIを準備してください。"
+      ]
+    },
+    {
+      "en": "Backend conversation is available.",
+      "ja": "Backendで会話できます。",
+      "aliases": [
+        "Backend standard talk is reachable.",
+        "バックエンドで会話できます。"
+      ]
+    },
+    {
+      "en": "Set up an AI provider on the backend. It uses a separate key.",
+      "ja": "Backend側のAIを設定してください。アプリのキーは使われません。",
+      "aliases": [
+        "Configure the AI provider on the backend. The app key is separate.",
+        "バックエンド側のAIを設定してください。アプリのキーは別設定です。",
+        "バックエンド側のAIを設定してください。アプリのキーは使われません。"
+      ]
+    },
+    {
+      "en": "OpenAI API key set.",
+      "ja": "OpenAI APIキーは設定済みです。",
+      "aliases": [
+        "OpenAI API key is configured."
+      ]
+    },
+    {
+      "en": "OpenAI API key is required.",
+      "ja": "OpenAI APIキーを入力してください。"
+    },
+    {
+      "en": "OpenAI API key is not configured.",
+      "ja": "OpenAI APIキーが未設定です。"
+    },
+    {
+      "en": "On-device AI is available.",
+      "ja": "端末内AIを利用できます。",
+      "aliases": [
+        "Local chat runtime is available."
+      ]
+    },
+    {
+      "en": "On-device AI is unavailable in this build.",
+      "ja": "このバージョンでは端末内AIを利用できません。",
+      "aliases": [
+        "Local chat runtime is not available in this build.",
+        "このビルドでは端末内AIを利用できません。"
+      ]
+    },
+    {
+      "en": "Configure the OpenAI key on the backend for Realtime.",
+      "ja": "リアルタイム機能にはBackend側のOpenAIキー設定が必要です。",
+      "aliases": [
+        "リアルタイム機能にはバックエンド側のOpenAIキー設定が必要です。"
+      ]
+    },
+    {
+      "en": "Backend Realtime is available.",
+      "ja": "Backendのリアルタイム機能を利用できます。",
+      "aliases": [
+        "Backend realtime endpoint is reachable.",
+        "バックエンドのリアルタイム接続を利用できます。",
+        "バックエンドのリアルタイム機能を利用できます。"
+      ]
+    },
+    {
+      "en": "Realtime modes require the backend.",
+      "ja": "リアルタイムモードにはBackendが必要です。",
+      "aliases": [
+        "リアルタイムモードにはバックエンドが必要です。"
+      ]
+    },
+    {
+      "en": "Local VOICEVOX Core is ready.",
+      "ja": "端末内VOICEVOXを利用できます。"
+    },
+    {
+      "en": "Backend VOICEVOX is ready.",
+      "ja": "BackendのVOICEVOXを利用できます。",
+      "aliases": [
+        "バックエンドのVOICEVOXを利用できます。"
+      ]
+    },
+    {
+      "en": "VOICEVOX needs backend setup or local VOICEVOX Core.",
+      "ja": "Backendまたは端末内VOICEVOXの設定が必要です。",
+      "aliases": [
+        "バックエンドまたは端末内VOICEVOXの設定が必要です。"
+      ]
+    },
+    {
+      "en": "Backend is reachable.",
+      "ja": "Backendに接続できます。",
+      "aliases": [
+        "バックエンドに接続できます。"
+      ]
+    },
+    {
+      "en": "Backend is offline.",
+      "ja": "Backendは未接続です。",
+      "aliases": [
+        "バックエンドは未接続です。"
+      ]
+    },
+    {
+      "en": "Realtime Talk ON",
+      "ja": "リアルタイム会話"
+    },
+    {
+      "en": "Backend Talk ON",
+      "ja": "Backend会話",
+      "aliases": [
+        "バックエンド会話"
+      ]
+    },
+    {
+      "en": "Realtime Talk VOICEVOX ON",
+      "ja": "リアルタイム · VOICEVOX"
+    },
+    {
+      "en": "Realtime Talk Aivis ON",
+      "ja": "リアルタイム · Aivis"
+    },
+    {
+      "en": "Realtime Translate ON",
+      "ja": "リアルタイム翻訳"
+    },
+    {
+      "en": "Previous",
+      "ja": "前へ"
+    },
+    {
+      "en": "Next",
+      "ja": "次へ"
+    },
+    {
+      "en": "Back",
+      "ja": "戻る"
+    },
+    {
+      "en": "Use this appearance",
+      "ja": "この姿を使う"
+    },
+    {
+      "en": "File not found",
+      "ja": "ファイルが見つかりません"
+    },
+    {
+      "en": "Name",
+      "ja": "名前"
+    },
+    {
+      "en": "Change appearance",
+      "ja": "着替え"
+    },
+    {
+      "en": "Remove from list",
+      "ja": "一覧から外す"
+    },
+    {
+      "en": "No characters yet",
+      "ja": "まだ登録されていません"
+    },
+    {
+      "en": "In use",
+      "ja": "使用中"
+    },
+    {
+      "en": "Missing file",
+      "ja": "ファイルなし"
+    },
+    {
+      "en": "Add appearance from file",
+      "ja": "ファイルからアバターを追加",
+      "aliases": [
+        "ファイルから新しい外見を追加"
+      ]
+    },
+    {
+      "en": "Save name",
+      "ja": "名前を保存"
+    },
+    {
+      "en": "Loading avatar…",
+      "ja": "アバターを読み込み中…"
+    },
+    {
+      "en": "Avatar changed",
+      "ja": "アバターを切り替えました"
+    },
+    {
+      "en": "Avatar loading is not ready",
+      "ja": "アバター読込の準備ができていません"
+    },
+    {
+      "en": "Changing appearance…",
+      "ja": "着替えています…"
+    },
+    {
+      "en": "Local AI data: not checked",
+      "ja": "端末内AIのデータ：未確認"
+    },
+    {
+      "en": "Default (system)",
+      "ja": "標準（システム設定）"
+    },
+    {
+      "en": "Solid",
+      "ja": "単色"
+    },
+    {
+      "en": "Gray",
+      "ja": "グレー"
+    },
+    {
+      "en": "Charcoal",
+      "ja": "チャコール",
+      "aliases": [
+        "Studio",
+        "スタジオ"
+      ]
+    },
+    {
+      "en": "Sky",
+      "ja": "空"
+    },
+    {
+      "en": "Transparent",
+      "ja": "透明"
+    },
+    {
+      "en": "Black",
+      "ja": "黒"
+    },
+    {
+      "en": "White",
+      "ja": "白"
+    },
+    {
+      "en": "None",
+      "ja": "なし"
+    },
+    {
+      "en": "Cam 1",
+      "ja": "カメラ 1"
+    },
+    {
+      "en": "Cam 2",
+      "ja": "カメラ 2"
+    },
+    {
+      "en": "Cam 3",
+      "ja": "カメラ 3"
+    },
+    {
+      "en": "Cam 4",
+      "ja": "カメラ 4"
+    },
+    {
+      "en": "Warm beige",
+      "ja": "ベージュ",
+      "aliases": [
+        "Warm Room",
+        "暖かな部屋"
+      ]
+    },
+    {
+      "en": "Midnight blue",
+      "ja": "ミッドナイトブルー",
+      "aliases": [
+        "Night Desk",
+        "夜のデスク"
+      ]
+    },
+    {
+      "en": "Cool gray",
+      "ja": "クールグレー",
+      "aliases": [
+        "Soft Stage",
+        "柔らかなステージ"
+      ]
+    },
+    {
+      "en": "Skybox",
+      "ja": "スカイボックス",
+      "aliases": [
+        "Unity Default",
+        "Unity標準"
+      ]
+    },
+    {
+      "en": "Delete backend conversations & memories?",
+      "ja": "Backendの会話・記憶を削除しますか？",
+      "aliases": [
+        "Delete all history?",
+        "履歴をすべて削除しますか？"
+      ]
+    },
+    {
+      "en": "Deletes all this user's conversations, response cache and memories on the backend. On-device history and saved answers remain. This cannot be undone.",
+      "ja": "このユーザーのBackend上の会話・応答キャッシュ・記憶を削除します。端末の履歴と保存した回答は残ります。元には戻せません。",
+      "aliases": [
+        "Deletes conversation history, response cache and saved memories. This cannot be undone.",
+        "This deletes conversation history, response cache and saved memories. This cannot be undone.",
+        "会話履歴、応答キャッシュ、会話から保存されたメモリを削除します。この操作は元に戻せません。",
+        "会話履歴・応答キャッシュ・保存した記憶を削除します。元には戻せません。"
+      ]
+    },
+    {
+      "en": "Mic Test: no microphone",
+      "ja": "マイクが見つかりません"
+    },
+    {
+      "en": "Mic Test: failed",
+      "ja": "マイクのテストに失敗しました"
+    },
+    {
+      "en": "Mic Test: complete",
+      "ja": "マイクのテストが完了しました"
+    },
+    {
+      "en": "Mic Test: listening ({0})",
+      "ja": "マイクをテスト中（{0}）"
+    },
+    {
+      "en": "Choose an appearance · Keeps this character’s name, personality, voice and memories",
+      "ja": "アバターを選択 · 名前・性格・声・記憶は引き継ぎます",
+      "aliases": [
+        "Choose a new appearance · Name, personality, voice and memories stay with this character",
+        "新しい外見を選択 · 名前・性格・声・記憶は引き継ぎます"
+      ]
+    },
+    {
+      "en": "Switch to another character before removing this one from the list.",
+      "ja": "別のキャラクターへ切り替えてから一覧から外してください。"
+    },
+    {
+      "en": "Could not update the list: ",
+      "ja": "一覧を更新できません: "
+    },
+    {
+      "en": "Could not save the name: ",
+      "ja": "名前を保存できません: "
+    },
+    {
+      "en": "Download voice data from Settings first.",
+      "ja": "設定から音声データをダウンロードしてください。",
+      "aliases": [
+        "On-device voice data is not ready. Download it from Settings.",
+        "端末内の音声データが未準備です。設定からデータを取得してください。"
+      ]
+    },
+    {
+      "en": "Saved results · This device",
+      "ja": "保存した回答 · この端末",
+      "aliases": [
+        "保存した結果 · この端末"
+      ]
+    },
+    {
+      "en": "Use Save on a reply to keep it here",
+      "ja": "回答の「保存」でここに残せます",
+      "aliases": [
+        "回答の Save から保存できます"
+      ]
+    },
+    {
+      "en": "Could not open saved results: ",
+      "ja": "保存結果を開けません: "
+    },
+    {
+      "en": "Return to composer",
+      "ja": "入力欄へ戻す"
+    },
+    {
+      "en": "List",
+      "ja": "一覧"
+    },
+    {
+      "en": "Shared memories from earlier versions · Backend",
+      "ja": "旧バージョンの共通記憶 · Backend",
+      "aliases": [
+        "以前の共通記憶 · Backend",
+        "旧バージョンの共通記憶 · バックエンド"
+      ]
+    },
+    {
+      "en": "This character’s memories · Backend",
+      "ja": "このキャラクターの記憶 · Backend",
+      "aliases": [
+        "This character's memories · Backend",
+        "このキャラクターの記憶 · バックエンド"
+      ]
+    },
+    {
+      "en": "Character memories",
+      "ja": "キャラクターの記憶へ"
+    },
+    {
+      "en": "View earlier shared memories",
+      "ja": "以前の共通記憶を見る"
+    },
+    {
+      "en": "Add",
+      "ja": "追加"
+    },
+    {
+      "en": "No memories yet",
+      "ja": "記憶はまだありません"
+    },
+    {
+      "en": "Recent conversations · This character / ",
+      "ja": "最近の会話 · このキャラクター / "
+    },
+    {
+      "en": "Secret Mode does not read or save recent conversations.",
+      "ja": "Secret Modeでは最近の会話を読み込み・保存しません。",
+      "aliases": [
+        "Secret mode does not read or save recent conversations.",
+        "秘密モードでは最近の会話を読み書きしません。"
+      ]
+    },
+    {
+      "en": "Saves the last 4 exchanges on this device, up to 600 characters per message. Used to continue conversations. Excludes Realtime.\n",
+      "ja": "会話を続けるため、直近4往復を端末に保存します（各発言600文字まで）。リアルタイム会話は対象外です。\n",
+      "aliases": [
+        "The last 4 exchanges are saved on this device, up to 600 characters per message, to continue normal conversations. Realtime conversations are not included.\n",
+        "直近4往復を端末に保存します。各発言は最大600文字。通常の会話を続けるために使用します。Realtimeの会話は含みません。\n"
+      ]
+    },
+    {
+      "en": "\nYou: ",
+      "ja": "\nあなた: "
+    },
+    {
+      "en": "\nCharacter: ",
+      "ja": "\nキャラクター: "
+    },
+    {
+      "en": "Clear recent conversations",
+      "ja": "最近の会話を消去"
+    },
+    {
+      "en": "Stop the reply before clearing conversations.",
+      "ja": "返答を停止してから消去してください。"
+    },
+    {
+      "en": "Confirm clear conversation",
+      "ja": "この会話を消去する"
+    },
+    {
+      "en": "Could not clear conversations: ",
+      "ja": "会話を消去できません: "
+    },
+    {
+      "en": "Could not read recent conversations. The original file is preserved.\n",
+      "ja": "最近の会話を読み込めません。元ファイルは保持されています。\n"
+    },
+    {
+      "en": "Long-term memories (Backend)",
+      "ja": "長期記憶（Backend）",
+      "aliases": [
+        "長期記憶 (Backend)",
+        "長期記憶（バックエンド）"
+      ]
+    },
+    {
+      "en": "Add memory",
+      "ja": "記憶を追加"
+    },
+    {
+      "en": "Edit memory",
+      "ja": "記憶を編集"
+    },
+    {
+      "en": "Could not save memory: ",
+      "ja": "記憶を保存できません: "
+    },
+    {
+      "en": "Confirm delete",
+      "ja": "削除する",
+      "aliases": [
+        "本当に削除"
+      ]
+    },
+    {
+      "en": "Could not delete memory: ",
+      "ja": "記憶を削除できません: "
+    },
+    {
+      "en": "Could not resume the Realtime microphone. Stop recording and start again.",
+      "ja": "Realtime用マイクの再開に失敗しました。録音を一度停止して再開してください。"
+    },
+    {
+      "en": "Connecting to Realtime...",
+      "ja": "Realtime接続中..."
+    },
+    {
+      "en": "Could not start the Realtime microphone in the Mac Editor. Use normal microphone input.",
+      "ja": "Mac EditorのRealtime用マイク入力を開始できませんでした。通常の音声入力を使ってください。"
+    },
+    {
+      "en": "Realtime connection failed: {0}",
+      "ja": "Realtime接続に失敗しました: {0}"
+    },
+    {
+      "en": "Realtime receive failed: {0}",
+      "ja": "Realtime受信に失敗しました: {0}"
+    },
+    {
+      "en": "Realtime mode changed. Press Mic to start recording again.",
+      "ja": "モード変更により録音を停止しました。Micで再開できます。",
+      "aliases": [
+        "Recording stopped because the Realtime mode changed. Press Mic to start again.",
+        "Realtimeモードを変更したため、現在のRealtime録音を停止しました。もう一度Micを押してください。"
+      ]
+    },
+    {
+      "en": "This Realtime mode is unavailable after an API change. Use normal voice or text input.",
+      "ja": "Realtime APIの仕様が更新されたため、このRealtimeモードは現在利用できません。通常の音声入力またはテキスト入力を使ってください。"
+    },
+    {
+      "en": "Please wait for the avatar to finish loading.",
+      "ja": "アバターの読み込みが終わるまでお待ちください。"
+    },
+    {
+      "en": "Stop the conversation before switching characters.",
+      "ja": "会話を停止してからキャラクターを切り替えてください。"
+    },
+    {
+      "en": "From Windows: save the VRM to iCloud Drive, then select it in Files on your iPhone. For USB, use Apple Devices file sharing. From Mac, AirDrop also works.",
+      "ja": "Windowsから: iCloud DriveへVRMを保存し、iPhoneの「ファイル」で選択。USBならAppleデバイスのファイル共有。MacからはAirDropも使えます。"
+    },
+    {
+      "en": "From PC: use USB file transfer to copy the VRM into Download, then select it in Yui.",
+      "ja": "PCから: USBファイル転送でDownloadへVRMをコピーし、Yuiで選択します。"
+    },
+    {
+      "en": "Save the VRM on this PC. The same file also works on your phone.",
+      "ja": "VRMをこのPCへ保存します。同じファイルをスマホでも使えます。"
+    },
+    {
+      "en": "Already have a VRM?\nOpen Settings → Character → Import avatar, then choose the file. VRM 0.x and 1.0 are supported.\n\n",
+      "ja": "VRMを持っている場合\n「設定 → キャラクター → アバターを読み込む」でファイルを選びます。VRM 0.x / 1.0に対応しています。\n\n",
+      "aliases": [
+        "Already have a VRM?\nChoose it with Add VRM / ZIP. Both VRM 0.x and 1.0 are supported.\n\n",
+        "VRMを持っている場合\n「VRM / ZIPを追加」から選ぶだけです。VRM 0.x / 1.0に対応します。\n\n"
+      ]
+    },
+    {
+      "en": "For a VRChat avatar\n1. Use your customized Unity project. If you have just bought an avatar, first follow its author’s setup instructions.\n",
+      "ja": "VRChat用アバターの場合\n1. 普段改変しているUnityプロジェクトを使います。購入直後なら、先に作者の説明どおりにセットアップします。\n",
+      "aliases": [
+        "For a VRChat avatar\n1. On Windows or Mac, add Yui Avatar Bridge to your original Unity project.\n",
+        "VRChat用アバターの場合\n1. WindowsまたはMacで、自分の元UnityプロジェクトへYui Avatar Bridgeを追加。\n"
+      ]
+    },
+    {
+      "en": "2. Export a VRM with NDMF VRM Exporter or your existing converter. No Yui-specific conversion tool or VRChat upload is required.\n",
+      "ja": "2. NDMF VRM Exporterなどの既存ツールでVRMを書き出します。Yui専用ツールやVRChatへのアップロードは不要です。\n",
+      "aliases": [
+        "2. Open Yui → Avatar Bridge → Export Avatar for Yui (0.2 or later), select the avatar, then export a VRM. Supported Modular Avatar processing runs automatically.\n",
+        "2. Yui → Avatar Bridge → Export Avatar for Yui（0.2以降）を開き、使いたい姿を選んでVRMを書き出します。対応するModular Avatarの加工は自動で行います。\n",
+        "2. Select the avatar in Yui Avatar Bridge 0.2 or later and export a VRM. Supported Modular Avatar processing runs automatically.\n",
+        "2. Yui Avatar Bridge 0.2以降の画面でアバターを選び、VRMを書き出します。対応するModular Avatarの加工も自動で行います。\n"
+      ]
+    },
+    {
+      "en": "\nIn Yui, choose Settings → Character → Import avatar.\n\n",
+      "ja": "\nYuiの「設定 → キャラクター → アバターを読み込む」で選択します。\n\n",
+      "aliases": [
+        "\nChoose Add VRM / ZIP in Yui.\n\n",
+        "\nYuiの「VRM / ZIPを追加」で選択します。\n\n"
+      ]
+    },
+    {
+      "en": "Export once on a PC; use the VRM on any supported device. Legacy Bridge ZIP files work only on their supported OS.\n\n",
+      "ja": "PCで一度書き出したVRMを各端末で使えます。旧Bridge ZIPは対応OSでのみ読み込めます。\n\n",
+      "aliases": [
+        "The original Unity project is processed on a PC. No manual VRM conversion or per-device export is needed. Legacy Bridge ZIP files also work on their supported OS.\n\n",
+        "元UnityプロジェクトはPCで処理します。VRM化の手動操作や端末別の書出しは不要です。旧Bridge ZIPも対応OSなら読み込めます。\n\n"
+      ]
+    },
+    {
+      "en": "Compatibility\nCheck appearance, lip sync, blinking and motion after import. Shading and physics may differ. VRChat menus, grab actions and custom animations are not reproduced.\n\n",
+      "ja": "対応範囲\n読み込み後に、見た目・口パク・まばたき・揺れを確認してください。陰影や物理演算には差が出ます。VRChatのメニュー・つかむ操作・独自アニメーションは再現しません。\n\n",
+      "aliases": [
+        "Compatibility\nBasic materials, lip sync, supported expressions and simple hair/clothing motion. Excludes custom shaders, outfit menus, authored animations, PhysBone collisions and grab actions.\n\n",
+        "対応範囲\n基本的な見た目・口パク・対応する表情・髪や服の簡易的な揺れ。独自シェーダー・衣装メニュー・仕込みアニメーション・PhysBoneの衝突やつかむ操作には非対応です。\n\n",
+        "Compatibility\nBasic materials, lip sync, supported facial expressions and simple hair/clothing motion. Custom shaders, outfit menus, authored animations, PhysBone collisions and grab actions are not reproduced.\n\n",
+        "対応範囲\n基本の素材・口パク・対応する基本表情・簡易の揺れ。独自シェーダー、衣装メニュー、仕込みアニメーション、PhysBoneの衝突やつかむ操作は再現しません。\n\n"
+      ]
+    },
+    {
+      "en": "To change outfits, open My characters → Change appearance. Select a saved avatar or a new file. The character keeps its name, personality, voice and memories.",
+      "ja": "マイキャラクター → 着替えで、保存済みのアバターや新しいファイルを選べます。名前・性格・声・記憶は引き継ぎます。",
+      "aliases": [
+        "To change outfits for the same character, choose Change appearance in My characters. Choose a saved appearance or a new file; the name, personality, voice and memories stay with the character.",
+        "同じキャラクターを着替えさせるには、アバター一覧の「着替え」。保存済みの外見も、新しいファイルも選べます。名前・性格・声・記憶を維持します。"
+      ]
+    },
+    {
+      "en": "The Realtime microphone stopped in the Mac Editor. Stop recording and start again.",
+      "ja": "Mac EditorのRealtime用マイク入力が停止しました。録音を一度停止して再開してください。"
+    },
+    {
+      "en": "The {0}-second limit was reached. Sending the recorded audio.",
+      "ja": "録音上限の{0}秒に達しました。ここまでの音声を送信します。",
+      "aliases": [
+        "The {0}-second recording limit was reached. Sending the audio recorded so far.",
+        "入力制限の{0}秒を超過しました。ここまでの音声で送信します。"
+      ]
+    },
+    {
+      "en": "Ready to talk",
+      "ja": "話しかけてください"
+    },
+    {
+      "en": "Set up conversation data",
+      "ja": "会話データを準備してください"
+    },
+    {
+      "en": "Check the backend log and settings.",
+      "ja": "Backendログと設定を確認してください。"
+    },
+    {
+      "en": "Backend offline. Use on-device AI or OpenAI API for conversation. Realtime, the database and backend voices require a backend.",
+      "ja": "Backendは未接続です。端末内AIかOpenAI APIで会話できます。リアルタイム機能・データベース・Backendの音声には接続が必要です。",
+      "aliases": [
+        "Backend is offline. Basic conversations still work with local AI or Direct API. Realtime, the database and backend voices need a backend.",
+        "Backend未接続です。基本会話はローカル/Direct APIで続行できますが、Realtime、DB、Backend TTSにはBackendが必要です。",
+        "バックエンドは未接続です。端末内AIかOpenAI APIで会話できます。リアルタイム機能・データベース・バックエンドの音声には接続が必要です。"
+      ]
+    },
+    {
+      "en": "OpenAI key not set. Add it in AI settings for direct access, or configure it on the backend for backend access.",
+      "ja": "OpenAIキーが未設定です。直接接続は「AI」で、Backend経由はBackend側でキーを設定してください。",
+      "aliases": [
+        "OpenAI API key is not set. Add a key to use OpenAI through Backend Talk or Direct API.",
+        "OpenAI APIキーが未設定です。Backend TalkやDirect APIの高精度モデルを使う場合はキーを設定してください。",
+        "OpenAIキーが未設定です。直接接続は「AI」で、バックエンド経由はバックエンド側でキーを設定してください。"
+      ]
+    },
+    {
+      "en": "Irodori needs HTTP TTS setup on the backend.",
+      "ja": "IrodoriにはBackend側のHTTP TTS設定が必要です。",
+      "aliases": [
+        "Irodori TTS is listed but needs HTTP TTS configuration on the backend.",
+        "Irodori TTSは表示されていますが、Backend側のHTTP TTS設定が必要です。",
+        "Irodoriにはバックエンド側のHTTP TTS設定が必要です。"
+      ]
+    },
+    {
+      "en": "AivisSpeech needs a backend. VOICEVOX can run on this device or a backend.",
+      "ja": "AivisSpeechにはBackendが必要です。VOICEVOXは端末内でもBackendでも使えます。",
+      "aliases": [
+        "AivisSpeech HD needs backend configuration. VOICEVOX can run locally or on the backend.",
+        "AivisSpeech HDはBackend側の設定後に使用できます。VOICEVOXはローカルまたはBackendで使用できます。",
+        "AivisSpeechにはバックエンドが必要です。VOICEVOXは端末内でもバックエンドでも使えます。"
+      ]
+    },
+    {
+      "en": "AI and voice services are ready. If audio or images fail, check your device selection in Settings.",
+      "ja": "AIと音声を利用できます。マイクやカメラが使えない場合は、設定で選択中の機器を確認してください。",
+      "aliases": [
+        "Main conversation and voice providers are ready. If audio or images do not work, also check the device selection in Settings.",
+        "主要な会話/音声providerは使用できる状態です。音声や画像が動かない場合はSettingsのデバイス選択も確認してください。"
+      ]
+    },
+    {
+      "en": "Checking backend connections.",
+      "ja": "Backendの接続状態を確認中です。"
+    },
+    {
+      "en": "Wait a moment, then open Help again.",
+      "ja": "少し待ってからヘルプを開き直してください。",
+      "aliases": [
+        "少し待ってからもう一度Helpを開いてください。"
+      ]
+    },
+    {
+      "en": "Details unavailable",
+      "ja": "詳細不明"
+    },
+    {
+      "en": "Could not check conversation data.",
+      "ja": "会話データを確認できませんでした。"
+    },
+    {
+      "en": "Check your network connection and try again.",
+      "ja": "ネットワーク接続を確認して、もう一度試してください。"
+    },
+    {
+      "en": "Could not check on-device AI data.",
+      "ja": "端末内AIのデータを確認できませんでした。",
+      "aliases": [
+        "ローカルAIデータの確認に失敗しました。"
+      ]
+    },
+    {
+      "en": "Could not check additional voice data.",
+      "ja": "追加音声データの確認に失敗しました。"
+    },
+    {
+      "en": "Prepare conversation data",
+      "ja": "会話データの準備"
+    },
+    {
+      "en": "Additional voice packages are not available for this OS yet.",
+      "ja": "このOS向けの追加音声パックはまだありません。"
+    },
+    {
+      "en": "Additional voice data is ready.",
+      "ja": "追加音声データは準備できています。"
+    },
+    {
+      "en": "On-device AI data is ready.",
+      "ja": "端末内AIのデータは準備済みです。",
+      "aliases": [
+        "ローカルAIデータは準備できています。"
+      ]
+    },
+    {
+      "en": "Download additional voice data.",
+      "ja": "追加音声データをダウンロードします。"
+    },
+    {
+      "en": "{0} downloads from GitHub Releases, including additional voices such as AivisSpeech HD.",
+      "ja": "GitHub Releasesから音声データを{0}件ダウンロードします。",
+      "aliases": [
+        "{0} items. Additional voice data, such as AivisSpeech HD, will be downloaded from GitHub Releases.",
+        "対象: {0}件。AivisSpeech HDなどの追加TTSデータをGitHub Releasesから取得します。"
+      ]
+    },
+    {
+      "en": "Download conversation data again to repair it.",
+      "ja": "会話データを再取得して修復します。"
+    },
+    {
+      "en": "Start downloading initial data.",
+      "ja": "初回のデータダウンロードを開始します。"
+    },
+    {
+      "en": "{0} required downloads from GitHub Releases.",
+      "ja": "GitHub Releasesから必要なデータを{0}件ダウンロードします。",
+      "aliases": [
+        "{0} items. Required data will be downloaded from GitHub Releases.",
+        "対象: {0}件。必要なデータをGitHub Releasesから取得します。"
+      ]
+    },
+    {
+      "en": "Downloading additional voice data.",
+      "ja": "追加音声データをダウンロードしています。"
+    },
+    {
+      "en": "Downloading initial data.",
+      "ja": "初回データをダウンロードしています。"
+    },
+    {
+      "en": "Keep the app open until the download finishes.",
+      "ja": "完了までアプリを閉じずにお待ちください。"
+    },
+    {
+      "en": "Could not install additional voice data.",
+      "ja": "追加音声データのインストールに失敗しました。"
+    },
+    {
+      "en": "Could not install on-device AI data.",
+      "ja": "端末内AIのデータをインストールできませんでした。",
+      "aliases": [
+        "ローカルAIデータのインストールに失敗しました。"
+      ]
+    },
+    {
+      "en": "Additional voice setup is complete.",
+      "ja": "追加音声データの準備が完了しました。"
+    },
+    {
+      "en": "On-device AI setup is complete.",
+      "ja": "端末内AIの準備ができました。",
+      "aliases": [
+        "ローカルAIデータの準備が完了しました。"
+      ]
+    },
+    {
+      "en": "Restart the backend to load newly added voices.",
+      "ja": "追加した音声を使うにはBackendを再起動してください。",
+      "aliases": [
+        "Restart the backend if needed to enable additional voices.",
+        "必要に応じてBackendを再起動すると追加TTSが有効になります。",
+        "追加した音声を使うにはバックエンドを再起動してください。"
+      ]
+    },
+    {
+      "en": "Local Gemma is ready to use.",
+      "ja": "Local Gemmaを使用できます。"
+    },
+    {
+      "en": "Download canceled.",
+      "ja": "ダウンロードを中断しました。"
+    },
+    {
+      "en": "Start again when you are ready.",
+      "ja": "準備できたらもう一度開始してください。"
+    },
+    {
+      "en": "Could not download additional voice data.",
+      "ja": "追加音声データのダウンロードに失敗しました。"
+    },
+    {
+      "en": "Could not download on-device AI data.",
+      "ja": "端末内AIのデータをダウンロードできませんでした。",
+      "aliases": [
+        "ローカルAIデータのダウンロードに失敗しました。"
+      ]
+    },
+    {
+      "en": "Canceling…",
+      "ja": "中断しています…"
+    },
+    {
+      "en": "Downloaded data will be kept.",
+      "ja": "取得済みのデータは保持します。"
+    },
+    {
+      "en": "Download initial data",
+      "ja": "初回データダウンロード"
+    },
+    {
+      "en": "Start download",
+      "ja": "ダウンロードを開始"
+    },
+    {
+      "en": "Try again",
+      "ja": "もう一度試す"
+    },
+    {
+      "en": "Ready to talk.",
+      "ja": "会話の準備ができました。",
+      "aliases": [
+        "Ready to talk. Say something to begin.",
+        "会話の準備ができました。話しかけてください。"
+      ]
+    },
+    {
+      "en": "Data downloaded, but on-device Gemma is unavailable. Select OpenAI API or a configured backend.",
+      "ja": "ダウンロードは完了しましたが、端末内Gemmaは使えません。OpenAI APIか設定済みのBackendを選んでください。",
+      "aliases": [
+        "Data is ready, but on-device Gemma is unavailable in this environment. Select API or a configured backend.",
+        "データの準備は完了しましたが、この環境の端末内Gemmaは利用できません。APIまたは設定済みBackendを選択してください。",
+        "ダウンロードは完了しましたが、端末内Gemmaは使えません。OpenAI APIか設定済みのバックエンドを選んでください。"
+      ]
+    },
+    {
+      "en": "Data downloaded · Select API or Backend",
+      "ja": "取得完了 · APIかBackendを選択",
+      "aliases": [
+        "Data ready · Use API / Backend",
+        "データ取得完了 · API / Backendを使用してください",
+        "取得完了 · APIかバックエンドを選択"
+      ]
+    },
+    {
+      "en": "Voices downloaded. Restart the backend to use them.",
+      "ja": "音声データを取得しました。Backendを再起動してご利用ください。",
+      "aliases": [
+        "Additional voices are ready. Restart the backend to use voices such as AivisSpeech HD.",
+        "追加音声データの準備が完了しました。Backend再起動後にAivisSpeech HDなどの追加TTSを確認できます。",
+        "音声データを取得しました。バックエンドを再起動してご利用ください。"
+      ]
+    },
+    {
+      "en": "Opening image picker...",
+      "ja": "画像を選択中…",
+      "aliases": [
+        "画像ファイル選択を開きます..."
+      ]
+    },
+    {
+      "en": "Image selection canceled.",
+      "ja": "画像の選択をキャンセルしました。",
+      "aliases": [
+        "画像ファイル選択はキャンセルされました。"
+      ]
+    },
+    {
+      "en": "Choose an image camera in Settings → Display → Image camera.",
+      "ja": "設定 → 表示 → 画像入力用カメラでカメラを選んでください。",
+      "aliases": [
+        "Look用カメラが未設定です。Settings > Camera > Device で使用するカメラを選んでください。"
+      ]
+    },
+    {
+      "en": "Camera access is not allowed. Enable it in your device settings.",
+      "ja": "カメラの使用が許可されていません。端末の設定で許可してください。",
+      "aliases": [
+        "Camera access is not allowed. Enable camera access in your device settings.",
+        "カメラ権限が許可されていないため、Lookを使えません。iOS設定でカメラ権限を確認してください。"
+      ]
+    },
+    {
+      "en": "Reading camera... {0}",
+      "ja": "カメラ画像を取得中… {0}",
+      "aliases": [
+        "カメラを見ています... {0}"
+      ]
+    },
+    {
+      "en": "No camera frame at this resolution. Retrying at the default resolution.",
+      "ja": "画像を取得できないため、標準の解像度で再試行します。",
+      "aliases": [
+        "No valid frame at this resolution. Retrying with the default resolution.",
+        "指定解像度では有効なカメラ画像を取得できませんでした。デフォルト解像度で再試行します。"
+      ]
+    },
+    {
+      "en": "Could not capture a camera frame. For a virtual camera such as Camo or OBS, check that its source app is playing video.",
+      "ja": "カメラ画像を取得できませんでした。Camo/OBSなどの仮想カメラは、出力元アプリで映像が動いていることを確認してください。"
+    },
+    {
+      "en": "Camera frame captured: {0}x{1}",
+      "ja": "カメラ画像を取得しました: {0}x{1}"
+    },
+    {
+      "en": "Check the image, then send your message",
+      "ja": "画像を確認して送信してください"
+    },
+    {
+      "en": "Could not analyze the camera image. {0}",
+      "ja": "カメラ画像を解析できませんでした。{0}"
+    },
+    {
+      "en": "Could not analyze the camera image. Check camera access, OpenAI Vision settings and the backend log.",
+      "ja": "カメラ画像を解析できませんでした。カメラ権限、OpenAI Vision設定、Backendログを確認してください。"
+    },
+    {
+      "en": "The selected image camera was not found: {0}",
+      "ja": "選択中のカメラが見つかりません: {0}",
+      "aliases": [
+        "選択中のLook用カメラが見つかりません: {0}"
+      ]
+    },
+    {
+      "en": "Image camera selected automatically: {0}",
+      "ja": "カメラを自動選択しました: {0}",
+      "aliases": [
+        "Look用カメラを自動選択しました: {0}"
+      ]
+    },
+    {
+      "en": "Preparing image…",
+      "ja": "画像を準備しています…"
+    },
+    {
+      "en": "Attaching image: {0}",
+      "ja": "画像を添付します: {0}"
+    },
+    {
+      "en": "Supported images: PNG, JPG, WebP, HEIC and HEIF.",
+      "ja": "対応形式: PNG / JPG / WebP / HEIC / HEIF",
+      "aliases": [
+        "対応している画像形式は PNG / JPG / WebP / HEIC / HEIF です。"
+      ]
+    },
+    {
+      "en": "Could not analyze the image. {0}",
+      "ja": "画像を解析できませんでした。{0}"
+    },
+    {
+      "en": "Could not analyze the image. Check the file format, OpenAI Vision settings and the backend log.",
+      "ja": "画像を解析できませんでした。ファイル形式、OpenAI Vision設定、Backendログを確認してください。"
+    },
+    {
+      "en": "Camera image attached. Send a message to ask about it.",
+      "ja": "カメラ画像を添付しました。質問を入力して送信してください。",
+      "aliases": [
+        "Camera image attached for API Mode. Send a message to ask about it.",
+        "API Mode用にカメラ画像を添付しました。次のメッセージで画像を直接見ながら返答します。"
+      ]
+    },
+    {
+      "en": "Image attached. Send a message to ask about it.",
+      "ja": "画像を添付しました。質問を入力して送信してください。",
+      "aliases": [
+        "Image attached for API Mode. Send a message to ask about it.",
+        "API Mode用に画像を添付しました。次のメッセージで画像を直接見ながら返答します。"
+      ]
+    },
+    {
+      "en": "No microphone found. Check your device and app settings.",
+      "ja": "マイクが見つかりません。端末とアプリの設定を確認してください。",
+      "aliases": [
+        "No microphone found. Check your system and app microphone settings.",
+        "マイクが見つかりません。WindowsとUnityのマイク設定を確認してください。"
+      ]
+    },
+    {
+      "en": "Wait for the avatar to load before recording.",
+      "ja": "アバターの読み込みが終わってから録音してください。"
+    },
+    {
+      "en": "Could not start the microphone. Select one in Settings → AI and allow microphone access in your device settings.",
+      "ja": "マイクを使えません。設定 → AIでマイクを選び、端末の設定で使用を許可してください。",
+      "aliases": [
+        "Could not start the microphone. Choose a microphone in Settings → AI and check system microphone access.",
+        "マイクを開始できませんでした。Consoleの `Unity microphones:` に出た名前を Preferred Microphone Device に指定してみてください。"
+      ]
+    },
+    {
+      "en": "Android speech recognition returned no text.",
+      "ja": "Android音声認識で文字起こしできませんでした。"
+    },
+    {
+      "en": "Android speech recognition failed. Try a shorter, clearer recording.",
+      "ja": "Android音声認識に失敗しました。もう一度短めにはっきり話してください。"
+    },
+    {
+      "en": "Could not record audio. Device: {0}",
+      "ja": "録音できませんでした。マイク: {0}",
+      "aliases": [
+        "音声を録音できませんでした。device={0}"
+      ]
+    },
+    {
+      "en": "Could not transcribe the audio.",
+      "ja": "音声を文字起こしできませんでした。"
+    },
+    {
+      "en": "On-device transcription failed. Try recording again with less background noise.",
+      "ja": "端末内で文字起こしできませんでした。周囲の音を減らして、もう一度録音してください。",
+      "aliases": [
+        "On-device speech recognition failed. Try a shorter, clearer recording or change the speech recognition settings.",
+        "ローカル音声認識に失敗しました。もう一度短めにはっきり話すか、音声/STT設定を変更してください。"
+      ]
+    },
+    {
+      "en": "Wait for the avatar to load before sending.",
+      "ja": "アバターの読み込みが終わってから送信してください。"
+    },
+    {
+      "en": "Generating reply...",
+      "ja": "返答生成中..."
+    },
+    {
+      "en": "Could not connect to the backend. Start it and check this URL: {0}",
+      "ja": "Backendに接続できません。起動状態とURLを確認してください: {0}",
+      "aliases": [
+        "Could not connect to the backend. Start the backend and check this URL: {0}",
+        "Backendに接続できません。scripts/run_backend.ps1 を起動してください。url={0}",
+        "バックエンドに接続できません。起動状態とURLを確認してください: {0}"
+      ]
+    },
+    {
+      "en": "Voice unavailable",
+      "ja": "音声を利用できません"
+    },
+    {
+      "en": "TTS is silent",
+      "ja": "音声なしの設定です"
+    },
+    {
+      "en": "Previewing voice...",
+      "ja": "音声を試聴中…"
+    },
+    {
+      "en": "Preview failed",
+      "ja": "試聴できませんでした"
+    },
+    {
+      "en": "Voice preview",
+      "ja": "音声の試聴"
+    },
+    {
+      "en": "Realtime listening...",
+      "ja": "Realtime · 聞き取り中…"
+    },
+    {
+      "en": "Realtime refreshing...",
+      "ja": "Realtime · 再接続中…"
+    },
+    {
+      "en": "Realtime...",
+      "ja": "Realtime · 処理中…"
+    },
+    {
+      "en": "Translating...",
+      "ja": "翻訳中…"
+    },
+    {
+      "en": "Realtime error",
+      "ja": "リアルタイム接続エラー"
+    },
+    {
+      "en": "Realtime connecting...",
+      "ja": "Realtime · 接続中…"
+    },
+    {
+      "en": "Realtime failed",
+      "ja": "リアルタイム接続に失敗しました"
+    },
+    {
+      "en": "Realtime disconnected",
+      "ja": "Realtime · 切断されました"
+    },
+    {
+      "en": "Realtime unavailable",
+      "ja": "リアルタイム機能を利用できません"
+    },
+    {
+      "en": "Could not save character settings: ",
+      "ja": "キャラクター設定を保存できません: "
+    },
+    {
+      "en": "Could not read character settings. The original file is preserved.",
+      "ja": "キャラクター設定を読み込めません。元ファイルは保持されています。"
+    },
+    {
+      "en": "Realtime mic error",
+      "ja": "リアルタイム用マイクのエラー"
+    },
+    {
+      "en": "API ready",
+      "ja": "API ready"
+    },
+    {
+      "en": "Backend offline",
+      "ja": "Backend offline"
+    },
+    {
+      "en": "Local AI data: check failed ({0})",
+      "ja": "端末内AIのデータ確認に失敗（{0}）"
+    },
+    {
+      "en": "Local AI data: managed by platform store",
+      "ja": "端末内AIのデータはストアで管理します"
+    },
+    {
+      "en": "Local AI data: checking...",
+      "ja": "端末内AIのデータを確認中…"
+    },
+    {
+      "en": "Additional voices: managed by platform store",
+      "ja": "追加の音声はストアで管理します"
+    },
+    {
+      "en": "Additional voices: checking...",
+      "ja": "追加の音声を確認中…"
+    },
+    {
+      "en": "Local AI data: ready",
+      "ja": "端末内AIのデータ：準備完了"
+    },
+    {
+      "en": "Local AI data: no required desktop assets",
+      "ja": "追加で必要な端末内AIデータはありません"
+    },
+    {
+      "en": "Additional voices: not checked",
+      "ja": "追加の音声：未確認"
+    },
+    {
+      "en": "Additional voices: ready",
+      "ja": "追加の音声：準備完了"
+    },
+    {
+      "en": "Additional voices: no add-on assets for this platform",
+      "ja": "このOS用の追加音声はまだありません"
+    },
+    {
+      "en": "Local AI data: {0} download(s) required",
+      "ja": "端末内AI：{0}件のダウンロードが必要です"
+    },
+    {
+      "en": "Additional voices: {0} download(s) available",
+      "ja": "追加の音声：{0}件をダウンロードできます"
+    },
+    {
+      "en": "Local AI data: failed ({0})",
+      "ja": "端末内AIのデータ取得に失敗（{0}）"
+    },
+    {
+      "en": "Additional voices: failed ({0})",
+      "ja": "追加音声の取得に失敗（{0}）"
+    },
+    {
+      "en": "Local AI data: download cancelled",
+      "ja": "端末内AIのダウンロードを中断しました"
+    },
+    {
+      "en": "Additional voices: download cancelled",
+      "ja": "追加音声のダウンロードを中断しました"
+    },
+    {
+      "en": "Additional voices ready",
+      "ja": "追加の音声を利用できます"
+    },
+    {
+      "en": "On-device AI is unavailable in this build. Select OpenAI API or a backend to continue.",
+      "ja": "このバージョンでは端末内AIを利用できません。OpenAI APIかBackendを選んでください。",
+      "aliases": [
+        "Local AI runtime is not available in this build. Local mode will show an error instead of using backend/API.",
+        "このビルドでは端末内AIを利用できません。端末内モードのままでは会話できません。APIまたはバックエンドを選んでください。",
+        "このバージョンでは端末内AIを利用できません。OpenAI APIかバックエンドを選んでください。"
+      ]
+    },
+    {
+      "en": "Local AI unavailable",
+      "ja": "端末内AIを利用できません"
+    },
+    {
+      "en": "Local AI runtime is not available in this build, so requests are falling back to the backend/API path.",
+      "ja": "端末内AIを利用できないため、BackendまたはAPIを使います。",
+      "aliases": [
+        "端末内AIを利用できないため、バックエンドまたはAPIを使います。"
+      ]
+    },
+    {
+      "en": "Local AI unavailable; backend fallback",
+      "ja": "端末内AIを利用できないためBackendに接続します",
+      "aliases": [
+        "端末内AIを利用できないためバックエンドに接続します"
+      ]
+    },
+    {
+      "en": "This appearance is empty. Import an avatar first.",
+      "ja": "この枠は空です。先にアバターを読み込んでください。"
+    },
+    {
+      "en": "Could not load this appearance: ",
+      "ja": "このアバターを読み込めません: "
+    },
+    {
+      "en": "Custom avatar importer is not configured",
+      "ja": "アバターを読み込む準備ができていません"
+    },
+    {
+      "en": "Opening avatar file...",
+      "ja": "アバターファイルを選択中…"
+    },
+    {
+      "en": "{0} cleared",
+      "ja": "{0}を解除しました"
+    },
+    {
+      "en": "Clearing...",
+      "ja": "消去中…"
+    },
+    {
+      "en": "History cleared",
+      "ja": "履歴を消去しました"
+    },
+    {
+      "en": "Clear failed",
+      "ja": "消去できませんでした"
+    },
+    {
+      "en": "Look camera not selected",
+      "ja": "画像入力用のカメラを選んでください"
+    },
+    {
+      "en": "Camera permission denied",
+      "ja": "カメラの使用が許可されていません"
+    },
+    {
+      "en": "Looking through camera...",
+      "ja": "カメラ画像を取得中…"
+    },
+    {
+      "en": "Camera unavailable",
+      "ja": "カメラを利用できません"
+    },
+    {
+      "en": "Mic: none",
+      "ja": "Mic: 未選択"
+    },
+    {
+      "en": "Mic OK: {0}",
+      "ja": "Mic OK: {0}"
+    },
+    {
+      "en": "Microphone unavailable",
+      "ja": "マイクを利用できません"
+    },
+    {
+      "en": "Realtime listening... {0}",
+      "ja": "Realtime · 聞き取り中 {0}"
+    },
+    {
+      "en": "Recording... {0}",
+      "ja": "録音中 {0}"
+    },
+    {
+      "en": "STT failed",
+      "ja": "文字起こしに失敗しました"
+    },
+    {
+      "en": "Realtime responding...",
+      "ja": "Realtime · 応答中…"
+    },
+    {
+      "en": "No speech detected",
+      "ja": "音声を聞き取れませんでした"
+    },
+    {
+      "en": "Generating...",
+      "ja": "応答を生成中…"
+    },
+    {
+      "en": "Avatar setting saved",
+      "ja": "アバターの設定を保存しました"
+    },
+    {
+      "en": "Could not connect to the backend. Check that it is running and the URL is correct.",
+      "ja": "Backendに接続できません。起動状態とURLを確認してください。"
+    },
+    {
+      "en": "Backend error ({0}): {1}",
+      "ja": "Backendエラー ({0}): {1}"
+    },
+    {
+      "en": "Another avatar import is already running.",
+      "ja": "別のアバターを読み込み中です。"
+    },
+    {
+      "en": "The selected avatar file was not found.",
+      "ja": "選択したアバターファイルが見つかりません。"
+    },
+    {
+      "en": "Please choose a .vrm file or Unity avatar package .zip.",
+      "ja": ".vrmまたはUnityから書き出したアバターの.zipを選んでください。"
+    },
+    {
+      "en": "Avatar package returned no avatar instance.",
+      "ja": "アバターパッケージからモデルを読み込めませんでした。"
+    },
+    {
+      "en": "UniVRM returned no avatar instance.",
+      "ja": "VRMからモデルを読み込めませんでした。"
+    },
+    {
+      "en": "Loaded: {0}",
+      "ja": "読み込み完了: {0}"
+    },
+    {
+      "en": "Avatar import canceled. Your current avatar is unchanged.",
+      "ja": "読み込みをキャンセルしました。現在のアバターは変わりません。",
+      "aliases": [
+        "Avatar import canceled. The current avatar is preserved.",
+        "アバター読込を中止しました。現在のアバターは保持されます。"
+      ]
+    },
+    {
+      "en": "The avatar is displayed, but could not be saved: ",
+      "ja": "アバターは表示されましたが、保存に失敗しました: "
+    },
+    {
+      "en": "Custom avatar import failed: {0}",
+      "ja": "アバターを読み込めませんでした: {0}"
+    },
+    {
+      "en": "Open VRM or Unity Avatar Package ZIP",
+      "ja": "VRM / アバターパッケージZIPを選択"
+    },
+    {
+      "en": "Open Custom VRM",
+      "ja": "VRMを選択"
+    },
+    {
+      "en": "Analyze image with Yui Vision",
+      "ja": "画像を選択"
+    },
+    {
+      "en": "File selection is not supported in this environment.",
+      "ja": "この環境ではファイル選択にまだ対応していません。"
+    },
+    {
+      "en": "Could not open the macOS file picker.",
+      "ja": "macOSファイル選択を起動できませんでした。"
+    },
+    {
+      "en": "macOS file picker error: {0}",
+      "ja": "macOSファイル選択でエラーが発生しました: {0}"
+    },
+    {
+      "en": "Windows file picker helper not found: {0}",
+      "ja": "Windowsファイル選択ヘルパーが見つかりません: {0}"
+    },
+    {
+      "en": "Could not start the Windows file picker helper.",
+      "ja": "Windowsファイル選択ヘルパーを起動できませんでした。"
+    },
+    {
+      "en": "Windows file picker error: {0}",
+      "ja": "Windowsファイル選択ヘルパーでエラーが発生しました: {0}"
+    },
+    {
+      "en": "{0}: Prefer on-device models. API models are better suited to difficult questions and detailed image understanding.",
+      "ja": "{0}: 端末内モデルを優先します。難しい質問や高精度な画像理解はAPIの方が向いています。"
+    },
+    {
+      "en": "{0}: Uses the backend. If offline, select Automatic or on-device AI.",
+      "ja": "{0}: Backendを使います。未接続の場合は「自動選択」か「この端末で実行」を選んでください。",
+      "aliases": [
+        "{0}: Always use the backend for conversation. If it is offline, choose Automatic or on-device AI.",
+        "{0}: バックエンドの標準会話基盤を固定で使用します。バックエンド未起動時はAuto SelectかLocal Gemmaを使ってください。",
+        "{0}: バックエンドを使います。未接続の場合は「自動選択」か「この端末で実行」を選んでください。"
+      ]
+    },
+    {
+      "en": "{0}: Uses the app’s OpenAI key. Your selected voice stays the same.",
+      "ja": "{0}: アプリのOpenAIキーを使います。選択中の音声は変わりません。",
+      "aliases": [
+        "{0}: Connect directly using the app API key. Your selected voice engine stays the same.",
+        "{0}: BackendなしでAPIキーを使います。声はSettingsのTTS Modeがそのまま使われます。"
+      ]
+    },
+    {
+      "en": "{0}: Experimental. Audio streaming can increase API costs. Turn it off when not in use.",
+      "ja": "{0}: 試験機能。音声の常時送信はAPI料金が増えるため、使わないときはオフにしてください。",
+      "aliases": [
+        "{0}: Experimental feature. Audio streaming can increase API costs; enable it only while in use.",
+        "{0}: 実験機能です。音声ストリーム接続中はAPIコストが増えやすいので、使う時だけオンにしてください。"
+      ]
+    },
+    {
+      "en": "Default microphone",
+      "ja": "標準のマイク"
+    },
+    {
+      "en": "Camera off",
+      "ja": "カメラなし"
+    },
+    {
+      "en": "Drag to rotate. Right-drag or use two fingers to move. Scroll or pinch to zoom. Done saves the view.",
+      "ja": "ドラッグで回転、右ドラッグ・2本指で移動、スクロール・ピンチで拡大縮小。「完了」で保存します。",
+      "aliases": [
+        "Drag to rotate. Right-drag or use two fingers to move. Scroll or pinch to zoom. Done saves this view.",
+        "ドラッグで回転、右ドラッグや2本指で位置を移動します。スクロールやピンチで拡大・縮小。「完了」で表示位置を保存します。"
+      ]
+    },
+    {
+      "en": "{0} installed",
+      "ja": "{0}件導入済み"
+    },
+    {
+      "en": "Show all services",
+      "ja": "すべてのサービスを表示"
+    },
+    {
+      "en": "Show fewer services",
+      "ja": "標準表示に戻す",
+      "aliases": [
+        "Show relevant services"
+      ]
+    },
+    {
+      "en": "No backend connection. On-device AI and direct OpenAI access work without one.",
+      "ja": "Backendは未接続です。端末内AIとOpenAIへの直接接続は、Backendなしで使えます。",
+      "aliases": [
+        "バックエンドは未接続です。端末内AIとOpenAIへの直接接続は、バックエンドなしで使えます。"
+      ]
+    },
+    {
+      "en": "Use on-device AI if a request fails",
+      "ja": "通信に失敗したら端末内AIを使う"
+    },
+    {
+      "en": "If a request fails",
+      "ja": "通信に失敗したとき"
+    },
+    {
+      "en": "e.g. Calm voice",
+      "ja": "例：落ち着いた声"
+    },
+    {
+      "en": "e.g. Summer outfit",
+      "ja": "例：夏の衣装"
+    },
+    {
+      "en": "Soft Gradient · Default",
+      "ja": "Soft Gradient · Default",
+      "aliases": [
+        "Soft Gradient · Sample",
+        "Soft Gradient · サンプル"
+      ]
+    },
+    {
+      "en": "Continue with on-device AI",
+      "ja": "端末内AIで続ける"
+    },
+    {
+      "en": "Soft Charcoal",
+      "ja": "Soft Charcoal"
+    },
+    {
+      "en": "Soft Sand",
+      "ja": "Soft Sand"
+    },
+    {
+      "en": "Soft Midnight",
+      "ja": "Soft Midnight"
+    },
+    {
+      "en": "Soft Mist",
+      "ja": "Soft Mist"
+    },
+    {
+      "en": "Say something",
+      "ja": "伝えたいことを入力"
+    },
+    {
+      "en": "Describe the task",
+      "ja": "作業の内容を入力"
+    },
+    {
+      "en": "Stop the conversation before changing modes.",
+      "ja": "会話を停止してからモードを切り替えてください。"
+    },
+    {
+      "en": "History",
+      "ja": "履歴"
+    },
+    {
+      "en": "Conversations",
+      "ja": "会話履歴"
+    },
+    {
+      "en": "Avatar guide",
+      "ja": "アバターの導入方法"
+    },
+    {
+      "en": "Newer",
+      "ja": "新しい履歴"
+    },
+    {
+      "en": "Older",
+      "ja": "古い履歴"
+    },
+    {
+      "en": "Earlier record (excerpt)",
+      "ja": "以前の記録（抜粋）",
+      "aliases": [
+        "Earlier record",
+        "以前の記録"
+      ]
+    },
+    {
+      "en": "Text history is not deleted automatically",
+      "ja": "会話の本文は自動削除しません"
+    },
+    {
+      "en": "Some records could not be read; original data is retained.",
+      "ja": "読めない記録があります。元データは保持しています。"
+    },
+    {
+      "en": "History is hidden in Secret mode",
+      "ja": "Secret Modeでは会話履歴を表示しません"
+    },
+    {
+      "en": "History could not be opened. Your data is retained.",
+      "ja": "履歴を開けません。元データは保持しています。"
+    },
+    {
+      "en": "History could not be saved. Free some space and try again.",
+      "ja": "履歴を保存できません。端末の空き容量をご確認ください。"
+    },
+    {
+      "en": "Delete this entry",
+      "ja": "この記録を削除"
+    },
+    {
+      "en": "Stored on the backend",
+      "ja": "Backendに保存された記録"
+    },
+    {
+      "en": "Stored on this device",
+      "ja": "この端末に保存された記録"
+    },
+    {
+      "en": "On-device history",
+      "ja": "端末に保存された会話"
+    },
+    {
+      "en": "Earlier backend history",
+      "ja": "以前の会話をBackendから読む"
+    },
+    {
+      "en": "Manage backend memories",
+      "ja": "Backendの記憶を管理"
+    },
+    {
+      "en": "Clear backend conversations & memories",
+      "ja": "Backendの会話・記憶を削除"
+    },
+    {
+      "en": "On-device history is managed from History in the console.",
+      "ja": "端末に保存された会話は、コンソールの「履歴」で管理します。"
+    },
+    {
+      "en": "Conversation text stays on this device until you delete it. Open History to browse older messages and saved answers. Secret mode does not save conversations.",
+      "ja": "会話の本文は、削除するまで端末に残ります。「履歴」で過去の会話や保存した回答を読めます。Secret Modeの会話は保存しません。"
+    },
+    {
+      "en": "Type a message or use Mic. Use the paperclip to choose a photo. On mobile, take a photo with your camera app first. Log is in the console header; avatars are in Settings → Character. Send becomes Stop while a request or voice is active.",
+      "ja": "文章を入力するか、Micで話しかけます。写真はクリップから選択。スマートフォンでは標準カメラで撮影してから添付できます。履歴はLog、アバターは設定のキャラクターから。処理中はStopで停止できます。"
+    },
+    {
+      "en": "Backend history cleared",
+      "ja": "Backendの会話・記憶を削除しました"
+    },
+    {
+      "en": "Deletes this device’s copy; backend records are managed in Advanced.",
+      "ja": "この端末の記録を削除します。Backendの記録は詳細設定で管理します。"
+    },
+    {
+      "en": "Saved answers",
+      "ja": "保存した回答"
+    },
+    {
+      "en": "Nothing saved yet",
+      "ja": "まだ記録がありません"
+    },
+    {
+      "en": "Attach image",
+      "ja": "画像を添付"
+    },
+    {
+      "en": "Rename character",
+      "ja": "キャラクターの名前"
+    },
+    {
+      "en": "A file picker is already open.",
+      "ja": "ファイル選択を閉じてから、もう一度お試しください。"
+    },
+    {
+      "en": "Could not open the file picker.",
+      "ja": "ファイル選択を開けませんでした。もう一度お試しください。"
+    },
+    {
+      "en": "Could not read the selected file. Please select it again.",
+      "ja": "ファイルを読み取れませんでした。もう一度選んでください。"
+    },
+    {
+      "en": "The selected file is no longer available. Please select it again.",
+      "ja": "ファイルが見つかりません。もう一度選んでください。"
+    },
+    {
+      "en": "Choose a PNG, JPEG, WebP or HEIF image.",
+      "ja": "PNG・JPEG・WebP・HEIFの画像を選んでください。"
+    },
+    {
+      "en": "Choose a VRM or a ZIP exported by Yui Avatar Bridge.",
+      "ja": "VRM、またはYui Avatar Bridgeで書き出したZIPを選んでください。"
+    },
+    {
+      "en": "The selected file is empty.",
+      "ja": "選んだファイルにデータがありません。"
+    },
+    {
+      "en": "Choose an image smaller than 64 MB.",
+      "ja": "64 MB以下の画像を選んでください。"
+    },
+    {
+      "en": "Choose an avatar file smaller than 512 MB.",
+      "ja": "512 MB以下のアバターファイルを選んでください。"
+    },
+    {
+      "en": "OpenAI API key is required in Settings > AI connection.",
+      "ja": "設定 → AIでOpenAI APIキーを入力してください。"
+    },
+    {
+      "en": "Could not decode this image. Try PNG or JPEG.",
+      "ja": "画像を読み込めませんでした。PNGまたはJPEGでお試しください。"
+    },
+    {
+      "en": "Choose a PNG or JPEG image on Windows.",
+      "ja": "WindowsではPNGまたはJPEG画像を選んでください。"
+    },
+    {
+      "en": "A downloaded avatar ZIP must be extracted first. Choose the .vrm inside. A .unitypackage or FBX requires conversion in Unity.\n\n",
+      "ja": "購入したZIPは先に解凍し、中の .vrm を選んでください。.unitypackage やFBXはUnityで変換が必要です。\n\n"
+    },
+    {
+      "en": "Read aloud with current voice",
+      "ja": "現在の声で読み上げ"
+    },
+    {
+      "en": "Stop the current response before reading history aloud.",
+      "ja": "返答を停止してから読み上げてください。"
+    },
+    {
+      "en": "Speech playback failed. Check the selected voice in Settings.",
+      "ja": "読み上げできませんでした。設定で選択中の音声を確認してください。"
+    },
+    {
+      "en": "Could not load avatar",
+      "ja": "アバターを読み込めませんでした"
+    },
+    {
+      "en": "Change appearance; keep name, personality, voice and memory.",
+      "ja": "外見を変更します。名前・性格・声・記憶は引き継ぎます。"
+    },
+    {
+      "en": "This file is not a valid VRM. Extract the downloaded ZIP and choose the .vrm file inside.",
+      "ja": "有効なVRMファイルではありません。ダウンロードしたZIPを展開し、中にある.vrmファイルを選んでください。"
+    },
+    {
+      "en": "Allow data sharing?",
+      "ja": "外部サービスへの送信"
+    },
+    {
+      "en": "Not now",
+      "ja": "送信しない"
+    },
+    {
+      "en": "Allow",
+      "ja": "同意して続ける"
+    },
+    {
+      "en": "Privacy",
+      "ja": "プライバシー"
+    },
+    {
+      "en": "OpenAI privacy policy",
+      "ja": "OpenAIのプライバシーポリシー"
+    },
+    {
+      "en": "Withdraw sharing permission",
+      "ja": "外部送信の同意を取り消す"
+    },
+    {
+      "en": "API key not saved",
+      "ja": "APIキーを保存できませんでした"
+    },
+    {
+      "en": "Could not access the system key store.",
+      "ja": "システムのキー保管領域にアクセスできませんでした。"
+    },
+    {
+      "en": "API key could not be saved securely. It is available for this session only.",
+      "ja": "APIキーを安全に保存できませんでした。今回の起動中は使えますが、再起動後は設定し直してください。"
+    },
+    {
+      "en": "Messages and recent conversation context, character instructions, recorded audio, and images you choose are sent to OpenAI to generate replies, transcribe speech, and analyze images. Web search may send a search query to search providers. Your API key is sent only to OpenAI.",
+      "ja": "応答の生成・文字起こし・画像解析のために、メッセージと最近の会話、キャラクターの設定、録音した音声、選択した画像をOpenAIへ送信します。Web検索では検索語が検索サービスへ送られることがあります。APIキーはOpenAIだけに送信します。"
+    },
+    {
+      "en": "Messages and recent conversation context, character instructions, recorded audio, selected images, and text to read aloud are sent to this Backend. Its administrator chooses AI and voice providers, which may include OpenAI or other external services. Use a Backend you trust.",
+      "ja": "メッセージと最近の会話、キャラクターの設定、録音した音声、選択した画像、読み上げる文章を、このBackendへ送信します。Backendの設定により、OpenAIなどの外部AI・音声サービスへ転送される場合があります。信頼できるBackendを指定してください。"
+    },
+    {
+      "en": "Secret mode does not prevent this transfer or control the provider's retention. You can withdraw permission in Help → Quick guide → Privacy.",
+      "ja": "Secret Modeでも送信先の保存方針は変わりません。同意はヘルプ → 使い方 → プライバシーから取り消せます。"
+    },
+    {
+      "en": "Conversation text, saved answers, and imported avatars are stored on this device until you delete them. Secret mode skips conversation history, but still sends requests through your selected AI and voice connections. OpenAI mode sends data directly to OpenAI; Backend mode uses the server and providers configured by its administrator. On-device AI does not send your messages to an AI server. Model downloads contact the hosting service. The iOS/macOS app stores your API key in Keychain. Windows/Android currently use app settings. Removing an API key in Settings deletes the saved key.",
+      "ja": "会話の本文・保存した回答・読み込んだアバターは、削除するまでこの端末に保存します。Secret Modeでは会話履歴を残しませんが、選択したAI・音声サービスへの送信は行います。OpenAIモードはOpenAIへ直接、Backendモードは指定サーバーとその管理者が設定したサービスへ送信します。端末内AIは会話をAIサーバーへ送りません。モデルの取得時は配布サーバーへ接続します。APIキーはiOS/macOSではKeychainに、Windows/Androidでは現在アプリの設定領域に保存します。設定でAPIキーを空にして保存すると、保存済みのキーを削除します。"
+    },
+    {
+      "en": "Withdrawing permission affects future requests; it does not delete data already received by a server. For server retention or deletion, contact its administrator or provider.",
+      "ja": "同意を取り消すと、次回の送信前に再確認します。送信済みのデータは削除されません。サーバー側の保存や削除については、管理者またはサービス提供者に確認してください。"
+    },
+    {
+      "en": "The saved API key is locked. Unlock it to use OpenAI. Other features remain available.",
+      "ja": "保存済みのAPIキーを読み取れません。OpenAIを使うにはロックを解除してください。他の機能は利用できます。"
+    },
+    {
+      "en": "Unlock saved API key",
+      "ja": "保存済みAPIキーのロックを解除"
+    },
+    {
+      "en": "API key required",
+      "ja": "APIキーが必要です"
+    },
+    {
+      "en": "Unlock API key in Settings",
+      "ja": "設定でAPIキーを確認してください"
+    },
+    {
+      "en": "Microphone permission required",
+      "ja": "端末の設定でマイクを許可してください"
+    },
+    {
+      "en": "Speech recognition permission required",
+      "ja": "端末の設定で音声認識を許可してください"
+    },
+    {
+      "en": "Couldn't transcribe your voice. Check your microphone and try again.",
+      "ja": "音声を聞き取れませんでした。マイクを確認して、もう一度お試しください。"
+    },
+    {
+      "en": "Finish",
+      "ja": "終了"
+    },
+    {
+      "en": "This voice requires Backend. Choose the available voice in Settings → Voice.",
+      "ja": "この声にはBackendが必要です。設定 → 音声で利用可能な声を選んでください。"
+    },
+    {
+      "en": "Log",
+      "ja": "Log"
+    },
+    {
+      "en": "Voice credits",
+      "ja": "音声クレジット"
+    },
+    {
+      "en": "VOICEVOX:冥鳴ひまり / 四国めたん / ずんだもん / 九州そら / 小夜/SAYO\nVoice use and sharing must follow each voice library’s terms. See https://github.com/VOICEVOX/voicevox_vvm for the terms.",
+      "ja": "VOICEVOX:冥鳴ひまり / 四国めたん / ずんだもん / 九州そら / 小夜/SAYO\n音声の利用・共有には各音声ライブラリの規約が適用されます。規約一覧：https://github.com/VOICEVOX/voicevox_vvm"
+    }
+  ]
+}

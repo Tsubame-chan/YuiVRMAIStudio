@@ -1,0 +1,78 @@
+#import <Cocoa/Cocoa.h>
+#import <ImageIO/ImageIO.h>
+#include <string>
+
+// Owned by Unity's application. A sheet cannot disappear behind an unrelated
+// osascript process, and no Automation permission or shell quoting is needed.
+static NSOpenPanel *yuiPanel;
+static int yuiPickerStatus;
+static std::string yuiPickerResult;
+
+static NSString *YuiImageCopy(NSURL *url) {
+    NSNumber *bytes;
+    [url getResourceValue:&bytes forKey:NSURLFileSizeKey error:nil];
+    if(bytes.unsignedLongLongValue > 64ULL * 1024 * 1024) return nil;
+    CGImageSourceRef source = CGImageSourceCreateWithURL((__bridge CFURLRef)url, nil);
+    if (!source) return nil;
+    NSDictionary *options = @{(__bridge NSString *)kCGImageSourceCreateThumbnailFromImageAlways:@YES,
+        (__bridge NSString *)kCGImageSourceCreateThumbnailWithTransform:@YES,
+        (__bridge NSString *)kCGImageSourceThumbnailMaxPixelSize:@1600};
+    CGImageRef thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, (__bridge CFDictionaryRef)options);
+    CFRelease(source);
+    if (!thumbnail) return nil;
+    NSString *folder = [NSTemporaryDirectory() stringByAppendingPathComponent:@"YuiPickedFiles/Image"];
+    [NSFileManager.defaultManager createDirectoryAtPath:folder withIntermediateDirectories:YES attributes:nil error:nil];
+    NSString *path = [folder stringByAppendingPathComponent:[NSUUID.UUID.UUIDString stringByAppendingString:@".jpg"]];
+    CGImageDestinationRef destination = CGImageDestinationCreateWithURL((__bridge CFURLRef)[NSURL fileURLWithPath:path], CFSTR("public.jpeg"), 1, nil);
+    if (!destination) { CGImageRelease(thumbnail); return nil; }
+    CGImageDestinationAddImage(destination, thumbnail, (__bridge CFDictionaryRef)@{(__bridge NSString *)kCGImageDestinationLossyCompressionQuality:@0.9});
+    BOOL ok = CGImageDestinationFinalize(destination);
+    CFRelease(destination); CGImageRelease(thumbnail);
+    if (!ok) { [NSFileManager.defaultManager removeItemAtPath:path error:nil]; return nil; }
+    return path;
+}
+
+extern "C" int YuiMacFilePicker_Open(const char *mode, const char *title) {
+    if (![NSThread isMainThread]) return -1;
+    if (yuiPanel) return 0;
+    yuiPickerStatus = 0;
+    yuiPickerResult.clear();
+    yuiPanel = [NSOpenPanel openPanel];
+    yuiPanel.canChooseFiles = YES;
+    yuiPanel.canChooseDirectories = NO;
+    yuiPanel.allowsMultipleSelection = NO;
+    yuiPanel.message = [NSString stringWithUTF8String:title ?: ""];
+    NSString *kind = [NSString stringWithUTF8String:mode ?: ""];
+    yuiPanel.allowedFileTypes = [kind isEqualToString:@"image"]
+        ? @[@"png", @"jpg", @"jpeg", @"webp", @"heic", @"heif"]
+        : [kind isEqualToString:@"vrm"] ? @[@"vrm"] : @[@"vrm", @"zip"];
+    yuiPanel.allowsOtherFileTypes = NO;
+    void (^finished)(NSModalResponse) = ^(NSModalResponse response) {
+        if (response == NSModalResponseOK && yuiPanel.URL.isFileURL) {
+            if ([kind isEqualToString:@"image"]) {
+                NSURL *url = yuiPanel.URL;
+                // Keep the picker busy until the image is decoded off the UI thread.
+                dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+                    NSString *path = YuiImageCopy(url);
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        yuiPickerResult = path.UTF8String ?: "";
+                        yuiPickerStatus = path ? 1 : 3;
+                        yuiPanel = nil;
+                    });
+                });
+                return;
+            }
+            yuiPickerResult = yuiPanel.URL.path.UTF8String ?: "";
+            yuiPickerStatus = 1;
+        } else yuiPickerStatus = 2;
+        yuiPanel = nil;
+    };
+    [NSApp activateIgnoringOtherApps:YES];
+    NSWindow *window = NSApp.mainWindow ?: NSApp.keyWindow;
+    if (window) [yuiPanel beginSheetModalForWindow:window completionHandler:finished];
+    else [yuiPanel beginWithCompletionHandler:finished];
+    return 1;
+}
+
+extern "C" int YuiMacFilePicker_Status() { return yuiPickerStatus; }
+extern "C" const char *YuiMacFilePicker_Result() { return yuiPickerResult.c_str(); }

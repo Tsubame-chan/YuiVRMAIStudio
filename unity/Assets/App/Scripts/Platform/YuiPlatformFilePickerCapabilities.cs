@@ -64,9 +64,9 @@ namespace YuiPhysicalAI.Platform
                 case YuiPlatformFamily.Windows:
                     return new YuiFilePickerCapabilities(true, true, "YuiFilePickerHelper.exe");
                 case YuiPlatformFamily.MacOS:
-                    return new YuiFilePickerCapabilities(true, true, "native file dialog through standalone helper path");
+                    return new YuiFilePickerCapabilities(true, true, "Cocoa NSOpenPanel sheet in the Unity application");
                 case YuiPlatformFamily.IOS:
-                    return new YuiFilePickerCapabilities(true, true, "UIDocumentPicker copied into app storage");
+                    return new YuiFilePickerCapabilities(true, true, "PHPicker for photos; UIDocumentPicker for VRM/Bridge ZIP; temporary app copy");
                 case YuiPlatformFamily.Android:
                     return new YuiFilePickerCapabilities(true, true, "Android Storage Access Framework copied into app storage");
                 case YuiPlatformFamily.WebGL:

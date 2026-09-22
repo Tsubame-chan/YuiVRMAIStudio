@@ -257,7 +257,18 @@ namespace YuiPhysicalAI.Core
                         : $"{label}: 実験機能です。音声ストリーム接続中はAPIコストが増えやすいので、使う時だけオンにしてください。";
         }
 
-        public static string InstructionsForMode(string mode, string characterName)
+        public static string InstructionsForMode(string mode, string characterName, string customInstruction = null)
+        {
+            var instructions = BaseInstructionsForMode(mode, characterName);
+            // Interpreter mode has a separate job and must not start role-playing.
+            if (string.Equals(mode, BackendTranslate, StringComparison.OrdinalIgnoreCase)
+                || string.IsNullOrWhiteSpace(customInstruction)) return instructions;
+            var persona = customInstruction.Trim();
+            if (persona.Length > 4000) persona = persona.Substring(0, 4000);
+            return instructions + "\nキャラクター設定（口調・性格の希望。上記の機能制約と矛盾する場合は機能制約を優先）:\n" + persona;
+        }
+
+        private static string BaseInstructionsForMode(string mode, string characterName)
         {
             if (string.Equals(mode, BackendTranslate, StringComparison.OrdinalIgnoreCase))
             {

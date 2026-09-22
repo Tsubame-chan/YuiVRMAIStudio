@@ -32,3 +32,31 @@ def test_identity_isolation_and_duplicate_retry(tmp_path):
     assert repo.get_cached_response('request-a', 'bob', 'avatar-a', 'session-a', 'task-a') is None
     assert repo.get_cached_response('request-a', 'alice', 'avatar-a', 'session-b', 'task-a') is None
     assert repo.get_cached_response('request-a', 'alice', 'avatar-a', 'session-a', 'task-a').text == 'answer'
+
+
+def test_recent_history_restoration_is_scoped(tmp_path):
+    url = 'sqlite:///' + str(tmp_path / 'recent.db')
+    initialize_database(url)
+    repo = ChatRepository(url)
+    for i, (user, character, session) in enumerate([('u', 'a', 's'), ('u', 'b', 's'), ('u', 'a', 'other'), ('other', 'a', 's')]):
+        repo.save_chat_turn(request_id=str(i), user_id=user, character_id=character, session_id=session,
+                            user_message=f'question-{i}', response=ChatResponse(text=f'answer-{i}'), provider='test', model='test')
+    rows = repo.list_recent_conversations('u', character_id='a', session_id='s')
+    assert [r.message for r in rows] == ['question-0', 'answer-0']
+    assert repo.list_recent_conversations('u') == []
+
+
+def test_history_pages_reach_oldest_without_crossing_identity(tmp_path):
+    url = 'sqlite:///' + str(tmp_path / 'paged.db')
+    initialize_database(url)
+    repo = ChatRepository(url)
+    for i in range(80):
+        repo.save_chat_turn(request_id=str(i), user_id='u', character_id='a', session_id='s',
+                            user_message=f'question-{i}', response=ChatResponse(text=f'answer-{i}'), provider='test', model='test')
+    repo.save_chat_turn(request_id='other', user_id='u', character_id='b', session_id='s',
+                        user_message='other', response=ChatResponse(text='other'), provider='test', model='test')
+    pages = [repo.list_recent_conversations('u', limit=6, offset=i, character_id='a', session_id='s') for i in range(0, 162, 6)]
+    messages = [r.message for page in pages for r in reversed(page)]
+    assert len(messages) == len(set(messages)) == 160
+    assert messages[0] == 'answer-79' and messages[-1] == 'question-0'
+    assert repo.list_recent_conversations('u', limit=6, offset=162, character_id='a', session_id='s') == []

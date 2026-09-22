@@ -88,6 +88,7 @@ namespace YuiPhysicalAI.UI
 
         private void Awake()
         {
+            YuiUiLocalization.Changed += RefreshUiLanguage;
             if (chatPanel == null)
             {
                 chatPanel = YuiSceneObjectFinder.FindFirst<YuiChatPanel>();
@@ -115,6 +116,7 @@ namespace YuiPhysicalAI.UI
 
         private void OnDestroy()
         {
+            YuiUiLocalization.Changed -= RefreshUiLanguage;
             StopMicrophoneMonitor();
             Unbind();
         }
@@ -122,6 +124,17 @@ namespace YuiPhysicalAI.UI
         private void Update()
         {
             UpdateMicrophoneMonitor();
+#if UNITY_STANDALONE || UNITY_EDITOR
+            if (chatPanel != null && chatPanel.HasSavedDataPanel) return;
+            if (settingsRoot != null && settingsRoot.activeSelf && Input.GetKeyDown(KeyCode.Tab))
+                YuiControlAffordance.MoveSettingsFocus(settingsRoot.transform,Input.GetKey(KeyCode.LeftShift)||Input.GetKey(KeyCode.RightShift));
+            if ((Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand)
+                || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyDown(KeyCode.Comma))
+            {
+                if (settingsRoot != null && settingsRoot.activeSelf) Hide(); else Show();
+            }
+            if (settingsRoot != null && settingsRoot.activeSelf && Input.GetKeyDown(KeyCode.Escape)) Hide();
+#endif
         }
 
         public void Configure(
@@ -232,8 +245,11 @@ namespace YuiPhysicalAI.UI
             Hide();
         }
 
+        private int settingsOpenGeneration;
+
         public async void Show()
         {
+            var generation = ++settingsOpenGeneration;
             if (settingsRoot != null)
             {
                 settingsRoot.SetActive(true);
@@ -242,17 +258,14 @@ namespace YuiPhysicalAI.UI
 
             EnsureOverlayCanvas(settingsRoot, 5000);
             ResolveRuntimeMeterReferences();
-            if (chatPanel != null)
-            {
-                using var capabilityRefresh = new CancellationTokenSource(1500);
-                await chatPanel.RefreshCapabilitySnapshotAsync(capabilityRefresh.Token);
-            }
 
             RepairMissingRuntimeUi();
             ApplyResponsiveOverlayLayout();
             RefreshFields();
+            LocalizeSettingsOptions();
             RefreshLocalAiAssetStatus();
             HideClearConfirm();
+            YuiUiLocalization.BindKnownLabels(settingsRoot.transform);
             if (settingsRoot != null)
             {
                 settingsRoot.SetActive(true);
@@ -260,12 +273,26 @@ namespace YuiPhysicalAI.UI
             }
 
             Canvas.ForceUpdateCanvases();
+            var firstTab = settingsRoot != null ? settingsRoot.transform.Find("Panel/SettingsTab" + settingsPage) : null;
+            if (firstTab != null && UnityEngine.EventSystems.EventSystem.current != null)
+                UnityEngine.EventSystems.EventSystem.current.SetSelectedGameObject(firstTab.gameObject);
+            if (chatPanel != null)
+            {
+                using var capabilityRefresh = new CancellationTokenSource(5000);
+                await chatPanel.RefreshCapabilitySnapshotAsync(capabilityRefresh.Token);
+                if (generation != settingsOpenGeneration || settingsRoot == null || !settingsRoot.activeSelf) return;
+                RefreshTtsModeOptions(TtsModeValue());
+                EnsureVoiceOptions();
+                ApplyResponsiveOverlayLayout();
+            }
         }
 
         public void Hide()
         {
+            settingsOpenGeneration++;
             StopMicrophoneMonitor();
             HideClearConfirm();
+            YuiUiLocalization.BindKnownLabels(settingsRoot.transform);
             SetCameraAdjustVisible(false);
             if (settingsRoot != null)
             {
@@ -274,6 +301,7 @@ namespace YuiPhysicalAI.UI
 
             isPreviewingVoice = false;
             SetVoicePreviewInteractable(true);
+            chatPanel?.FocusDesktopComposer();
         }
 
     }

@@ -19,6 +19,7 @@ class LMStudioChatProvider(ChatProvider):
         transport: httpx.AsyncBaseTransport | None = None,
     ):
         self.settings = settings
+        self.name = "litert_lm" if settings.chat_provider == "litert_lm" else "lmstudio"
         base_url = settings.litert_lm_base_url if settings.chat_provider == "litert_lm" else settings.lmstudio_base_url
         self._model = settings.litert_lm_chat_model if settings.chat_provider == "litert_lm" else settings.lmstudio_chat_model
         self._client = httpx.AsyncClient(

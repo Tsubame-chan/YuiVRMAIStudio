@@ -49,7 +49,7 @@ namespace YuiPhysicalAI.UI
             Sprite bubbleSprite,
             string originalText = null,
             IReadOnlyList<YuiChatLink> links = null,
-            string resultMetadata = null)
+            string resultMetadata = null, bool localizeBody = false)
         {
             EnsureStructure(font, bubbleSprite);
             this.resultMetadata = resultMetadata;
@@ -65,7 +65,7 @@ namespace YuiPhysicalAI.UI
 
             if (bodyText != null)
             {
-                bodyText.text = text;
+                if (speaker == "System" || localizeBody) YuiUiLocalization.Set(bodyText,text); else bodyText.text = text;
                 bodyText.color = bodyColor;
             }
 
@@ -126,7 +126,7 @@ namespace YuiPhysicalAI.UI
             {
                 bubbleLayout = bubbleRect.gameObject.AddComponent<VerticalLayoutGroup>();
             }
-            bubbleLayout.padding = new RectOffset(16, 16, 12, 12);
+            bubbleLayout.padding = new RectOffset(22, 22, 18, 18);
             bubbleLayout.spacing = 7f;
             bubbleLayout.childAlignment = TextAnchor.UpperLeft;
             bubbleLayout.childControlWidth = true;
@@ -238,8 +238,8 @@ namespace YuiPhysicalAI.UI
             {
                 actionsElement = actionsRect.gameObject.AddComponent<LayoutElement>();
             }
-            actionsElement.minHeight = 26f;
-            actionsElement.preferredHeight = 26f;
+            actionsElement.minHeight = 44f;
+            actionsElement.preferredHeight = 44f;
 
             copyButton = copyButton != null ? copyButton : FindChildButton(actionsRect, "CopyButton");
             if (copyButton == null)
@@ -249,12 +249,12 @@ namespace YuiPhysicalAI.UI
                     actionsRect,
                     "Copy",
                     font,
-                    56f,
+                    100f,
                     new Color(1f, 1f, 1f, 0.08f),
                     new Color(0.86f, 0.9f, 1f, 0.92f));
             }
             if(saveButton==null)saveButton=FindChildButton(actionsRect,"SaveButton");
-            if(saveButton==null)saveButton=CreateActionButton("SaveButton",actionsRect,"Save",font,64f,new Color(1f,1f,1f,.08f),Color.white);
+            if(saveButton==null)saveButton=CreateActionButton("SaveButton",actionsRect,"Save",font,100f,new Color(1f,1f,1f,.08f),Color.white);
             saveButton.onClick.RemoveAllListeners();saveButton.onClick.AddListener(SaveCurrentText);
             copyButtonText = copyButtonText != null ? copyButtonText : copyButton.GetComponentInChildren<Text>(true);
 
@@ -266,7 +266,7 @@ namespace YuiPhysicalAI.UI
                     actionsRect,
                     "Sources",
                     font,
-                    92f,
+                    156f,
                     new Color(0.38f, 0.58f, 0.95f, 0.22f),
                     new Color(0.9f, 0.95f, 1f, 0.96f));
             }
@@ -299,7 +299,7 @@ namespace YuiPhysicalAI.UI
 
         private void BindActionButtons(Font font)
         {
-            if(saveButton!=null)saveButton.GetComponentInChildren<Text>().text="Save";
+            if(saveButton!=null)YuiUiLocalization.Set(saveButton.GetComponentInChildren<Text>(),"Save");
             var hasText = !string.IsNullOrWhiteSpace(copyText);
             var hasLinks = currentLinks != null && currentLinks.Count > 0;
 
@@ -317,7 +317,7 @@ namespace YuiPhysicalAI.UI
 
             if (copyButtonText != null)
             {
-                copyButtonText.text = "Copy";
+                YuiUiLocalization.Set(copyButtonText,"Copy");
                 ApplyFont(copyButtonText, font);
             }
 
@@ -330,7 +330,7 @@ namespace YuiPhysicalAI.UI
 
             if (linksButtonText != null)
             {
-                linksButtonText.text = hasLinks ? $"Sources {currentLinks.Count}" : "Sources";
+                YuiUiLocalization.Set(linksButtonText,hasLinks ? $"Sources {currentLinks.Count}" : "Sources");
                 ApplyFont(linksButtonText, font);
             }
 
@@ -342,24 +342,28 @@ namespace YuiPhysicalAI.UI
             GUIUtility.systemCopyBuffer = copyText ?? string.Empty;
             if (copyButtonText != null)
             {
-                copyButtonText.text = "Done";
+                YuiUiLocalization.Set(copyButtonText,"Done");
             }
         }
 
-        private void SaveCurrentText()
+        private async void SaveCurrentText()
         {
-            try {
-                var directory=System.IO.Path.Combine(Application.persistentDataPath,"SavedResults");
-                System.IO.Directory.CreateDirectory(directory);
-                var name="Yui_"+System.DateTime.Now.ToString("yyyyMMdd_HHmmss_fff")+"_"+System.Guid.NewGuid().ToString("N").Substring(0,6)+".md";
-                System.IO.File.WriteAllText(System.IO.Path.Combine(directory,name),copyText??string.Empty);
-                if (!string.IsNullOrEmpty(resultMetadata))
-                    System.IO.File.WriteAllText(System.IO.Path.Combine(directory,name+".json"),resultMetadata);
-                saveButton.GetComponentInChildren<Text>().text="Saved";
-#if UNITY_STANDALONE || UNITY_EDITOR
-                Application.OpenURL(new System.Uri(directory+System.IO.Path.DirectorySeparatorChar).AbsoluteUri);
-#endif
-            } catch(System.Exception ex) {Debug.LogWarning("Could not save result: "+ex.Message);saveButton.GetComponentInChildren<Text>().text="Retry";}
+            if (saveButton == null || !saveButton.interactable) return;
+            var store = new YuiSavedResultStore(System.IO.Path.Combine(Application.persistentDataPath,"SavedResults"));
+            var text = copyText ?? string.Empty;
+            var metadata = resultMetadata;
+            saveButton.interactable = false;
+            try
+            {
+                await System.Threading.Tasks.Task.Run(() => store.Save(text, metadata));
+                if (this != null && saveButton != null) YuiUiLocalization.Set(saveButton.GetComponentInChildren<Text>(),"Saved");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning("Could not save answer: " + ex.Message);
+                if (this != null && saveButton != null)
+                { saveButton.interactable = true; YuiUiLocalization.Set(saveButton.GetComponentInChildren<Text>(),"Retry"); }
+            }
         }
 
         private void ToggleLinks()
@@ -426,14 +430,14 @@ namespace YuiPhysicalAI.UI
             var element = root.GetComponent<LayoutElement>();
             element.minWidth = preferredWidth;
             element.preferredWidth = preferredWidth;
-            element.minHeight = 26f;
-            element.preferredHeight = 26f;
+            element.minHeight = 44f;
+            element.preferredHeight = 44f;
 
             var button = root.GetComponent<Button>();
             button.targetGraphic = image;
 
             var text = CreateText("Label", root.transform, YuiChatLogStyle.ActionFontSize, FontStyle.Bold, font);
-            text.text = label;
+            if (name != "OpenLinkButton") YuiUiLocalization.Set(text,label); else text.text = label;
             text.alignment = TextAnchor.MiddleCenter;
             text.color = textColor;
             var textRect = text.transform as RectTransform;
@@ -463,8 +467,8 @@ namespace YuiPhysicalAI.UI
             layout.childForceExpandHeight = false;
 
             var element = row.GetComponent<LayoutElement>();
-            element.minHeight = 34f;
-            element.preferredHeight = 34f;
+            element.minHeight = 82f;
+            element.preferredHeight = 82f;
 
             var rowImage = row.AddComponent<Image>();
             rowImage.color = new Color(1f, 1f, 1f, 0.075f);
@@ -482,6 +486,7 @@ namespace YuiPhysicalAI.UI
             var openElement = openButton.GetComponent<LayoutElement>();
             openElement.preferredWidth = 210f;
             openElement.flexibleWidth = 1f;
+            openElement.minHeight = 70f; openElement.preferredHeight = 70f;
             var openLabel = openButton.GetComponentInChildren<Text>(true);
             if (openLabel != null)
             {
@@ -499,7 +504,7 @@ namespace YuiPhysicalAI.UI
                 new Color(1f, 1f, 1f, 0.08f),
                 new Color(0.86f, 0.9f, 1f, 0.92f));
             var copyElement = copyButton.GetComponent<LayoutElement>();
-            copyElement.preferredWidth = 54f;
+            copyElement.preferredWidth = 90f;
             copyButton.onClick.AddListener(() => GUIUtility.systemCopyBuffer = link.Url);
 
             return row;

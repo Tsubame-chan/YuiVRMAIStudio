@@ -20,7 +20,25 @@ namespace YuiPhysicalAI.LocalAI
 
         [DllImport("__Internal")]
         private static extern void YuiPlatformSpeechBridge_Free(IntPtr pointer);
+        [DllImport("__Internal")] private static extern int YuiPlatformSpeechBridge_AuthorizationStatus();
+        [DllImport("__Internal")] private static extern void YuiPlatformSpeechBridge_RequestAuthorization();
 #endif
+
+        public static async Task<bool> EnsureRecognitionPermissionAsync(CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+#if UNITY_IOS && !UNITY_EDITOR
+            if (YuiPlatformSpeechBridge_AuthorizationStatus() == 0)
+                YuiPlatformSpeechBridge_RequestAuthorization();
+            while (YuiPlatformSpeechBridge_AuthorizationStatus() == 0)
+                await Task.Delay(100, token);
+            token.ThrowIfCancellationRequested();
+            return YuiPlatformSpeechBridge_AuthorizationStatus() == 3;
+#else
+            await Task.CompletedTask;
+            return true;
+#endif
+        }
 
         public static bool IsSupported
         {
@@ -78,63 +96,33 @@ namespace YuiPhysicalAI.LocalAI
 #endif
         }
 
-        public static YuiPlatformSpeechTranscriptionResult Transcribe(YuiLocalAiAudioRequest request)
-        {
-            if (!CanTranscribe)
-            {
-                return YuiPlatformSpeechTranscriptionResult.Error("platform_unsupported", "Platform speech recognition is not available.");
-            }
-
-            if (request?.AudioBytes == null || request.AudioBytes.Length <= 44)
-            {
-                return YuiPlatformSpeechTranscriptionResult.Error("invalid_audio", "Recorded audio is empty.");
-            }
-
-            var tempPath = Path.Combine(Application.temporaryCachePath, $"yui-stt-{Guid.NewGuid():N}.wav");
-            try
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(tempPath));
-                File.WriteAllBytes(tempPath, request.AudioBytes);
-                var payload = JsonConvert.SerializeObject(new
-                {
-                    audio_path = tempPath,
-                    language_code = "ja-JP"
-                });
-
-#if UNITY_IOS && !UNITY_EDITOR
-                return ParseTranscription(InvokeNativeJson(() => YuiPlatformSpeechBridge_Transcribe(payload)));
-#else
-                return YuiPlatformSpeechTranscriptionResult.Error("platform_unsupported", "Platform speech recognition is not available.");
-#endif
-            }
-            catch (Exception ex)
-            {
-                return YuiPlatformSpeechTranscriptionResult.Error("bridge_error", ex.Message);
-            }
-            finally
-            {
-                try
-                {
-                    if (File.Exists(tempPath))
-                    {
-                        File.Delete(tempPath);
-                    }
-                }
-                catch (Exception)
-                {
-                    // Best-effort temp cleanup.
-                }
-            }
-        }
-
         public static async Task<YuiPlatformSpeechTranscriptionResult> TranscribeAsync(
-            YuiLocalAiAudioRequest request,
-            CancellationToken cancellationToken)
+            YuiLocalAiAudioRequest request, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!CanTranscribe)
+                return YuiPlatformSpeechTranscriptionResult.Error("platform_unsupported", "Platform speech recognition is not available.");
 #if UNITY_ANDROID && !UNITY_EDITOR
             return await YuiAndroidSpeechRecognizer.TranscribeLiveAsync("ja-JP", cancellationToken);
 #else
-            return await Task.Run(() => Transcribe(request), cancellationToken);
+            if (request?.AudioBytes == null || request.AudioBytes.Length <= 44)
+                return YuiPlatformSpeechTranscriptionResult.Error("invalid_audio", "Recorded audio is empty.");
+            try
+            {
+                if (!await EnsureRecognitionPermissionAsync(cancellationToken))
+                    return YuiPlatformSpeechTranscriptionResult.Error("speech_not_authorized", "Speech recognition permission required");
+                return await YuiNativeMediaFile.RunAsync(request.AudioBytes, ".wav", path =>
+                {
+                    var payload = JsonConvert.SerializeObject(new { audio_path = path, language_code = "ja-JP" });
+#if UNITY_IOS && !UNITY_EDITOR
+                    return ParseTranscription(InvokeNativeJson(() => YuiPlatformSpeechBridge_Transcribe(payload)));
+#else
+                    return YuiPlatformSpeechTranscriptionResult.Error("platform_unsupported", "Platform speech recognition is not available.");
+#endif
+                }, cancellationToken);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex) { return YuiPlatformSpeechTranscriptionResult.Error("bridge_error", ex.Message); }
 #endif
         }
 

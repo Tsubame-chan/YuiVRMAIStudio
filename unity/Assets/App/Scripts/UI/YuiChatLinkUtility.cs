@@ -23,9 +23,11 @@ namespace YuiPhysicalAI.UI
                 if (string.IsNullOrWhiteSpace(label) || IsDomainLike(label))
                 {
                     label = ExtractDomain(Url);
+                    if (Uri.TryCreate(Url, UriKind.Absolute, out var uri) && uri.AbsolutePath != "/")
+                        label += " · " + Uri.UnescapeDataString(uri.AbsolutePath.TrimEnd('/').Substring(uri.AbsolutePath.TrimEnd('/').LastIndexOf('/') + 1));
                 }
 
-                return label.Length > 32 ? label.Substring(0, 29) + "..." : label;
+                return label.Length > 76 ? label.Substring(0, 73) + "..." : label;
             }
         }
 
@@ -78,82 +80,68 @@ namespace YuiPhysicalAI.UI
 
     public static class YuiChatLinkUtility
     {
-        private static readonly Regex ParenthesizedMarkdownCitationRegex = new Regex(
-            @"\(\s*\[(?<label>[^\]]+)\]\((?<url>(?:https?://|www\.)[^\s)]+)\)\s*\)",
-            RegexOptions.IgnoreCase);
-
+        // Code samples are content, not navigation. Keep their bytes and indentation intact.
+        private static readonly Regex CodeRegex = new Regex(@"```[\s\S]*?(?:```|$)|~~~[\s\S]*?(?:~~~|$)|`[^`\r\n]+`");
         private static readonly Regex MarkdownLinkRegex = new Regex(
-            @"\[(?<label>[^\]]+)\]\((?<url>(?:https?://|www\.)[^\s)]+)\)",
-            RegexOptions.IgnoreCase);
-
+            @"\[(?<label>[^\]\r\n]+)\]\((?<url>(?:https?://|www\.)(?:[^\s()]+|\([^\s()]*\))+)\)", RegexOptions.IgnoreCase);
         private static readonly Regex RawUrlRegex = new Regex(
-            @"(?:https?://|www\.)[^\s　)）】」』]+",
-            RegexOptions.IgnoreCase);
-
-        private static readonly Regex DomainCitationRegex = new Regex(
-            @"\(\s*\[?\s*(?<domain>(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}(?:/[^\]\s)）]*)?)\s*\]?\s*\)",
-            RegexOptions.IgnoreCase);
-
+            @"(?:https?://|www\.)(?:[^\s　<>""`\[\]()）】」』、。]+|\([^\s()]*\))+", RegexOptions.IgnoreCase);
         private static readonly Regex BracketDomainRegex = new Regex(
-            @"\[\s*(?<domain>(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}(?:/[^\]\s)）]*)?)\s*\]",
-            RegexOptions.IgnoreCase);
+            @"\[\s*(?<domain>(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}(?:/[^\]\s]*)?)\s*\]", RegexOptions.IgnoreCase);
 
         public static YuiChatLinkParseResult Parse(string text)
         {
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                return new YuiChatLinkParseResult(string.Empty, Array.Empty<YuiChatLink>());
-            }
-
+            if (string.IsNullOrEmpty(text)) return new YuiChatLinkParseResult(string.Empty, Array.Empty<YuiChatLink>());
             var links = new List<YuiChatLink>();
-            var seenUrls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var display = text;
-
-            display = ParenthesizedMarkdownCitationRegex.Replace(display, match =>
+            var seenUrls = new HashSet<string>(StringComparer.Ordinal);
+            var output = new System.Text.StringBuilder();
+            var position = 0;
+            foreach (Match code in CodeRegex.Matches(text))
             {
-                AddLink(links, seenUrls, match.Groups["label"].Value, match.Groups["url"].Value);
-                return string.Empty;
-            });
+                output.Append(ParseProse(text.Substring(position, code.Index - position), links, seenUrls));
+                output.Append(code.Value);
+                position = code.Index + code.Length;
+            }
+            output.Append(ParseProse(text.Substring(position), links, seenUrls));
+            return new YuiChatLinkParseResult(output.ToString(), links);
+        }
 
-            display = MarkdownLinkRegex.Replace(display, match =>
+        private static string ParseProse(string text, IList<YuiChatLink> links, ISet<string> seenUrls)
+        {
+            var display = MarkdownLinkRegex.Replace(text, match =>
             {
-                AddLink(links, seenUrls, match.Groups["label"].Value, match.Groups["url"].Value);
                 var label = match.Groups["label"].Value;
-                return YuiChatLink.IsDomainLike(label) ? string.Empty : label;
+                var url = match.Groups["url"].Value;
+                AddLink(links, seenUrls, label, url);
+                return label + " (" + url + ")";
             });
-
-            display = DomainCitationRegex.Replace(display, match =>
-            {
-                AddLink(links, seenUrls, match.Groups["domain"].Value, match.Groups["domain"].Value);
-                return string.Empty;
-            });
-
-            display = BracketDomainRegex.Replace(display, match =>
-            {
-                AddLink(links, seenUrls, match.Groups["domain"].Value, match.Groups["domain"].Value);
-                return string.Empty;
-            });
-
-            display = RawUrlRegex.Replace(display, match =>
-            {
+            foreach (Match match in RawUrlRegex.Matches(display))
                 AddLink(links, seenUrls, ExtractReadableLabel(match.Value), match.Value);
-                return string.Empty;
-            });
-
-            display = YuiSpeechTextUtility.CleanDisplayText(display);
-            display = Regex.Replace(display, @"[ \t]{2,}", " ").Trim();
-            return new YuiChatLinkParseResult(display, links);
+            foreach (Match match in BracketDomainRegex.Matches(display))
+                AddLink(links, seenUrls, match.Groups["domain"].Value, match.Groups["domain"].Value);
+            // Never apply speech cleanup to screen/copy/save content or remove references.
+            return display;
         }
 
         private static void AddLink(
-            ICollection<YuiChatLink> links,
+            IList<YuiChatLink> links,
             ISet<string> seenUrls,
             string label,
             string url)
         {
             var link = new YuiChatLink(label, url);
-            if (string.IsNullOrWhiteSpace(link.Url) || !seenUrls.Add(link.Url))
+            if (!Uri.TryCreate(link.Url, UriKind.Absolute, out var uri)
+                || (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp)
+                || string.IsNullOrEmpty(uri.Host)) return;
+            if (!seenUrls.Add(link.Url))
             {
+                // A provider annotation may arrive after a domain-only inline citation.
+                // Prefer the actual page title while retaining one link per exact URL.
+                for (var i = 0; i < links.Count; i++)
+                    if (string.Equals(links[i].Url, link.Url, StringComparison.Ordinal)
+                        && (YuiChatLink.IsDomainLike(links[i].Label) || links[i].Label == "Link")
+                        && !YuiChatLink.IsDomainLike(link.Label) && link.Label != "Link")
+                        links[i] = link;
                 return;
             }
 

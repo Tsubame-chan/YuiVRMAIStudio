@@ -54,6 +54,15 @@ namespace YuiPhysicalAI.Core
             return UnityChanDefault;
         }
 
+        // Public builds expose a single bundled demo. Keep persisted IDs compatible.
+        public static string NormalizeForProfile(string value, bool publicProfile)
+        {
+            if (publicProfile && (string.Equals(value, DemoAvatar, System.StringComparison.OrdinalIgnoreCase)
+                || string.Equals(value, "demo_avatar", System.StringComparison.OrdinalIgnoreCase)))
+                return UnityChanDefault;
+            return Normalize(value);
+        }
+
         public static bool IsCustomVrm(string value)
         {
             var normalized = Normalize(value);

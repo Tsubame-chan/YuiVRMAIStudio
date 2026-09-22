@@ -23,11 +23,9 @@ namespace YuiPhysicalAI.UI
         private string retryChatMessage;
         private string ChatCharacterId()
         {
-            if (avatarSlot == YuiAvatarSlots.CustomVrm1 && runtimeVrmImporter != null)
+            if (YuiAvatarSlots.IsCustomVrm(avatarSlot) && runtimeVrmImporter != null)
             {
-                var path = runtimeVrmImporter.LastCustomVrmPath;
-                foreach (var entry in YuiAvatarLibrary.Read())
-                    if (string.Equals(YuiAvatarLibrary.Resolve(entry), path, StringComparison.Ordinal)) return entry.id;
+                return runtimeVrmImporter.GetCharacterId(avatarSlot);
             }
             return "builtin:" + avatarSlot;
         }
@@ -42,18 +40,19 @@ namespace YuiPhysicalAI.UI
         private async System.Threading.Tasks.Task SendMessageAsync(string message)
         {
             if (isSending) return;
+            if (runtimeVrmImporter != null && runtimeVrmImporter.IsImporting)
+            { SetStatus("アバターの読み込みが終わってから送信してください。"); return; }
             using var operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token);
             activeChatCancellation = operation;
             retryChatMessage = message;
             var responseReceived = false;
             var characterId = ChatCharacterId();
+            var dialogueMode = chatInteractionMode;
+            var retainDialogue = !secretMode;
             var sessionId = ChatSessionId(characterId);
             var taskId = chatInteractionMode == "work" ? Guid.NewGuid().ToString("N") : null;
-            Debug.Log(IsLocalAiConversationMode()
-                ? $"Sending message to Yui local AI: {message}"
-                : IsDirectOpenAiConversationMode()
-                    ? $"Sending message to Yui API mode: {message}"
-                    : $"Sending message to Yui backend: {message}");
+            // Diagnostics must not create an undeletable second copy of a conversation.
+            Debug.Log($"Yui chat request: mode={conversationMode}, input_chars={message?.Length ?? 0}");
             var totalTimer = System.Diagnostics.Stopwatch.StartNew();
             isSending = true;
             SetInteractable(false);
@@ -64,6 +63,7 @@ namespace YuiPhysicalAI.UI
 
             try
             {
+                await SelectAiEndpointAsync(YuiPhysicalAI.LocalAI.YuiLocalAiCapability.Chat, operation.Token);
                 SetStatus("Generating...");
                 SetPendingLine(CharacterName, "返答生成中...");
                 if (pendingVisionImageAttachment.HasImage && !ShouldAttachImageForApiChat())
@@ -96,6 +96,11 @@ namespace YuiPhysicalAI.UI
                     operation.Token);
                 operation.Token.ThrowIfCancellationRequested();
                 responseReceived = true;
+                if (retainDialogue)
+                {
+                    try { DialogueStore.Append(characterId, dialogueMode, message, chat.Text); }
+                    catch (Exception ex) { Debug.LogWarning("Recent character dialogue was not saved: " + ex.Message); }
+                }
                 retryChatMessage = null;
                 pendingVisionImageAttachment.MarkConsumedAfterSuccessfulChat();
                 Debug.Log($"Yui chat latency: {chatTimer.ElapsedMilliseconds} ms");
@@ -131,7 +136,7 @@ namespace YuiPhysicalAI.UI
                 ClearPendingLine();
                 SetStatus("停止しました");
             }
-            catch (YuiBackendException ex) when (ex.StatusCode == 0)
+            catch (YuiBackendException ex) when (ex.StatusCode == 0 && !responseReceived)
             {
                 ClearPendingLine();
                 SetStatus("Backend offline");
@@ -143,7 +148,7 @@ namespace YuiPhysicalAI.UI
             catch (Exception ex)
             {
                 ClearPendingLine();
-                SetStatus(IsLocalAiConversationMode() ? "Local AI unavailable" : "Error");
+                SetStatus(responseReceived ? "Voice unavailable" : IsLocalAiConversationMode() ? "Local AI unavailable" : "Error");
                 var errorMessage = ex is YuiBackendException backendException
                     ? backendException.UserMessage
                     : ex.Message;
@@ -165,6 +170,7 @@ namespace YuiPhysicalAI.UI
                     {
                         EventSystem.current.SetSelectedGameObject(null);
                     }
+                    FocusDesktopComposer();
                 }
             }
         }

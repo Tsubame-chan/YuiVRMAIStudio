@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${YUI_RELEASE_VERSION:-v0.2.0-beta.1}"
+VERSION="${YUI_RELEASE_VERSION:-v0.2.0-beta.5}"
 OUT_DIR="${YUI_RELEASE_OUT_DIR:-$ROOT_DIR/releases/$VERSION}"
 PACKAGE_NAME="YuiVRMAIStudio_LocalAIAssets_Minimum_${VERSION}.zip"
 SPLIT_SIZE="${YUI_RELEASE_SPLIT_SIZE:-1900m}"
@@ -10,7 +10,7 @@ SPLIT_SIZE="${YUI_RELEASE_SPLIT_SIZE:-1900m}"
 ASSET_ROOT="$ROOT_DIR/unity/Assets/StreamingAssets/YuiLocalAI"
 REQUIRED_PATHS=(
   "$ASSET_ROOT/local_ai_model_packs.json"
-  "$ASSET_ROOT/Models/gemma-4-E4B-it.litertlm"
+  "$ASSET_ROOT/Models/gemma-4-E2B-it.litertlm"
   "$ASSET_ROOT/Voicevox/Models/meimei_himari_1.vvm"
   "$ASSET_ROOT/Voicevox/open_jtalk_dic_utf_8-1.11"
 )
@@ -42,10 +42,14 @@ copy_path() {
 }
 
 copy_path "unity/Assets/StreamingAssets/YuiLocalAI/local_ai_model_packs.json"
-copy_path "unity/Assets/StreamingAssets/YuiLocalAI/Models"
-rm -f "$TMP_DIR/unity/Assets/StreamingAssets/YuiLocalAI/Models/gemma-4-E2B-it.litertlm"*
-rm -f "$TMP_DIR/unity/Assets/StreamingAssets/YuiLocalAI/Models/gemma-4-12B-it.litertlm"*
-copy_path "unity/Assets/StreamingAssets/YuiLocalAI/Voicevox/Models"
+# Package only the selected model and reviewed redistributable voices.
+# Copying entire model directories can include optional/private assets or caches.
+copy_path "unity/Assets/StreamingAssets/YuiLocalAI/Models/gemma-4-E2B-it.litertlm"
+copy_path "unity/Assets/StreamingAssets/YuiLocalAI/Voicevox/Models/meimei_himari_1.vvm"
+copy_path "unity/Assets/StreamingAssets/YuiLocalAI/Voicevox/Models/metan_zundamon_0.vvm"
+copy_path "unity/Assets/StreamingAssets/YuiLocalAI/Voicevox/Models/kyushu_sora_2.vvm"
+copy_path "unity/Assets/StreamingAssets/YuiLocalAI/Voicevox/Models/sayo_15.vvm"
+copy_path "unity/Assets/StreamingAssets/YuiLocalAI/Voicevox/Licenses"
 copy_path "unity/Assets/StreamingAssets/YuiLocalAI/Voicevox/open_jtalk_dic_utf_8-1.11"
 
 (

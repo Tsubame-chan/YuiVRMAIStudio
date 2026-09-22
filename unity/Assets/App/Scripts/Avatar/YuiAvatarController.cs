@@ -174,6 +174,7 @@ namespace YuiPhysicalAI.Avatar
                 },
             };
 
+        private YuiAvatarExpressionDriver importedExpressions;
         private float faceReturnAt = -1f;
         private bool wasSpeaking;
 
@@ -240,6 +241,7 @@ namespace YuiPhysicalAI.Avatar
             YuiPresenceAnimator targetPresenceAnimator)
         {
             animator = targetAnimator;
+            importedExpressions = animator != null ? animator.GetComponentInParent<YuiAvatarExpressionDriver>() : null;
             faceRenderer = targetFaceRenderer;
             presenceAnimator = targetPresenceAnimator;
             if (presenceAnimator != null)
@@ -280,6 +282,11 @@ namespace YuiPhysicalAI.Avatar
 
         public void ApplyFace(string face, bool returnToNeutral)
         {
+            if (importedExpressions != null && importedExpressions.ApplyFace(face))
+            {
+                faceReturnAt = returnToNeutral && !IsNeutral(face) ? Time.time + faceReturnDelaySeconds : -1f;
+                return;
+            }
             var binding = FindFaceBinding(face);
             if (binding == null)
             {

@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     openai_chat_model: str = "gpt-5.4-mini"
     openai_vision_model: str = "gpt-5.4-mini"
     openai_vision_detail: str = "auto"
-    openai_transcribe_model: str = "gpt-4o-mini-transcribe"
+    openai_transcribe_model: str = "gpt-transcribe"
     openai_realtime_model: str = "gpt-realtime-2"
     openai_realtime_translate_model: str = "gpt-realtime-translate"
     openai_realtime_transcribe_model: str = "gpt-realtime-whisper"

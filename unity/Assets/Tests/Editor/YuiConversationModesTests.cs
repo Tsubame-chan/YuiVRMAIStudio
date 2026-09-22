@@ -5,6 +5,14 @@ namespace YuiPhysicalAI.Tests.Editor
 {
     public sealed class YuiConversationModesTests
     {
+        [Test]
+        public void RealtimePersonalityAppliesToTalkAndDoesNotOverrideInterpreter()
+        {
+            StringAssert.Contains("落ち着いた口調", YuiConversationModes.InstructionsForMode("voice", "星", "落ち着いた口調"));
+            StringAssert.Contains("落ち着いた口調", YuiConversationModes.InstructionsForMode("voice_text", "星", "落ち着いた口調"));
+            StringAssert.DoesNotContain("落ち着いた口調", YuiConversationModes.InstructionsForMode("translate", "星", "落ち着いた口調"));
+        }
+
         [TestCase(null, YuiConversationModes.Stable)]
         [TestCase("", YuiConversationModes.Stable)]
         [TestCase("backend", YuiConversationModes.BackendAi)]

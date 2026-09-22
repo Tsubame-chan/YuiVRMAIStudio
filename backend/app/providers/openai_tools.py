@@ -33,6 +33,9 @@ WEB_SEARCH_TRIGGERS = (
     "花火",
     "イベント",
     "開催",
+    "search",
+    "look up",
+    "lookup",
     "weather",
     "forecast",
     "news",
@@ -83,3 +86,27 @@ def should_offer_web_search(settings: Settings, text: str) -> bool:
 
     normalized_text = text.lower()
     return any(trigger in normalized_text for trigger in WEB_SEARCH_TRIGGERS)
+
+
+def append_response_citations(text: str, response: Any) -> str:
+    """Keep provider citation annotations when parsing structured chat output."""
+    def read(item: Any, key: str, default: Any = None) -> Any:
+        return item.get(key, default) if isinstance(item, dict) else getattr(item, key, default)
+    from urllib.parse import urlsplit
+    sources: list[str] = []
+    seen: set[str] = set()
+    for output in read(response, "output", []) or []:
+        for content in read(output, "content", []) or []:
+            for citation in read(content, "annotations", []) or []:
+                url = read(citation, "url", "")
+                if read(citation, "type") != "url_citation" or not isinstance(url, str):
+                    continue
+                parsed = urlsplit(url)
+                if parsed.scheme not in {"http", "https"} or not parsed.netloc or url in seen:
+                    continue
+                seen.add(url)
+                title = str(read(citation, "title") or parsed.netloc).replace("\n", " ").replace("\r", " ")
+                title = title.replace("[", "(").replace("]", ")")
+                safe_url = url.replace("(", "%28").replace(")", "%29")
+                sources.append(f"[{title}]({safe_url})")
+    return text + "\n\nSources\n" + "\n\n".join(sources) if sources else text

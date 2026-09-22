@@ -33,11 +33,20 @@ namespace YuiPhysicalAI.LocalAI
         public bool FallbackToBackendTranscription { get; set; } = true;
         public bool FallbackToBackendVision { get; set; } = true;
         public bool FallbackToLocalChat { get; set; }
+        public bool FallbackToLocalTranscription { get; set; }
+        public Func<YuiLocalAiCapability, CancellationToken, Task<YuiAiEndpoint>> SelectEndpoint { get; set; }
+        public Func<ChatRequest, CancellationToken, Task<ChatResponse>> DirectChat { get; set; }
+        public Func<byte[], string, CancellationToken, Task<SttResponse>> DirectTranscribe { get; set; }
+        public Func<byte[], string, CancellationToken, Task<VisionResponse>> DirectVision { get; set; }
 
         public async Task<ChatResponse> SendChatAsync(ChatRequest request, CancellationToken cancellationToken)
         {
-            var requiresLocal = PreferLocal || PreferLocalChat;
-            if (requiresLocal && localService == null && !FallbackToBackend)
+            cancellationToken.ThrowIfCancellationRequested();
+            var endpoint = SelectEndpoint != null ? await SelectEndpoint(YuiLocalAiCapability.Chat, cancellationToken) : YuiAiEndpoint.Backend;
+            if (endpoint == YuiAiEndpoint.DirectOpenAi && !(PreferLocal || PreferLocalChat))
+                return await (DirectChat ?? throw new InvalidOperationException("Direct OpenAI chat is unavailable."))(request, cancellationToken);
+            var requiresLocal = PreferLocal || PreferLocalChat || endpoint == YuiAiEndpoint.Local;
+            if (requiresLocal && localService == null && (!FallbackToBackend || endpoint == YuiAiEndpoint.Local))
             {
                 throw new InvalidOperationException("Local AI request failed: local runtime is not available.");
             }
@@ -50,6 +59,7 @@ namespace YuiPhysicalAI.LocalAI
                         RequestId = request?.RequestId,
                         UserId = request?.UserId,
                         Message = request?.Message,
+                        Mode = request?.Mode ?? "talk",
                         CharacterName = request?.CharacterName,
                         CustomInstruction = request?.CustomInstruction,
                         ScreenContext = request?.Context?.ScreenContext,
@@ -58,10 +68,10 @@ namespace YuiPhysicalAI.LocalAI
                     cancellationToken);
                 if (local.Success)
                 {
-                    return YuiLocalAiBackendCompatibility.ToChatResponse(local);
+                    return YuiLocalAiBackendCompatibility.ToChatResponse(local, request?.Mode);
                 }
 
-                if (!FallbackToBackend)
+                if (!FallbackToBackend || endpoint == YuiAiEndpoint.Local)
                 {
                     throw new InvalidOperationException(LocalError(local));
                 }
@@ -82,6 +92,7 @@ namespace YuiPhysicalAI.LocalAI
                         RequestId = request?.RequestId,
                         UserId = request?.UserId,
                         Message = request?.Message,
+                        Mode = request?.Mode ?? "talk",
                         CharacterName = request?.CharacterName,
                         CustomInstruction = request?.CustomInstruction,
                         ScreenContext = request?.Context?.ScreenContext,
@@ -90,7 +101,7 @@ namespace YuiPhysicalAI.LocalAI
                     cancellationToken);
                 if (local.Success)
                 {
-                    return YuiLocalAiBackendCompatibility.ToChatResponse(local);
+                    return YuiLocalAiBackendCompatibility.ToChatResponse(local, request?.Mode);
                 }
 
                 throw new InvalidOperationException(LocalError(local), ex);
@@ -103,8 +114,12 @@ namespace YuiPhysicalAI.LocalAI
             int? durationMs,
             CancellationToken cancellationToken)
         {
-            var requiresLocal = PreferLocal || PreferLocalTranscription;
-            if (requiresLocal && localService == null && !FallbackToBackendTranscription)
+            cancellationToken.ThrowIfCancellationRequested();
+            var endpoint = SelectEndpoint != null ? await SelectEndpoint(YuiLocalAiCapability.Transcription, cancellationToken) : YuiAiEndpoint.Backend;
+            if (endpoint == YuiAiEndpoint.DirectOpenAi && !(PreferLocal || PreferLocalTranscription))
+                return await (DirectTranscribe ?? throw new InvalidOperationException("Direct OpenAI transcription is unavailable."))(wavBytes, filename, cancellationToken);
+            var requiresLocal = PreferLocal || PreferLocalTranscription || endpoint == YuiAiEndpoint.Local;
+            if (requiresLocal && localService == null && (!FallbackToBackendTranscription || endpoint == YuiAiEndpoint.Local))
             {
                 throw new InvalidOperationException("Local AI STT failed: local transcription runtime is not available.");
             }
@@ -124,7 +139,7 @@ namespace YuiPhysicalAI.LocalAI
                     return YuiLocalAiBackendCompatibility.ToSttResponse(local);
                 }
 
-                if (!FallbackToBackendTranscription)
+                if (!FallbackToBackendTranscription || endpoint == YuiAiEndpoint.Local)
                 {
                     throw new InvalidOperationException(LocalError(local));
                 }
@@ -132,7 +147,23 @@ namespace YuiPhysicalAI.LocalAI
                 Debug.LogWarning($"Local AI STT failed; falling back to backend: {LocalError(local)}");
             }
 
-            return await backendTranscribe(wavBytes, filename, durationMs, cancellationToken);
+            try
+            {
+                return await backendTranscribe(wavBytes, filename, durationMs, cancellationToken);
+            }
+            catch (YuiBackendException ex) when (FallbackToLocalTranscription && localService != null
+                && IsBackendUnavailable(ex))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var local = await localService.TranscribeAsync(new YuiLocalAiAudioRequest
+                {
+                    AudioBytes = wavBytes,
+                    MimeType = "audio/wav",
+                    SampleRate = TryReadWavSampleRate(wavBytes) ?? 0
+                }, cancellationToken);
+                if (local.Success) return YuiLocalAiBackendCompatibility.ToSttResponse(local);
+                throw new InvalidOperationException(LocalError(local), ex);
+            }
         }
 
         private static int? TryReadWavSampleRate(byte[] wavBytes)
@@ -186,12 +217,17 @@ namespace YuiPhysicalAI.LocalAI
             string mimeType,
             CancellationToken cancellationToken)
         {
-            if (PreferLocalVision && localService == null && !FallbackToBackendVision)
+            cancellationToken.ThrowIfCancellationRequested();
+            var endpoint = SelectEndpoint != null ? await SelectEndpoint(YuiLocalAiCapability.Vision, cancellationToken) : YuiAiEndpoint.Backend;
+            var requiresLocal = PreferLocalVision || endpoint == YuiAiEndpoint.Local;
+            if (!requiresLocal && endpoint == YuiAiEndpoint.DirectOpenAi)
+                return await (DirectVision ?? throw new InvalidOperationException("Direct OpenAI vision is unavailable."))(imageBytes, mimeType, cancellationToken);
+            if (requiresLocal && localService == null && (!FallbackToBackendVision || endpoint == YuiAiEndpoint.Local))
             {
                 throw new InvalidOperationException("Local AI vision failed: local vision runtime is not available.");
             }
 
-            if (PreferLocalVision && localService != null)
+            if (requiresLocal && localService != null)
             {
                 var local = await localService.AnalyzeImageAsync(
                     new YuiLocalAiVisionRequest
@@ -206,7 +242,7 @@ namespace YuiPhysicalAI.LocalAI
                     return YuiLocalAiBackendCompatibility.ToVisionResponse(local);
                 }
 
-                if (!FallbackToBackendVision)
+                if (!FallbackToBackendVision || endpoint == YuiAiEndpoint.Local)
                 {
                     throw new InvalidOperationException(LocalError(local));
                 }
@@ -232,7 +268,14 @@ namespace YuiPhysicalAI.LocalAI
             return FallbackToLocalChat
                 && localService != null
                 && ex != null
-                && ex.StatusCode == 0;
+                && IsBackendUnavailable(ex);
+        }
+
+        public static bool IsBackendUnavailable(YuiBackendException ex)
+        {
+            // Do not retry rejected/invalid user input or authentication failures.
+            // 503 is the backend's explicit missing-provider configuration response.
+            return ex != null && (ex.StatusCode == 0 || ex.StatusCode == 503);
         }
     }
 }

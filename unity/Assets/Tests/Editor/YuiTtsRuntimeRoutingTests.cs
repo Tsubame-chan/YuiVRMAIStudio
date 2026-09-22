@@ -75,6 +75,13 @@ namespace YuiPhysicalAI.Tests.Editor
         }
 
         [Test]
+        public void StandaloneApiVoiceIgnoresPreviouslyReachableBackendWhenCoreIsReady()
+        {
+            Assert.AreEqual(YuiTtsExecutionRoute.NativeVoicevox,
+                YuiTtsRuntimeRouting.ResolveVoicevoxRoute(true, true, false, preferNative: true));
+        }
+
+        [Test]
         public void ChatdollKitVoicevoxFallback_IsLimitedToVoicevoxLegacyLocalMode()
         {
             Assert.IsTrue(YuiTtsRuntimeRouting.ShouldTryChatdollKitVoicevoxFallback("local"));

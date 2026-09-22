@@ -200,12 +200,28 @@ namespace YuiPhysicalAI.UI
             }
 
             var height = Mathf.Max(0.1f, bounds.size.y);
-            var targetPoint = bounds.center + new Vector3(0f, height * 0.16f, 0f);
-            var distance = Mathf.Clamp(height * 1.9f, 2.45f, 4.75f);
-            var cameraLift = Mathf.Clamp(height * 0.06f, 0.08f, 0.16f);
-            targetCamera.transform.position = targetPoint + new Vector3(0f, cameraLift, -distance);
-            targetCamera.transform.rotation = Quaternion.LookRotation(targetPoint - targetCamera.transform.position, Vector3.up);
+            var face = bounds.center + Vector3.up * height * .4f;
+            var animator = avatarRoot.GetComponentInChildren<Animator>();
+            if (animator != null && animator.isHuman)
+            {
+                var head = animator.GetBoneTransform(HumanBodyBones.Head);
+                var leftFoot = animator.GetBoneTransform(HumanBodyBones.LeftFoot);
+                var rightFoot = animator.GetBoneTransform(HumanBodyBones.RightFoot);
+                if (head != null)
+                {
+                    face = head.position;
+                    var leftEye = animator.GetBoneTransform(HumanBodyBones.LeftEye);
+                    var rightEye = animator.GetBoneTransform(HumanBodyBones.RightEye);
+                    if (leftEye != null && rightEye != null) face = (leftEye.position + rightEye.position) * .5f;
+                    // Renderer bounds can include hidden outfits or broad skinning
+                    // bounds. The skeleton is the reference for a humanoid's size.
+                    if (leftFoot != null && rightFoot != null)
+                        height = Mathf.Max(.1f, (head.position.y - Mathf.Min(leftFoot.position.y, rightFoot.position.y)) * 1.15f);
+                }
+            }
             targetCamera.fieldOfView = shownFieldOfView > 0f ? shownFieldOfView : 25f;
+            targetCamera.transform.rotation = YuiAvatarFraming.CameraRotation;
+            targetCamera.transform.position = YuiAvatarFraming.CameraPosition(face, height, targetCamera.fieldOfView);
             CaptureCameraDefaults();
             ResetOrbitToDefault();
         }
@@ -319,9 +335,17 @@ namespace YuiPhysicalAI.UI
             SetConsoleVisible(true);
         }
 
+#if UNITY_IOS && !UNITY_EDITOR
+        [System.Runtime.InteropServices.DllImport("__Internal")]
+        private static extern void YuiStatusBarSetHidden(int hidden);
+#endif
+
         private void SetConsoleVisible(bool visible)
         {
             consoleVisible = visible;
+#if UNITY_IOS && !UNITY_EDITOR
+            YuiStatusBarSetHidden(visible ? 0 : 1);
+#endif
             if (visible)
             {
                 cameraEditMode = false;
@@ -712,7 +736,7 @@ namespace YuiPhysicalAI.UI
                 Time.deltaTime * returnSpeed);
             targetCamera.fieldOfView = Mathf.Lerp(
                 targetCamera.fieldOfView,
-                shownFieldOfView > 0f ? shownFieldOfView : defaultCameraFieldOfView,
+                defaultCameraFieldOfView,
                 Time.deltaTime * 5f);
         }
 
@@ -793,14 +817,19 @@ namespace YuiPhysicalAI.UI
                 return false;
             }
 
-            bounds = RendererBuffer[0].bounds;
-            for (var i = 1; i < RendererBuffer.Count; i++)
+            var found = false;
+            for (var i = 0; i < RendererBuffer.Count; i++)
             {
-                bounds.Encapsulate(RendererBuffer[i].bounds);
+                var renderer = RendererBuffer[i];
+                // forceRenderingOff is deliberately ignored: newly imported avatars
+                // are hidden while springs settle but still need their initial frame.
+                if (!renderer.enabled || !renderer.gameObject.activeInHierarchy) continue;
+                if (!found) { bounds = renderer.bounds; found = true; }
+                else bounds.Encapsulate(renderer.bounds);
             }
 
             RendererBuffer.Clear();
-            return true;
+            return found;
         }
 
         private static bool TryLoadCameraPreset(

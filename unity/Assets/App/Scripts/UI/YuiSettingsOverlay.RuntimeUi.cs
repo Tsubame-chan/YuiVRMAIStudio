@@ -83,16 +83,11 @@ namespace YuiPhysicalAI.UI
 
         private void EnsureDirectOpenAiAdvancedInputs(Transform fallbackContent)
         {
-            var parent = advancedRoot != null ? advancedRoot.transform : fallbackContent;
+            var parent = fallbackContent;
             if (parent == null)
             {
                 return;
             }
-            if (advancedRoot != null)
-            {
-                EnsureAdvancedApiPanelFrame(advancedRoot.transform);
-            }
-            EnsureAdvancedPanelBacking(parent);
 
             if (backendUrlInput == null)
             {
@@ -267,7 +262,7 @@ namespace YuiPhysicalAI.UI
                 var label = labelObject.GetComponent<Text>();
                 label.font = BuiltinUiFont();
                 label.fontSize = 14;
-                label.text = labelText;
+                YuiUiLocalization.Set(label, labelText);
                 label.alignment = TextAnchor.MiddleLeft;
                 label.color = Color.white;
                 SetTopRectRuntime(labelObject.transform, 36f, 0f, 0f, 42f);
@@ -279,10 +274,10 @@ namespace YuiPhysicalAI.UI
             }
 
             current.transform.SetParent(parent, false);
-            var text = current.GetComponentInChildren<Text>(true);
+            var text = current.transform.Find("Label")?.GetComponent<Text>();
             if (text != null && text.gameObject.name == "Label")
             {
-                text.text = labelText;
+                YuiUiLocalization.Set(text, labelText);
             }
             return current;
         }
@@ -358,7 +353,7 @@ namespace YuiPhysicalAI.UI
             var label = current.GetComponentInChildren<Text>(true);
             if (label != null)
             {
-                label.text = labelText;
+                YuiUiLocalization.Set(label, labelText);
             }
             return current;
         }
@@ -452,9 +447,9 @@ namespace YuiPhysicalAI.UI
         {
             if (localAiAssetStatusText != null)
             {
-                localAiAssetStatusText.text = chatPanel != null
+                YuiUiLocalization.Set(localAiAssetStatusText,chatPanel != null
                     ? chatPanel.LocalAiAssetStatusText
-                    : "Local AI data: not checked";
+                    : "Local AI data: not checked");
             }
         }
 

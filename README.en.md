@@ -1,247 +1,54 @@
 # Yui VRM AI Studio
 
-[日本語README](README.md)
+[日本語](README.md)
 
-**Turn your favorite VRM character into an AI agent that can talk, see, search, and remember.**
+A Unity application for talking with your VRM avatar using text, voice and images. Use the included public default avatar or import your own VRM.
 
-Yui VRM AI Studio turns your own VRM character into a desktop AI avatar that can handle conversation and work through text, voice, images, and a selected camera. It is for people who want their VRChat/VRM character, original character, or favorite avatar to become something they can speak with, remember with, ask for help, and reconnect to from mobile when away from the PC.
+## Downloads and source status
 
-The project is now a Desktop Public Beta for Windows and macOS. Download the app ZIP, unzip it, and launch it; the required Local Gemma / VOICEVOX data and desktop backend bundle are downloaded on first launch. OpenAI API keys and optional higher-quality voice add-ons can be added later from inside the app.
+| Item | Status |
+| --- | --- |
+| Windows / macOS apps | Available in [v0.2.0-beta.5](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.0-beta.5) |
+| main branch | Updated source as of 2026-09-23; newer than the beta.5 binaries |
+| [Source validation snapshot](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/dev-snapshot-20260923) | Standard VOICEVOX models and terms, not a finished application release |
+| iOS / Android | Implementation and validation source; no store release |
 
-## Bring your own avatar
+`Code → Download ZIP` contains source, not built apps or large AI models. To try the published app, download the beta.5 ZIP for your OS. Its first-run downloader installs Local AI, VOICEVOX and the platform-specific Backend bundle. Keep its manifest, split archives and checksums together.
 
-Import VRM directly, or install the experimental **Yui Avatar Bridge** in your Unity / VRChat avatar project and export a ZIP for your target device. See the [avatar import and mobile transfer guide](docs/AVATAR_IMPORT.md). Mobile device validation and full shader/outfit compatibility are still in progress.
+See [Windows setup](docs/SETUP_GUIDE.md), [macOS setup](docs/MAC_PUBLIC_BETA.en.md), [large assets](docs/LOCAL_AI_ASSETS.md) and [current source status](docs/SOURCE_STATUS.md).
 
-## What The Experience Is
+## Implemented in the current source
 
-- Show your own `.vrm` character on screen and talk with that character.
-- Use text input, voice input, image input, and the selected camera image.
-- Use `Talk` for short natural replies and `Work` for detailed on-screen results with only the conclusion spoken aloud.
-- Keep conversation history and local memory as the app grows toward a persistent AI avatar.
-- Try the app after the first launch download, then add BYOK settings or optional voice runtimes for the richer feature set.
-- Use VOICEVOX as the standard Japanese voice fallback, with optional AivisSpeech HD and Irodori TTS paths.
+- VRM 0.x / 1.0 import, characters and outfits, lip sync, blinking and Humanoid idle-pose adjustment.
+- Short conversation in Talk; detailed screen output and spoken summaries in Work.
+- Text, microphone and image input. On mobile the paperclip opens the photo picker; take a photo in the camera app first. Desktop retains image/camera selection.
+- On-device Gemma, Direct OpenAI and Backend AI. Choose the voice engine independently of the language model.
+- Persistent local conversation history, saved answers, read-aloud and Secret Mode.
+- Japanese / English UI, shared typography, Soft Gradient backgrounds and connection diagnostics.
+- Backend web search, speech and image processing. Realtime conversation/translation remain experimental advanced options.
 
-## Where To Start
+Availability depends on the OS, runtime, models and connected services. This list does not claim acceptance on every device.
 
-| Target | Status | Start here |
-| --- | --- | --- |
-| Windows Desktop Public Beta | Public beta | [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md) |
-| macOS Desktop Public Beta | Public beta | [`docs/MAC_PUBLIC_BETA.en.md`](docs/MAC_PUBLIC_BETA.en.md) |
-| iOS / Android | Future public candidates | Desktop Beta is the current priority |
+## AI and voices
 
-Windows and macOS setup docs now follow the same design model. Runnable builds and large Local AI/TTS assets are distributed through [GitHub Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases).
+Direct OpenAI uses the key saved in the app and does not require a PC Backend. API usage charges apply. Backend requests use the Backend's own configuration; the app key is not forwarded to it. An on-device language model can use a reachable Backend voice engine.
 
-`v0.2.0-beta.5` is the current Desktop Public Beta Release. Normal users should download only the Windows or macOS app ZIP. The app downloads the larger required data on first launch.
+On-device VOICEVOX requires Core, its dictionary and model files. Beta.5 provides the Meimei Himari model. The separate source snapshot supplies the current source's five standard voices; see [source status](docs/SOURCE_STATUS.md). The beta.5 manifest references the published beta.3 macOS AivisSpeech HD add-on. Irodori and Windows voice add-ons are not included in that manifest. Backend VOICEVOX, AivisSpeech and HTTP TTS require separately configured engines.
 
-## Which Download To Use
+## Bring your avatar
 
-Download the app ZIP for your OS from GitHub Releases, unzip it, and launch it.
+In the current source, use Settings → Character → Import avatar. My characters → Change outfit keeps the character identity while changing appearance.
 
-- macOS: `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.5_macos.zip`
-- Windows: `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.5_windows.zip`
+Export VRChat avatars from their configured Unity project with an existing VRM converter. Custom shaders, clothing menus and contact features are not reproduced completely. Purchased ZIPs, `.unitypackage` files and FBX cannot be imported directly. See the [avatar guide](docs/AVATAR_IMPORT.md).
 
-On first launch, the app shows a download screen. Start it and the required Local AI/TTS data and Yui Backend bundle are installed automatically. Normal users do not need to install Python or set up the backend by hand.
+## Privacy and development
 
-Release assets such as `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` and `YuiVRMAIStudio_BackendBundle_*` are normally downloaded by the app. Download them manually only for source builds, downloader validation, or manual recovery.
+The current Apple implementation stores API keys in Keychain and asks before first sending content to external AI or a Backend. Secret Mode does not prevent requests to the selected external service. These changes do not retroactively update beta.5. See [privacy](docs/PRIVACY.md).
 
-The `.sha256` files are optional integrity checks. `Code > Download ZIP` and `git clone` are source-code paths; they do not include generated app builds or large models.
+Development uses Unity 2022.3.62f3. Model weights, generated builds, personal avatars, conversations and secrets are excluded from Git. Source builds also require the relevant SDKs, native libraries, models and signing configuration.
 
-Normal users do not need to find or install VOICEVOX or Python separately.
-
-| TTS | Current delivery path | Manual installation |
-| --- | --- | --- |
-| Local VOICEVOX (default) | VOICEVOX Core ships in the app; the required first-run download supplies the Meimei Himari model and dictionary | Not required |
-| AivisSpeech HD (macOS) | Optional download from Settings > `Additional Voices`, including runtime, selected models, and Japanese BERT | Not required |
-| Backend VOICEVOX Engine | Advanced path for using an existing VOICEVOX app; not needed for default speech | Optional |
-| Irodori TTS | Developer-preview external HTTP TTS path; not present in the current Release manifest | Currently required |
-| Aivis / Irodori on Windows | Redistributable runtimes are still being validated; not present in the current Release manifest | Not currently provided |
-
-The required first-run set stays focused on the minimum VOICEVOX path, while higher-quality voices use optional packs. `Additional Voices` only offers a pack when the current Release manifest contains one for the user's OS. The macOS AivisSpeech HD pack is large, but it avoids separate searches and manual extraction. Irodori TTS and Windows add-ons will move to the same flow after redistribution and runtime checks are complete.
-
-## What It Does
-
-- Load VRM 1.0 / VRM 0.x `.vrm` avatars and talk with them as AI characters.
-- Use text chat, voice input, and Japanese voice responses.
-- Use image input / vision and selected-camera understanding.
-- Switch between short `Talk` replies and detailed `Work` output.
-- Keep conversation history and local memory.
-- Ask current-information questions with web-search assistance for weather, events, news, places, and similar queries.
-- Try low-latency conversation experiments through the OpenAI Realtime API.
-- Use Realtime VOICEVOX mode with OpenAI Realtime STT and VOICEVOX TTS.
-- Use Auto Select to prefer backend capabilities and fall back to local runtime when needed.
-- Use Local Gemma SLM for offline or weak-network lightweight chat.
-- See and choose between local VOICEVOX, backend VOICEVOX, AivisSpeech HD, and Irodori TTS capability states.
-- Use realtime translation mode.
-
-## How It Works, Briefly
-
-The app UI runs in Unity. AI provider calls, the conversation database, speech generation, web search, and image processing are handled by either the downloaded local backend on the same machine or by the app's embedded local runtime.
-
-When the backend is running, Yui can use higher-quality conversation paths, realtime talk/translation, memory DB, web search, and backend TTS providers. Without the backend, the app remains usable through Direct API mode, Local Gemma, and local VOICEVOX fallback. Connection details and ports are configurable, so this README does not assume any developer-specific URL or private IP address.
-
-## Technical Notes: Provider Status
-
-### Main providers
-
-- OpenAI: chat / STT / vision / realtime / translation / hosted web search
-- VOICEVOX Engine: Japanese TTS runtime
-- Local Gemma SLM: offline-first local chat fallback
-- Local VOICEVOX: built-in/native Japanese TTS fallback where supported
-
-### Implemented, not fully verified
-
-- Generic HTTP TTS adapter for experimental JSON-in/audio-out TTS services such as Irodori TTS
-- Open-Meteo current weather API as an experimental structured-information path separate from web search
-- LM Studio local chat provider through an experimental OpenAI-compatible `/chat/completions` connection
-- Grok / xAI chat provider through xAI's OpenAI-compatible `/chat/completions` endpoint
-- Shared capability diagnostics for Settings and Help, so backend/local/direct availability is labeled through one policy
-
-### Beta Confidence Notes
-
-- `Auto Select` is the recommended first choice. It prefers the backend when healthy and falls back to local/direct paths when needed.
-- Release app ZIPs are expected to trigger the first-run downloader when required local/backend data is missing.
-- Provider/model availability can change on the external service side. Check Settings and Help connection status when something looks unavailable.
-
-### Candidates
-
-- OpenAI-compatible local LLM providers such as LM Studio and Ollama
-- provider selection UI
-- broader OS-native STT/TTS support and quality checks
-- dedicated map, calendar, or other structured APIs
-
-## Requirements
-
-Minimum:
-
-- The Windows or macOS Beta release files from GitHub Releases
-- A VRM file if you want to use your own `.vrm` avatar
-
-Optional:
-
-- An OpenAI API key for Direct API, higher-quality vision, or STT paths
-- The downloaded local backend bundle for realtime talk/translation, memory DB, web search, and backend TTS
-- On macOS, the in-app AivisSpeech HD download when extending Japanese voice playback. Manual VOICEVOX Engine or Irodori setup is advanced and is not required for default speech
-
-Platform details:
-
-- Windows: [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md)
-- macOS: [`docs/MAC_PUBLIC_BETA.en.md`](docs/MAC_PUBLIC_BETA.en.md)
-
-### Git Clone vs Release Artifacts
-
-The git repository does not commit large Gemma model files, voice models,
-voice dictionaries, backend bundles, or generated app builds. Those belong in
-GitHub Release Beta artifacts because of size and license boundaries. Release
-app artifacts are meant to download the required local/backend data on first
-launch. Optional voices and source-build assets are only needed when you choose
-those paths. See
-[`docs/LOCAL_AI_ASSETS.md`](docs/LOCAL_AI_ASSETS.md).
-
-### TTS / Irodori Validation
-
-VOICEVOX is the standard Japanese TTS fallback. On desktop, local VOICEVOX is the default no-backend path, while backend VOICEVOX, AivisSpeech HD, and Irodori TTS provide richer options when the backend is configured. Irodori TTS is still under validation, and the candidate runtime differs by OS.
-
-- macOS Apple Silicon: MLX VoiceDesign path in [`docs/IRODORI_TTS_PACKAGING.md`](docs/IRODORI_TTS_PACKAGING.md)
-- Windows NVIDIA: Irodori-TTS-Server path in [`docs/IRODORI_TTS_WINDOWS_NVIDIA.md`](docs/IRODORI_TTS_WINDOWS_NVIDIA.md)
-- Windows CPU / no GPU: VOICEVOX is recommended
-
-Large model files and TTS server runtimes are not committed to git because of size and license boundaries. Redistribution-approved assets are fetched by the app from GitHub Releases; Irodori is not yet included and remains a developer-configured path. If Irodori fails, `TTS_FALLBACK_PROVIDER=voicevox` can return speech generation to VOICEVOX.
-
-## Use Your Own VRM Character
-
-This beta imports `.vrm` files only.
-The current release cannot directly load a VRChat SDK avatar, Unity scene, Unity prefab, `.unitypackage`, or an avatar that only exists as an uploaded VRChat avatar.
-
-If your avatar is managed in a VRChat Unity project, check whether the original BOOTH/distribution package includes a `.vrm` file.
-If not, export or convert a separate VRM copy through a Unity/UniVRM or Blender/VRM workflow first. `Yui Avatar Bridge`, a VCC package intended to reduce this to a few clicks inside the avatar project, is now a priority. See [`docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md`](docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md).
-
-## Privacy / Data Flow
-
-Yui VRM AI Studio is BYOK. Your API key is stored locally in your `.env` file.
-
-Depending on enabled features, the following data may be sent to configured external AI providers:
-
-- chat messages
-- voice input
-- uploaded images
-- user-selected images / camera images
-- translation audio or text
-- prompts that need web search
-
-The following data is stored locally:
-
-- `.env`
-- SQLite conversation database
-- generated VOICEVOX audio cache
-- logs
-
-Be careful with sensitive image, camera, or audio content when using vision or realtime translation.
-
-## Roadmap
-
-### Desktop Public Beta
-
-- Unify Windows / macOS Desktop Public Beta behavior
-- OpenAI chat / STT / vision / web search
-- VOICEVOX TTS
-- Local Gemma SLM and Direct API fallback
-- Auto Select with backend preference and local fallback
-- Backend VOICEVOX / AivisSpeech HD / Irodori TTS selection
-- conversation history and memory
-- image input / vision and selected-camera understanding
-- realtime experimental modes
-
-### Next
-
-- ship `Yui Avatar Bridge` for exporting a user-owned VRChat avatar from its VCC Unity project
-- unify image, future screen/window capture, and files in one task composer for explain/translate/summarize/draft workflows
-- continue PC work from mobile with the same character, memory, and task state
-- add user-visible memory review, correction, pin, and forget controls
-- keep improving first-run recovery, update checks, and Windows/macOS release quality
-
-### Future
-
-- public iOS / Android evaluation
-- external app audio bridge
-- realtime translation for YouTube / games / streams / calls
-- physical AI / external device integration
-
-## Docs
-
-- Windows setup: [`docs/SETUP_GUIDE.md`](docs/SETUP_GUIDE.md)
-- macOS Public Beta: [`docs/MAC_PUBLIC_BETA.en.md`](docs/MAC_PUBLIC_BETA.en.md)
-- Irodori Windows NVIDIA validation: [`docs/IRODORI_TTS_WINDOWS_NVIDIA.md`](docs/IRODORI_TTS_WINDOWS_NVIDIA.md)
-- Irodori optional backend packaging: [`docs/IRODORI_TTS_PACKAGING.md`](docs/IRODORI_TTS_PACKAGING.md)
-- API details: [`docs/api.md`](docs/api.md)
-- external information / web search policy: [`docs/LLM_EXTERNAL_INFO.md`](docs/LLM_EXTERNAL_INFO.md)
-- local AI/TTS asset distribution: [`docs/LOCAL_AI_ASSETS.md`](docs/LOCAL_AI_ASSETS.md)
-- quality and validation policy: [`docs/QUALITY_AND_VALIDATION.md`](docs/QUALITY_AND_VALIDATION.md)
-- product direction and prioritized features: [`docs/PRODUCT_DIRECTION_20260714.md`](docs/PRODUCT_DIRECTION_20260714.md)
-- VCC avatar import architecture: [`docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md`](docs/YUI_AVATAR_BRIDGE_ARCHITECTURE.md)
-
-## Troubleshooting
-
-For first-run problems, start with the setup guide for your platform.
-
-- Windows: [`docs/SETUP_GUIDE.md#troubleshooting`](docs/SETUP_GUIDE.md#troubleshooting)
-- macOS: [`docs/MAC_PUBLIC_BETA.en.md`](docs/MAC_PUBLIC_BETA.en.md)
-
-Common causes:
-
-- the local helper service is not running
-- `.env` does not contain `OPENAI_API_KEY`
-- VOICEVOX Engine is missing or not running
-- on Windows, `YuiFilePickerHelper.exe` is not next to the app executable
-
-Developer API details and deeper diagnostics are documented in [`docs/api.md`](docs/api.md).
-
-## License And Credits
-
-Project code is released under the MIT License. See [`LICENSE`](LICENSE).
-
-Third-party assets and libraries keep their own licenses.
-
-- UnityChan assets are distributed under the Unity-Chan License Terms.
-- VOICEVOX-related runtimes and voice assets follow the upstream VOICEVOX terms.
-- If you publish generated speech, include the required VOICEVOX credit for the selected voice. The default beta voice is `VOICEVOX:冥鳴ひまり`.
-- ChatdollKit, lilToon, UniVRM, and other Unity packages remain under their respective licenses.
+- [Source status and known limits](docs/SOURCE_STATUS.md)
+- [Runtime support](docs/RUNTIME_SUPPORT.md)
+- [Quality and validation](docs/QUALITY_AND_VALIDATION.md)
+- [Public player asset validation](docs/PUBLIC_PLAYER_ASSET_VALIDATION.md)
+- [API](docs/api.md)

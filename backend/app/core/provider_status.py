@@ -4,6 +4,7 @@ from typing import Any
 import httpx
 
 from app.core.config import Settings
+from app.core.tts_inventory import aivis_installed
 from app.models.provider_status import (
     ProviderStatusItem,
     ProviderStatusResponse,
@@ -20,7 +21,9 @@ def build_provider_status(
     database_ok: bool,
     voicevox_status: dict[str, Any],
     http_tts_status: dict[str, Any] | None = None,
+    aivis_status: dict[str, Any] | None = None,
 ) -> ProviderStatusResponse:
+    aivis_status = aivis_status or {"status": "unknown", "detail": "Engine has not been checked."}
     backend_status = "ok" if database_ok else "degraded"
     http_tts_status = http_tts_status or {
         "status": "configured" if settings.http_tts_base_url else "not_configured",
@@ -40,6 +43,7 @@ def build_provider_status(
             )
         )
     return ProviderStatusResponse(
+        chat_provider=settings.chat_provider,
         status=backend_status,
         backend=SystemStatusItem(status=backend_status),
         database=SystemStatusItem(
@@ -70,6 +74,7 @@ def build_provider_status(
                 vision_model=settings.gemini_vision_model,
             ),
             "voicevox": ProviderStatusItem(
+                selectable=voicevox_status.get("status") == "ok",
                 status=str(voicevox_status.get("status", "unknown")),
                 detail=str(voicevox_status.get("detail", "")),
                 category="local_tts",
@@ -79,13 +84,15 @@ def build_provider_status(
                 speakers=voicevox_status.get("speakers"),
             ),
             "aivis": ProviderStatusItem(
-                status="configured" if settings.aivis_base_url else "not_configured",
-                detail="VOICEVOX-compatible AivisSpeech Engine endpoint.",
+                selectable=aivis_status.get("status") == "ok" or aivis_installed(settings.aivis_base_url),
+                status=str(aivis_status.get("status", "unknown")),
+                detail=str(aivis_status.get("detail", "")),
                 category="local_tts",
                 is_local=True,
                 base_url=settings.aivis_base_url,
             ),
             "http_tts": ProviderStatusItem(
+                selectable=bool(settings.http_tts_base_url),
                 status=str(http_tts_status.get("status", "unknown")),
                 detail="; ".join(http_tts_detail_parts),
                 category="external_tts",
@@ -101,6 +108,14 @@ def build_provider_status(
                 is_local=True,
                 base_url=settings.lmstudio_base_url,
                 chat_model=settings.lmstudio_chat_model,
+            ),
+            "litert_lm": ProviderStatusItem(
+                status="configured" if settings.litert_lm_base_url else "not_configured",
+                detail="LiteRT-LM local chat endpoint.",
+                category="local_chat",
+                is_local=True,
+                base_url=settings.litert_lm_base_url,
+                chat_model=settings.litert_lm_chat_model,
             ),
         },
     )

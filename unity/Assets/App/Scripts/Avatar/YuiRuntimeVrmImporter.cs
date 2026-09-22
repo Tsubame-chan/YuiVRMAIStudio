@@ -25,6 +25,10 @@ namespace YuiPhysicalAI.Avatar
         public string LastCustomVrmPath { get; private set; }
         public string LastImportMessage { get; private set; }
         public bool IsImporting { get; private set; }
+        public bool LastImportCanceled { get; private set; }
+        private CancellationTokenSource importCancellation;
+        public void CancelImport() { importCancellation?.Cancel(); }
+        private void OnDestroy() { importCancellation?.Cancel(); }
         public bool HasRestorableSavedCustomVrm
         {
             get
@@ -63,16 +67,19 @@ namespace YuiPhysicalAI.Avatar
 
             var slot = GetSavedAvatarSlot();
             var path = GetCustomVrmPath(slot);
-            await ImportFromPathAsync(path, true, slot);
+            var characterId = GetCharacterId(slot);
+            await ImportFromPathAsync(path, true, slot, characterId.StartsWith("builtin:", StringComparison.Ordinal) ? null : characterId);
         }
 
-        public async Task<bool> ImportFromFilePickerAsync(string slot = null)
+        public async Task<bool> ImportFromFilePickerAsync(string slot = null, string replaceCharacterId = null)
         {
+            LastImportCanceled = false;
             LogImport("Opening avatar file picker.");
-            var result = await YuiFilePicker.OpenAvatarFileAsync();
+            using var result = await YuiFilePicker.OpenAvatarFileAsync();
             LogImport($"File picker result: opened={result.Opened} path={result.Path} message={result.UserMessage}");
             if (!result.Opened)
             {
+                LastImportCanceled = string.IsNullOrWhiteSpace(result.UserMessage);
                 LastImportMessage = !string.IsNullOrWhiteSpace(result.UserMessage)
                     ? result.UserMessage
                     : "Avatar selection was canceled.";
@@ -84,10 +91,10 @@ namespace YuiPhysicalAI.Avatar
                 return false;
             }
 
-            return await ImportFromPathAsync(result.Path, true, slot);
+            return await ImportFromPathAsync(result.Path, true, slot, replaceCharacterId);
         }
 
-        public async Task<bool> ImportFromPathAsync(string path, bool activateOnSuccess = true, string slot = null)
+        public async Task<bool> ImportFromPathAsync(string path, bool activateOnSuccess = true, string slot = null, string replaceCharacterId = null)
         {
             slot = YuiAvatarSlots.IsCustomVrm(slot) ? YuiAvatarSlots.Normalize(slot) : YuiAvatarSlots.CustomVrm1;
             if (IsImporting)
@@ -119,12 +126,17 @@ namespace YuiPhysicalAI.Avatar
             IsImporting = true;
             LastImportMessage = string.Empty;
             GameObject root = null;
+            using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(90));
+            importCancellation = cancellation;
+            var committed = false;
+            var previousEntry = YuiAvatarLibrary.Read().Find(entry => entry.id == replaceCharacterId);
+            YuiAvatarLibrary.Entry libraryEntry = null;
             try
             {
                 LogImport($"Begin loading avatar: {path} size={new FileInfo(path).Length} bytes");
                 if (isAvatarPackage)
                 {
-                    var package = await YuiAvatarPackageLoader.LoadAsync(path, ResolveAvatarParent());
+                    var package = await YuiAvatarPackageLoader.LoadAsync(path, ResolveAvatarParent(), cancellation.Token);
                     root = package.Root;
                     if (root == null)
                     {
@@ -134,12 +146,11 @@ namespace YuiPhysicalAI.Avatar
                 }
                 else
                 {
-                    using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(90));
                     var instance = await Vrm10.LoadPathAsync(
                         path,
                         canLoadVrm0X: true,
                         controlRigGenerationOption: ControlRigGenerationOption.None,
-                        showMeshes: true,
+                        showMeshes: false,
                         awaitCaller: new RuntimeOnlyAwaitCaller(),
                         materialGenerator: new BuiltInVrm10MaterialDescriptorGenerator(),
                         vrmMetaInformationCallback: (thumbnail, vrm10Meta, vrm0Meta) =>
@@ -158,6 +169,9 @@ namespace YuiPhysicalAI.Avatar
                     root = instance.gameObject;
                 }
 
+                cancellation.Token.ThrowIfCancellationRequested();
+                root.SetActive(false);
+                if (root.GetComponent<YuiAvatarExpressionDriver>() == null) root.AddComponent<YuiAvatarExpressionDriver>();
                 root.name = CustomAvatarName;
                 var parent = ResolveAvatarParent();
                 root.transform.SetParent(parent, false);
@@ -174,16 +188,23 @@ namespace YuiPhysicalAI.Avatar
                     runtimeGltf.ShowMeshes();
                 }
 
-                var libraryEntry = YuiAvatarLibrary.Register(path);
+                libraryEntry = await YuiAvatarLibrary.RegisterAsync(path, replaceCharacterId, cancellation.Token);
                 path = YuiAvatarLibrary.Resolve(libraryEntry);
                 SaveTransform(path, root.transform);
-                LastCustomVrmPath = path;
-                PlayerPrefs.SetString(CustomVrmPathPrefsKey(slot), path);
-                if (slot == YuiAvatarSlots.CustomVrm1)
+
+                // Keep the current avatar visible during preparation. The new one
+                // can animate/simulate, but cannot render until the switch commits.
+                if (activateOnSuccess)
                 {
-                    PlayerPrefs.SetString(CustomVrmPathKey, path);
+                    var presentation = YuiAvatarSwitcher.PrepareCustomAvatarForDisplay(root);
+                    var frameCaller = new RuntimeOnlyAwaitCaller();
+                    while (!presentation.IsReady)
+                    {
+                        cancellation.Token.ThrowIfCancellationRequested();
+                        await frameCaller.NextFrame();
+                    }
+                    cancellation.Token.ThrowIfCancellationRequested();
                 }
-                PlayerPrefs.Save();
 
                 if (avatarSwitcher == null)
                 {
@@ -197,32 +218,90 @@ namespace YuiPhysicalAI.Avatar
                 }
                 else
                 {
+                    if (root.GetComponent<YuiCustomVrmIdlePose>() == null) root.AddComponent<YuiCustomVrmIdlePose>();
+                    if (root.GetComponent<YuiAvatarPresentation>() == null) root.AddComponent<YuiAvatarPresentation>();
                     root.SetActive(true);
+                    root.GetComponent<YuiAvatarPresentation>()?.ReleaseForDisplay();
                     LogImport("Avatar switcher not found; custom avatar root activated directly.");
                 }
 
-                YuiAvatarLibrary.CaptureThumbnail(libraryEntry);
+                committed = true;
+                PlayerPrefs.SetString("Yui.CharacterId." + slot, libraryEntry.id);
+                LastCustomVrmPath = path;
+                PlayerPrefs.SetString(CustomVrmPathPrefsKey(slot), path);
+                if (slot == YuiAvatarSlots.CustomVrm1)
+                {
+                    PlayerPrefs.SetString(CustomVrmPathKey, path);
+                }
+                PlayerPrefs.Save();
+
+                // The first animation pose is applied later in the frame. Capturing
+                // immediately after activation stores the imported T-pose instead.
+                if (activateOnSuccess) StartCoroutine(CaptureSettledThumbnail(libraryEntry, root));
                 Debug.Log($"Yui custom avatar import: loaded {Path.GetFileName(path)}");
                 LastImportMessage = $"読み込み完了: {libraryEntry.name}";
                 LogImport(LastImportMessage);
                 return true;
             }
+            catch (OperationCanceledException)
+            {
+                if (root != null && !committed) { root.GetComponent<YuiAvatarBundleLease>()?.ReleaseOwner(); Destroy(root); }
+                LastImportMessage = "アバター読込を中止しました。現在のアバターは保持されます。";
+                return false;
+            }
             catch (Exception ex)
             {
-                if (root != null)
+                if (root != null && !committed)
                 {
+                    root.GetComponent<YuiAvatarBundleLease>()?.ReleaseOwner();
                     Destroy(root);
                 }
 
-                LastImportMessage = $"Custom avatar import failed: {ex.Message}";
+                if (committed) { LastImportMessage = "アバターは表示されましたが、保存に失敗しました: " + ex.Message; return true; }
+                LastImportMessage = ex is UniGLTF.GlbParseException
+                    ? "This file is not a valid VRM. Extract the downloaded ZIP and choose the .vrm file inside."
+                    : $"Custom avatar import failed: {ex.Message}";
                 Debug.LogError($"Yui custom avatar import failed: {ex.Message}");
                 LogImport($"{LastImportMessage}\n{ex}");
                 return false;
             }
             finally
             {
+                if (!committed && libraryEntry != null)
+                {
+                    try {
+                        var store = new YuiAvatarLibraryStore(YuiAvatarLibrary.DirectoryPath);
+                        if (previousEntry != null) store.RestoreAppearance(previousEntry, libraryEntry.file);
+                        else store.Remove(libraryEntry.id);
+                    }
+                    catch (Exception ex) { Debug.LogWarning("Avatar appearance index rollback: " + ex.Message); }
+                }
+                importCancellation = null;
                 IsImporting = false;
+                if (!committed && avatarSwitcher != null && avatarSwitcher.ActiveAvatar == null)
+                    avatarSwitcher.SetAvatarSlot(YuiBuildProfile.DefaultAvatarSlot);
             }
+        }
+
+        private System.Collections.IEnumerator CaptureSettledThumbnail(YuiAvatarLibrary.Entry entry, GameObject root)
+        {
+            var presentation = root != null ? root.GetComponent<YuiAvatarPresentation>() : null;
+            do { yield return new WaitForEndOfFrame(); }
+            while (root != null && root.activeInHierarchy && presentation != null && !presentation.IsReady);
+            if (root == null || !root.activeInHierarchy) yield break;
+            if (avatarSwitcher != null && avatarSwitcher.ActiveAvatar != root) yield break;
+            YuiAvatarLibrary.CaptureThumbnail(entry);
+        }
+
+        public string GetCharacterId(string slot)
+        {
+            var path = GetCustomVrmPath(slot);
+            var id = PlayerPrefs.GetString("Yui.CharacterId." + slot, "");
+            foreach (var entry in YuiAvatarLibrary.Read())
+                if (entry.id == id) return entry.id;
+            foreach (var entry in YuiAvatarLibrary.Read())
+                if (YuiAvatarLibrary.Resolve(entry) == path) return entry.id;
+            return "builtin:" + slot;
         }
 
         public string GetCustomVrmPath(string slot)
@@ -286,11 +365,7 @@ namespace YuiPhysicalAI.Avatar
 
         private static string GetSavedAvatarSlot()
         {
-            var source = string.IsNullOrWhiteSpace(Application.dataPath)
-                ? Application.identifier
-                : Application.dataPath;
-            var key = $"{YuiPrefsKeys.AvatarSlot}.{StableHash(source ?? "default")}";
-            return YuiAvatarSlots.Normalize(PlayerPrefs.GetString(key, string.Empty));
+            return YuiAvatarSlots.Normalize(YuiAvatarSelectionPrefs.Read(YuiBuildProfile.DefaultAvatarSlot));
         }
 
         private static string CustomVrmPathPrefsKey(string slot)
@@ -519,7 +594,3 @@ namespace YuiPhysicalAI.Avatar
 
     }
 }
-
-
-
-

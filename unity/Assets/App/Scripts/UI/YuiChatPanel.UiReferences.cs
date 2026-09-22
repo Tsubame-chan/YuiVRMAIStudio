@@ -37,6 +37,7 @@ namespace YuiPhysicalAI.UI
             NormalizeLogView();
             EnsureChatLogView();
             EnsureUnifiedComposer();
+            StyleConversationSurface();
         }
 
         private void ResolveAvatarReferences()

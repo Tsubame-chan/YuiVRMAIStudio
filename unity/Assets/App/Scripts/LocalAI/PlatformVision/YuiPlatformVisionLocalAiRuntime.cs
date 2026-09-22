@@ -54,36 +54,18 @@ namespace YuiPhysicalAI.LocalAI
 
         public async Task<YuiLocalAiVisionResponse> AnalyzeImageAsync(YuiLocalAiVisionRequest request, CancellationToken cancellationToken)
         {
-            return await Task.Run(
-                () =>
+            var result = await YuiPlatformVisionBridge.AnalyzeAsync(request, cancellationToken);
+            return new YuiLocalAiVisionResponse
+            {
+                Success = result.Ok, ErrorCode = result.ErrorCode, ErrorMessage = result.ErrorMessage,
+                ModelId = RuntimeName, VisionResultId = result.Ok ? Guid.NewGuid().ToString("N") : null,
+                Summary = result.Summary ?? string.Empty,
+                Structured = new Dictionary<string, object>
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var result = YuiPlatformVisionBridge.Analyze(request);
-                    if (!result.Ok)
-                    {
-                        return new YuiLocalAiVisionResponse
-                        {
-                            Success = false,
-                            ErrorCode = result.ErrorCode,
-                            ErrorMessage = result.ErrorMessage,
-                            ModelId = RuntimeName
-                        };
-                    }
-
-                    return new YuiLocalAiVisionResponse
-                    {
-                        Success = true,
-                        ModelId = RuntimeName,
-                        VisionResultId = Guid.NewGuid().ToString("N"),
-                        Summary = result.Summary ?? string.Empty,
-                        Structured = new Dictionary<string, object>
-                        {
-                            ["labels"] = result.Labels ?? Array.Empty<string>(),
-                            ["recognized_text"] = result.RecognizedText ?? string.Empty
-                        }
-                    };
-                },
-                cancellationToken);
+                    ["labels"] = result.Labels ?? Array.Empty<string>(),
+                    ["recognized_text"] = result.RecognizedText ?? string.Empty
+                }
+            };
         }
 
         private static Task<TResponse> Unsupported<TResponse>(YuiLocalAiCapability capability)

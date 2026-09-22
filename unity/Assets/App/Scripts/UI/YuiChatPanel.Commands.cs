@@ -20,6 +20,8 @@ namespace YuiPhysicalAI.UI
     {
         private void SendCurrentInput()
         {
+            if (isRecording) { _ = StopRecordingAndSendAsync(); return; }
+            if (HasStoppableComposerOperation) { StopComposerOperation(); return; }
             if (inputField == null || isSending)
             {
                 return;
@@ -44,7 +46,7 @@ namespace YuiPhysicalAI.UI
 
             if (isRecording)
             {
-                _ = StopRecordingAndSendAsync();
+                StopComposerOperation();
                 return;
             }
 

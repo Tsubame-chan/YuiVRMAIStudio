@@ -6,8 +6,8 @@ namespace YuiPhysicalAI.UI
 {
     public sealed partial class YuiChatPanel
     {
-        private static readonly Color ActiveModeColor = new Color(0.24f, 0.38f, 0.82f, 1f);
-        private static readonly Color InactiveModeColor = new Color(0.12f, 0.14f, 0.18f, 0.96f);
+        private static readonly Color ActiveModeColor = YuiUiTheme.Selected;
+        private static readonly Color InactiveModeColor = YuiUiTheme.Field;
 
         private void EnsureChatInteractionModeControls()
         {
@@ -75,7 +75,7 @@ namespace YuiPhysicalAI.UI
             labelTransform.offsetMax = Vector2.zero;
 
             labelText = labelTransform.GetComponent<Text>();
-            labelText.text = label;
+            YuiUiLocalization.Set(labelText,label);
             labelText.alignment = TextAnchor.MiddleCenter;
             labelText.fontSize = 15;
             labelText.color = Color.white;
@@ -90,10 +90,14 @@ namespace YuiPhysicalAI.UI
 
         private void SetChatInteractionMode(string mode)
         {
+            if (isSending || isRecording || realtimeStreamActive)
+            { SetStatus("Stop the conversation before changing modes.");return; }
             chatInteractionMode = YuiChatRequestModes.Normalize(mode);
+            _=RestoreConversationViewAsync();
             PlayerPrefs.SetString(ChatInteractionModeKey, chatInteractionMode);
             PlayerPrefs.Save();
             UpdateChatInteractionModeUi();
+            ApplyPrimaryCommandLabels();
             SetStatus(YuiChatRequestModes.IsWork(chatInteractionMode) ? "Work mode" : "Talk mode");
         }
 
@@ -124,7 +128,7 @@ namespace YuiPhysicalAI.UI
             if (label != null)
             {
                 label.fontStyle = active ? FontStyle.Bold : FontStyle.Normal;
-                label.color = active ? Color.white : new Color(0.78f, 0.80f, 0.84f, 1f);
+                label.color = active ? YuiUiTheme.Accent : YuiUiTheme.Muted;
             }
         }
 
@@ -138,12 +142,12 @@ namespace YuiPhysicalAI.UI
             }
             if (sendButtonText != null)
             {
-                sendButtonText.text = "Send";
+                YuiUiLocalization.Set(sendButtonText,"Send");
             }
 
             if (inputField?.placeholder is Text placeholder)
             {
-                placeholder.text = "Message or task";
+                YuiUiLocalization.Set(placeholder,YuiChatRequestModes.IsWork(chatInteractionMode) ? "Describe the task" : "Say something");
             }
         }
     }

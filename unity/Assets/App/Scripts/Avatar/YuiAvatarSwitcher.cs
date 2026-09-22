@@ -33,6 +33,7 @@ namespace YuiPhysicalAI.Avatar
         [SerializeField] private ModelController modelController;
         [SerializeField] private AudioSource speechAudioSource;
 
+        public string CustomAvatarSlot { get; private set; } = YuiAvatarSlots.CustomVrm1;
         private AvatarPoseSnapshot demoInitialPose;
         private AvatarPoseSnapshot distributionInitialPose;
 
@@ -90,6 +91,7 @@ namespace YuiPhysicalAI.Avatar
 
         public GameObject SetAvatarSlot(string slot, bool allowFallback = true)
         {
+            var previousAvatar = ActiveAvatar;
             ActiveSlot = NormalizeSlot(slot);
             var activeAvatar = ResolveAvatar(ActiveSlot);
             if (activeAvatar == null)
@@ -128,7 +130,10 @@ namespace YuiPhysicalAI.Avatar
             ActiveAvatar = activeAvatar;
             RestoreKnownAvatarPose(activeAvatar);
             SanitizeAvatar(activeAvatar);
+            if (activeAvatar == distributionAvatar && activeAvatar != previousAvatar)
+                StartBundledAvatarAtRest(activeAvatar);
             RebindRuntime(activeAvatar);
+            activeAvatar?.GetComponent<YuiAvatarPresentation>()?.ReleaseForDisplay();
             return activeAvatar;
         }
 
@@ -141,6 +146,8 @@ namespace YuiPhysicalAI.Avatar
         {
             if (customAvatar != null)
             {
+                customAvatar.SetActive(false);
+                customAvatar.GetComponent<YuiAvatarBundleLease>()?.ReleaseOwner();
                 Destroy(customAvatar);
                 customAvatar = null;
             }
@@ -153,26 +160,44 @@ namespace YuiPhysicalAI.Avatar
 
         public void SetCustomAvatar(GameObject avatar, string slot, bool activate = true)
         {
-            if (customAvatar != null && customAvatar != avatar)
+            var previous = customAvatar;
+            var previousSlot = ActiveSlot;
+            var previousCustomSlot = CustomAvatarSlot;
+            try
             {
-                Destroy(customAvatar);
-            }
-
-            customAvatar = avatar;
-            if (customAvatar != null)
-            {
-                customAvatar.name = "Yui Custom Avatar";
-                SanitizeAvatar(customAvatar);
-                ConfigureCustomVrmIdlePose(customAvatar);
-                if (activate)
+                if (avatar != null)
                 {
+                    // Runtime imports may already be prepared while still hidden.
+                    if (!activate || avatar.GetComponent<YuiAvatarPresentation>()?.IsReady != true) avatar.SetActive(false);
+                    avatar.name = "Yui Custom Avatar";
+                    SanitizeAvatar(avatar);
+                    ConfigureCustomVrmIdlePose(avatar);
+                }
+                customAvatar = avatar;
+                CustomAvatarSlot = YuiAvatarSlots.Normalize(slot);
+                if (avatar != null && activate)
                     SetAvatarSlot(YuiAvatarSlots.IsCustomVrm(slot) ? slot : YuiAvatarSlots.CustomVrm1);
-                }
-                else
-                {
-                    customAvatar.SetActive(false);
-                }
+                if (previous != null && previous != avatar) { previous.SetActive(false); previous.GetComponent<YuiAvatarBundleLease>()?.ReleaseOwner(); Destroy(previous); }
             }
+            catch
+            {
+                customAvatar = previous;
+                CustomAvatarSlot = previousCustomSlot;
+                if (avatar != null && avatar != previous) avatar.SetActive(false);
+                try { SetAvatarSlot(previousSlot); }
+                catch (Exception ex) { Debug.LogWarning("Avatar rollback binding: " + ex.Message); }
+                throw;
+            }
+        }
+
+        public static YuiAvatarPresentation PrepareCustomAvatarForDisplay(GameObject avatar)
+        {
+            SanitizeAvatar(avatar);
+            ConfigureCustomVrmIdlePose(avatar);
+            var presentation = avatar.GetComponent<YuiAvatarPresentation>();
+            presentation.HoldForSelection();
+            avatar.SetActive(true);
+            return presentation;
         }
 
         private void RebindRuntime(GameObject activeAvatar)
@@ -182,6 +207,12 @@ namespace YuiPhysicalAI.Avatar
                 return;
             }
 
+            // Legacy built-in avatars disabled the Chatdoll runtime to avoid
+            // competing face/animation controllers, which also removed blinking.
+            var legacyBlink = activeAvatar.GetComponentInChildren<ChatdollKit.Model.Blink>(true);
+            if (legacyBlink != null && !legacyBlink.enabled
+                && activeAvatar.GetComponent<YuiAvatarExpressionDriver>() == null)
+                activeAvatar.AddComponent<YuiAvatarExpressionDriver>();
             var animator = activeAvatar.GetComponentInChildren<Animator>(true);
             var faceRenderer = FindBestFaceRenderer(activeAvatar);
             var presence = YuiAvatarSlots.IsCustomVrm(ActiveSlot)
@@ -221,7 +252,7 @@ namespace YuiPhysicalAI.Avatar
                 return distributionAvatar;
             }
 
-            if (YuiAvatarSlots.IsCustomVrm(slot) && customAvatar != null)
+            if (YuiAvatarSlots.IsCustomVrm(slot) && slot == CustomAvatarSlot && customAvatar != null)
             {
                 return customAvatar;
             }
@@ -232,6 +263,19 @@ namespace YuiPhysicalAI.Avatar
             }
 
             return null;
+        }
+
+        public static void StartBundledAvatarAtRest(GameObject avatar)
+        {
+            var animator = avatar != null ? avatar.GetComponentInChildren<Animator>(true) : null;
+            // UnityChan's sample controller starts in JUMP00B. Gravity is already disabled;
+            // this is authored animation, not falling caused by runtime placement.
+            if (animator == null || animator.runtimeAnimatorController == null
+                || animator.runtimeAnimatorController.name != "UnityChanActionCheck") return;
+            var idle = Animator.StringToHash("Base Layer.WAIT00");
+            if (!animator.HasState(0, idle)) return;
+            animator.Play(idle, 0, 0);
+            animator.Update(0);
         }
 
         private void CaptureInitialPoses()
@@ -267,7 +311,7 @@ namespace YuiPhysicalAI.Avatar
 
         private static string NormalizeSlot(string slot)
         {
-            return YuiAvatarSlots.Normalize(slot);
+            return YuiAvatarSlots.NormalizeForProfile(slot, YuiBuildProfile.Current == YuiBuildProfile.Public);
         }
 
         private void HideBundledAvatarsIfWaitingForSavedCustomVrm()
@@ -298,8 +342,7 @@ namespace YuiPhysicalAI.Avatar
 
         private static string GetSavedAvatarSlot()
         {
-            var key = $"{YuiPrefsKeys.AvatarSlot}.{GetLocalPrefsScope()}";
-            return YuiAvatarSlots.Normalize(PlayerPrefs.GetString(key, string.Empty));
+            return YuiAvatarSlots.Normalize(YuiAvatarSelectionPrefs.Read(YuiBuildProfile.DefaultAvatarSlot));
         }
 
         private static string CustomVrmPathPrefsKey(string slot)
@@ -456,6 +499,8 @@ namespace YuiPhysicalAI.Avatar
 
             var idlePose = avatar.GetComponent<YuiCustomVrmIdlePose>() ?? avatar.AddComponent<YuiCustomVrmIdlePose>();
             idlePose.enabled = true;
+            if (avatar.GetComponent<YuiAvatarPresentation>() == null)
+                avatar.AddComponent<YuiAvatarPresentation>();
         }
 
         private readonly struct AvatarPoseSnapshot

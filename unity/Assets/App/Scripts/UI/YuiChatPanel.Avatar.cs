@@ -38,7 +38,7 @@ namespace YuiPhysicalAI.UI
             return savedAvatarSlot;
         }
 
-        private static string AvatarSlotPrefsKey => $"{AvatarSlotKey}.{GetLocalPrefsScope()}";
+        private static string AvatarSlotPrefsKey => YuiAvatarSelectionPrefs.Key;
 
         private static string GetLocalPrefsScope()
         {
@@ -76,6 +76,13 @@ namespace YuiPhysicalAI.UI
                 && runtimeVrmImporter.HasRestorableSavedCustomVrm
                 && !avatarSwitcher.HasCustomAvatar;
             avatarSwitcher.SetAvatarSlot(avatarSlot, !waitForSavedCustomVrm);
+            if (!waitForSavedCustomVrm && avatarSwitcher.ActiveAvatar != null && avatarSlot != avatarSwitcher.ActiveSlot)
+            {
+                avatarSlot = avatarSwitcher.ActiveSlot;
+                PlayerPrefs.SetString(AvatarSlotPrefsKey, avatarSlot);
+                PlayerPrefs.Save();
+                SelectCharacterProfile();
+            }
             if (showStatus)
             {
                 if (!string.Equals(requestedSlot, avatarSwitcher.ActiveSlot, StringComparison.OrdinalIgnoreCase))

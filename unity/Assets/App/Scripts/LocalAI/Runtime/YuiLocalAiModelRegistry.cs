@@ -102,8 +102,19 @@ namespace YuiPhysicalAI.LocalAI
                         DiskBudgetMb = 2600,
                         Priority = 10,
                         StartupPolicy = YuiLocalAiStartupPolicy.WarmTextOnly,
-                        Platforms = new[] { "ios", "android", "macos" },
-                        Notes = "Standard E2B model for iOS, Android and macOS. Windows embedded runtime is unavailable; use API or Backend."
+                        Platforms = new[] { "ios", "android", "macos", "windows" },
+                        Notes = "Standard E2B model. Desktop uses the bundled LiteRT-LM worker without a backend service."
+                    },
+                    new YuiLocalAiModelPack
+                    {
+                        Id = "stt_gemma4_e2b_desktop", DisplayName = "Gemma 4 E2B Speech Recognition",
+                        Provider = "google-litert-lm", ModelId = "litert-community/gemma-4-E2B-it-litert-lm",
+                        Format = "litert-lm", RuntimeModelRef = "gemma-4-E2B-it.litertlm",
+                        DeploymentKind = YuiLocalAiDeploymentKind.OnDeviceEmbedded,
+                        Capabilities = new[] { YuiLocalAiCapability.Transcription }, EnabledByDefault = true,
+                        DownloadRequired = true, MemoryBudgetMb = 1800, DiskBudgetMb = 0, Priority = 12,
+                        StartupPolicy = YuiLocalAiStartupPolicy.OnDemand, Platforms = new[] { "macos", "windows" },
+                        Notes = "Reuses the chat model for offline Japanese transcription; no additional download or server."
                     },
                     new YuiLocalAiModelPack
                     {

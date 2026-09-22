@@ -100,6 +100,9 @@ namespace YuiPhysicalAI.Api
     [Serializable]
     public sealed class ProviderStatusResponse
     {
+        [JsonProperty("chat_provider")]
+        public string ChatProvider { get; set; } = "openai";
+
         [JsonProperty("status")]
         public string Status { get; set; }
 
@@ -126,6 +129,12 @@ namespace YuiPhysicalAI.Api
     [Serializable]
     public sealed class ProviderStatusItem
     {
+        [JsonProperty("selectable")]
+        public bool Selectable { get; set; }
+
+        [JsonProperty("engine")]
+        public string Engine { get; set; }
+
         [JsonProperty("status")]
         public string Status { get; set; }
 
@@ -446,6 +455,9 @@ namespace YuiPhysicalAI.Api
     [Serializable]
     public sealed class MemorySaveRequest
     {
+        [JsonProperty("character_id")]
+        public string CharacterId { get; set; }
+
         [JsonProperty("user_id")]
         public string UserId { get; set; } = "local_user";
 
@@ -462,6 +474,12 @@ namespace YuiPhysicalAI.Api
     [Serializable]
     public sealed class MemorySearchRequest
     {
+        [JsonProperty("offset")]
+        public int Offset { get; set; }
+
+        [JsonProperty("character_id")]
+        public string CharacterId { get; set; }
+
         [JsonProperty("user_id")]
         public string UserId { get; set; } = "local_user";
 

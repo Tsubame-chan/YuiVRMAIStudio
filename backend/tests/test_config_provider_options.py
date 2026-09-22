@@ -18,7 +18,7 @@ def test_config_reports_available_provider_options() -> None:
     finally:
         app.dependency_overrides.clear()
 
-    assert payload["chat_providers"] == ["openai", "lmstudio"]
+    assert payload["chat_providers"] == ["openai", "lmstudio", "litert_lm"]
     assert payload["vision_providers"] == ["openai"]
     assert payload["stt_providers"] == ["openai"]
     assert payload["tts_providers"] == ["voicevox", "aivis", "http"]
@@ -89,4 +89,4 @@ def test_config_reports_xai_chat_provider_when_configured() -> None:
     finally:
         app.dependency_overrides.clear()
 
-    assert payload["chat_providers"] == ["openai", "lmstudio", "xai"]
+    assert payload["chat_providers"] == ["openai", "lmstudio", "litert_lm", "xai"]

@@ -8,8 +8,14 @@ namespace YuiPhysicalAI.UI
     {
         private void Apply()
         {
-            ApplyFieldsToRuntime(true);
-            Hide();
+            if (applyButton != null) applyButton.interactable = false;
+            try
+            {
+                ApplyFieldsToRuntime(true);
+                RefreshFields();
+                Hide();
+            }
+            finally { if (applyButton != null) applyButton.interactable = true; }
         }
 
         private void ApplyFieldsToRuntime(bool applyDisplaySettings)
@@ -39,7 +45,6 @@ namespace YuiPhysicalAI.UI
                     openAiApiKeyInput != null ? openAiApiKeyInput.text : chatPanel.OpenAiApiKey,
                     openAiModelInput != null ? openAiModelInput.text : chatPanel.OpenAiModel);
                 chatPanel.SetAutoAiFallbackEnabled(autoAiFallbackToggle == null || autoAiFallbackToggle.isOn);
-                chatPanel.SetAvatarSlot(AvatarSlotValue());
                 chatPanel.ApplyRuntimeSettings(
                     backendUrl,
                     speakerId,
@@ -56,6 +61,7 @@ namespace YuiPhysicalAI.UI
                     irodoriVoiceInstructInput != null ? irodoriVoiceInstructInput.text : chatPanel.IrodoriVoiceInstruct,
                     MicrophoneValue(),
                     LookCameraValue());
+                // Saving an appearance is asynchronous; voice previews never change it.
             }
 
             if (applyDisplaySettings && backgroundManager != null && backgroundDropdown != null)
@@ -106,14 +112,22 @@ namespace YuiPhysicalAI.UI
             StartMicrophoneMonitor();
         }
 
-        private void ImportCustomVrm()
+        private async void ImportCustomVrm()
         {
-            if (chatPanel != null)
-            {
-                SaveCustomVrmDisplayNameFromInput();
-                chatPanel.SetAvatarSlot(AvatarSlotValue());
-                chatPanel.ImportCustomVrmFromFilePicker();
-            }
+            if (chatPanel == null) return;
+            ApplyFieldsToRuntime(false);
+            await chatPanel.ImportAvatarAsync();
+            RefreshCharacterSelection();
+        }
+
+        public bool RefreshCharacterSelection()
+        {
+            if (settingsRoot == null || !settingsRoot.activeSelf) return false;
+            RefreshFields();
+            ApplyResponsiveOverlayLayout();
+            var tab = settingsRoot.transform.Find("Panel/SettingsTab" + settingsPage)?.GetComponent<Button>();
+            if (tab != null) tab.Select();
+            return true;
         }
 
         private void ClearCustomVrm()
@@ -692,6 +706,7 @@ namespace YuiPhysicalAI.UI
         {
             if (cameraAdjustRoot != null)
             {
+                if (visible) StyleCameraAdjustmentHud();
                 cameraAdjustRoot.SetActive(visible);
             }
         }
@@ -726,13 +741,13 @@ namespace YuiPhysicalAI.UI
         {
             if (text != null)
             {
-                text.text = value;
+                YuiUiLocalization.Set(text,value);
             }
         }
 
         private void ToggleAdvanced()
         {
-            SetAdvancedVisible(!advancedVisible);
+            SelectSettingsPage(4);
         }
 
         private void SetAdvancedVisible(bool visible)

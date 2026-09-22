@@ -35,10 +35,27 @@ namespace YuiPhysicalAI.UI
             Debug.Log($"Yui mic test: device='{device}', caps={frequencyText}");
         }
 
-        private void StartRecording()
+        private CancellationTokenSource activeVoiceCancellation;
+
+        private bool startingRecording;
+
+        private async void StartRecording()
         {
+            if (startingRecording || isSending || isRecording) return;
+            startingRecording = true;
+            try { await StartRecordingAsync(); }
+            catch (OperationCanceledException) { }
+            catch (Exception ex) { SetStatus("Microphone unavailable"); AppendLog("System", ex.Message); }
+            finally { startingRecording = false; }
+        }
+
+        private async Task StartRecordingAsync()
+        {
+            if (runtimeVrmImporter != null && runtimeVrmImporter.IsImporting)
+            { SetStatus("アバターの読み込みが終わってから録音してください。"); return; }
             if (IsRealtimeConversationMode())
             {
+                await EnsureExternalDataPermissionAsync(backendUrl, false, cancellationTokenSource.Token);
                 StopRealtimeAudioPlayback();
             }
             else
@@ -46,11 +63,31 @@ namespace YuiPhysicalAI.UI
                 ReleaseCurrentPlaybackClip();
             }
 
+            // OS permission time is not recording time. Starting Microphone first
+            // can return a clip while the permission sheet is still being answered.
+            if (!await YuiMicrophonePermission.EnsureAsync(cancellationTokenSource.Token))
+            { SetStatus("Microphone permission required"); return; }
+#if UNITY_IOS && !UNITY_EDITOR
+            if (!IsRealtimeConversationMode()
+                && await SelectAiEndpointAsync(YuiLocalAiCapability.Transcription, cancellationTokenSource.Token) == YuiAiEndpoint.Local
+                && !await YuiPlatformSpeechBridge.EnsureRecognitionPermissionAsync(cancellationTokenSource.Token))
+            { SetStatus("Speech recognition permission required"); return; }
+#endif
+
 #if UNITY_ANDROID && !UNITY_EDITOR
             if (!IsRealtimeConversationMode() && YuiAndroidSpeechRecognizer.IsSupported)
             {
-                _ = StartAndroidPlatformSpeechRecognitionAsync();
-                return;
+                try
+                {
+                    var endpoint = await SelectAiEndpointAsync(YuiPhysicalAI.LocalAI.YuiLocalAiCapability.Transcription, cancellationTokenSource.Token);
+                    if (endpoint == YuiPhysicalAI.LocalAI.YuiAiEndpoint.Local)
+                    {
+                        await StartAndroidPlatformSpeechRecognitionAsync();
+                        return;
+                    }
+                }
+                catch (OperationCanceledException) { return; }
+                catch (Exception ex) { SetStatus("Microphone unavailable"); AppendLog("System", ex.Message); return; }
             }
 #endif
 
@@ -121,6 +158,8 @@ namespace YuiPhysicalAI.UI
 #if UNITY_ANDROID && !UNITY_EDITOR
         private async Task StartAndroidPlatformSpeechRecognitionAsync()
         {
+            using var voiceOperation = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token);
+            activeVoiceCancellation = voiceOperation;
             try
             {
                 isSending = true;
@@ -132,7 +171,7 @@ namespace YuiPhysicalAI.UI
 
                 var transcript = await YuiAndroidSpeechRecognizer.TranscribeLiveAsync(
                     "ja-JP",
-                    cancellationTokenSource.Token);
+                    voiceOperation.Token);
                 var message = transcript.Text?.Trim();
                 if (!transcript.Ok || string.IsNullOrEmpty(message))
                 {
@@ -148,14 +187,18 @@ namespace YuiPhysicalAI.UI
 
                 if (IsLikelyBrokenSpeechTranscript(message))
                 {
-                    Debug.LogWarning($"Yui Android platform STT rejected broken transcript: {message}");
+                    Debug.LogWarning("Yui Android platform STT rejected a broken transcript.");
                     SetStatus("STT failed");
                     AppendLog("System", "Android音声認識に失敗しました。もう一度短めにはっきり話してください。");
                     return;
                 }
 
+                voiceOperation.Token.ThrowIfCancellationRequested();
+                activeVoiceCancellation = null;
+                isSending = false;
                 await SendMessageAsync(message);
             }
+            catch (OperationCanceledException) { SetStatus("停止しました"); }
             catch (Exception ex)
             {
                 SetStatus("Error");
@@ -164,6 +207,7 @@ namespace YuiPhysicalAI.UI
             }
             finally
             {
+                if (activeVoiceCancellation == voiceOperation) activeVoiceCancellation = null;
                 isSending = false;
                 SetInteractable(true);
                 UpdateMicrophoneLevel(0f);
@@ -352,6 +396,8 @@ namespace YuiPhysicalAI.UI
                 return;
             }
 
+            using var voiceOperation = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token);
+            activeVoiceCancellation = voiceOperation;
             try
             {
                 isSending = true;
@@ -375,36 +421,47 @@ namespace YuiPhysicalAI.UI
                     wavBytes,
                     "ptt_recording.wav",
                     durationMs,
-                    cancellationTokenSource.Token);
+                    voiceOperation.Token);
 
                 var message = transcript.Text?.Trim();
                 if (string.IsNullOrEmpty(message))
                 {
+                    SetStatus("No speech detected");
                     AppendLog("System", "音声を文字起こしできませんでした。");
                     return;
                 }
 
                 if (IsLikelyBrokenSpeechTranscript(message))
                 {
-                    Debug.LogWarning($"Yui local STT rejected broken transcript: {message}");
+                    Debug.LogWarning("Yui local STT rejected a broken transcript.");
                     SetStatus("STT failed");
                     AppendLog("System", "ローカル音声認識に失敗しました。もう一度短めにはっきり話すか、音声/STT設定を変更してください。");
                     return;
                 }
 
+                voiceOperation.Token.ThrowIfCancellationRequested();
+                activeVoiceCancellation = null;
+                isSending = false;
                 await SendMessageAsync(message);
             }
+            catch (OperationCanceledException) { SetStatus("停止しました"); }
             catch (Exception ex)
             {
                 SetStatus("Error");
                 var errorMessage = ex is YuiBackendException backendException
                     ? backendException.UserMessage
                     : ex.Message;
+                // Keep native diagnostics in the diagnostic log. A failed local
+                // transcription is recoverable and is not an LLM/chat failure.
+                if (errorMessage.StartsWith("Local AI request failed:", StringComparison.Ordinal)
+                    || errorMessage.StartsWith("Local AI STT failed:", StringComparison.Ordinal))
+                    errorMessage = "Couldn't transcribe your voice. Check your microphone and try again.";
                 AppendLog("System", errorMessage);
                 Debug.LogError(ex);
             }
             finally
             {
+                if (activeVoiceCancellation == voiceOperation) activeVoiceCancellation = null;
                 isSending = false;
                 SetInteractable(true);
             }

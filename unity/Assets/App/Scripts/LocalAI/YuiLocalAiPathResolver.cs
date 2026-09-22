@@ -44,6 +44,7 @@ namespace YuiPhysicalAI.LocalAI
 
         private static IEnumerable<string> CandidateLocalAiRoots()
         {
+            yield return Path.Combine(Application.persistentDataPath, "YuiLocalAI");
             var streamingAssets = NormalizeLocalPath(Application.streamingAssetsPath);
             if (!string.IsNullOrWhiteSpace(streamingAssets))
             {

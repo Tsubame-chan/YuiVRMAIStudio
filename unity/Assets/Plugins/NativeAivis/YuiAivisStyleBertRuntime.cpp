@@ -21,7 +21,9 @@
 #include <TargetConditionals.h>
 #endif
 
-#if __has_include("../../StreamingAssets/YuiLocalAI/Aivis/Runtime/ONNXRuntime/include/onnxruntime_cxx_api.h")
+#if defined(__APPLE__) && TARGET_OS_IPHONE && __has_include("../iOS/Aivis/onnxruntime.framework/Headers/onnxruntime_cxx_api.h")
+#include "../iOS/Aivis/onnxruntime.framework/Headers/onnxruntime_cxx_api.h"
+#elif __has_include("../../StreamingAssets/YuiLocalAI/Aivis/Runtime/ONNXRuntime/include/onnxruntime_cxx_api.h")
 #include "../../StreamingAssets/YuiLocalAI/Aivis/Runtime/ONNXRuntime/include/onnxruntime_cxx_api.h"
 #elif __has_include("../../../Data/Raw/YuiLocalAI/Aivis/Runtime/ONNXRuntime/include/onnxruntime_cxx_api.h")
 #include "../../../Data/Raw/YuiLocalAI/Aivis/Runtime/ONNXRuntime/include/onnxruntime_cxx_api.h"

@@ -8,27 +8,18 @@ namespace YuiPhysicalAI.UI
         public const float BubbleMaxWidthRatio = 0.84f;
         public const float BubbleMinWidth = 180f;
         public const float BubbleFallbackWidth = 360f;
-        public const int SpeakerFontSize = 13;
-        public const int BodyFontSize = 16;
-        public const int ActionFontSize = 12;
+        public const int SpeakerFontSize = YuiUiTypography.Caption;
+        public const int BodyFontSize = YuiUiTypography.Body;
+        public const int ActionFontSize = YuiUiTypography.Caption;
 
-        public static readonly Color SystemBackground = new Color(0.18f, 0.19f, 0.22f, 0.96f);
-        public static readonly Color UserBackground = new Color(0.23f, 0.33f, 0.78f, 0.96f);
-        public static readonly Color AssistantBackground = new Color(0.16f, 0.18f, 0.28f, 0.96f);
+        public static readonly Color SystemBackground = YuiUiTheme.Field;
+        public static readonly Color UserBackground = YuiUiTheme.Selected;
+        public static readonly Color AssistantBackground = new Color32(38,36,44,255);
         public static readonly Color SystemSpeaker = new Color(1f, 0.82f, 0.44f, 1f);
-        public static readonly Color Speaker = new Color(0.82f, 0.86f, 1f, 1f);
-        public static readonly Color Body = new Color(0.94f, 0.95f, 1f, 1f);
+        public static readonly Color Speaker = YuiUiTheme.Accent;
+        public static readonly Color Body = YuiUiTheme.Text;
 
-        public static Font ResolveFont(Text source)
-        {
-            if (source != null && source.font != null)
-            {
-                return source.font;
-            }
-
-            return Font.CreateDynamicFontFromOSFont(new[] { "Hiragino Sans", "Yu Gothic", "Meiryo", "Arial" }, 13)
-                ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        }
+        public static Font ResolveFont(Text source) => YuiUiTypography.Regular;
 
         public static Sprite CreateRoundedBubbleSprite()
         {

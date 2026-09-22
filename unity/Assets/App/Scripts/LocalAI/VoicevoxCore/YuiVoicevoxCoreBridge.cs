@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -29,13 +31,16 @@ namespace YuiPhysicalAI.LocalAI
             {
 #if (UNITY_IOS || UNITY_STANDALONE_OSX || UNITY_ANDROID) && !UNITY_EDITOR
                 return true;
+#elif UNITY_STANDALONE_WIN && !UNITY_EDITOR
+                return YuiDesktopInferenceProcess.IsAvailable
+                    && File.Exists(Path.Combine(YuiDesktopInferenceProcess.NativeLibraryDirectory, "voicevox_core.dll"));
 #else
                 return false;
 #endif
             }
         }
 
-        public static YuiVoicevoxCoreSynthesisResult Synthesize(
+        public static async Task<YuiVoicevoxCoreSynthesisResult> SynthesizeAsync(
             string text,
             int styleId,
             float speedScale,
@@ -43,16 +48,19 @@ namespace YuiPhysicalAI.LocalAI
             float intonationScale,
             float volumeScale,
             float prePhonemeLength,
-            float postPhonemeLength)
+            float postPhonemeLength, CancellationToken cancellationToken)
         {
             if (!IsSupported)
             {
                 return YuiVoicevoxCoreSynthesisResult.Error("platform_unsupported", "VOICEVOX Core native bridge is not available.");
             }
 
+            await YuiPackagedVoicevoxAssets.PrepareAsync(cancellationToken);
             var root = YuiLocalAiPathResolver.VoicevoxRootPath();
             var payload = JsonConvert.SerializeObject(new
             {
+                capability = "SpeechSynthesis",
+                native_library_directory = YuiDesktopInferenceProcess.NativeLibraryDirectory,
                 text = text ?? string.Empty,
                 style_id = styleId,
                 speed_scale = speedScale,
@@ -62,10 +70,14 @@ namespace YuiPhysicalAI.LocalAI
                 pre_phoneme_length = prePhonemeLength,
                 post_phoneme_length = postPhonemeLength,
                 open_jtalk_dict_path = Path.Combine(root, "open_jtalk_dic_utf_8-1.11"),
-                model_path = Path.Combine(root, "Models", "meimei_himari_1.vvm")
+                model_path = YuiVoicevoxModelCatalog.ModelPath(styleId)
             });
 
-#if UNITY_ANDROID && !UNITY_EDITOR
+var result = await Task.Run(() => {
+            cancellationToken.ThrowIfCancellationRequested();
+#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
+            return JsonConvert.DeserializeObject<YuiVoicevoxCoreSynthesisResult>(YuiDesktopInferenceProcess.Invoke(payload, cancellationToken));
+#elif UNITY_ANDROID && !UNITY_EDITOR
             return YuiAndroidVoicevoxCore.Synthesize(payload);
 #elif (UNITY_IOS || UNITY_STANDALONE_OSX) && !UNITY_EDITOR
             try
@@ -81,6 +93,9 @@ namespace YuiPhysicalAI.LocalAI
 #else
             return YuiVoicevoxCoreSynthesisResult.Error("platform_unsupported", "VOICEVOX Core native bridge is not available.");
 #endif
+            }, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            return result;
         }
 
 #if (UNITY_IOS || UNITY_STANDALONE_OSX) && !UNITY_EDITOR

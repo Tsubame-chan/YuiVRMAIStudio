@@ -9,9 +9,34 @@ namespace YuiPhysicalAI.UI
 {
     public sealed partial class YuiChatPanel
     {
+        private string providerStatusUrl;
+
+        public System.Collections.Generic.List<System.Collections.Generic.KeyValuePair<string, string>> VoiceEnvironmentOptions(string selected)
+        {
+            var localBackendInstalled = false;
+#if (UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN) && !UNITY_EDITOR
+            var root = YuiPhysicalAI.Backend.YuiDesktopBackendPaths.ResolveBackendRoot(Application.dataPath, Application.persistentDataPath);
+            localBackendInstalled = YuiPhysicalAI.Backend.YuiDesktopBackendSupervisor.ShouldAutoStart(backendUrl, true, root);
+#endif
+            var nativeAivis = false;
+#if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
+            nativeAivis = YuiAivisNativeBridge.GetStatus()?.RuntimeReady == true;
+#endif
+            var deviceSpeech = false;
+#if UNITY_IOS && !UNITY_EDITOR
+            deviceSpeech = true;
+#endif
+            return YuiVoiceEnvironmentOptions.Build(providerStatusUrl == backendUrl ? cachedProviderStatus : null,
+                IsBackendRecentlyReachable(), localBackendInstalled, NativeVoicevoxAvailable(), nativeAivis, deviceSpeech, selected);
+        }
+
         public YuiCapabilitySnapshot CurrentCapabilitySnapshot()
         {
             var providerStatus = RecentProviderStatus();
+            if (providerStatus == null && routingBackendHealth != null && routingBackendUrl == backendUrl
+                && Time.realtimeSinceStartup - routingBackendCheckedAt <= 15f)
+                return YuiCapabilityMatrix.FromHealth(routingBackendHealth, IsBackendRecentlyReachable(),
+                    NativeVoicevoxAvailable(), LocalChatRuntimeAvailable(), !string.IsNullOrWhiteSpace(openAiApiKey), IsRemoteBackend());
             return YuiCapabilityMatrix.FromProviderStatus(
                 providerStatus,
                 backendReachable: providerStatus != null || IsBackendRecentlyReachable(),
@@ -30,7 +55,13 @@ namespace YuiPhysicalAI.UI
 
             try
             {
-                cachedProviderStatus = await client.GetProviderStatusAsync(cancellationToken);
+                // Installed desktop services may provide voices even when the LLM is on-device.
+                GetComponent<YuiPhysicalAI.Backend.YuiDesktopBackendSupervisor>()?.RequestEnsureBackend();
+                var requestedUrl = backendUrl;
+                var status = await client.GetProviderStatusAsync(cancellationToken);
+                if (requestedUrl != backendUrl) return;
+                cachedProviderStatus = status;
+                providerStatusUrl = requestedUrl;
                 lastProviderStatusSuccessAt = Time.realtimeSinceStartup;
                 MarkBackendSuccess();
                 await RefreshBackendConfigAsync(cancellationToken);
@@ -41,8 +72,9 @@ namespace YuiPhysicalAI.UI
             }
             catch (Exception ex)
             {
-                cachedProviderStatus = null;
                 lastProviderStatusSuccessAt = -999f;
+                lastBackendSuccessAt = -999f;
+                routingBackendHealth = null;
                 if (EnableBackendDiagnosticsLog)
                 {
                     Debug.LogWarning($"Yui capability snapshot refresh failed: {ex.Message}");
@@ -52,7 +84,7 @@ namespace YuiPhysicalAI.UI
 
         private ProviderStatusResponse RecentProviderStatus()
         {
-            return cachedProviderStatus != null
+            return providerStatusUrl == backendUrl && cachedProviderStatus != null
                 && Time.realtimeSinceStartup - lastProviderStatusSuccessAt <= 15f
                     ? cachedProviderStatus
                     : null;
@@ -60,17 +92,15 @@ namespace YuiPhysicalAI.UI
 
         private bool IsBackendRecentlyReachable()
         {
-            return backendConfigLoaded
-                || Time.realtimeSinceStartup - lastBackendSuccessAt <= 15f;
+            return Time.realtimeSinceStartup - lastBackendSuccessAt <= 15f;
         }
+
+        public bool HasInstalledLocalChat => LocalChatRuntimeAvailable();
+        public bool HasInstalledNativeVoicevox => NativeVoicevoxAvailable();
 
         private bool LocalChatRuntimeAvailable()
         {
-            if (localAiService != null && localAiService.Supports(YuiLocalAiCapability.Chat))
-            {
-                return true;
-            }
-
+            if (!YuiGoogleAiEdgeBridge.IsSupported) return false;
             var registry = YuiLocalAiModelRegistry.FromStreamingAssetsOrDefault();
             return YuiLocalAiRuntimeFactory.HasOnDeviceEmbeddedPack(
                 registry,

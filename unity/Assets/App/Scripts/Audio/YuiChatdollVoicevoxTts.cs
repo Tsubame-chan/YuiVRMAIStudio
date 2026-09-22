@@ -30,13 +30,11 @@ namespace YuiPhysicalAI.Audio
         private readonly HashSet<string> initializedSpeakerKeys = new HashSet<string>();
         private readonly HashSet<string> loggedEngineInfoEndpoints = new HashSet<string>();
         private readonly HashSet<string> cancellableSynthesisUnavailableEndpoints = new HashSet<string>();
-        private readonly HashSet<string> warmUpKeys = new HashSet<string>();
 
         private void Awake()
         {
             EnsureSynthesizer();
             ConfigureSynthesizer();
-            StartWarmUp();
         }
 
         public async Task<AudioClip> SynthesizeAsync(
@@ -85,7 +83,6 @@ namespace YuiPhysicalAI.Audio
             postPhonemeLength = settings.PostPhonemeLength;
             EnsureSynthesizer();
             ConfigureSynthesizer();
-            StartWarmUp();
         }
 
         private async Task<AudioClip> SynthesizeDirectAsync(string text, CancellationToken cancellationToken)
@@ -177,40 +174,6 @@ namespace YuiPhysicalAI.Audio
         public static int SynthesisTimeoutSeconds(int textLength)
         {
             return Mathf.Clamp(18 + Mathf.CeilToInt(Mathf.Max(0, textLength) * 0.12f), 24, 45);
-        }
-
-        private void StartWarmUp()
-        {
-#if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
-            return;
-#else
-            var key = endpointUrl.TrimEnd('/') + "|" + speaker;
-            if (!warmUpKeys.Add(key))
-            {
-                return;
-            }
-
-            _ = WarmUpAsync(key);
-#endif
-        }
-
-        private async Task WarmUpAsync(string key)
-        {
-            try
-            {
-                await LogEngineInfoOnceAsync(CancellationToken.None);
-                var initialized = await EnsureSpeakerInitializedAsync(CancellationToken.None);
-                Debug.Log($"Yui VOICEVOX warm-up complete: {key}, initialized={initialized}");
-            }
-            catch (Exception ex)
-            {
-                if (ex is OperationCanceledException)
-                {
-                    return;
-                }
-
-                Debug.LogWarning($"Yui VOICEVOX warm-up skipped: {key}, error={ex.Message}");
-            }
         }
 
         private async Task<bool> EnsureSpeakerInitializedAsync(CancellationToken cancellationToken)

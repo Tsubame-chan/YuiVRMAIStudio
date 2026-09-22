@@ -6,25 +6,44 @@ namespace YuiPhysicalAI.UI
 {
     public static class YuiToolbarIconUtility
     {
-        private const string SettingsIconPath = "YuiToolbarIcons/settings";
-        private const string SecretIconPath = "YuiToolbarIcons/secret";
-        private const string HelpIconPath = "YuiToolbarIcons/help";
+        private const string SettingsIconPath = "YuiSymbols/settings";
+        private const string SecretIconPath = "YuiSymbols/visibility_off";
+        private const string HelpIconPath = "YuiSymbols/help";
 
         private static readonly Dictionary<string, Sprite> SpriteCache = new Dictionary<string, Sprite>();
 
         public static void ApplySettingsIcon(Button button)
         {
-            ApplyIcon(button, SettingsIconPath, 8f);
+            ApplyFloatingIcon(button, SettingsIconPath, 0);
         }
 
         public static void ApplySecretIcon(Button button)
         {
-            ApplyIcon(button, SecretIconPath, 7f);
+            ApplyFloatingIcon(button, SecretIconPath, 1);
         }
 
         public static void ApplyHelpIcon(Button button)
         {
-            ApplyIcon(button, HelpIconPath, 7f);
+            ApplyFloatingIcon(button, HelpIconPath, 2);
+        }
+
+        public static void ApplyCloseIcon(Button button) => ApplyIcon(button, "YuiSymbols/close", 22f);
+        public static void ApplyAttachmentIcon(Button button)
+        {
+            ApplyIcon(button, "YuiSymbols/attach_file", 22f);
+            var old=button != null ? button.transform.Find("Paperclip") : null;
+            if(old!=null) old.gameObject.SetActive(false);
+        }
+
+        private static void ApplyFloatingIcon(Button button, string path, int index)
+        {
+            ApplyIcon(button, path, 24f);
+            if (button == null) return;
+            // Larger targets than the icon itself, with a consistent gap between actions.
+            var rect = (RectTransform)button.transform;
+            rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one;
+            rect.sizeDelta = new Vector2(112,112);
+            rect.anchoredPosition = new Vector2(-32,-40-index*128);
         }
 
         private static void ApplyIcon(Button button, string resourcePath, float padding)
@@ -40,21 +59,23 @@ namespace YuiPhysicalAI.UI
                 return;
             }
 
+            YuiUiTheme.ButtonStyle(button);
             HideTextLabels(button.transform);
 
             var icon = EnsureIconImage(button.transform);
             icon.sprite = sprite;
             icon.preserveAspect = true;
             icon.raycastTarget = false;
-            icon.color = Color.white;
+            icon.color = YuiUiTheme.Text;
 
             var iconRect = icon.GetComponent<RectTransform>();
-            iconRect.anchorMin = Vector2.zero;
-            iconRect.anchorMax = Vector2.one;
-            iconRect.offsetMin = new Vector2(padding, padding);
-            iconRect.offsetMax = new Vector2(-padding, -padding);
+            iconRect.anchorMin = iconRect.anchorMax = iconRect.pivot = new Vector2(.5f,.5f);
+            iconRect.sizeDelta = new Vector2(48,48);
+            iconRect.anchoredPosition = Vector2.zero;
             icon.transform.SetAsLastSibling();
         }
+
+        public static Sprite LoadSymbol(string name) => LoadSprite("YuiSymbols/" + name);
 
         private static Sprite LoadSprite(string resourcePath)
         {

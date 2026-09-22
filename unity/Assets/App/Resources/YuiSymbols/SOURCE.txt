@@ -1,0 +1,4 @@
+Google Material Symbols Rounded, 24px. Apache License 2.0.
+https://github.com/google/material-design-icons
+Commit: 27e9ef1dbeedc13d682fece4a58e1eda4cb0961a
+SVG rasterized at 192px with white fill; unchanged paths.

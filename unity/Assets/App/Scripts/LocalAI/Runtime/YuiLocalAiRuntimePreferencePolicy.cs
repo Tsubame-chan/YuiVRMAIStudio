@@ -41,14 +41,14 @@ namespace YuiPhysicalAI.LocalAI
                 YuiConversationModes.Normalize(conversationMode),
                 YuiConversationModes.LocalAi,
                 StringComparison.OrdinalIgnoreCase);
-            var localSpeechMode = string.Equals(ttsMode, "local-ai", StringComparison.OrdinalIgnoreCase);
-            var requiresLocalTranscription = (localConversation || localSpeechMode) && localTranscriptionAvailable;
+            // A playback voice must not change where microphone audio is recognized.
+            var requiresLocalTranscription = localConversation;
 
             return new YuiLocalAiRuntimePreferences(
                 preferLocalChat: localConversation,
                 preferLocalTranscription: requiresLocalTranscription,
                 preferLocalVision: localConversation,
-                fallbackToBackend: !localConversation && !localSpeechMode,
+                fallbackToBackend: !localConversation,
                 fallbackToBackendTranscription: !requiresLocalTranscription,
                 fallbackToBackendVision: !localConversation);
         }

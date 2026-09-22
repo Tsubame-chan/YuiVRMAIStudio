@@ -9,6 +9,7 @@ static const VoicevoxOnnxruntime *yuiVoicevoxOrt = nullptr;
 static OpenJtalkRc *yuiVoicevoxOpenJtalk = nullptr;
 static VoicevoxSynthesizer *yuiVoicevoxSynthesizer = nullptr;
 static NSString *yuiVoicevoxLoadedModelPath = nil;
+static uint8_t yuiVoicevoxLoadedModelId[16];
 
 static const char *YuiVoicevoxCString(NSString *text)
 {
@@ -95,6 +96,12 @@ static VoicevoxResultCode YuiVoicevoxEnsureModelLoaded(NSString *modelPath)
         return result;
     }
 
+    if (yuiVoicevoxLoadedModelPath != nil) {
+        result = voicevox_synthesizer_unload_voice_model(yuiVoicevoxSynthesizer, &yuiVoicevoxLoadedModelId);
+        if (result != VOICEVOX_RESULT_OK) { voicevox_voice_model_file_delete(model); return result; }
+        yuiVoicevoxLoadedModelPath = nil;
+    }
+    voicevox_voice_model_file_id(model, &yuiVoicevoxLoadedModelId);
     result = voicevox_synthesizer_load_voice_model(yuiVoicevoxSynthesizer, model);
     voicevox_voice_model_file_delete(model);
     if (result == VOICEVOX_RESULT_OK || result == VOICEVOX_RESULT_MODEL_ALREADY_LOADED_ERROR) {

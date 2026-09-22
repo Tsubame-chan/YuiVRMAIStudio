@@ -79,9 +79,22 @@ namespace YuiPhysicalAI.LocalAI
                 return new YuiLocalAiInstalledAssetLedger();
             }
 
-            var ledger = JsonConvert.DeserializeObject<YuiLocalAiInstalledAssetLedger>(File.ReadAllText(path))
-                ?? new YuiLocalAiInstalledAssetLedger();
+            YuiLocalAiInstalledAssetLedger ledger;
+            try { ledger = JsonConvert.DeserializeObject<YuiLocalAiInstalledAssetLedger>(File.ReadAllText(path)); }
+            catch (JsonException)
+            {
+                // This ledger contains install metadata, not conversations. Keep the damaged file
+                // intact and recover its backup, or let the file probe reconstruct readiness.
+                ledger = null;
+                if (File.Exists(path + ".bak"))
+                {
+                    try { ledger = JsonConvert.DeserializeObject<YuiLocalAiInstalledAssetLedger>(File.ReadAllText(path + ".bak")); }
+                    catch (JsonException) { }
+                }
+            }
+            ledger ??= new YuiLocalAiInstalledAssetLedger();
             ledger.Assets ??= new List<YuiLocalAiInstalledAssetRecord>();
+            ledger.Assets.RemoveAll(item => item == null);
             return ledger;
         }
 
@@ -94,7 +107,13 @@ namespace YuiPhysicalAI.LocalAI
 
             UpdatedAtUtc = DateTime.UtcNow.ToString("O");
             Directory.CreateDirectory(Path.GetDirectoryName(path));
-            File.WriteAllText(path, JsonConvert.SerializeObject(this, Formatting.Indented));
+            var stage = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                File.WriteAllText(stage, JsonConvert.SerializeObject(this, Formatting.Indented));
+                if (File.Exists(path)) File.Replace(stage, path, path + ".bak"); else File.Move(stage, path);
+            }
+            finally { if (File.Exists(stage)) File.Delete(stage); }
         }
 
         public YuiLocalAiInstalledAssetRecord Find(string id)

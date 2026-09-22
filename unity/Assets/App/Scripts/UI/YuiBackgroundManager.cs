@@ -9,7 +9,7 @@ namespace YuiPhysicalAI.UI
         private const string BackdropName = "Yui Runtime Backdrop";
 
         [SerializeField] private Camera targetCamera;
-        [SerializeField] private YuiBackgroundPreset preset = YuiBackgroundPreset.Studio;
+        [SerializeField] private YuiBackgroundPreset preset = YuiBackgroundPreset.SoftGradient;
         [SerializeField] private bool loadSavedPreset = true;
         [SerializeField] private bool useBackdropPlane;
         [SerializeField] private Vector3 backdropPosition = new Vector3(0f, 1.35f, 4.1f);
@@ -17,6 +17,12 @@ namespace YuiPhysicalAI.UI
 
         private GameObject backdrop;
         private Material backdropMaterial;
+        private Material gradientMaterial;
+        private Skybox cameraSkybox;
+        private Material originalSkyboxMaterial;
+        private bool originalSkyboxEnabled;
+        private bool ownsSkybox;
+        public static readonly string[] OptionLabels = { "Soft Charcoal", "Soft Sand", "Soft Midnight", "Soft Mist", "Skybox", "Soft Gradient · Default" };
 
         public YuiBackgroundPreset Preset => preset;
 
@@ -29,7 +35,7 @@ namespace YuiPhysicalAI.UI
 
             if (loadSavedPreset)
             {
-                preset = (YuiBackgroundPreset)PlayerPrefs.GetInt(PresetKey, (int)preset);
+                preset = (YuiBackgroundPreset)PlayerPrefs.GetInt(PresetKey, (int)YuiBackgroundPreset.SoftGradient);
             }
 
             ApplyPreset(preset, false);
@@ -37,6 +43,9 @@ namespace YuiPhysicalAI.UI
 
         private void OnDestroy()
         {
+            RestoreCameraSkybox();
+            if (gradientMaterial != null) Destroy(gradientMaterial);
+            if (ownsSkybox && cameraSkybox != null) Destroy(cameraSkybox);
             if (backdropMaterial != null)
             {
                 Destroy(backdropMaterial);
@@ -70,22 +79,15 @@ namespace YuiPhysicalAI.UI
                 targetCamera = Camera.main;
             }
 
+            RestoreCameraSkybox();
+
             switch (preset)
             {
                 case YuiBackgroundPreset.UnityDefault:
                     ApplyUnityDefault();
                     break;
-                case YuiBackgroundPreset.WarmRoom:
-                    ApplySolidBackdrop(new Color(0.82f, 0.78f, 0.68f), new Color(0.33f, 0.30f, 0.25f), 0.76f);
-                    break;
-                case YuiBackgroundPreset.NightDesk:
-                    ApplySolidBackdrop(new Color(0.045f, 0.055f, 0.075f), new Color(0.12f, 0.16f, 0.23f), 0.64f);
-                    break;
-                case YuiBackgroundPreset.SoftStage:
-                    ApplySolidBackdrop(new Color(0.62f, 0.66f, 0.69f), new Color(0.76f, 0.80f, 0.82f), 0.82f);
-                    break;
                 default:
-                    ApplySolidBackdrop(new Color(0.16f, 0.18f, 0.19f), new Color(0.54f, 0.57f, 0.56f), 0.78f);
+                    ApplySoftGradient();
                     break;
             }
 
@@ -94,6 +96,56 @@ namespace YuiPhysicalAI.UI
                 PlayerPrefs.SetInt(PresetKey, (int)preset);
                 PlayerPrefs.Save();
             }
+        }
+
+        private void RestoreCameraSkybox()
+        {
+            if (cameraSkybox == null) return;
+            cameraSkybox.material = originalSkyboxMaterial;
+            cameraSkybox.enabled = originalSkyboxEnabled;
+        }
+
+        private void ApplySoftGradient()
+        {
+            // Backgrounds affect the camera only. Avatar lighting belongs to the scene;
+            // adding bright ambient light here washes out MToon imports.
+            ApplySolidBackdrop(new Color(.11f,.12f,.16f),Color.gray);
+            if (backdrop != null) backdrop.SetActive(false);
+            if (targetCamera == null) return;
+            if (gradientMaterial == null)
+            {
+                var shader = Resources.Load<Shader>("YuiBackgrounds/SoftGradient");
+                if (shader == null || !shader.isSupported) return; // readable solid fallback
+                gradientMaterial = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
+            }
+            if (cameraSkybox == null)
+            {
+                cameraSkybox = targetCamera.GetComponent<Skybox>();
+                ownsSkybox = cameraSkybox == null;
+                if (ownsSkybox) cameraSkybox = targetCamera.gameObject.AddComponent<Skybox>();
+                originalSkyboxMaterial = cameraSkybox.material;
+                originalSkyboxEnabled = !ownsSkybox && cameraSkybox.enabled;
+            }
+            var bottom = new Color(.115f,.125f,.165f);
+            var top = new Color(.075f,.084f,.115f);
+            var glow = new Color(.18f,.165f,.21f);
+            switch (preset)
+            {
+                case YuiBackgroundPreset.Studio:
+                    bottom=new Color(.13f,.14f,.15f); top=new Color(.07f,.08f,.09f); glow=new Color(.19f,.19f,.19f); break;
+                case YuiBackgroundPreset.WarmRoom:
+                    bottom=new Color(.43f,.39f,.33f); top=new Color(.29f,.26f,.23f); glow=new Color(.24f,.22f,.18f); break;
+                case YuiBackgroundPreset.NightDesk:
+                    bottom=new Color(.075f,.12f,.18f); top=new Color(.04f,.065f,.12f); glow=new Color(.13f,.19f,.26f); break;
+                case YuiBackgroundPreset.SoftStage:
+                    bottom=new Color(.36f,.41f,.43f); top=new Color(.24f,.29f,.32f); glow=new Color(.25f,.27f,.28f); break;
+            }
+            gradientMaterial.SetVector("_BottomColor",bottom);
+            gradientMaterial.SetVector("_TopColor",top);
+            gradientMaterial.SetVector("_GlowColor",glow);
+            cameraSkybox.material = gradientMaterial;
+            cameraSkybox.enabled = true;
+            targetCamera.clearFlags = CameraClearFlags.Skybox;
         }
 
         private void ApplyUnityDefault()
@@ -109,7 +161,7 @@ namespace YuiPhysicalAI.UI
             }
         }
 
-        private void ApplySolidBackdrop(Color cameraColor, Color backdropColor, float ambient)
+        private void ApplySolidBackdrop(Color cameraColor, Color backdropColor)
         {
             if (targetCamera != null)
             {
@@ -117,7 +169,6 @@ namespace YuiPhysicalAI.UI
                 targetCamera.backgroundColor = cameraColor;
             }
 
-            RenderSettings.ambientLight = Color.white * ambient;
             if (!useBackdropPlane)
             {
                 if (backdrop != null)
@@ -186,5 +237,6 @@ namespace YuiPhysicalAI.UI
         NightDesk,
         SoftStage,
         UnityDefault,
+        SoftGradient,
     }
 }

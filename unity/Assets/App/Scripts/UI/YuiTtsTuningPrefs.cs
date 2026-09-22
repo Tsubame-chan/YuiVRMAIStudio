@@ -128,6 +128,8 @@ namespace YuiPhysicalAI.UI
 
         private static int CompatibleSpeakerForMode(string mode, int speakerId)
         {
+            if (NormalizeMode(mode) != "aivis" && NormalizeMode(mode) != "aivis-native")
+                speakerId = YuiTtsVoiceOptionCatalog.StandardVoicevoxId(speakerId);
             if (speakerId <= 0)
             {
                 return DefaultSpeakerForMode(mode);
