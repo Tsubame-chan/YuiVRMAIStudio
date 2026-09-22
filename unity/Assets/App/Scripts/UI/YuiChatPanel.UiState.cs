@@ -23,13 +23,15 @@ namespace YuiPhysicalAI.UI
             statusText.supportRichText = true;
             statusText.color = Color.white;
             statusText.alignment = TextAnchor.MiddleLeft;
-            var modeLabel = YuiConversationModes.StatusLabel(conversationMode);
-            var modePrefix = string.IsNullOrEmpty(modeLabel)
-                ? string.Empty
-                : $"<color=#f5c542><b>{modeLabel}</b></color>\n";
-            statusText.text = secretMode
-                ? $"{modePrefix}<b>Secret Mode</b>\n{currentStatus}"
-                : $"{modePrefix}{currentStatus}";
+            var modeLabel = YuiUiLocalization.Text(YuiConversationModes.StatusLabel(conversationMode));
+            // Privacy and connectivity are independent; keep connectivity on its own line.
+            var heading = modeLabel + (secretMode ? (string.IsNullOrEmpty(modeLabel) ? "" : " · ") + "Secret Mode" : "");
+            var displayedStatus = currentStatus;
+            if (!isSending && !isRecording && conversationMode == YuiConversationModes.DirectOpenAi
+                && string.IsNullOrWhiteSpace(openAiApiKey))
+                displayedStatus = string.IsNullOrEmpty(YuiApiKeyStore.LastError) ? "API key required" : "Unlock API key in Settings";
+            statusText.text = (string.IsNullOrEmpty(heading) ? "" : $"<color=#f5c542><b>{heading}</b></color>\n")
+                + YuiUiLocalization.Text(displayedStatus);
             if (!string.IsNullOrWhiteSpace(appContextStatus))
             {
                 statusText.text += $"\n<color=#a8c7ff>{appContextStatus}</color>";
@@ -45,12 +47,12 @@ namespace YuiPhysicalAI.UI
 
             if (sendButtonText != null)
             {
-                sendButtonText.text = interactable ? "Send" : "...";
+                YuiUiLocalization.Set(sendButtonText,interactable ? "Send" : "...");
             }
 
             if (recordButton != null)
             {
-                recordButton.interactable = interactable || isRecording;
+                recordButton.interactable = (interactable || isRecording) && !(isRecording && IsRealtimeConversationMode());
             }
 
             if (lookButton != null)
@@ -73,7 +75,10 @@ namespace YuiPhysicalAI.UI
         {
             if (recordButtonText != null)
             {
-                recordButtonText.text = text;
+                recordButtonText.resizeTextForBestFit = true;
+                recordButtonText.resizeTextMinSize = 16;
+                recordButtonText.resizeTextMaxSize = YuiUiTypography.Button;
+                YuiUiLocalization.Set(recordButtonText,isRecording ? (IsRealtimeConversationMode() ? "Mic" : "Cancel") : text);
             }
         }
 
@@ -81,7 +86,7 @@ namespace YuiPhysicalAI.UI
         {
             if (lookButtonText != null)
             {
-                lookButtonText.text = text;
+                YuiUiLocalization.Set(lookButtonText,text);
             }
         }
 
@@ -89,7 +94,7 @@ namespace YuiPhysicalAI.UI
         {
             if (importImageButtonText != null)
             {
-                importImageButtonText.text = text;
+                YuiUiLocalization.Set(importImageButtonText,text);
             }
         }
 
@@ -136,19 +141,8 @@ namespace YuiPhysicalAI.UI
 
         private void ApplyReadableFont()
         {
-            var font = Font.CreateDynamicFontFromOSFont(
-                new[] { "Meiryo", "Yu Gothic", "MS Gothic", "Arial" },
-                20);
-
-            if (font == null)
-            {
-                return;
-            }
-
-            foreach (var text in GetComponentsInChildren<Text>(true))
-            {
-                text.font = font;
-            }
+            // The app Canvas contains Settings/Help as siblings of the chat panel.
+            YuiUiTypography.Apply(GetComponentInParent<Canvas>()?.rootCanvas.transform ?? transform);
         }
     }
 }

@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 from datetime import date
 import logging
@@ -17,6 +18,7 @@ from app.models.health import HealthResponse
 from app.models.memory import (
     MemoryItem,
     MemorySaveRequest,
+    MemoryScope,
     MemorySearchRequest,
     MemorySearchResponse,
 )
@@ -70,6 +72,7 @@ def health(settings: Settings = Depends(get_settings)) -> HealthResponse:
         providers={
             "openai_configured": bool(settings.openai_api_key),
             "gemini_configured": bool(settings.gemini_api_key),
+            "xai_configured": bool(settings.xai_api_key),
             "chat_provider": settings.chat_provider,
             "vision_provider": settings.vision_provider,
             "tts_provider": settings.tts_provider,
@@ -95,7 +98,7 @@ def health(settings: Settings = Depends(get_settings)) -> HealthResponse:
 
 @router.get("/config", response_model=ConfigResponse)
 def config(settings: Settings = Depends(get_settings)) -> ConfigResponse:
-    chat_providers = ["openai", "lmstudio"]
+    chat_providers = ["openai", "lmstudio", "litert_lm"]
     if settings.xai_api_key:
         chat_providers.append("xai")
     vision_providers = ["openai"]
@@ -141,13 +144,16 @@ def config(settings: Settings = Depends(get_settings)) -> ConfigResponse:
 @router.get("/providers/status", response_model=ProviderStatusResponse)
 async def providers_status(settings: Settings = Depends(get_settings)) -> ProviderStatusResponse:
     database_ok = check_database(settings.database_url)
-    voicevox_status = await probe_voicevox(settings)
-    http_tts_status = await probe_http_tts(settings)
+    voicevox_status, http_tts_status, aivis_status = await asyncio.gather(
+        probe_voicevox(settings), probe_http_tts(settings),
+        probe_voicevox(settings.model_copy(update={"voicevox_base_url": settings.aivis_base_url})),
+    )
     return build_provider_status(
         settings,
         database_ok=database_ok,
         voicevox_status=voicevox_status,
         http_tts_status=http_tts_status,
+        aivis_status=aivis_status,
     )
 
 
@@ -240,6 +246,7 @@ async def chat(
                     memory_repository=memory_repository,
                     user_id=request.user_id,
                     query=request.message,
+                    character_id=request.character_id,
                 )
             ]
         response = await provider.generate(request, history=history)
@@ -285,6 +292,8 @@ async def chat(
 
 
 def _chat_model_name(settings: Settings, provider_name: str) -> str:
+    if provider_name == "litert_lm":
+        return settings.litert_lm_chat_model
     if provider_name == "lmstudio":
         return settings.lmstudio_chat_model
     if provider_name == "xai":
@@ -297,24 +306,28 @@ def _memory_context(
     memory_repository: MemoryRepository,
     user_id: str,
     query: str,
+    character_id: str | None = None,
 ) -> list[MemoryItem]:
     memories = memory_repository.search(
-        MemorySearchRequest(user_id=user_id, query=query, limit=5)
+        MemorySearchRequest(user_id=user_id, query=query, limit=5, character_id=character_id)
     )
     if memories:
         return memories
-    return memory_repository.list_recent(user_id=user_id, limit=5)
+    return memory_repository.list_recent(user_id=user_id, limit=5, character_id=character_id)
 
 
 @router.get("/conversations/recent", response_model=RecentConversationsResponse)
 def recent_conversations(
     user_id: str = "local_user",
     limit: int = 20,
+    offset: int = 0,
+    character_id: str | None = None,
+    session_id: str | None = None,
     repository: ChatRepository = Depends(get_chat_repository),
 ) -> RecentConversationsResponse:
     limit = max(1, min(limit, 100))
     return RecentConversationsResponse(
-        items=repository.list_recent_conversations(user_id=user_id, limit=limit)
+        items=repository.list_recent_conversations(user_id=user_id, limit=limit, character_id=character_id, session_id=session_id, offset=max(0, offset))
     )
 
 
@@ -464,6 +477,8 @@ async def stt(
     settings: Settings = Depends(get_settings),
     usage_repository: UsageRepository = Depends(get_usage_repository),
 ) -> STTResponse:
+    if settings.stt_provider == "openai" and not settings.openai_api_key:
+        raise HTTPException(status_code=503, detail="Backend OpenAI key is not configured. Configure OPENAI_API_KEY for this backend, or use OpenAI API mode with the app's key.")
     audio_bytes = await audio.read()
     if not audio_bytes:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Audio file is empty.")
@@ -607,6 +622,23 @@ def memory_save(
     repository: MemoryRepository = Depends(get_memory_repository),
 ) -> MemoryItem:
     return repository.save(request)
+
+
+@router.post("/memory/{memory_id}/update", response_model=MemoryItem)
+def memory_update(memory_id: int, request: MemorySaveRequest,
+                  repository: MemoryRepository = Depends(get_memory_repository)) -> MemoryItem:
+    item = repository.update(memory_id, request)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Memory not found")
+    return item
+
+
+@router.post("/memory/{memory_id}/delete")
+def memory_delete(memory_id: int, request: MemoryScope,
+                  repository: MemoryRepository = Depends(get_memory_repository)) -> dict[str, bool]:
+    if not repository.delete(memory_id, request.user_id, request.character_id):
+        raise HTTPException(status_code=404, detail="Memory not found")
+    return {"deleted": True}
 
 
 @router.post("/memory/search", response_model=MemorySearchResponse)

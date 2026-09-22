@@ -170,7 +170,7 @@ namespace YuiPhysicalAI.UI
             {
                 realtimeVoicevoxSpeechCancellationTokenSource?.Dispose();
                 realtimeVoicevoxSpeechCancellationTokenSource = null;
-                if (pausedRealtimeInput)
+                if (pausedRealtimeInput && generation == realtimeVoicevoxGeneration)
                 {
                     ResumeRealtimeInputAfterAssistantPlayback(
                         pausedInputDevice,

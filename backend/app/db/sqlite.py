@@ -102,6 +102,10 @@ def initialize_database(database_url: str) -> None:
                 if column not in existing:
                     connection.execute(f"ALTER TABLE {table} ADD COLUMN {column} TEXT")
         connection.execute("CREATE INDEX IF NOT EXISTS idx_conversations_identity ON conversations(user_id, character_id, session_id, id)")
+        memory_columns = {row[1] for row in connection.execute("PRAGMA table_info(memories)")}
+        if "character_id" not in memory_columns:
+            connection.execute("ALTER TABLE memories ADD COLUMN character_id TEXT")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_memories_identity ON memories(user_id, character_id, id)")
         connection.commit()
 
 

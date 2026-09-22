@@ -7,6 +7,9 @@ namespace YuiPhysicalAI.UI
 {
     public sealed partial class YuiSettingsOverlay
     {
+        private string[] microphoneOptionValues = new[] { "Default" };
+        private string[] cameraOptionValues = new[] { "Disabled" };
+
         private void RefreshFields()
         {
             if (chatPanel != null)
@@ -26,6 +29,7 @@ namespace YuiPhysicalAI.UI
                 if (autoAiFallbackToggle != null)
                 {
                     autoAiFallbackToggle.SetIsOnWithoutNotify(chatPanel.AutoAiFallbackEnabled);
+                    autoAiFallbackToggle.GetComponent<YuiSettingsSwitch>()?.Refresh();
                 }
                 RefreshTtsModeOptions();
                 if (ttsModeDropdown != null)
@@ -116,6 +120,8 @@ namespace YuiPhysicalAI.UI
 
             if (backgroundDropdown != null && backgroundManager != null)
             {
+                backgroundDropdown.ClearOptions();
+                backgroundDropdown.AddOptions(new System.Collections.Generic.List<string>(YuiBackgroundManager.OptionLabels));
                 backgroundDropdown.value = (int)backgroundManager.Preset;
             }
 
@@ -194,36 +200,25 @@ namespace YuiPhysicalAI.UI
             }
         }
 
-        private void RefreshTtsModeOptions()
+        private void RefreshTtsModeOptions(string preferredMode = null)
         {
             if (ttsModeDropdown == null)
             {
                 return;
             }
 
-            var includeHttpTts = ShouldShowHttpTtsOption();
-            var httpTtsAvailableOrUnknown = chatPanel == null
-                || !chatPanel.BackendConfigLoaded
-                || chatPanel.HttpTtsAvailable;
+            var selected = preferredMode ?? (chatPanel != null ? chatPanel.TtsMode : "server");
+            visibleTtsModes.Clear();
             ttsModeDropdown.options.Clear();
-            var options = YuiTtsModeOptions.Labels(
-                ShouldShowLocalAiTtsOption(),
-                ShouldShowNativeAivisOption(),
-                ShouldShowNativeVoicevoxOption(),
-                includeHttpTts,
-                httpTtsAvailableOrUnknown);
-            var capabilitySnapshot = chatPanel != null ? chatPanel.CurrentCapabilitySnapshot() : null;
-            for (var i = 0; i < options.Length; i++)
+            var options = chatPanel != null ? chatPanel.VoiceEnvironmentOptions(selected)
+                : YuiVoiceEnvironmentOptions.Build(null, false, false, false, false, false, selected);
+            foreach (var option in options)
             {
-                var mode = YuiTtsModeOptions.ModeFromIndex(
-                    i,
-                    ShouldShowLocalAiTtsOption(),
-                    ShouldShowNativeAivisOption(),
-                    ShouldShowNativeVoicevoxOption(),
-                    includeHttpTts);
-                var label = YuiCapabilityDiagnostics.DecorateTtsLabel(options[i], mode, capabilitySnapshot);
-                ttsModeDropdown.options.Add(new Dropdown.OptionData(label));
+                visibleTtsModes.Add(option.Key);
+                ttsModeDropdown.options.Add(new Dropdown.OptionData(option.Value));
             }
+            ttsModeDropdown.SetValueWithoutNotify(TtsModeIndex(selected));
+            ttsModeDropdown.RefreshShownValue();
         }
 
         private void RefreshConversationModeOptions()
@@ -292,6 +287,7 @@ namespace YuiPhysicalAI.UI
             var options = chatPanel != null
                 ? chatPanel.GetMicrophoneDeviceOptions()
                 : new[] { "Default" };
+            microphoneOptionValues = options;
             if (microphoneDropdown.options.Count == options.Length)
             {
                 var same = true;
@@ -326,6 +322,7 @@ namespace YuiPhysicalAI.UI
             var options = chatPanel != null
                 ? chatPanel.GetLookCameraDeviceOptions()
                 : new[] { "Disabled" };
+            cameraOptionValues = options;
             if (lookCameraDropdown.options.Count == options.Length)
             {
                 var same = true;
@@ -502,12 +499,8 @@ namespace YuiPhysicalAI.UI
                 return "server";
             }
 
-            return YuiTtsModeOptions.ModeFromIndex(
-                ttsModeDropdown.value,
-                ShouldShowLocalAiTtsOption(),
-                ShouldShowNativeAivisOption(),
-                ShouldShowNativeVoicevoxOption(),
-                ShouldShowHttpTtsOption());
+            return ttsModeDropdown.value >= 0 && ttsModeDropdown.value < visibleTtsModes.Count
+                ? visibleTtsModes[ttsModeDropdown.value] : "server";
         }
 
         private bool IsAivisTtsSelected()
@@ -548,7 +541,7 @@ namespace YuiPhysicalAI.UI
                 return "Default";
             }
 
-            return microphoneDropdown.options[microphoneDropdown.value].text;
+            return microphoneDropdown.value < microphoneOptionValues.Length ? microphoneOptionValues[microphoneDropdown.value] : "Default";
         }
 
         private string LookCameraValue()
@@ -560,11 +553,13 @@ namespace YuiPhysicalAI.UI
                 return "Disabled";
             }
 
-            return lookCameraDropdown.options[lookCameraDropdown.value].text;
+            return lookCameraDropdown.value < cameraOptionValues.Length ? cameraOptionValues[lookCameraDropdown.value] : "Disabled";
         }
 
         private string AvatarSlotValue()
         {
+            // Slots are storage compatibility only. The library owns active selection.
+            if (chatPanel != null) return chatPanel.AvatarSlot;
             if (avatarDropdown == null)
             {
                 return YuiAvatarSlots.UnityChanDefault;
@@ -597,12 +592,9 @@ namespace YuiPhysicalAI.UI
 
         private int TtsModeIndex(string mode)
         {
-            return YuiTtsModeOptions.IndexFromMode(
-                mode,
-                ShouldShowLocalAiTtsOption(),
-                ShouldShowNativeAivisOption(),
-                ShouldShowNativeVoicevoxOption(),
-                ShouldShowHttpTtsOption());
+            var index = visibleTtsModes.IndexOf(mode);
+            if (index < 0 && (mode == "local" || mode == "voicevox-native")) index = visibleTtsModes.IndexOf("server");
+            return index >= 0 ? index : 0;
         }
 
         private static int IrodoriVoiceGenderIndex(string gender)
@@ -646,9 +638,9 @@ namespace YuiPhysicalAI.UI
                 return 0;
             }
 
-            for (var i = 0; i < microphoneDropdown.options.Count; i++)
+            for (var i = 0; i < microphoneOptionValues.Length; i++)
             {
-                if (microphoneDropdown.options[i].text == device)
+                if (microphoneOptionValues[i] == device)
                 {
                     return i;
                 }
@@ -664,9 +656,9 @@ namespace YuiPhysicalAI.UI
                 return 0;
             }
 
-            for (var i = 0; i < lookCameraDropdown.options.Count; i++)
+            for (var i = 0; i < cameraOptionValues.Length; i++)
             {
-                if (lookCameraDropdown.options[i].text == device)
+                if (cameraOptionValues[i] == device)
                 {
                     return i;
                 }
@@ -682,6 +674,9 @@ namespace YuiPhysicalAI.UI
 
         private System.Collections.Generic.IReadOnlyList<YuiTtsVoiceOption> VoiceOptionsForMode(string mode)
         {
+            if (YuiTtsRuntimeRouting.IsVoicevoxIntent(mode)
+                && (mode == "voicevox-native" || chatPanel == null || !chatPanel.HasBackendVoicevox))
+                return YuiTtsVoiceOptionCatalog.EmbeddedVoicevoxOptions;
             return YuiTtsVoiceOptionCatalog.OptionsForMode(mode, chatPanel != null ? chatPanel.BackendAivisVoiceOptions : null);
         }
 

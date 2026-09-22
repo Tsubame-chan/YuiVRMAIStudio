@@ -124,7 +124,7 @@ namespace YuiPhysicalAI.UI
 
             if (IsLikelyBrokenSpeechText(speechText))
             {
-                Debug.LogWarning($"Yui TTS skipped broken speech text: {speechText}");
+                Debug.LogWarning("Yui TTS skipped broken speech text.");
                 SetStatus("Ready");
                 return;
             }
@@ -143,39 +143,38 @@ namespace YuiPhysicalAI.UI
                 return;
             }
 
-            for (var index = 0; index < chunks.Length; index++)
+            try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                var chunkTimer = System.Diagnostics.Stopwatch.StartNew();
-                var clip = await SynthesizeSpeechClipAsync(
-                    chunks[index],
-                    chat.VoiceStyle,
-                    $"{chatRequestId}-tts-{index}",
-                    cancellationToken);
-                Debug.Log($"Yui TTS chunk {index + 1}/{chunks.Length} latency: {chunkTimer.ElapsedMilliseconds} ms, chars={chunks[index].Length}");
-                if (clip == null)
+                for (var index = 0; index < chunks.Length; index++)
                 {
-                    continue;
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var clip = await SynthesizeSpeechClipAsync(chunks[index], chat.VoiceStyle,
+                        $"{chatRequestId}-tts-{index}", cancellationToken);
+                    await PlayPreparedSpeechClipAsync(clip, cancellationToken);
                 }
-
-                while (audioSource.isPlaying && !cancellationToken.IsCancellationRequested)
-                {
-                    // Yielding every frame burns CPU. 30 ms is well below typical
-                    // VOICEVOX chunk boundaries and stays imperceptible.
-                    await Task.Delay(30, cancellationToken);
-                }
-
+                await WaitForCurrentPlaybackToFinishAsync(cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
-                var previousClip = audioSource.clip;
+                SetStatus("Connected");
+            }
+            finally { ReleaseCurrentPlaybackClip(); }
+        }
+
+        private async Task PlayPreparedSpeechClipAsync(AudioClip clip, CancellationToken cancellationToken)
+        {
+            if (clip == null) throw new InvalidOperationException("Speech synthesis returned no audio.");
+            var ownedByPlayer = false;
+            try
+            {
+                await WaitForCurrentPlaybackToFinishAsync(cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                var previous = audioSource.clip;
                 audioSource.Stop();
                 audioSource.clip = clip;
-                DestroyOwnedAudioClip(previousClip, clip);
+                ownedByPlayer = true;
+                DestroyOwnedAudioClip(previous, clip);
                 audioSource.Play();
             }
-
-            await WaitForCurrentPlaybackToFinishAsync(cancellationToken);
-            ReleaseCurrentPlaybackClip();
-            SetStatus("Connected");
+            finally { if (!ownedByPlayer) DestroyOwnedAudioClip(clip, null); }
         }
 
         private string ResolveSpeechText(ChatResponse chat)
@@ -220,80 +219,38 @@ namespace YuiPhysicalAI.UI
             string chatRequestId,
             CancellationToken cancellationToken)
         {
+            using var prefetch = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             var tasks = new Task<AudioClip>[chunks.Length];
-            var prefetchGate = new SemaphoreSlim(2, 2);
-            for (var index = 0; index < chunks.Length; index++)
-            {
-                var chunkIndex = index;
-                tasks[chunkIndex] = SynthesizeSpeechClipWithPrefetchGateAsync(
-                    prefetchGate,
-                    chunks[chunkIndex],
-                    voiceStyle,
-                    $"{chatRequestId}-tts-{chunkIndex}",
-                    cancellationToken);
-            }
-
-            for (var index = 0; index < chunks.Length; index++)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var chunkTimer = System.Diagnostics.Stopwatch.StartNew();
-                AudioClip clip = null;
-                try
-                {
-                    clip = await tasks[index];
-                }
-                catch
-                {
-                    for (var cleanupIndex = index + 1; cleanupIndex < tasks.Length; cleanupIndex++)
-                    {
-                        if (tasks[cleanupIndex].IsCompletedSuccessfully)
-                        {
-                            DestroyOwnedAudioClip(tasks[cleanupIndex].Result, null);
-                        }
-                    }
-
-                    throw;
-                }
-
-                Debug.Log($"Yui TTS chunk {index + 1}/{chunks.Length} latency: {chunkTimer.ElapsedMilliseconds} ms, chars={chunks[index].Length}, prefetch=true");
-                if (clip == null)
-                {
-                    continue;
-                }
-
-                while (audioSource.isPlaying && !cancellationToken.IsCancellationRequested)
-                {
-                    await Task.Delay(30, cancellationToken);
-                }
-
-                cancellationToken.ThrowIfCancellationRequested();
-                var previousClip = audioSource.clip;
-                audioSource.Stop();
-                audioSource.clip = clip;
-                DestroyOwnedAudioClip(previousClip, clip);
-                audioSource.Play();
-            }
-
-            await WaitForCurrentPlaybackToFinishAsync(cancellationToken);
-            ReleaseCurrentPlaybackClip();
-            SetStatus("Connected");
-        }
-
-        private async Task<AudioClip> SynthesizeSpeechClipWithPrefetchGateAsync(
-            SemaphoreSlim gate,
-            string text,
-            string voiceStyle,
-            string requestId,
-            CancellationToken cancellationToken)
-        {
-            await gate.WaitAsync(cancellationToken);
             try
             {
-                return await SynthesizeSpeechClipAsync(text, voiceStyle, requestId, cancellationToken);
+                // Keep only two chunks in flight instead of synthesizing the
+                // whole answer while the user is still hearing its first sentence.
+                for (var index = 0; index < chunks.Length; index++)
+                {
+                    prefetch.Token.ThrowIfCancellationRequested();
+                    tasks[index] ??= SynthesizeSpeechClipAsync(chunks[index], voiceStyle,
+                        $"{chatRequestId}-tts-{index}", prefetch.Token);
+                    if (index + 1 < chunks.Length)
+                        tasks[index + 1] ??= SynthesizeSpeechClipAsync(chunks[index + 1], voiceStyle,
+                            $"{chatRequestId}-tts-{index + 1}", prefetch.Token);
+                    var clip = await tasks[index];
+                    tasks[index] = null;
+                    await PlayPreparedSpeechClipAsync(clip, prefetch.Token);
+                }
+                await WaitForCurrentPlaybackToFinishAsync(prefetch.Token);
+                prefetch.Token.ThrowIfCancellationRequested();
+                SetStatus("Connected");
             }
             finally
             {
-                gate.Release();
+                prefetch.Cancel();
+                ReleaseCurrentPlaybackClip();
+                foreach (var pending in tasks)
+                {
+                    if (pending == null) continue;
+                    try { DestroyOwnedAudioClip(await pending, null); }
+                    catch (Exception) { /* Observe failed/cancelled synthesis while preserving the original error. */ }
+                }
             }
         }
 
@@ -377,10 +334,23 @@ namespace YuiPhysicalAI.UI
 
             if (YuiTtsRuntimeRouting.IsVoicevoxIntent(ttsMode))
             {
-                var route = YuiTtsRuntimeRouting.ResolveVoicevoxRoute(
+                var explicitlyNative = IsTtsMode("voicevox-native");
+                if (explicitlyNative && !NativeVoicevoxAvailable())
+                    throw new InvalidOperationException("端末内の音声データが未準備です。設定からデータを取得してください。");
+                var route = explicitlyNative ? YuiTtsExecutionRoute.NativeVoicevox : YuiTtsRuntimeRouting.ResolveVoicevoxRoute(
                     BackendVoicevoxAvailable(),
                     NativeVoicevoxAvailable(),
-                    IsRemoteBackend());
+                    IsRemoteBackend(),
+                    preferNative: IsLocalAiConversationMode() || IsDirectOpenAiConversationMode()
+                        || (YuiPhysicalAI.Core.YuiConversationModes.Normalize(conversationMode) == YuiPhysicalAI.Core.YuiConversationModes.Stable
+                            && selectedChatEndpoint != YuiPhysicalAI.LocalAI.YuiAiEndpoint.Backend));
+                // Route by the installed voice model, independently of LLM mode.
+                if (speakerId > 0 && !YuiPhysicalAI.LocalAI.YuiVoicevoxModelCatalog.IsAvailable(speakerId))
+                {
+                    if (explicitlyNative || !BackendVoicevoxAvailable())
+                        throw new InvalidOperationException("This voice requires Backend. Choose the available voice in Settings → Voice.");
+                    route = YuiTtsExecutionRoute.Backend;
+                }
                 if (route == YuiTtsExecutionRoute.NativeVoicevox)
                 {
                     try
@@ -390,7 +360,7 @@ namespace YuiPhysicalAI.UI
                     catch (Exception ex) when (!(ex is OperationCanceledException))
                     {
                         localVoicevoxUnavailable = true;
-                        if (!BackendVoicevoxAvailable())
+                        if (explicitlyNative || IsLocalAiConversationMode() || IsDirectOpenAiConversationMode() || !BackendVoicevoxAvailable())
                         {
                             throw;
                         }
@@ -463,6 +433,7 @@ namespace YuiPhysicalAI.UI
                 Debug.LogWarning($"ChatdollKit VOICEVOX TTS failed; falling back to backend TTS: {ex.Message}");
             }
 
+            await EnsureExternalDataPermissionAsync(backendUrl, false, cancellationToken);
             Debug.Log("Yui TTS source: FastAPI backend direct audio");
             var backendTtsProvider = BackendTtsProviderForMode();
             var safeSpeed = YuiTtsTuning.SafeSpeedForMode(ttsMode, speedScale);
@@ -501,36 +472,15 @@ namespace YuiPhysicalAI.UI
                 var timer = System.Diagnostics.Stopwatch.StartNew();
                 var safeSpeed = YuiTtsTuning.SafeSpeedForMode(ttsMode, speedScale);
                 var safePitch = YuiTtsTuning.SafePitchForMode(ttsMode, pitchScale);
-                var audioBytes = await Task.Run(
-                    () =>
-                    {
-                        cancellationToken.ThrowIfCancellationRequested();
-                        var result = YuiPhysicalAI.LocalAI.YuiAivisNativeBridge.Synthesize(
-                            text,
-                            speakerId > 0 ? speakerId : 1431611904,
-                            safeSpeed,
-                            safePitch,
-                            intonationScale,
-                            synthesisVolumeScale,
-                            prePhonemeLength,
-                            postPhonemeLength);
-                        if (result == null || !result.Ok)
-                        {
-                            var error = result == null
-                                ? "Aivis native bridge returned no response."
-                                : $"{result.ErrorCode} {result.ErrorMessage} {FormatMissingComponents(result.MissingComponents)}".Trim();
-                            throw new InvalidOperationException(error);
-                        }
-
-                        var bytes = result.AudioBytes();
-                        if (bytes == null || bytes.Length <= 44)
-                        {
-                            throw new InvalidOperationException("Aivis native bridge returned empty audio.");
-                        }
-
-                        return bytes;
-                    },
-                    cancellationToken);
+                var result = await YuiPhysicalAI.LocalAI.YuiAivisNativeBridge.SynthesizeAsync(
+                    text, speakerId > 0 ? speakerId : 1431611904, safeSpeed, safePitch,
+                    intonationScale, synthesisVolumeScale, prePhonemeLength, postPhonemeLength, cancellationToken);
+                if (result == null || !result.Ok)
+                    throw new InvalidOperationException(result == null ? "Aivis native bridge returned no response." :
+                        $"{result.ErrorCode} {result.ErrorMessage} {FormatMissingComponents(result.MissingComponents)}".Trim());
+                var audioBytes = result.AudioBytes();
+                if (audioBytes == null || audioBytes.Length <= 44)
+                    throw new InvalidOperationException("Aivis native bridge returned empty audio.");
 
                 timer.Stop();
                 Debug.Log($"Yui TTS source: Aivis Native, latency={timer.ElapsedMilliseconds} ms, bytes={audioBytes.Length}");
@@ -558,57 +508,25 @@ namespace YuiPhysicalAI.UI
 #endif
         }
 
-#if (UNITY_IOS || UNITY_STANDALONE_OSX) && !UNITY_EDITOR
         private async Task<AudioClip> SynthesizeVoicevoxCoreSpeechClipAsync(
-            string text,
-            string requestId,
-            CancellationToken cancellationToken)
+            string text, string requestId, CancellationToken cancellationToken)
         {
-            return await Task.Run(
-                () =>
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var timer = System.Diagnostics.Stopwatch.StartNew();
-                    var safeSpeed = YuiTtsTuning.SafeSpeedForMode(ttsMode, speedScale);
-                    var safePitch = YuiTtsTuning.SafePitchForMode(ttsMode, pitchScale);
-                    var result = YuiPhysicalAI.LocalAI.YuiVoicevoxCoreBridge.Synthesize(
-                        text,
-                        speakerId > 0 ? speakerId : 14,
-                        safeSpeed,
-                        safePitch,
-                        intonationScale,
-                        synthesisVolumeScale,
-                        prePhonemeLength,
-                        postPhonemeLength);
-                    timer.Stop();
-                    if (result == null || !result.Ok)
-                    {
-                        var error = result == null
-                            ? "VOICEVOX Core returned no response."
-                            : $"{result.ErrorCode} {result.ErrorMessage}".Trim();
-                        throw new InvalidOperationException(error);
-                    }
-
-                    var audioBytes = result.AudioBytes();
-                    if (audioBytes == null || audioBytes.Length <= 44)
-                    {
-                        throw new InvalidOperationException("VOICEVOX Core returned empty audio.");
-                    }
-
-                    Debug.Log($"Yui TTS source: VOICEVOX Core, latency={timer.ElapsedMilliseconds} ms, bytes={audioBytes.Length}");
-                    return WavUtility.ToAudioClip(audioBytes, requestId);
-                },
-                cancellationToken);
+            var timer = System.Diagnostics.Stopwatch.StartNew();
+            var result = await YuiPhysicalAI.LocalAI.YuiVoicevoxCoreBridge.SynthesizeAsync(
+                text, speakerId > 0 ? speakerId : 14,
+                YuiTtsTuning.SafeSpeedForMode(ttsMode, speedScale),
+                YuiTtsTuning.SafePitchForMode(ttsMode, pitchScale),
+                intonationScale, synthesisVolumeScale, prePhonemeLength, postPhonemeLength, cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (result == null || !result.Ok)
+                throw new InvalidOperationException(result == null ? "VOICEVOX Core returned no response." : (result.ErrorCode + " " + result.ErrorMessage));
+            var audioBytes = result.AudioBytes();
+            if (audioBytes == null || audioBytes.Length <= 44) throw new InvalidOperationException("VOICEVOX Core returned empty audio.");
+            Debug.Log($"Yui TTS source: VOICEVOX Core, latency={timer.ElapsedMilliseconds} ms, bytes={audioBytes.Length}");
+            // AudioClip is a Unity object and must be created on the main thread after the worker completes.
+            return WavUtility.ToAudioClip(audioBytes, requestId);
         }
-#else
-        private Task<AudioClip> SynthesizeVoicevoxCoreSpeechClipAsync(
-            string text,
-            string requestId,
-            CancellationToken cancellationToken)
-        {
-            throw new InvalidOperationException("VOICEVOX Core is not available in this build.");
-        }
-#endif
+
 
         private static string FormatMissingComponents(string[] missingComponents)
         {
@@ -634,13 +552,22 @@ namespace YuiPhysicalAI.UI
 
         private bool NativeVoicevoxAvailable()
         {
-            return !localVoicevoxUnavailable
-                && YuiPhysicalAI.LocalAI.YuiVoicevoxCoreBridge.IsSupported;
+            if (localVoicevoxUnavailable || !YuiPhysicalAI.LocalAI.YuiVoicevoxCoreBridge.IsSupported) return false;
+#if UNITY_ANDROID && !UNITY_EDITOR
+            // Android's bundled files are extracted from the APK on first synthesis.
+            return true;
+#else
+            var root = YuiPhysicalAI.LocalAI.YuiLocalAiPathResolver.VoicevoxRootPath();
+            return System.IO.File.Exists(System.IO.Path.Combine(root, "Models", "meimei_himari_1.vvm"))
+                && System.IO.File.Exists(System.IO.Path.Combine(root, "open_jtalk_dic_utf_8-1.11", "sys.dic"));
+#endif
         }
+
+        public bool HasBackendVoicevox => BackendVoicevoxAvailable();
 
         private bool BackendVoicevoxAvailable()
         {
-            if (!backendConfigLoaded || ttsProviderOptions == null)
+            if (!IsBackendRecentlyReachable() || !backendConfigLoaded || ttsProviderOptions == null)
             {
                 return false;
             }

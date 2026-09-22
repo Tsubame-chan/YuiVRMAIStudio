@@ -40,6 +40,7 @@ namespace YuiPhysicalAI.Platform
 
             EnsureBridge();
             pending = new TaskCompletionSource<YuiFilePicker.Result>();
+            var task = pending.Task;
             try
             {
                 using (var bridgeClass = new AndroidJavaClass(JavaClassName))
@@ -54,7 +55,7 @@ namespace YuiPhysicalAI.Platform
                 return Task.FromResult(new YuiFilePicker.Result(false, null, $"Androidファイルピッカーを起動できませんでした: {ex.Message}"));
             }
 
-            return pending.Task;
+            return task;
 #else
             return Task.FromResult(new YuiFilePicker.Result(false, null, "Android実機以外ではAndroidファイルピッカーを開けません。"));
 #endif
@@ -87,7 +88,7 @@ namespace YuiPhysicalAI.Platform
                 return;
             }
 
-            completion.TrySetResult(new YuiFilePicker.Result(true, message, null));
+            completion.TrySetResult(new YuiFilePicker.Result(true, message, null, true));
         }
 
         private static void EnsureBridge()

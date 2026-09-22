@@ -76,6 +76,9 @@ DESCEND_SKIP_DIR_NAMES = {
 PRIVATE_PATTERN_FILE = "scripts/audit_private_patterns.txt"
 
 REQUIRED_SOURCE_PATHS = [
+    ("unity/Assets/App/Editor/YuiCredentialStoreBuild.cs", "macOS key storage must be built and checked"),
+    ("unity/Assets/Plugins/iOS/YuiCredentialStore.mm", "Apple API keys require Keychain integration"),
+    ("docs/PRIVACY.md", "users need the data handling policy"),
     (".env.example", "first-time contributors need a safe environment template"),
     ("LICENSE", "public repositories need a project license"),
     ("backend/requirements.txt", "public users need backend dependencies for BYOK setup"),
@@ -86,6 +89,9 @@ REQUIRED_SOURCE_PATHS = [
     ("unity/Assets/App/Scripts/LocalAI/Runtime/YuiLocalAiAssetStore.cs", "first-run local AI downloads need asset planning and verification"),
     ("unity/Assets/App/Scripts/LocalAI/Runtime/YuiLocalAiAssetDownloader.cs", "first-run local AI downloads need the downloader implementation"),
     ("unity/Assets/App/Editor/YuiPublicWindowsBuildTools.cs", "public source builds need the Windows/macOS public build entrypoint"),
+    ("unity/Assets/App/Editor/YuiMacFilePickerBuild.cs", "macOS builds need the native file picker build and packaging check"),
+    ("unity/Assets/App/Editor/Native/YuiMacFilePicker.mm.txt", "macOS builds need NSOpenPanel source"),
+    ("unity/Assets/App/Editor/YuiWindowsFilePickerBuild.cs", "Windows builds need the file picker packaging callback"),
     ("tools/YuiFilePickerHelper", "Windows file picker helper source should be available"),
     ("docs/SETUP_GUIDE.md", "Windows users need a first-run and backend setup guide"),
     ("docs/MAC_PUBLIC_BETA.md", "macOS users need a first-run and backend setup guide"),

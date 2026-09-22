@@ -20,6 +20,20 @@ namespace YuiPhysicalAI.UI
     {
         private void Update()
         {
+#if UNITY_STANDALONE || UNITY_EDITOR
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                if (savedDataPanel != null) { Destroy(savedDataPanel); RefreshCharacterSettings(); }
+                else if (avatarLibraryPanel != null) { Destroy(avatarLibraryPanel); RefreshCharacterSettings(); }
+                else if (composerMenu != null && composerMenu.gameObject.activeSelf) { composerMenu.gameObject.SetActive(false); FocusDesktopComposer(); }
+            }
+            if(Input.GetKeyDown(KeyCode.Tab)) MoveComposerFocus(Input.GetKey(KeyCode.LeftShift)||Input.GetKey(KeyCode.RightShift));
+            if (!isSending && inputField != null && inputField.isFocused
+                && (Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand)
+                    || Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+                && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)))
+                SendCurrentInput();
+#endif
             UpdateAppAwareness();
             PlayNextRealtimeQueuedClip();
             var realtimeMode = IsRealtimeConversationMode();
@@ -132,8 +146,22 @@ namespace YuiPhysicalAI.UI
             }
         }
 
+        internal void FocusDesktopComposer()
+        {
+#if UNITY_STANDALONE || UNITY_EDITOR
+            if (inputField != null && inputField.interactable)
+            {
+                inputField.Select();
+                inputField.ActivateInputField();
+            }
+#endif
+        }
+
         private async void Start()
         {
+            FocusDesktopComposer();
+            MigrateRecentDialogue();
+            await RestoreConversationViewAsync();
             _ = CheckLocalAiAssetsOnFirstLaunchAsync();
             if (ShouldMonitorBackend())
             {
@@ -146,7 +174,7 @@ namespace YuiPhysicalAI.UI
             }
             else
             {
-                SetStatus("Local AI ready");
+                SetStatus(LocalChatRuntimeAvailable() ? "話しかけてください" : "会話データを準備してください");
             }
         }
 
@@ -154,6 +182,16 @@ namespace YuiPhysicalAI.UI
         {
             try
             {
+                // Startup is an onboarding check, not a forced update. An installed
+                // runtime or app-only API setup must remain usable offline.
+                var mode = YuiPhysicalAI.Core.YuiConversationModes.Normalize(conversationMode);
+                var canChatWithoutBackend = mode == YuiPhysicalAI.Core.YuiConversationModes.LocalAi
+                    ? LocalChatRuntimeAvailable()
+                    : mode == YuiPhysicalAI.Core.YuiConversationModes.DirectOpenAi
+                        ? !string.IsNullOrWhiteSpace(openAiApiKey)
+                        : mode == YuiPhysicalAI.Core.YuiConversationModes.Stable
+                            && (!string.IsNullOrWhiteSpace(openAiApiKey) || LocalChatRuntimeAvailable());
+                if (canChatWithoutBackend && (NativeVoicevoxAvailable() || IsTtsMode("silent"))) return;
                 EnsureLocalAiDownloadOverlay();
                 if (localAiDownloadOverlay != null && cancellationTokenSource != null)
                 {
@@ -180,6 +218,7 @@ namespace YuiPhysicalAI.UI
             }
         }
 
+        public bool RequiresBackend => ShouldMonitorBackend();
         private bool ShouldMonitorBackend()
         {
             return YuiBackendMonitorPolicy.ShouldMonitorBackend(
@@ -195,6 +234,7 @@ namespace YuiPhysicalAI.UI
 
         private void EnsureBackendMonitorIfNeeded()
         {
+            if (ShouldMonitorBackend()) GetComponent<YuiPhysicalAI.Backend.YuiDesktopBackendSupervisor>()?.RequestEnsureBackend();
             if (backendMonitorStarted || cancellationTokenSource == null || !ShouldMonitorBackend())
             {
                 return;
@@ -209,6 +249,9 @@ namespace YuiPhysicalAI.UI
             try
             {
                 var health = await client.GetHealthAsync(cancellationToken);
+                routingBackendHealth = health;
+                routingBackendUrl = backendUrl;
+                routingBackendCheckedAt = Time.realtimeSinceStartup;
                 MarkBackendSuccess();
                 if (!isSending)
                 {
@@ -222,10 +265,6 @@ namespace YuiPhysicalAI.UI
 
                 await RefreshBackendConfigAsync(cancellationToken);
 
-                if (chatLogView == null || chatLogView.IsEmpty)
-                {
-                    await LoadRecentConversationsAsync(cancellationToken);
-                }
             }
             catch (Exception ex)
             {
@@ -313,29 +352,12 @@ namespace YuiPhysicalAI.UI
             lastBackendSuccessAt = Time.realtimeSinceStartup;
         }
 
-        private async Task LoadRecentConversationsAsync(CancellationToken cancellationToken)
-        {
-            if (secretMode)
-            {
-                return;
-            }
-
-            var recent = await client.GetRecentConversationsAsync(userId, 12, cancellationToken);
-            MarkBackendSuccess();
-            if (recent?.Items == null || recent.Items.Count == 0)
-            {
-                return;
-            }
-
-            foreach (var item in recent.Items)
-            {
-                var speaker = item.Role == "assistant" ? "Yui" : "You";
-                AppendLog(speaker, item.Message);
-            }
-        }
-
         private void OnDestroy()
         {
+            YuiUiLocalization.Changed -= RenderStatus;
+            if (savedDataPanel != null) Destroy(savedDataPanel);
+            if (composerMenu != null) Destroy(composerMenu.gameObject);
+            if (avatarLibraryPanel != null) Destroy(avatarLibraryPanel);
             if (sendButton != null)
             {
                 sendButton.onClick.RemoveListener(SendCurrentInput);

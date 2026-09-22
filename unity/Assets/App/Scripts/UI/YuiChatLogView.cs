@@ -23,6 +23,7 @@ namespace YuiPhysicalAI.UI
         private Sprite bubbleSprite;
         private YuiChatMessageBubble runtimeBubbleTemplate;
         private bool bubbleMode;
+        private bool deferLayout;
         private Vector2 lastViewportSize;
 
         public bool IsEmpty => messages.Count == 0 && legacyLogBuilder.Length == 0;
@@ -43,10 +44,12 @@ namespace YuiPhysicalAI.UI
         {
             var safeSpeaker = string.IsNullOrWhiteSpace(speaker) ? "System" : speaker.Trim();
             var safeText = text ?? string.Empty;
-            legacyLogBuilder.AppendLine($"{safeSpeaker}: {safeText}");
+
 
             if (!bubbleMode)
             {
+                messages.Add(new MessageEntry { Speaker = safeSpeaker, Text = safeText });
+                TrimOldMessages();
                 RenderLegacy(null, null);
                 return;
             }
@@ -54,6 +57,17 @@ namespace YuiPhysicalAI.UI
             messages.Add(CreateBubble(safeSpeaker, safeText, pending: false, resultMetadata: resultMetadata));
             TrimOldMessages();
             RebuildLayoutAndScroll();
+        }
+
+        public void Restore(IEnumerable<YuiTextArchive.Entry> oldestFirst)
+        {
+            deferLayout = true;
+            try
+            {
+                Clear();
+                foreach (var item in oldestFirst) AppendLog(item.Speaker, item.Text, item.Metadata);
+            }
+            finally { deferLayout = false; RenderAll(); }
         }
 
         public void Clear()
@@ -272,7 +286,7 @@ namespace YuiPhysicalAI.UI
 
         private void RenderLegacy(string pendingSpeaker, string pendingText)
         {
-            if (logText == null)
+            if (logText == null || deferLayout)
             {
                 return;
             }
@@ -282,6 +296,8 @@ namespace YuiPhysicalAI.UI
                 logText.gameObject.SetActive(true);
             }
 
+            legacyLogBuilder.Clear();
+            foreach (var message in messages) legacyLogBuilder.AppendLine($"{message.Speaker}: {message.Text}");
             var pending = pendingSpeaker == null ? null : $"{pendingSpeaker}: {pendingText}";
             logText.text = pending == null ? legacyLogBuilder.ToString() : legacyLogBuilder + pending;
 
@@ -341,7 +357,7 @@ namespace YuiPhysicalAI.UI
                 chatFont,
                 bubbleSprite,
                 entry.Text,
-                parsedText.Links, entry.ResultMetadata);
+                parsedText.Links, entry.ResultMetadata, entry.Root != null && entry.Root.name == "PendingMessageBubble");
         }
 
         private void TrimOldMessages()
@@ -368,7 +384,7 @@ namespace YuiPhysicalAI.UI
 
         private void RebuildLayoutAndScroll()
         {
-            if (!bubbleMode || bubbleContent == null)
+            if (deferLayout || !bubbleMode || bubbleContent == null)
             {
                 return;
             }

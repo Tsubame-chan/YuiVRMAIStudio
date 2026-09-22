@@ -44,10 +44,12 @@ namespace YuiPhysicalAI.EditorTools
             var paths = report.packedAssets.SelectMany(pack => pack.contents).Select(item => item.sourceAssetPath)
                 .Where(path => !string.IsNullOrEmpty(path)).Distinct().OrderBy(path => path).ToArray();
             var unexpected = paths.Where(path => !IsApprovedAssetPath(path)).ToArray();
-            var evidence = new Evidence { unityVersion = Application.unityVersion, result = unexpected.Length == 0 ? "PASS" : "FAIL",
+            var evidence = new Evidence { unityVersion = Application.unityVersion, result = paths.Length == 0 ? "NO_EVIDENCE" : unexpected.Length == 0 ? "PASS" : "FAIL",
                 assetCount = paths.Length, unexpectedAssets = unexpected, packedAssets = paths };
             var output = Path.Combine(Path.GetDirectoryName(report.summary.outputPath), "yui-public-asset-audit.json");
             File.WriteAllText(output, JsonUtility.ToJson(evidence, true));
+            if (paths.Length == 0)
+                throw new BuildFailedException("Packed asset evidence is empty. Rebuild with DetailedBuildReport and CleanBuildCache before distribution. See " + output);
             if (unexpected.Length > 0)
                 throw new BuildFailedException("Public Player contains unapproved assets. Do not distribute. See " + output);
         }

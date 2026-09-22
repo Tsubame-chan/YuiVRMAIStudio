@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using YuiPhysicalAI.Api;
 using YuiPhysicalAI.LocalAI;
+using YuiPhysicalAI.Core;
 
 namespace YuiPhysicalAI.UI
 {
@@ -17,6 +18,10 @@ namespace YuiPhysicalAI.UI
         private YuiAiRuntimeRouter aiRuntimeRouter;
         private YuiLocalAiService localAiService;
         private bool localAiUnavailableWarningShown;
+        private HealthResponse routingBackendHealth;
+        private string routingBackendUrl;
+        private float routingBackendCheckedAt = -999f;
+        private YuiAiEndpoint selectedChatEndpoint;
 
         public void RequestLocalAiAssetRepairDownload()
         {
@@ -32,12 +37,13 @@ namespace YuiPhysicalAI.UI
 
         public void RefreshLocalAiRuntimeAfterAssetInstall()
         {
+            localVoicevoxUnavailable = false;
             ConfigureAiRuntimeRouter();
             localAiUnavailableWarningShown = false;
             if (LocalChatRuntimeAvailable())
             {
-                AppendLog("System", "ローカルAIデータの準備が完了しました。Local Gemmaの起動を試せます。");
-                SetStatus("Local AI data ready");
+                AppendLog("System", "会話の準備ができました。話しかけてください。");
+                SetStatus("話しかけてください");
             }
             else
             {
@@ -83,7 +89,8 @@ namespace YuiPhysicalAI.UI
                 localVisionAvailable: false,
                 localTranscriptionAvailable: ShouldUseOnDeviceSpeechForCurrentPlatform());
             var preferLocalSpeech = initialPreferences.PreferLocalTranscription || IsLocalAiTtsMode() || ShouldUseOnDeviceSpeechForCurrentPlatform();
-            var shouldUseLocalRuntime = enableLocalAiRuntime || preferLocalConversation || allowLocalChatFallback || preferLocalSpeech || shouldUseLocalVision;
+            var shouldUseLocalRuntime = enableLocalAiRuntime || preferLocalConversation || allowLocalChatFallback || preferLocalSpeech || shouldUseLocalVision
+                || YuiConversationModes.Normalize(conversationMode) == YuiConversationModes.Stable;
             if (shouldUseLocalRuntime)
             {
 #if UNITY_EDITOR
@@ -137,12 +144,12 @@ namespace YuiPhysicalAI.UI
                 localTranscriptionAvailable);
             var chatEndpoint = IsDirectOpenAiConversationMode()
                 ? (Func<ChatRequest, CancellationToken, Task<ChatResponse>>)SendDirectOpenAiChatAsync
-                : ((request, token) => client.SendChatAsync(request, token));
+                : ((request, token) => SendWithPermissionAsync(backendUrl, false, () => client.SendChatAsync(request, token), token));
             aiRuntimeRouter = new YuiAiRuntimeRouter(
                 localAiService,
                 chatEndpoint,
-                (wavBytes, filename, durationMs, token) => client.TranscribeAudioAsync(wavBytes, filename, durationMs, token),
-                (imageBytes, filename, promptType, mimeType, token) => client.AnalyzeImageAsync(imageBytes, filename, promptType, mimeType, token))
+                (wavBytes, filename, durationMs, token) => SendWithPermissionAsync(backendUrl, false, () => client.TranscribeAudioAsync(wavBytes, filename, durationMs, token), token),
+                (imageBytes, filename, promptType, mimeType, token) => SendWithPermissionAsync(backendUrl, false, () => client.AnalyzeImageAsync(imageBytes, filename, promptType, mimeType, token), token))
             {
                 PreferLocal = false,
                 PreferLocalChat = preferences.PreferLocalChat,
@@ -151,8 +158,34 @@ namespace YuiPhysicalAI.UI
                 FallbackToBackend = localAiFallbackToBackend && preferences.FallbackToBackend,
                 FallbackToBackendTranscription = localAiFallbackToBackend && preferences.FallbackToBackendTranscription,
                 FallbackToBackendVision = preferences.FallbackToBackendVision,
-                FallbackToLocalChat = allowLocalChatFallback
+                FallbackToLocalChat = allowLocalChatFallback,
+                FallbackToLocalTranscription = allowLocalChatFallback && localTranscriptionAvailable,
+                SelectEndpoint = SelectAiEndpointAsync,
+                DirectChat = SendDirectOpenAiChatAsync,
+                DirectTranscribe = (bytes, filename, token) => SendWithPermissionAsync(YuiExternalDataConsent.OpenAiDestination, true, () => DirectOpenAiClient().TranscribeAudioAsync(bytes, filename, token), token),
+                DirectVision = (bytes, mime, token) => SendWithPermissionAsync(YuiExternalDataConsent.OpenAiDestination, true, () => DirectOpenAiClient().AnalyzeImageAsync(bytes, mime, token), token)
             };
+        }
+
+        private async Task<YuiAiEndpoint> SelectAiEndpointAsync(YuiLocalAiCapability capability, CancellationToken token)
+        {
+            if (YuiConversationModes.Normalize(conversationMode) == YuiConversationModes.Stable
+                && (routingBackendUrl != backendUrl || Time.realtimeSinceStartup - routingBackendCheckedAt > 10f))
+            {
+                routingBackendUrl = backendUrl;
+                routingBackendHealth = null;
+                using var probe = CancellationTokenSource.CreateLinkedTokenSource(token);
+                probe.CancelAfter(TimeSpan.FromSeconds(2));
+                try { routingBackendHealth = await client.GetHealthAsync(probe.Token); }
+                catch (OperationCanceledException) when (!token.IsCancellationRequested) { }
+                catch (YuiBackendException) { }
+                token.ThrowIfCancellationRequested();
+                routingBackendCheckedAt = Time.realtimeSinceStartup;
+            }
+            var endpoint = YuiAiEndpointPolicy.Resolve(conversationMode, routingBackendHealth,
+                !string.IsNullOrWhiteSpace(openAiApiKey), capability);
+            if (capability == YuiLocalAiCapability.Chat) selectedChatEndpoint = endpoint;
+            return endpoint;
         }
 
         private bool IsLocalAiConversationMode()
@@ -182,6 +215,11 @@ namespace YuiPhysicalAI.UI
 
         private Task<ChatResponse> SendDirectOpenAiChatAsync(ChatRequest request, CancellationToken cancellationToken)
         {
+            return SendWithPermissionAsync(YuiExternalDataConsent.OpenAiDestination, true, () => DirectOpenAiClient().SendChatAsync(request, cancellationToken), cancellationToken);
+        }
+
+        private YuiDirectOpenAiClient DirectOpenAiClient()
+        {
             if (directOpenAiClient == null
                 || !string.Equals(directOpenAiClient.Model, YuiDirectOpenAiClient.NormalizeModel(openAiModel), System.StringComparison.Ordinal)
                 || !directOpenAiClient.IsConfigured)
@@ -189,7 +227,7 @@ namespace YuiPhysicalAI.UI
                 directOpenAiClient = new YuiDirectOpenAiClient(openAiApiKey, openAiModel);
             }
 
-            return directOpenAiClient.SendChatAsync(request, cancellationToken);
+            return directOpenAiClient;
         }
 
         private bool IsLocalAiTtsMode()

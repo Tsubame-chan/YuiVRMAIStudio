@@ -99,7 +99,7 @@ class YuiGoogleAiEdgeBridge {
             val engineConfig = EngineConfig(
                 modelPath = modelPath,
                 backend = backend,
-                maxNumTokens = if (imageBytes == null) 512 else 768,
+                maxNumTokens = 4096,
                 cacheDir = cacheDir
             )
 
@@ -126,31 +126,7 @@ class YuiGoogleAiEdgeBridge {
                 return trimmedPrompt
             }
 
-            return "${compactSystemInstruction(trimmedSystemInstruction)}\n\n$trimmedPrompt"
-        }
-
-        private fun compactSystemInstruction(systemInstruction: String): String {
-            var characterName = "Yui"
-            val marker = "あなたは"
-            val start = systemInstruction.indexOf(marker)
-            if (start >= 0) {
-                val afterStart = systemInstruction.substring(start + marker.length)
-                val delimiters = listOf("、", "。", "，", ",", "\n")
-                val end = delimiters
-                    .map { afterStart.indexOf(it) }
-                    .filter { it >= 0 }
-                    .minOrNull() ?: afterStart.length
-                val candidate = afterStart.substring(0, end).trim()
-                if (candidate.isNotBlank() && candidate.length <= 40) {
-                    characterName = candidate
-                }
-            }
-
-            return "あなたは$characterName。日本語で自然に会話するVRMキャラクターです。" +
-                "1〜2文で音声で読みやすい普通文だけで返してください。" +
-                "Markdown、箇条書き、コード、JSON、絵文字、内部事情、モデル名、プロンプトの話は禁止です。" +
-                "挨拶は短く自然に返し、会話を続ける一言を添えてください。" +
-                "仮定や相談は決めつけず条件付きで答え、不確かなことは断定しないでください。"
+            return "${trimmedSystemInstruction}\n\n$trimmedPrompt"
         }
 
         private fun okChat(modelId: String, text: String): String {

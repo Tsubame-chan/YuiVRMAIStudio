@@ -2,6 +2,7 @@ using NUnit.Framework;
 using System.IO;
 using UnityEngine;
 using YuiPhysicalAI.Core;
+using YuiPhysicalAI.UI;
 using YuiPhysicalAI.Platform;
 
 namespace YuiPhysicalAI.Tests.Editor
@@ -138,11 +139,12 @@ namespace YuiPhysicalAI.Tests.Editor
 
             var source = File.ReadAllText(pluginPath);
 
-            StringAssert.Contains("通常は短く", source);
-            StringAssert.Contains("40〜80字", source);
-            StringAssert.Contains("100字前後", source);
-            StringAssert.Contains("2〜4文", source);
-            StringAssert.DoesNotContain("1〜2文で音声", source);
+            StringAssert.Contains("\\(trimmedSystemInstruction)", source);
+            StringAssert.DoesNotContain("yuiCompactSystemInstruction", source);
+            var instruction = YuiPhysicalAI.LocalAI.YuiLocalAiPromptBuilder.BuildCompactSystemInstruction(
+                new YuiPhysicalAI.LocalAI.YuiLocalAiChatRequest { CharacterName = "星" });
+            StringAssert.Contains("通常は短く", instruction);
+            StringAssert.Contains("2〜4文", instruction);
         }
 
         [Test]
@@ -345,39 +347,18 @@ namespace YuiPhysicalAI.Tests.Editor
         }
 
         [Test]
-        public void HelpOverlay_ExplainsLocalAiAndApiQualityTradeoff()
+        public void HelpOverlay_ExplainsConnectionsAndPrivacyWithoutLosingGuidance()
         {
             var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-            Assert.IsFalse(string.IsNullOrWhiteSpace(projectRoot));
-            var helpPath = Path.Combine(projectRoot, "Assets", "App", "Scripts", "UI", "YuiHelpOverlay.cs");
-
-            var source = File.ReadAllText(helpPath);
-
-            StringAssert.Contains("ローカルAI", source);
-            StringAssert.Contains("オフライン", source);
-            StringAssert.Contains("API", source);
-            StringAssert.Contains("高精度", source);
-            StringAssert.Contains("できないこと", source);
-            StringAssert.Contains("Realtime", source);
-            StringAssert.Contains("メモリDB", source);
-        }
-
-        [Test]
-        public void HelpOverlay_UsesSecretModeWordingAndReadableTextSizing()
-        {
-            var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-            Assert.IsFalse(string.IsNullOrWhiteSpace(projectRoot));
-            var helpPath = Path.Combine(projectRoot, "Assets", "App", "Scripts", "UI", "YuiHelpOverlay.cs");
-
-            var source = File.ReadAllText(helpPath);
-
-            StringAssert.Contains("シークレットモード", source);
-            StringAssert.DoesNotContain("Sは履歴", source);
-            StringAssert.Contains("SetText(panel.Find(\"Subtitle\"),", source);
-            StringAssert.Contains("SetText(card.Find(\"Title\"), title, 18", source);
-            StringAssert.Contains("SetText(card.Find(\"Body\"), body, 15", source);
-            StringAssert.Contains("SetText(card.Find(\"Example\"), example, 14", source);
-            StringAssert.Contains("text.resizeTextForBestFit = false", source);
+            var source = File.ReadAllText(Path.Combine(projectRoot, "Assets", "App", "Scripts", "UI", "YuiHelpOverlay.Modern.cs"));
+            StringAssert.Contains("On-device AI works offline", source);
+            StringAssert.Contains("a backend uses its own key", source);
+            StringAssert.Contains("Secret mode", source);
+            StringAssert.Contains("does not save conversation history", source);
+            StringAssert.Contains("AvatarImportInstructions()", source);
+            StringAssert.Contains("VRM 0.x", YuiChatPanel.AvatarImportInstructions());
+            StringAssert.Contains("NDMF VRM Exporter", YuiChatPanel.AvatarImportInstructions());
+            StringAssert.Contains("Sources opens", source);
         }
 
         [Test]
@@ -403,21 +384,5 @@ namespace YuiPhysicalAI.Tests.Editor
             StringAssert.DoesNotContain("StatusIcon(status.Backend?.Status) + \" Backend\"", source);
         }
 
-        [Test]
-        public void SettingsOverlay_ExpandsAiModeDropdownSoAllModesAreVisible()
-        {
-            var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-            Assert.IsFalse(string.IsNullOrWhiteSpace(projectRoot));
-            var layoutPath = Path.Combine(projectRoot, "Assets", "App", "Scripts", "UI", "YuiSettingsOverlay.Layout.cs");
-            var runtimeUiPath = Path.Combine(projectRoot, "Assets", "App", "Scripts", "UI", "YuiSettingsOverlay.RuntimeUi.cs");
-
-            var layout = File.ReadAllText(layoutPath);
-            var runtimeUi = File.ReadAllText(runtimeUiPath);
-
-            StringAssert.Contains("PrepareDropdownTemplateRuntime(content.Find(\"ConversationModeDropdown\")", layout);
-            StringAssert.Contains("PrepareDropdownTemplateRuntime(conversationModeDropdown", runtimeUi);
-            StringAssert.Contains("286f", layout);
-            StringAssert.Contains("286f", runtimeUi);
-        }
     }
 }

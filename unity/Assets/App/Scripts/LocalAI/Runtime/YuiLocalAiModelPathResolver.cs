@@ -68,19 +68,26 @@ namespace YuiPhysicalAI.LocalAI
             if (streamingPath.Contains("://", StringComparison.Ordinal))
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(persistentPath));
-                using var request = UnityWebRequest.Get(streamingPath);
-                var operation = request.SendWebRequest();
-                while (!operation.isDone)
+                var stage = persistentPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                try
                 {
+                    using var request = UnityWebRequest.Get(streamingPath);
+                    request.downloadHandler = new DownloadHandlerFile(stage) { removeFileOnAbort = true };
+                    var operation = request.SendWebRequest();
+                    while (!operation.isDone)
+                    {
+                        if (cancellationToken.IsCancellationRequested) request.Abort();
+                        cancellationToken.ThrowIfCancellationRequested();
+                        await Task.Yield();
+                    }
                     cancellationToken.ThrowIfCancellationRequested();
-                    await Task.Yield();
+                    if (request.result == UnityWebRequest.Result.Success)
+                    {
+                        File.Move(stage, persistentPath);
+                        return persistentPath;
+                    }
                 }
-
-                if (request.result == UnityWebRequest.Result.Success)
-                {
-                    File.WriteAllBytes(persistentPath, request.downloadHandler.data);
-                    return persistentPath;
-                }
+                finally { if (File.Exists(stage)) File.Delete(stage); }
             }
 
             throw new FileNotFoundException(

@@ -11,6 +11,7 @@
     <activity
       android:name="jp.tsubamechan.yuivrm.localai.YuiFilePickerActivity"
       android:exported="false"
+      android:configChanges="orientation|screenSize|keyboardHidden"
       android:theme="@android:style/Theme.Translucent.NoTitleBar" />
   </application>
 </manifest>

@@ -192,8 +192,8 @@ namespace YuiPhysicalAI.Tests.Editor
             }
         }
 
-        [Test]
-        public void NativeSynthesize_ReturnsRuntimeUnavailableWithMissingComponentsWhenCoreIsIncomplete()
+        [UnityEngine.TestTools.UnityTest]
+        public System.Collections.IEnumerator NativeSynthesize_ReturnsRuntimeUnavailableWithMissingComponentsWhenCoreIsIncomplete()
         {
             var root = Path.Combine(Application.dataPath, "StreamingAssets", "YuiLocalAI", "Aivis");
             if (!Directory.Exists(root))
@@ -201,7 +201,9 @@ namespace YuiPhysicalAI.Tests.Editor
                 Assert.Ignore("Packaged Aivis voice assets are not present in this checkout.");
             }
 
-            var result = YuiAivisNativeBridge.Synthesize("こんにちは", 1431611904, 1f, 0f, 1f, 1f, 0.1f, 0.1f);
+            var pending = YuiAivisNativeBridge.SynthesizeAsync("こんにちは", 1431611904, 1f, 0f, 1f, 1f, 0.1f, 0.1f, System.Threading.CancellationToken.None);
+            while (!pending.IsCompleted) yield return null;
+            var result = pending.GetAwaiter().GetResult();
 
             Assert.IsFalse(result.Ok);
             Assert.AreEqual("runtime_unavailable", result.ErrorCode);

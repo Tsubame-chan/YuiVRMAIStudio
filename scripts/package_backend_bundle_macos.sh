@@ -33,6 +33,7 @@ for script in \
   run_backend_macos.sh \
   start_aivis_tts_macos.sh \
   run_litert_cli_macos.sh \
+  yui_desktop_inference.py \
   start_litert_lm_server_macos.sh; do
   cp -p "$ROOT_DIR/scripts/$script" "$BUNDLE_DIR/scripts/$script"
 done

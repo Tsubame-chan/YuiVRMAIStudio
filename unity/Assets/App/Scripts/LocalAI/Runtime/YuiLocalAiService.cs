@@ -26,6 +26,7 @@ namespace YuiPhysicalAI.LocalAI
 
         public Task WarmAsync(YuiLocalAiCapability capability, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (!runtime.Supports(capability))
             {
                 return Task.CompletedTask;
@@ -36,49 +37,55 @@ namespace YuiPhysicalAI.LocalAI
 
         public async Task<YuiLocalAiChatResponse> ChatAsync(YuiLocalAiChatRequest request, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (!runtime.Supports(YuiLocalAiCapability.Chat))
             {
                 return Unavailable<YuiLocalAiChatResponse>();
             }
 
-            return await WithLatency(runtime.ChatAsync(request, cancellationToken));
+            return await WithLatency(runtime.ChatAsync(request, cancellationToken), cancellationToken);
         }
 
         public async Task<YuiLocalAiTranscriptionResponse> TranscribeAsync(YuiLocalAiAudioRequest request, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (!runtime.Supports(YuiLocalAiCapability.Transcription))
             {
                 return Unavailable<YuiLocalAiTranscriptionResponse>();
             }
 
-            return await WithLatency(runtime.TranscribeAsync(request, cancellationToken));
+            return await WithLatency(runtime.TranscribeAsync(request, cancellationToken), cancellationToken);
         }
 
         public async Task<YuiLocalAiSpeechResponse> SynthesizeSpeechAsync(YuiLocalAiSpeechRequest request, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (!runtime.Supports(YuiLocalAiCapability.SpeechSynthesis))
             {
                 return Unavailable<YuiLocalAiSpeechResponse>();
             }
 
-            return await WithLatency(runtime.SynthesizeSpeechAsync(request, cancellationToken));
+            return await WithLatency(runtime.SynthesizeSpeechAsync(request, cancellationToken), cancellationToken);
         }
 
         public async Task<YuiLocalAiVisionResponse> AnalyzeImageAsync(YuiLocalAiVisionRequest request, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (!runtime.Supports(YuiLocalAiCapability.Vision))
             {
                 return Unavailable<YuiLocalAiVisionResponse>();
             }
 
-            return await WithLatency(runtime.AnalyzeImageAsync(request, cancellationToken));
+            return await WithLatency(runtime.AnalyzeImageAsync(request, cancellationToken), cancellationToken);
         }
 
-        private static async Task<T> WithLatency<T>(Task<T> task)
-            where T : YuiLocalAiResponse
+        private static async Task<T> WithLatency<T>(Task<T> task, CancellationToken cancellationToken)
+            where T : YuiLocalAiResponse, new()
         {
             var timer = Stopwatch.StartNew();
             var response = await task;
+            cancellationToken.ThrowIfCancellationRequested();
+            response ??= new T { Success = false, ErrorCode = "empty_response", ErrorMessage = "Local AI returned no response." };
             if (response != null)
             {
                 response.LatencyMs = timer.ElapsedMilliseconds;

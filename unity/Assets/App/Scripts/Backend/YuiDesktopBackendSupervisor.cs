@@ -23,6 +23,8 @@ namespace YuiPhysicalAI.Backend
         private string ownershipFile;
         private bool startedByThisProcess;
         private CancellationTokenSource cancellationTokenSource;
+        private Task ensureTask;
+        private bool localServicesChecked;
 
         public static bool ShouldAutoStart(string backendUrl, bool autoStartEnabled, string backendRoot)
         {
@@ -38,19 +40,12 @@ namespace YuiPhysicalAI.Backend
             Application.quitting += StopOwnedBackendProcesses;
         }
 
-        private void Start()
-        {
-#if (UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN) && !UNITY_EDITOR
-            _ = EnsureBackendAsync(false, cancellationTokenSource.Token);
-#endif
-        }
-
         public void RequestEnsureBackend(bool forceRestart = false)
         {
 #if (UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN) && !UNITY_EDITOR
-            if (cancellationTokenSource != null)
+            if (cancellationTokenSource != null && (ensureTask == null || ensureTask.IsCompleted))
             {
-                _ = EnsureBackendAsync(forceRestart, cancellationTokenSource.Token);
+                ensureTask = EnsureBackendAsync(forceRestart, cancellationTokenSource.Token);
             }
 #endif
         }
@@ -70,7 +65,7 @@ namespace YuiPhysicalAI.Backend
         private async Task EnsureBackendAsync(bool forceRestart, CancellationToken cancellationToken)
         {
             var configuredBackendUrl = PlayerPrefs.GetString(YuiPrefsKeys.BackendUrl, backendUrl);
-            if (!forceRestart && await IsHealthyAsync(configuredBackendUrl, cancellationToken))
+            if (!forceRestart && localServicesChecked && await IsHealthyAsync(configuredBackendUrl, cancellationToken))
             {
                 return;
             }
@@ -85,34 +80,31 @@ namespace YuiPhysicalAI.Backend
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(ownershipFile));
-                if (File.Exists(ownershipFile))
+                if (!startedByThisProcess && File.Exists(ownershipFile))
                 {
                     File.Delete(ownershipFile);
                 }
 
-                var startInfo = CreateStartInfo(backendRoot);
-                startInfo.Environment["YUI_REUSE_EXISTING_BACKEND"] = ShouldReuseExistingBackend(forceRestart) ? "1" : "0";
-                startInfo.Environment["YUI_BACKEND_OWNERSHIP_FILE"] = ownershipFile;
-
-                using (var process = Process.Start(startInfo))
+                // Process.Start can load Mono's native process helpers on first use.
+                // Do all process/pipe work off the Unity thread, not just WaitForExit.
+                var launchStatus = await Task.Run(() =>
                 {
-                    if (process == null)
-                    {
-                        UnityEngine.Debug.LogWarning("Yui bundled backend start process could not be created.");
-                        return;
-                    }
+                    var startInfo = CreateStartInfo(backendRoot);
+                    startInfo.Environment["YUI_REUSE_EXISTING_BACKEND"] = ShouldReuseExistingBackend(forceRestart) ? "1" : "0";
+                    startInfo.Environment["YUI_BACKEND_OWNERSHIP_FILE"] = ownershipFile;
+                    using var process = Process.Start(startInfo);
+                    if (process == null) return "Backend launcher could not be created.";
+                    // Drain both streams so a verbose engine cannot fill a pipe and stall startup.
+                    process.OutputDataReceived += (_, __) => { };
+                    process.ErrorDataReceived += (_, __) => { };
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
+                    if (!process.WaitForExit(15000)) return "Backend services are still starting.";
+                    return process.ExitCode == 0 ? "Backend services checked." : $"Backend launcher exited with code {process.ExitCode}.";
+                }, cancellationToken);
+                UnityEngine.Debug.Log(launchStatus);
 
-                    await Task.Run(() => process.WaitForExit(15000), cancellationToken);
-                    if (!process.HasExited)
-                    {
-                        UnityEngine.Debug.Log("Yui bundled backend start is still running; continuing health checks.");
-                    }
-                    else if (process.ExitCode != 0)
-                    {
-                        UnityEngine.Debug.LogWarning($"Yui bundled backend start exited with code {process.ExitCode}: {process.StandardError.ReadToEnd()}");
-                    }
-                }
-
+                localServicesChecked = true;
                 startedByThisProcess = File.Exists(ownershipFile);
                 await WaitUntilHealthyAsync(configuredBackendUrl, TimeSpan.FromSeconds(startupTimeoutSeconds), cancellationToken);
             }
@@ -122,12 +114,19 @@ namespace YuiPhysicalAI.Backend
             }
         }
 
-        private static async Task<bool> IsHealthyAsync(string url, CancellationToken cancellationToken)
+        private static Task<bool> IsHealthyAsync(string url, CancellationToken cancellationToken)
+        {
+            return Task.Run(() => IsHealthyWorkerAsync(url, cancellationToken), cancellationToken);
+        }
+
+        private static async Task<bool> IsHealthyWorkerAsync(string url, CancellationToken cancellationToken)
         {
             try
             {
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                timeout.CancelAfter(TimeSpan.FromSeconds(2));
                 using (var request = new HttpRequestMessage(HttpMethod.Get, CombineUrl(url, "/health")))
-                using (var response = await HttpClient.SendAsync(request, cancellationToken))
+                using (var response = await HttpClient.SendAsync(request, timeout.Token))
                 {
                     if (!response.IsSuccessStatusCode)
                     {

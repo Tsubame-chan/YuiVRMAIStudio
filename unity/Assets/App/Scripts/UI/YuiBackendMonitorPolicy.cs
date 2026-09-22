@@ -12,6 +12,8 @@ namespace YuiPhysicalAI.UI
 
         public static bool ShouldMonitorBackend(string conversationMode, string ttsMode, bool nativeVoicevoxAvailable)
         {
+            if (YuiConversationModes.Normalize(conversationMode) == YuiConversationModes.LocalAi
+                && YuiTtsRuntimeRouting.IsVoicevoxIntent(ttsMode) && nativeVoicevoxAvailable) return false;
             var backendIndependentConversation =
                 string.Equals(
                     YuiConversationModes.Normalize(conversationMode),

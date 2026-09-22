@@ -47,7 +47,10 @@ copy_payload() {
 
 copy_payload "$ASSET_ROOT/local_ai_model_packs.json" "$PAYLOAD_DIR/local_ai_model_packs.json"
 copy_payload "$ASSET_ROOT/Models/$DESKTOP_GEMMA_MODEL" "$PAYLOAD_DIR/Models/$DESKTOP_GEMMA_MODEL"
-copy_payload "$ASSET_ROOT/Voicevox/Models" "$PAYLOAD_DIR/Voicevox/Models"
+for model in meimei_himari_1.vvm metan_zundamon_0.vvm kyushu_sora_2.vvm sayo_15.vvm; do
+  copy_payload "$ASSET_ROOT/Voicevox/Models/$model" "$PAYLOAD_DIR/Voicevox/Models/$model"
+done
+copy_payload "$ASSET_ROOT/Voicevox/Licenses" "$PAYLOAD_DIR/Voicevox/Licenses"
 copy_payload "$ASSET_ROOT/Voicevox/open_jtalk_dic_utf_8-1.11" "$PAYLOAD_DIR/Voicevox/open_jtalk_dic_utf_8-1.11"
 find "$PAYLOAD_DIR" -name '*.meta' -type f -delete
 
@@ -142,7 +145,7 @@ if [[ "$INCLUDE_BACKEND_ASSET" == "1" ]]; then
       \"platforms\": [\"macos\"],
       \"required_for\": [\"desktop_backend\", \"web_search\", \"backend_tts\", \"memory\"],
       \"optional\": false,
-      \"version\": \"${YUI_BACKEND_ASSET_VERSION:-2026.09.09}\",
+      \"version\": \"${YUI_BACKEND_ASSET_VERSION:-2026.09.21}\",
       \"filename\": \"$(json_escape "$BACKEND_PACKAGE_NAME")\",
       \"url\": \"$(json_escape "$DOWNLOAD_BASE/$BACKEND_PACKAGE_NAME")\",
       \"parts\": [
@@ -157,6 +160,7 @@ $BACKEND_PARTS_JSON
         \"scripts/start_local_services_detached_macos.sh\",
         \"scripts/stop_local_services_macos.sh\",
         \"backend/.venv/bin/python\",
+        \"scripts/yui_desktop_inference.py\",
         \"backend/main.py\",
         \"backend/app/main.py\"
       ]
@@ -189,7 +193,7 @@ $BACKEND_PARTS_JSON
       \"platforms\": [\"windows\"],
       \"required_for\": [\"desktop_backend\", \"web_search\", \"backend_tts\", \"memory\"],
       \"optional\": false,
-      \"version\": \"${YUI_BACKEND_ASSET_VERSION:-2026.09.09}\",
+      \"version\": \"${YUI_BACKEND_ASSET_VERSION:-2026.09.21}\",
       \"filename\": \"$(json_escape "$WINDOWS_BACKEND_PACKAGE_NAME")\",
       \"url\": \"$(json_escape "$DOWNLOAD_BASE/$WINDOWS_BACKEND_PACKAGE_NAME")\",
       \"parts\": [
@@ -205,6 +209,9 @@ $WINDOWS_BACKEND_PARTS_JSON
         \"scripts/setup_backend_byok.ps1\",
         \"scripts/stop_local_services.ps1\",
         \"backend/.venv/Scripts/python.exe\",
+        \"runtime/voicevox/voicevox_core.dll\",
+        \"runtime/voicevox/voicevox_onnxruntime.dll\",
+        \"scripts/yui_desktop_inference.py\",
         \"backend/main.py\",
         \"backend/app/main.py\"
       ]
@@ -237,6 +244,10 @@ $PARTS_JSON
         "local_ai_model_packs.json",
         "Models/$DESKTOP_GEMMA_MODEL",
         "Voicevox/Models/meimei_himari_1.vvm",
+        "Voicevox/Models/metan_zundamon_0.vvm",
+        "Voicevox/Models/kyushu_sora_2.vvm",
+        "Voicevox/Models/sayo_15.vvm",
+        "Voicevox/Licenses/VOICEVOX_VVM_TERMS.txt",
         "Voicevox/open_jtalk_dic_utf_8-1.11"
       ]
     }$BACKEND_ASSET_JSON

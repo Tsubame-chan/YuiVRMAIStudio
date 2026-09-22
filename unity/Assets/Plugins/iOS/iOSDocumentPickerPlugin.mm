@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <PhotosUI/PhotosUI.h>
+#import <ImageIO/ImageIO.h>
 #import <UIKit/UIKit.h>
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
@@ -31,52 +32,23 @@ static void YuiDocumentPickerSend(NSString *objectName, NSString *message)
     UnitySendMessage(objectName.UTF8String, "OnIOSDocumentPickerResult", message.UTF8String);
 }
 
-static NSString *YuiDocumentPickerSafeExtension(NSURL *url, NSString *mode)
-{
-    NSString *extension = url.pathExtension.lowercaseString;
-    if (extension.length > 0)
-    {
-        return extension;
-    }
-    if ([mode isEqualToString:@"vrm"])
-    {
-        return @"vrm";
-    }
-    return [mode isEqualToString:@"avatar"] ? @"zip" : @"jpg";
-}
-
 static NSString *YuiDocumentPickerTargetRoot(NSString *mode)
 {
-    if ([mode isEqualToString:@"vrm"] || [mode isEqualToString:@"avatar"])
-    {
-        NSArray<NSString *> *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-        NSString *folder = [mode isEqualToString:@"avatar"] ? @"Avatar" : @"VRM";
-        return [[[paths firstObject] stringByAppendingPathComponent:@"YuiImportedFiles"] stringByAppendingPathComponent:folder];
-    }
+    return [[NSTemporaryDirectory() stringByAppendingPathComponent:@"YuiPickedFiles"]
+        stringByAppendingPathComponent:[mode isEqualToString:@"image"] ? @"Image" : @"Avatar"];
 
-    return [NSTemporaryDirectory() stringByAppendingPathComponent:@"YuiPickedFiles/Image"];
 }
 
 static NSString *YuiDocumentPickerCopyURL(NSURL *url, NSString *mode, NSError **error)
 {
-    NSString *root = YuiDocumentPickerTargetRoot(mode);
+    NSString *root = [YuiDocumentPickerTargetRoot(mode) stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
     NSFileManager *fileManager = NSFileManager.defaultManager;
     if (![fileManager createDirectoryAtPath:root withIntermediateDirectories:YES attributes:nil error:error])
     {
         return nil;
     }
 
-    NSString *extension = YuiDocumentPickerSafeExtension(url, mode);
-    NSString *prefix = @"yui-picked-image";
-    if ([mode isEqualToString:@"vrm"])
-    {
-        prefix = @"yui-imported-vrm";
-    }
-    else if ([mode isEqualToString:@"avatar"])
-    {
-        prefix = @"yui-imported-avatar";
-    }
-    NSString *filename = [NSString stringWithFormat:@"%@-%@.%@", prefix, NSUUID.UUID.UUIDString, extension];
+    NSString *filename = url.lastPathComponent;
     NSString *target = [root stringByAppendingPathComponent:filename];
 
     if ([fileManager fileExistsAtPath:target])
@@ -86,36 +58,21 @@ static NSString *YuiDocumentPickerCopyURL(NSURL *url, NSString *mode, NSError **
 
     if (![fileManager copyItemAtURL:url toURL:[NSURL fileURLWithPath:target] error:error])
     {
+        [fileManager removeItemAtPath:target error:nil];
         return nil;
     }
     return target;
 }
 
-static NSString *YuiDocumentPickerImageExtension(NSItemProvider *provider)
+static NSString *YuiDocumentPickerCopyImageURL(NSURL *url, NSError **error)
 {
-    for (NSString *identifier in provider.registeredTypeIdentifiers)
-    {
-        UTType *type = [UTType typeWithIdentifier:identifier];
-        if (type != nil && [type conformsToType:UTTypeImage])
-        {
-            NSString *extension = type.preferredFilenameExtension.lowercaseString;
-            if (extension.length > 0)
-            {
-                return extension;
-            }
-        }
-    }
-
-    return @"jpg";
-}
-
-static NSString *YuiDocumentPickerCopyImageData(NSData *data, NSString *extension, NSError **error)
-{
-    if (data.length == 0)
+    NSNumber *bytes = nil;
+    [url getResourceValue:&bytes forKey:NSURLFileSizeKey error:error];
+    if (bytes == nil || bytes.unsignedLongLongValue == 0 || bytes.unsignedLongLongValue > 64ULL * 1024 * 1024)
     {
         if (error != nil)
         {
-            *error = [NSError errorWithDomain:@"YuiIOSPhotoPicker" code:1 userInfo:@{NSLocalizedDescriptionKey: @"画像データが空です。"}];
+            *error = [NSError errorWithDomain:@"YuiIOSPhotoPicker" code:1 userInfo:@{NSLocalizedDescriptionKey: bytes.unsignedLongLongValue == 0 ? @"The selected file is empty." : @"Choose an image smaller than 64 MB."}];
         }
         return nil;
     }
@@ -127,10 +84,26 @@ static NSString *YuiDocumentPickerCopyImageData(NSData *data, NSString *extensio
         return nil;
     }
 
-    NSString *safeExtension = extension.length > 0 ? extension : @"jpg";
+    CGImageSourceRef source = CGImageSourceCreateWithURL((__bridge CFURLRef)url, nil);
+    if (!source) return nil;
+    NSDictionary *options = @{(__bridge NSString *)kCGImageSourceCreateThumbnailFromImageAlways:@YES,
+        (__bridge NSString *)kCGImageSourceCreateThumbnailWithTransform:@YES,
+        (__bridge NSString *)kCGImageSourceThumbnailMaxPixelSize:@1600};
+    CGImageRef thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, (__bridge CFDictionaryRef)options);
+    CFRelease(source);
+    if (!thumbnail) return nil;
+    NSMutableData *jpeg = [NSMutableData data];
+    CGImageDestinationRef destination = CGImageDestinationCreateWithData((__bridge CFMutableDataRef)jpeg, CFSTR("public.jpeg"), 1, nil);
+    if (!destination) { CGImageRelease(thumbnail); return nil; }
+    CGImageDestinationAddImage(destination, thumbnail, (__bridge CFDictionaryRef)@{(__bridge NSString *)kCGImageDestinationLossyCompressionQuality:@0.9});
+    BOOL encoded = CGImageDestinationFinalize(destination);
+    CFRelease(destination); CGImageRelease(thumbnail);
+    if (!encoded) return nil;
+
+    NSString *safeExtension = @"jpg";
     NSString *filename = [NSString stringWithFormat:@"yui-picked-photo-%@.%@", NSUUID.UUID.UUIDString, safeExtension];
     NSString *target = [root stringByAppendingPathComponent:filename];
-    return [data writeToFile:target options:NSDataWritingAtomic error:error] ? target : nil;
+    return [jpeg writeToFile:target options:NSDataWritingAtomic error:error] ? target : nil;
 }
 
 @implementation YuiIOSDocumentPickerDelegate
@@ -151,24 +124,28 @@ static NSString *YuiDocumentPickerCopyImageData(NSData *data, NSString *extensio
         return;
     }
 
-    BOOL scoped = [url startAccessingSecurityScopedResource];
-    NSError *error = nil;
-    NSString *path = YuiDocumentPickerCopyURL(url, self.mode ?: @"image", &error);
-    if (scoped)
-    {
-        [url stopAccessingSecurityScopedResource];
-    }
-
-    if (path.length == 0)
-    {
-        NSString *detail = error.localizedDescription ?: @"unknown error";
-        YuiDocumentPickerSend(self.callbackObjectName, [YuiDocumentPickerErrorPrefix stringByAppendingFormat:@"選択したファイルをコピーできませんでした: %@", detail]);
-        YuiDocumentPickerSharedDelegate = nil;
-        return;
-    }
-
-    YuiDocumentPickerSend(self.callbackObjectName, path);
-    YuiDocumentPickerSharedDelegate = nil;
+    NSString *callback = self.callbackObjectName;
+    NSString *mode = self.mode ?: @"image";
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        BOOL scoped = [url startAccessingSecurityScopedResource];
+        NSFileCoordinator *coordinator = [[NSFileCoordinator alloc] initWithFilePresenter:nil];
+        __block NSString *path = nil;
+        __block NSError *copyError = nil;
+        NSError *coordinationError = nil;
+        [coordinator coordinateReadingItemAtURL:url options:0 error:&coordinationError byAccessor:^(NSURL *readingURL) {
+            NSNumber *size = nil;
+            [readingURL getResourceValue:&size forKey:NSURLFileSizeKey error:nil];
+            if (size.unsignedLongLongValue > 512ULL * 1024 * 1024) {
+                copyError = [NSError errorWithDomain:@"YuiFilePicker" code:1 userInfo:@{NSLocalizedDescriptionKey:@"Choose an avatar file smaller than 512 MB."}];
+            } else path = YuiDocumentPickerCopyURL(readingURL, mode, &copyError);
+        }];
+        if (scoped) [url stopAccessingSecurityScopedResource];
+        NSString *message = path.length > 0 ? path : [YuiDocumentPickerErrorPrefix stringByAppendingString:copyError.localizedDescription ?: coordinationError.localizedDescription ?: @"Could not read the selected file. Please select it again."];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            YuiDocumentPickerSend(callback, message);
+            YuiDocumentPickerSharedDelegate = nil;
+        });
+    });
 }
 
 @end
@@ -195,14 +172,13 @@ static NSString *YuiDocumentPickerCopyImageData(NSData *data, NSString *extensio
         return;
     }
 
-    NSString *extension = YuiDocumentPickerImageExtension(provider);
     NSString *callbackObjectName = self.callbackObjectName;
-    [provider loadDataRepresentationForTypeIdentifier:UTTypeImage.identifier completionHandler:^(NSData * _Nullable data, NSError * _Nullable error) {
+    [provider loadFileRepresentationForTypeIdentifier:UTTypeImage.identifier completionHandler:^(NSURL * _Nullable url, NSError * _Nullable error) {
         NSString *message = nil;
-        if (data.length > 0)
+        if (url != nil)
         {
             NSError *writeError = nil;
-            NSString *path = YuiDocumentPickerCopyImageData(data, extension, &writeError);
+            NSString *path = YuiDocumentPickerCopyImageURL(url, &writeError);
             if (path.length > 0)
             {
                 message = path;

@@ -1,4 +1,10 @@
+> **2026-09-22 再評価:** 独自変換器の公開と正式経路の確定は保留。既存NDMF VRM ExporterでのMac往復・読込は成功したが、肌の白飛び・立ち姿の指摘を受け、照明と共通姿勢を改修。表示成功を外見の合格と扱わない。下記は旧実装の履歴。試験手順は[AVATAR_IMPORT](AVATAR_IMPORT.md)、[色・照明](reports/avatar_bridge_20260922/COLOR_REVIEW.md)、[待機姿勢](reports/avatar_bridge_20260922/POSE_REVIEW.md)を参照。
+
+> **2026-09-21 最新:** ユーザー承認により共通VRMを標準化。Yui拡張がVRChat元データの変換を担当し、手動のVRM化は要求しない。0.2.0候補をローカル実装・検証中。下記のOS別ZIP設計は既存0.1.1の履歴/互換仕様。現在の範囲は[互換性整理](design/AVATAR_COMPATIBILITY_BETA.md)と[開発報告](reports/beta_definition_20260921/SUMMARY.md)。
+
 # Yui Avatar Bridge Architecture
+
+> 2026-09-21: The basic-fidelity beta scope and simpler onboarding are being reconsidered in [BETA_SIMPLE_EXPERIENCE](design/BETA_SIMPLE_EXPERIENCE.md). A portable VRM geometry round-trip was demonstrated; the production exporter has not switched format. Historical incompatible ZIPs below are not the same files as the fresh Robot ZIP validated on 9/9. Do not conflate these test artifacts.
 
 Date: 2026-07-14
 Status: exporter/ZIP and macOS runtime import validated on 2026-09-09; source-project roundtrip and per-device expression/outfit/physics acceptance remain open.

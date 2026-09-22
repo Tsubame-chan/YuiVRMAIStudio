@@ -55,20 +55,50 @@ namespace YuiPhysicalAI.LocalAI
 
     public sealed class YuiUnityAssetHttpClient : IYuiLocalAiAssetHttpClient
     {
-        public async Task<string> GetStringAsync(string url, CancellationToken cancellationToken)
+        // UnityWebRequest creation, polling and disposal must stay on Unity's thread.
+        // The installer deliberately performs archive/crypto work on worker threads.
+        private readonly SynchronizationContext unityContext = SynchronizationContext.Current
+            ?? throw new InvalidOperationException("Create the Unity asset HTTP client on the Unity main thread.");
+
+        private Task<T> OnUnityThread<T>(Func<Task<T>> action)
         {
-            using var request = UnityWebRequest.Get(url);
-            await SendAsync(request, cancellationToken);
-            return request.downloadHandler.text;
+            if (SynchronizationContext.Current == unityContext) return action();
+            var completion = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+            unityContext.Post(async _ =>
+            {
+                try { completion.TrySetResult(await action()); }
+                catch (OperationCanceledException) { completion.TrySetCanceled(); }
+                catch (Exception ex) { completion.TrySetException(ex); }
+            }, null);
+            return completion.Task;
         }
 
-        public async Task DownloadFileAsync(
+        public Task<string> GetStringAsync(string url, CancellationToken cancellationToken)
+            => OnUnityThread(async () =>
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                using var request = UnityWebRequest.Get(url);
+                request.timeout = 30;
+                await SendAsync(request, cancellationToken);
+                return request.downloadHandler.text;
+            });
+
+        public Task DownloadFileAsync(string url, string destinationPath, long expectedBytes,
+            IProgress<YuiLocalAiAssetDownloadProgress> progress, CancellationToken cancellationToken)
+            => OnUnityThread(async () =>
+            {
+                await DownloadOnUnityThreadAsync(url, destinationPath, expectedBytes, progress, cancellationToken);
+                return true;
+            });
+
+        private async Task DownloadOnUnityThreadAsync(
             string url,
             string destinationPath,
             long expectedBytes,
             IProgress<YuiLocalAiAssetDownloadProgress> progress,
             CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
             using var request = UnityWebRequest.Get(url);
             request.downloadHandler = new DownloadHandlerFile(destinationPath)
@@ -86,9 +116,11 @@ namespace YuiPhysicalAI.LocalAI
                     expectedBytes,
                     request.downloadProgress < 0f ? 0f : request.downloadProgress,
                     "download"));
-                await Task.Yield();
+                // A bounded rate also prevents progress callbacks flooding the UI queue.
+                await Task.Delay(100, cancellationToken);
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfRequestFailed(request);
             var size = File.Exists(destinationPath) ? new FileInfo(destinationPath).Length : 0L;
             progress?.Report(new YuiLocalAiAssetDownloadProgress(url, size, expectedBytes > 0 ? expectedBytes : size, 1f, "download"));
@@ -100,9 +132,11 @@ namespace YuiPhysicalAI.LocalAI
             while (!operation.isDone)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                await Task.Yield();
+                // A bounded rate also prevents progress callbacks flooding the UI queue.
+                await Task.Delay(100, cancellationToken);
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             ThrowIfRequestFailed(request);
         }
 
@@ -221,9 +255,16 @@ namespace YuiPhysicalAI.LocalAI
                 await httpClient.DownloadFileAsync(asset.Url, zipPath, asset.SizeBytes, progress, cancellationToken).ConfigureAwait(false);
             }
 
-            VerifyFileSha256(asset.Sha256, zipPath, asset.Filename ?? asset.Id);
+            await Task.Run(() => VerifyAndInstallArchive(asset, zipPath, progress, cancellationToken), cancellationToken).ConfigureAwait(false);
+        }
+
+        private void VerifyAndInstallArchive(YuiLocalAiReleaseAsset asset, string zipPath,
+            IProgress<YuiLocalAiAssetDownloadProgress> progress, CancellationToken cancellationToken)
+        {
             var zipSize = File.Exists(zipPath) ? new FileInfo(zipPath).Length : 0L;
             progress?.Report(new YuiLocalAiAssetDownloadProgress(asset.DisplayName ?? asset.Id, zipSize, asset.SizeBytes, 1f, "verify"));
+            VerifyFileSha256(asset.Sha256, zipPath, asset.Filename ?? asset.Id, cancellationToken);
+            progress?.Report(new YuiLocalAiAssetDownloadProgress(asset.DisplayName ?? asset.Id, zipSize, asset.SizeBytes, 1f, "extract"));
             var storageRoot = Path.GetFullPath(assetStorageRoot).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
             var installRoot = Path.GetFullPath(Path.Combine(storageRoot, NormalizeRelativePath(asset.InstallRoot)));
             if (!installRoot.StartsWith(storageRoot, StringComparison.Ordinal) && installRoot != storageRoot.TrimEnd(Path.DirectorySeparatorChar))
@@ -297,7 +338,7 @@ namespace YuiPhysicalAI.LocalAI
                 var partName = SafeFileName(part.Filename ?? Path.GetFileName(part.Url));
                 var partPath = Path.Combine(downloadDirectory, partName);
                 await httpClient.DownloadFileAsync(part.Url, partPath, part.SizeBytes, progress, cancellationToken).ConfigureAwait(false);
-                VerifyFileSha256(part.Sha256, partPath, partName);
+                await Task.Run(() => VerifyFileSha256(part.Sha256, partPath, partName, cancellationToken), cancellationToken).ConfigureAwait(false);
                 partPaths.Add(partPath);
             }
 
@@ -310,7 +351,7 @@ namespace YuiPhysicalAI.LocalAI
             }
         }
 
-        private static void VerifyFileSha256(string expectedSha256, string path, string name)
+        private static void VerifyFileSha256(string expectedSha256, string path, string name, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(expectedSha256))
             {
@@ -319,7 +360,16 @@ namespace YuiPhysicalAI.LocalAI
 
             using var stream = File.OpenRead(path);
             using var sha256 = SHA256.Create();
-            var actual = BitConverter.ToString(sha256.ComputeHash(stream)).Replace("-", string.Empty).ToLowerInvariant();
+            var buffer = new byte[1024 * 1024];
+            int count;
+            while ((count = stream.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                sha256.TransformBlock(buffer, 0, count, null, 0);
+            }
+            cancellationToken.ThrowIfCancellationRequested();
+            sha256.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+            var actual = BitConverter.ToString(sha256.Hash).Replace("-", string.Empty).ToLowerInvariant();
             var expected = expectedSha256.Trim().ToLowerInvariant();
             if (!string.Equals(actual, expected, StringComparison.Ordinal))
             {
@@ -351,7 +401,15 @@ namespace YuiPhysicalAI.LocalAI
                 }
 
                 Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
-                entry.ExtractToFile(destinationPath, overwrite: true);
+                using var input = entry.Open();
+                using var output = File.Create(destinationPath);
+                var buffer = new byte[1024 * 1024];
+                int count;
+                while ((count = input.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    output.Write(buffer, 0, count);
+                }
             }
         }
 

@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using System.Threading;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 
@@ -29,13 +30,14 @@ namespace YuiPhysicalAI.Avatar
             ".cs", ".dll", ".exe", ".bat", ".cmd", ".com", ".ps1", ".sh", ".command", ".dylib", ".so", ".js", ".jar",
         };
 
-        public static async Task<YuiAvatarPackageLoadResult> LoadAsync(string packagePath, Transform parent)
+        public static async Task<YuiAvatarPackageLoadResult> LoadAsync(string packagePath, Transform parent, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(packagePath) || !File.Exists(packagePath))
             {
                 throw new FileNotFoundException("Avatar package ZIP was not found.", packagePath);
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             JObject manifest;
             string payloadHash;
             long payloadSize;
@@ -72,7 +74,7 @@ namespace YuiPhysicalAI.Avatar
                 extractedPath = Path.Combine(installRootForPath, ".partial-" + Guid.NewGuid().ToString("N"));
                 try
                 {
-                    (payloadHash, payloadSize) = await ExtractAndHashAsync(entry, extractedPath);
+                    (payloadHash, payloadSize) = await ExtractAndHashAsync(entry, extractedPath, cancellationToken);
                 }
                 catch
                 {
@@ -98,8 +100,10 @@ namespace YuiPhysicalAI.Avatar
             var bundlePath = Path.Combine(installRoot, payloadHash + ".bundle");
             try
             {
-                if (File.Exists(bundlePath)) File.Delete(bundlePath);
-                File.Move(extractedPath, bundlePath);
+                cancellationToken.ThrowIfCancellationRequested();
+                if (YuiAvatarBundleLease.IsInUse(bundlePath)) TryDelete(extractedPath);
+                else if (File.Exists(bundlePath)) File.Replace(extractedPath, bundlePath, null);
+                else File.Move(extractedPath, bundlePath);
                 extractedPath = null;
             }
             finally
@@ -107,18 +111,33 @@ namespace YuiPhysicalAI.Avatar
                 TryDelete(extractedPath);
             }
 
-            var bundleRequest = AssetBundle.LoadFromFileAsync(bundlePath);
-            await AwaitRequest(bundleRequest);
-            var bundle = bundleRequest.assetBundle
-                ?? throw new InvalidDataException("Unity could not load the platform avatar AssetBundle.");
+            var bundle = await YuiAvatarBundleLease.AcquireAsync(bundlePath);
+            GameObject loadedRoot = null;
+            GameObject inactiveStaging = null;
+            var ownershipTransferred = false;
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var prefabAddress = manifest.Value<string>("prefabAddress") ?? "avatar/prefab";
                 var prefabRequest = bundle.LoadAssetAsync<GameObject>(prefabAddress);
                 await AwaitRequest(prefabRequest);
+                cancellationToken.ThrowIfCancellationRequested();
                 var prefab = prefabRequest.asset as GameObject
                     ?? throw new InvalidDataException($"Avatar prefab is missing from the bundle: {prefabAddress}");
-                var root = UnityEngine.Object.Instantiate(prefab, parent, false);
+                ValidateRuntimePrefab(prefab);
+                // Legacy packages may contain AudioSources. Instantiate under an inactive
+                // parent so playOnAwake cannot run before these unused components are removed.
+                inactiveStaging = new GameObject("Yui Avatar Import Staging");
+                inactiveStaging.SetActive(false);
+                var root = UnityEngine.Object.Instantiate(prefab, inactiveStaging.transform, false);
+                loadedRoot = root;
+                root.SetActive(false);
+                foreach (var audio in root.GetComponentsInChildren<AudioSource>(true))
+                {
+                    audio.playOnAwake = false; audio.enabled = false;
+                    DestroyRuntimeObject(audio);
+                }
+                root.transform.SetParent(parent, false);
                 root.name = string.IsNullOrWhiteSpace(manifest.Value<string>("displayName"))
                     ? "Yui Imported Unity Avatar"
                     : manifest.Value<string>("displayName");
@@ -132,6 +151,27 @@ namespace YuiPhysicalAI.Avatar
                     manifest.Value<string>("displayName"),
                     packagePath,
                     ParseVisemes(manifest));
+                var springs = manifest["diagnostics"]?["physBones"]?.Children<JObject>().ToArray();
+                if (springs != null && springs.Length > 0)
+                {
+                    var motion = root.AddComponent<YuiAvatarSpringMotion>();
+                    motion.InitializeBodyExclusions(root.GetComponentInChildren<Animator>(true));
+                    foreach (var spring in springs.Take(128))
+                    {
+                        var bonePath = spring.Value<string>("rootPath");
+                        // Do not interpret an empty/missing path as permission to simulate the entire avatar.
+                        if (string.IsNullOrWhiteSpace(bonePath)) continue;
+                        var bone = root.transform.Find(bonePath);
+                        var excluded = new HashSet<Transform>();
+                        foreach (var ignored in spring["ignorePaths"]?.Values<string>() ?? Enumerable.Empty<string>())
+                        {
+                            if (!string.IsNullOrWhiteSpace(ignored)) { var ignoredBone = root.transform.Find(ignored); if (ignoredBone != null) excluded.Add(ignoredBone); }
+                        }
+                        motion.AddChain(bone, spring.Value<float?>("pull") ?? .3f, spring.Value<float?>("gravity") ?? 0, excluded);
+                    }
+                }
+                root.AddComponent<YuiAvatarBundleLease>().Own(bundlePath);
+                ownershipTransferred = true;
                 return new YuiAvatarPackageLoadResult
                 {
                     Root = root,
@@ -141,7 +181,27 @@ namespace YuiPhysicalAI.Avatar
             }
             finally
             {
-                bundle.Unload(false);
+                if (inactiveStaging != null) DestroyRuntimeObject(inactiveStaging);
+                if (!ownershipTransferred) { if (loadedRoot != null) DestroyRuntimeObject(loadedRoot); YuiAvatarBundleLease.Release(bundlePath); }
+            }
+        }
+
+        private static void DestroyRuntimeObject(UnityEngine.Object value)
+        {
+            if (Application.isPlaying) UnityEngine.Object.Destroy(value);
+            else UnityEngine.Object.DestroyImmediate(value);
+        }
+
+        public static void ValidateRuntimePrefab(GameObject prefab)
+        {
+            if (prefab == null) throw new InvalidDataException("Avatar prefab is missing.");
+            foreach (var component in prefab.GetComponentsInChildren<Component>(true))
+            {
+                if (component is Transform || component is Animator || component is SkinnedMeshRenderer
+                    || component is MeshRenderer || component is MeshFilter || component is LODGroup
+                    || component is AudioSource) continue; // inert legacy data; stripped before activation
+                throw new InvalidDataException("このアバターには対応外の実行コンポーネントがあります。最新のYui Avatar Bridgeで再書出ししてください: "
+                    + (component == null ? "Missing script" : component.GetType().Name));
             }
         }
 
@@ -189,12 +249,12 @@ namespace YuiPhysicalAI.Avatar
             }
         }
 
-        private static JObject SelectPayload(JObject manifest)
+        public static JObject SelectPayload(JObject manifest, string platform = null)
         {
-            var platform = CurrentPlatform();
+            platform = platform ?? CurrentPlatform();
             return manifest["payloads"]?.Children<JObject>()
                 .FirstOrDefault(item => string.Equals(item.Value<string>("platform"), platform, StringComparison.OrdinalIgnoreCase))
-                ?? throw new InvalidDataException($"Avatar package does not contain a payload for {platform}.");
+                ?? throw new InvalidDataException($"このZIPには {platform} 用アバターがありません（含まれるOS: {string.Join(", ", manifest["payloads"]?.Children<JObject>().Select(item => item.Value<string>("platform")) ?? Enumerable.Empty<string>())}）。元のUnityで {platform} を選んで再書出しし、ZIPを端末へコピーしてください。");
         }
 
         public static string CurrentPlatform()
@@ -231,7 +291,7 @@ namespace YuiPhysicalAI.Avatar
             return string.IsNullOrWhiteSpace(safe) ? "avatar" : safe;
         }
 
-        private static async Task<(string Hash, long Size)> ExtractAndHashAsync(ZipArchiveEntry entry, string outputPath)
+        private static async Task<(string Hash, long Size)> ExtractAndHashAsync(ZipArchiveEntry entry, string outputPath, CancellationToken cancellationToken)
         {
             using var sha = SHA256.Create();
             using var input = entry.Open();
@@ -239,9 +299,9 @@ namespace YuiPhysicalAI.Avatar
             var buffer = new byte[1024 * 1024];
             long size = 0;
             int read;
-            while ((read = await input.ReadAsync(buffer, 0, buffer.Length)) > 0)
+            while ((read = await input.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
             {
-                await output.WriteAsync(buffer, 0, read);
+                await output.WriteAsync(buffer, 0, read, cancellationToken);
                 sha.TransformBlock(buffer, 0, read, null, 0);
                 size = checked(size + read);
                 if (size > MaximumExpandedBytes)

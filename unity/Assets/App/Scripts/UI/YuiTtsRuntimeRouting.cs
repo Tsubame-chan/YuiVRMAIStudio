@@ -54,8 +54,10 @@ namespace YuiPhysicalAI.UI
         public static YuiTtsExecutionRoute ResolveVoicevoxRoute(
             bool backendVoicevoxAvailable,
             bool nativeVoicevoxAvailable,
-            bool backendIsRemote)
+            bool backendIsRemote,
+            bool preferNative = false)
         {
+            if (preferNative && nativeVoicevoxAvailable) return YuiTtsExecutionRoute.NativeVoicevox;
             if (backendVoicevoxAvailable && !backendIsRemote)
             {
                 return YuiTtsExecutionRoute.Backend;

@@ -33,6 +33,8 @@ namespace YuiPhysicalAI.Editor
         [MenuItem("Yui/Build/Build macOS Public Beta", false, 502)]
         public static void BuildMacOSPublicBeta()
         {
+            YuiMacFilePickerBuild.EnsureBuilt();
+            YuiCredentialStoreBuild.EnsureBuilt();
             BuildStandalone(
                 MacPublicBuildDirectory(),
                 MacAppName,
@@ -62,7 +64,7 @@ namespace YuiPhysicalAI.Editor
                 scenes = new[] { ScenePath },
                 locationPathName = outputPath,
                 target = target,
-                options = BuildOptions.None
+                options = BuildOptions.DetailedBuildReport | BuildOptions.CleanBuildCache
             };
 
             BuildReport report;
@@ -163,6 +165,12 @@ namespace YuiPhysicalAI.Editor
             PlayerSettings.companyName = "Yui VRM AI Studio";
             PlayerSettings.productName = "Yui VRM AI Studio";
             PlayerSettings.bundleVersion = PublicBuildVersion();
+            if (Environment.GetEnvironmentVariable("YUI_VALIDATION_PROFILE") == "1")
+            {
+                PlayerSettings.productName = "Yui VRM AI Studio Validation";
+                PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Standalone, "jp.tsubamechan.yuivrm.validation");
+            }
+
             PlayerSettings.defaultScreenWidth = YuiStandaloneWindowBootstrap.DefaultWindowWidth;
             PlayerSettings.defaultScreenHeight = YuiStandaloneWindowBootstrap.DefaultWindowHeight;
             PlayerSettings.fullScreenMode = FullScreenMode.Windowed;

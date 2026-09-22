@@ -11,10 +11,12 @@ namespace YuiPhysicalAI.LocalAI
     public sealed class YuiGoogleAiEdgeLocalAiRuntime : IYuiLocalAiRuntime
     {
         private readonly YuiLocalAiModelRegistry registry;
+        private readonly bool bridgeAvailable;
 
         public YuiGoogleAiEdgeLocalAiRuntime(YuiLocalAiModelRegistry registry)
         {
             this.registry = registry ?? new YuiLocalAiModelRegistry(Array.Empty<YuiLocalAiModelPack>());
+            bridgeAvailable = YuiGoogleAiEdgeBridge.IsSupported;
         }
 
         public string RuntimeName => "litert-lm";
@@ -24,7 +26,7 @@ namespace YuiPhysicalAI.LocalAI
             var capabilities = new HashSet<YuiLocalAiCapability>();
             foreach (var pack in registry.Packs)
             {
-                if (!IsGoogleAiEdgePack(pack) || pack.Capabilities == null)
+                if (!bridgeAvailable || !IsGoogleAiEdgePack(pack) || pack.Capabilities == null)
                 {
                     continue;
                 }
@@ -37,9 +39,9 @@ namespace YuiPhysicalAI.LocalAI
 
             return new YuiLocalAiStatus
             {
-                Available = YuiGoogleAiEdgeBridge.IsSupported && capabilities.Count > 0,
+                Available = bridgeAvailable && capabilities.Count > 0,
                 RuntimeName = RuntimeName,
-                Detail = YuiGoogleAiEdgeBridge.IsSupported
+                Detail = bridgeAvailable
                     ? "LiteRT-LM bridge is available for this player platform."
                     : "LiteRT-LM bridge is not available in this runtime.",
                 Capabilities = capabilities
@@ -48,7 +50,7 @@ namespace YuiPhysicalAI.LocalAI
 
         public bool Supports(YuiLocalAiCapability capability)
         {
-            return CandidatePacks(capability).Any();
+            return bridgeAvailable && CandidatePacks(capability).Any();
         }
 
         public Task WarmAsync(YuiLocalAiCapability capability, CancellationToken cancellationToken)
@@ -71,7 +73,7 @@ namespace YuiPhysicalAI.LocalAI
 
         public Task<YuiLocalAiTranscriptionResponse> TranscribeAsync(YuiLocalAiAudioRequest request, CancellationToken cancellationToken)
         {
-            return Unsupported<YuiLocalAiTranscriptionResponse>(YuiLocalAiCapability.Transcription);
+            return InvokeAsync<YuiLocalAiAudioRequest, YuiLocalAiTranscriptionResponse>(YuiLocalAiCapability.Transcription, request, cancellationToken);
         }
 
         public Task<YuiLocalAiSpeechResponse> SynthesizeSpeechAsync(YuiLocalAiSpeechRequest request, CancellationToken cancellationToken)
@@ -145,7 +147,8 @@ namespace YuiPhysicalAI.LocalAI
                             RuntimeModelRef = pack.RuntimeModelRef,
                             SystemInstruction = chatRequest?.SystemInstruction,
                             PayloadJson = JsonConvert.SerializeObject(request)
-                        });
+                        }, cancellationToken);
+                        cancellationToken.ThrowIfCancellationRequested();
 
                         if (!bridgeResponse.Ok)
                         {

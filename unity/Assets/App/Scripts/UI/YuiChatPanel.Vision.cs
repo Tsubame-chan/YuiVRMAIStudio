@@ -20,8 +20,10 @@ namespace YuiPhysicalAI.UI
     {
         private async Task ImportImageAndAnalyzeFromPickerAsync()
         {
-            AppendLog("System", "画像ファイル選択を開きます...");
-            var result = await YuiFilePicker.OpenImageFileAsync();
+            using var result = await YuiFilePicker.OpenImageFileAsync();
+            // Native dialogs can clear Unity's selected control even on cancel
+            // or a decode error. Restore the same keyboard path in every case.
+            FocusDesktopComposer();
             if (!result.Opened)
             {
                 if (!string.IsNullOrWhiteSpace(result.UserMessage))
@@ -29,7 +31,6 @@ namespace YuiPhysicalAI.UI
                     AppendLog("System", result.UserMessage);
                 }
 
-                AppendLog("System", "画像ファイル選択はキャンセルされました。");
                 return;
             }
 
@@ -354,7 +355,6 @@ namespace YuiPhysicalAI.UI
                 isSending = true;
                 SetInteractable(false);
                 SetStatus("画像を準備しています…");
-                AppendLog("System", $"画像を添付します: {Path.GetFileName(path)}");
 
                 var mimeType = YuiVisionImageUtility.ResolveImageMimeType(path);
                 if (string.IsNullOrEmpty(mimeType))
@@ -365,17 +365,17 @@ namespace YuiPhysicalAI.UI
                 }
 
                 var originalBytes = File.ReadAllBytes(path);
-                var imageBytes = YuiVisionImageUtility.TryEncodeImageForVision(
+                if (!YuiVisionImageUtility.TryEncodeImageForVision(
                     originalBytes,
                     visionImageMaxLongSide,
                     visionJpegQuality,
-                    out var optimizedBytes)
-                    ? optimizedBytes
-                    : originalBytes;
-                if (optimizedBytes != null)
+                    out var imageBytes))
                 {
-                    mimeType = "image/jpeg";
+                    AppendLog("System", "Could not decode this image. Try PNG or JPEG.");
+                    SetStatus("Ready");
+                    return;
                 }
+                mimeType = "image/jpeg";
                 pendingVisionImageAttachment.SetImageDataUrl(YuiVisionImageUtility.ToImageDataUrl(imageBytes, mimeType));
                 latestVision = null;
                 SetStatus("画像を確認して送信してください");
@@ -396,6 +396,7 @@ namespace YuiPhysicalAI.UI
             {
                 isSending = false;
                 SetInteractable(true);
+                FocusDesktopComposer();
             }
         }
 
@@ -405,7 +406,7 @@ namespace YuiPhysicalAI.UI
                 || string.Equals(
                     YuiConversationModes.Normalize(conversationMode),
                     YuiConversationModes.Stable,
-                    StringComparison.OrdinalIgnoreCase);
+                    StringComparison.OrdinalIgnoreCase) && selectedChatEndpoint != YuiPhysicalAI.LocalAI.YuiAiEndpoint.Local;
         }
 
         private static VisionResponse CreateApiAttachedVision(string promptType)

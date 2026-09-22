@@ -55,6 +55,7 @@ namespace YuiPhysicalAI.Core
         public const string BackgroundPreset = "Yui.Settings.BackgroundPreset";
 
         // Window / display
+        public const string UiLanguage = "Yui.Settings.UiLanguage";
         public const string WindowResolutionPreset = "Yui.Settings.WindowResolutionPreset";
         public const string WindowResolutionPresetDefaultUpgraded = "Yui.Settings.WindowResolutionPresetDefaultUpgraded";
         public const string WindowResolutionPresetListVersion = "Yui.Settings.WindowResolutionPresetListVersion";

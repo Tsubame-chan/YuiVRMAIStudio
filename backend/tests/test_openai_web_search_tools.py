@@ -50,3 +50,33 @@ def test_web_search_tools_off_mode_wins_over_enabled_flag() -> None:
     )
 
     assert build_web_search_tools(settings, "今日のニュースを調べて") == []
+
+
+def test_search_citations_support_sdk_objects_and_do_not_accept_local_files() -> None:
+    from types import SimpleNamespace as Item
+    from app.providers.openai_tools import append_response_citations
+    citation = Item(type="url_citation", title="Official\nsource", url="https://example.com/news")
+    response = Item(output=[Item(content=[Item(annotations=[citation, citation,
+        Item(type="url_citation", url="file:///private/data")])])])
+    text = append_response_citations("Result", response)
+    assert text.count("https://example.com/news") == 1
+    assert "Official source" in text
+    assert "file:" not in text
+
+
+def test_search_annotations_are_displayed_without_being_read_aloud() -> None:
+    from types import SimpleNamespace as Item
+    from app.providers.openai_chat import OpenAIChatProvider
+    from app.models.chat import ChatRequest, OpenAIChatOutput
+    provider = OpenAIChatProvider.__new__(OpenAIChatProvider)
+    provider.settings = Settings(openai_api_key="test-key")
+    output = OpenAIChatOutput(text="調べた結果です。", spoken_text="", face="Neutral", animation="idle_normal", voice_style="normal", should_use_vision=False, memory_action="none", should_tts=True)
+    def parse(**kwargs):
+        assert kwargs["store"] is False
+        assert kwargs["tools"][0]["type"] == "web_search"
+        return Item(output_parsed=output, output=[Item(content=[Item(annotations=[{"type":"url_citation","title":"Source","url":"https://example.com"}])])])
+    provider.client = Item(responses=Item(parse=parse))
+    request = ChatRequest(request_id="citations", message="Search the web", mode="work")
+    result = provider._normalize_response(provider._generate_structured(request, []), request)
+    assert "https://example.com" in result.text
+    assert result.spoken_text == "調べた結果です。"

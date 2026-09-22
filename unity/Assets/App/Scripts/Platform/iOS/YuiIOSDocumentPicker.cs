@@ -40,8 +40,10 @@ namespace YuiPhysicalAI.Platform
 
             EnsureBridge();
             pending = new TaskCompletionSource<YuiFilePicker.Result>();
-            YuiIOSDocumentPicker_Open(mode, BridgeObjectName);
-            return pending.Task;
+            var task = pending.Task;
+            try { YuiIOSDocumentPicker_Open(mode, BridgeObjectName); }
+            catch (Exception) { pending = null; return Task.FromResult(new YuiFilePicker.Result(false, null, "Could not open the file picker.")); }
+            return task;
 #else
             return Task.FromResult(new YuiFilePicker.Result(false, null, "iOS実機以外ではiOSドキュメントピッカーを開けません。"));
 #endif
@@ -74,7 +76,7 @@ namespace YuiPhysicalAI.Platform
                 return;
             }
 
-            completion.TrySetResult(new YuiFilePicker.Result(true, message, null));
+            completion.TrySetResult(new YuiFilePicker.Result(true, message, null, true));
         }
 
         private static void EnsureBridge()

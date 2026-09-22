@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BACKEND_DIR="$REPO_ROOT/backend"
@@ -18,6 +20,14 @@ load_env_file() {
     [[ -z "$line" || "$line" == \#* || "$line" != *=* ]] && continue
     key="${line%%=*}"
     value="${line#*=}"
+    # .env files commonly quote values. Do not pass their delimiters to the
+    # service, and never source/eval a file that can contain arbitrary text.
+    value="${value%$'\r'}"
+    if [[ "$value" == \"*\" && "$value" == *\" ]]; then
+      value="${value:1:${#value}-2}"
+    elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
+      value="${value:1:${#value}-2}"
+    fi
     [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || continue
     [[ -n "${!key:-}" ]] && continue
     export "$key=$value"
@@ -43,6 +53,11 @@ YUI_REUSE_EXISTING_BACKEND="${YUI_REUSE_EXISTING_BACKEND:-0}"
 RUN_ID="$(date +%Y%m%d-%H%M%S)"
 
 mkdir -p "$LOG_DIR" "$RUNTIME_DIR"
+# Unity stops waiting after a short startup window. Keep the detached launcher's
+# output on disk so closing the parent's pipes cannot terminate startup (SIGPIPE).
+if [[ -n "${YUI_BACKEND_OWNERSHIP_FILE:-}" ]]; then
+  exec >>"$LOG_DIR/launcher-$RUN_ID.log" 2>&1
+fi
 
 if [[ -d "$PYTHONHOME_CANDIDATE/lib/python3.12/encodings" ]]; then
   export PYTHONHOME="$PYTHONHOME_CANDIDATE"
@@ -202,7 +217,7 @@ start_irodori_if_configured() {
 
   if [[ -n "${IRODORI_START_COMMAND:-}" ]]; then
     echo "[Yui services] Starting Irodori TTS with IRODORI_START_COMMAND"
-    nohup /bin/bash -lc "$IRODORI_START_COMMAND" >"$out_log" 2>"$err_log" < /dev/null &
+    nohup /usr/bin/env -u PYTHONHOME -u PYTHONPATH /bin/bash -lc "$IRODORI_START_COMMAND" >"$out_log" 2>"$err_log" < /dev/null &
     local irodori_pid=$!
     echo "$irodori_pid" > "$RUNTIME_DIR/irodori.pid"
     record_owned_pid "irodori" "$irodori_pid"
@@ -217,7 +232,7 @@ start_irodori_if_configured() {
     echo "[Yui services] Starting Irodori MLX TTS on $base_url"
     (
       cd "$base_dir"
-      nohup "$python_bin" -m mlx_audio.server --host "$host" --port "$port" \
+      nohup /usr/bin/env -u PYTHONHOME -u PYTHONPATH "$python_bin" -m mlx_audio.server --host "$host" --port "$port" \
         >"$out_log" 2>"$err_log" < /dev/null &
       local irodori_pid=$!
       echo "$irodori_pid" > "$RUNTIME_DIR/irodori.pid"
@@ -253,7 +268,7 @@ resolve_voicevox_engine() {
 is_aivis_configured() {
   [[ "$AIVIS_ENABLE" == "0" || "$AIVIS_ENABLE" == "false" || "$AIVIS_ENABLE" == "False" ]] && return 1
   [[ "$AIVIS_ENABLE" == "1" || "$AIVIS_ENABLE" == "true" || "$AIVIS_ENABLE" == "True" ]] && return 0
-  [[ -x "$REPO_ROOT/tools/tts/aivis-engine/extracted/macOS-arm64/run" ]]
+  resolve_aivis_engine >/dev/null
 }
 
 resolve_aivis_engine() {
@@ -282,6 +297,38 @@ BACKEND_BASE_URL="http://$BACKEND_HOST:$BACKEND_PORT"
 
 echo "[Yui services] Repository: $REPO_ROOT"
 echo "[Yui services] Logs: $LOG_DIR"
+
+# Bring up the conversation API before optional voice engines. An unavailable
+# voice service must not delay text chat or connection diagnostics.
+PYTHON_BIN="$BACKEND_DIR/.venv/bin/python"
+if [[ ! -x "$PYTHON_BIN" ]]; then
+  echo "Backend virtual environment not found: $PYTHON_BIN" >&2
+  echo "Run: ./scripts/setup_backend_byok_macos.sh" >&2
+  exit 1
+fi
+
+if backend_health_ok "$BACKEND_BASE_URL/health" && [[ "$YUI_REUSE_EXISTING_BACKEND" == "1" ]]; then
+  echo "[Yui services] Reusing existing backend: $BACKEND_BASE_URL"
+else
+  if http_ok "$BACKEND_BASE_URL/health"; then
+    echo "[Yui services] Existing backend is unhealthy or degraded; restarting: $BACKEND_BASE_URL"
+  fi
+  stop_port_listener "Backend" "$BACKEND_PORT"
+  BACKEND_OUT="$LOG_DIR/backend-service-$RUN_ID.out.log"
+  BACKEND_ERR="$LOG_DIR/backend-service-$RUN_ID.err.log"
+  echo "[Yui services] Starting backend on $BACKEND_BASE_URL"
+  (
+    cd "$BACKEND_DIR"
+    nohup "$PYTHON_BIN" -m uvicorn main:app --host "$BACKEND_HOST" --port "$BACKEND_PORT" --no-use-colors \
+      >"$BACKEND_OUT" 2>"$BACKEND_ERR" < /dev/null &
+    backend_pid=$!
+    echo "$backend_pid" > "$RUNTIME_DIR/backend.pid"
+    record_owned_pid "backend" "$backend_pid"
+    disown "$backend_pid" 2>/dev/null || true
+  )
+  wait_http_ok "Backend" "$BACKEND_BASE_URL/health" 90 || true
+fi
+
 
 if http_ok "$VOICEVOX_BASE_URL/version"; then
   echo "[Yui services] VOICEVOX Engine is already running: $VOICEVOX_BASE_URL"
@@ -333,34 +380,6 @@ fi
 
 start_irodori_if_configured
 
-PYTHON_BIN="$BACKEND_DIR/.venv/bin/python"
-if [[ ! -x "$PYTHON_BIN" ]]; then
-  echo "Backend virtual environment not found: $PYTHON_BIN" >&2
-  echo "Run: ./scripts/setup_backend_byok_macos.sh" >&2
-  exit 1
-fi
-
-if backend_health_ok "$BACKEND_BASE_URL/health" && [[ "$YUI_REUSE_EXISTING_BACKEND" == "1" ]]; then
-  echo "[Yui services] Reusing existing backend: $BACKEND_BASE_URL"
-else
-  if http_ok "$BACKEND_BASE_URL/health"; then
-    echo "[Yui services] Existing backend is unhealthy or degraded; restarting: $BACKEND_BASE_URL"
-  fi
-  stop_port_listener "Backend" "$BACKEND_PORT"
-  BACKEND_OUT="$LOG_DIR/backend-service-$RUN_ID.out.log"
-  BACKEND_ERR="$LOG_DIR/backend-service-$RUN_ID.err.log"
-  echo "[Yui services] Starting backend on $BACKEND_BASE_URL"
-  (
-    cd "$BACKEND_DIR"
-    nohup "$PYTHON_BIN" -m uvicorn main:app --host "$BACKEND_HOST" --port "$BACKEND_PORT" --no-use-colors \
-      >"$BACKEND_OUT" 2>"$BACKEND_ERR" < /dev/null &
-    backend_pid=$!
-    echo "$backend_pid" > "$RUNTIME_DIR/backend.pid"
-    record_owned_pid "backend" "$backend_pid"
-    disown "$backend_pid" 2>/dev/null || true
-  )
-  wait_http_ok "Backend" "$BACKEND_BASE_URL/health" 90 || true
-fi
 
 echo
 echo "[Yui services] Startup check:"

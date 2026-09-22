@@ -3,6 +3,8 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -53,16 +55,21 @@ namespace YuiPhysicalAI.LocalAI
 
         public static YuiAivisNativeStatus GetStatus()
         {
+            return GetStatus(RootPath());
+        }
+
+        private static YuiAivisNativeStatus GetStatus(string root)
+        {
             var payload = JsonConvert.SerializeObject(new
             {
-                root_path = RootPath(),
+                root_path = root,
                 platform = RuntimePlatformName()
             });
 
 #if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
             var nativeRuntimeLinked = TryGetNativeStatus(payload, out var nativeStatus);
             var status = YuiAivisNativeStatus.FromCoreStatus(
-                YuiAivisCoreProbe.Evaluate(RootPath(), nativeRuntimeLinked, RuntimePlatformName()));
+                YuiAivisCoreProbe.Evaluate(root, nativeRuntimeLinked, RuntimePlatformName()));
 
             if (nativeStatus != null && nativeStatus.MissingComponents != null)
             {
@@ -78,11 +85,11 @@ namespace YuiPhysicalAI.LocalAI
 
             return status;
 #else
-            return YuiAivisNativeStatus.FromCoreStatus(YuiAivisCoreProbe.Evaluate(RootPath(), nativeRuntimeLinked: false, RuntimePlatformName()));
+            return YuiAivisNativeStatus.FromCoreStatus(YuiAivisCoreProbe.Evaluate(root, nativeRuntimeLinked: false, RuntimePlatformName()));
 #endif
         }
 
-        public static YuiAivisNativeSynthesisResult Synthesize(
+        public static async Task<YuiAivisNativeSynthesisResult> SynthesizeAsync(
             string text,
             int voiceId,
             float speedScale,
@@ -90,21 +97,33 @@ namespace YuiPhysicalAI.LocalAI
             float intonationScale,
             float volumeScale,
             float prePhonemeLength,
-            float postPhonemeLength)
+            float postPhonemeLength, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var root = RootPath();
+            var voicevoxRoot = VoicevoxRootPath();
+            var result = await Task.Run(() => Synthesize(root, voicevoxRoot, text, voiceId, speedScale, pitchScale,
+                intonationScale, volumeScale, prePhonemeLength, postPhonemeLength), cancellationToken);
+            cancellationToken.ThrowIfCancellationRequested();
+            return result;
+        }
+
+        private static YuiAivisNativeSynthesisResult Synthesize(string root, string voicevoxRoot, string text,
+            int voiceId, float speedScale, float pitchScale, float intonationScale, float volumeScale,
+            float prePhonemeLength, float postPhonemeLength)
         {
             if (string.IsNullOrWhiteSpace(text))
             {
                 return YuiAivisNativeSynthesisResult.Error("invalid_request", "Aivis text is empty.");
             }
 
-            var root = RootPath();
             var voice = YuiAivisNativeVoiceCatalog.FindVoice(root, voiceId);
             if (voice == null)
             {
                 return YuiAivisNativeSynthesisResult.Error("voice_missing", $"Aivis voice is not configured: {voiceId}");
             }
 
-            var status = GetStatus();
+            var status = GetStatus(root);
             if (status == null || !status.RuntimeReady)
             {
                 return YuiAivisNativeSynthesisResult.Error(
@@ -126,8 +145,8 @@ namespace YuiPhysicalAI.LocalAI
                 bert_model_path = Path.Combine(root, "Runtime", "JapaneseBert", "model_fp16.onnx"),
                 bert_tokenizer_path = Path.Combine(root, "Runtime", "JapaneseBert", "tokenizer.json"),
                 bert_vocab_path = Path.Combine(root, "Runtime", "JapaneseBert", "vocab.txt"),
-                open_jtalk_dict_path = Path.Combine(VoicevoxRootPath(), "open_jtalk_dic_utf_8-1.11"),
-                voicevox_model_path = Path.Combine(VoicevoxRootPath(), "Models", "meimei_himari_1.vvm"),
+                open_jtalk_dict_path = Path.Combine(voicevoxRoot, "open_jtalk_dic_utf_8-1.11"),
+                voicevox_model_path = Path.Combine(voicevoxRoot, "Models", "meimei_himari_1.vvm"),
                 voicevox_speaker_id = voice.VoicevoxSpeakerId > 0 ? voice.VoicevoxSpeakerId : 14,
                 speaker_id = voice.SpeakerId,
                 style_id = voice.DefaultStyleId,

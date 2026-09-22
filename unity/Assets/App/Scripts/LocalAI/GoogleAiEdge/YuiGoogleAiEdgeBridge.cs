@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -15,6 +16,8 @@ namespace YuiPhysicalAI.LocalAI
 
         [DllImport("__Internal")]
         private static extern void YuiGoogleAiEdgeBridge_Free(IntPtr pointer);
+        [DllImport("__Internal")] private static extern void YuiGoogleAiEdgeBridge_Cancel(string requestId);
+        [DllImport("__Internal")] private static extern void YuiGoogleAiEdgeBridge_Forget(string requestId);
 #endif
 
         public static bool IsSupported
@@ -25,37 +28,51 @@ namespace YuiPhysicalAI.LocalAI
                 return true;
 #elif UNITY_ANDROID && !UNITY_EDITOR
                 return true;
-#elif UNITY_STANDALONE_OSX && !UNITY_EDITOR
-                return !string.IsNullOrWhiteSpace(FindStandaloneLiteRtLmBinary());
+#elif UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN || UNITY_EDITOR_OSX || UNITY_EDITOR_WIN
+                return YuiDesktopInferenceProcess.IsAvailable;
 #else
                 return false;
 #endif
             }
         }
 
-        public static YuiGoogleAiEdgeBridgeResponse Invoke(YuiGoogleAiEdgeBridgeRequest request)
+        public static YuiGoogleAiEdgeBridgeResponse Invoke(YuiGoogleAiEdgeBridgeRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null)
             {
                 return Error("invalid_request", "Google AI Edge bridge request is null.");
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             var requestJson = JsonConvert.SerializeObject(request);
             try
             {
 #if UNITY_IOS && !UNITY_EDITOR
-                return Parse(InvokeNativeJson(() => YuiGoogleAiEdgeBridge_Invoke(requestJson)));
+                var requestId = Guid.NewGuid().ToString("N");
+                var json = Newtonsoft.Json.Linq.JObject.Parse(requestJson);
+                json["request_id"] = requestId;
+                requestJson = json.ToString(Formatting.None);
+                try
+                {
+                    using var registration = cancellationToken.Register(() => YuiGoogleAiEdgeBridge_Cancel(requestId));
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var response = Parse(InvokeNativeJson(() => YuiGoogleAiEdgeBridge_Invoke(requestJson)));
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return response;
+                }
+                finally { YuiGoogleAiEdgeBridge_Forget(requestId); }
 #elif UNITY_ANDROID && !UNITY_EDITOR
                 using (var bridge = new AndroidJavaClass("jp.tsubamechan.yuivrm.localai.YuiGoogleAiEdgeBridge"))
                 {
                     return Parse(bridge.CallStatic<string>("invoke", requestJson));
                 }
-#elif UNITY_STANDALONE_OSX && !UNITY_EDITOR
-                return InvokeStandaloneLiteRtLm(request);
+#elif UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN || UNITY_EDITOR_OSX || UNITY_EDITOR_WIN
+                return Parse(YuiDesktopInferenceProcess.Invoke(requestJson, cancellationToken));
 #else
                 return Error("platform_unsupported", "Google AI Edge bridge is only available on supported player builds.");
 #endif
             }
+            catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
                 Debug.LogWarning($"Yui Google AI Edge bridge failed: {ex.Message}");
@@ -101,309 +118,7 @@ namespace YuiPhysicalAI.LocalAI
         }
 #endif
 
-#if UNITY_STANDALONE_OSX && !UNITY_EDITOR
-        private static YuiGoogleAiEdgeBridgeResponse InvokeStandaloneLiteRtLm(YuiGoogleAiEdgeBridgeRequest request)
-        {
-            if (!string.Equals(request.Capability, YuiLocalAiCapability.Chat.ToString(), StringComparison.OrdinalIgnoreCase))
-            {
-                return Error("capability_unavailable", "Standalone LiteRT-LM bridge currently supports chat only.");
-            }
 
-            var binary = FindStandaloneLiteRtLmBinary();
-            if (string.IsNullOrWhiteSpace(binary))
-            {
-                return Error("runtime_missing", "litert-lm command was not found for the standalone local AI bridge.");
-            }
-
-            if (string.IsNullOrWhiteSpace(request.ModelPath) || !File.Exists(request.ModelPath))
-            {
-                return Error("model_file_missing", $"Local model file was not found: {request.ModelPath}");
-            }
-
-            var executionModelPath = PrepareStandaloneModelPath(request.ModelPath, request.CacheDirectory);
-
-            var chat = JsonConvert.DeserializeObject<YuiLocalAiChatRequest>(request.PayloadJson ?? "{}")
-                ?? new YuiLocalAiChatRequest();
-            var prompt = string.IsNullOrWhiteSpace(chat.Prompt)
-                ? chat.Message
-                : chat.Prompt;
-            if (string.IsNullOrWhiteSpace(prompt))
-            {
-                return Error("invalid_request", "Local chat prompt is empty.");
-            }
-
-            var standalonePrompt = string.IsNullOrWhiteSpace(request.SystemInstruction)
-                ? YuiLocalAiPromptBuilder.BuildPromptWithSystemInstruction(chat)
-                : CombineStandaloneSystemPrompt(request.SystemInstruction, prompt);
-
-            var response = InvokeStandaloneLiteRtLmBackend(
-                binary,
-                executionModelPath,
-                standalonePrompt,
-                request.RuntimeModelRef,
-                "gpu");
-            if (!response.Ok && IsStandaloneGpuInitializationFailure(response.ErrorMessage))
-            {
-                Debug.LogWarning("Yui LiteRT-LM GPU backend failed; retrying with CPU backend for macOS standalone validation.");
-                response = InvokeStandaloneLiteRtLmBackend(
-                    binary,
-                    executionModelPath,
-                    standalonePrompt,
-                    request.RuntimeModelRef,
-                    "cpu");
-            }
-
-            return response;
-        }
-
-        private static string CombineStandaloneSystemPrompt(string systemInstruction, string prompt)
-        {
-            return "システム指示:\n"
-                + (systemInstruction ?? string.Empty).Trim()
-                + "\n\n"
-                + (prompt ?? string.Empty).Trim();
-        }
-
-        private static YuiGoogleAiEdgeBridgeResponse InvokeStandaloneLiteRtLmBackend(
-            string binary,
-            string executionModelPath,
-            string prompt,
-            string runtimeModelRef,
-            string backend)
-        {
-            var timer = System.Diagnostics.Stopwatch.StartNew();
-            var startInfo = new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = binary,
-                Arguments = string.Join(
-                    " ",
-                    "run",
-                    QuoteArgument(executionModelPath),
-                    "--prompt",
-                    QuoteArgument(prompt),
-                    "--backend",
-                    backend,
-                    "--speculative-decoding",
-                    backend == "gpu" ? "true" : "false",
-                    "--temperature",
-                    "0.45",
-                    "--top-k",
-                    "30",
-                    "--top-p",
-                    "0.85",
-                    "--max-num-tokens",
-                    "1024",
-                    "--cache",
-                    "disk"),
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                StandardOutputEncoding = Encoding.UTF8,
-                StandardErrorEncoding = Encoding.UTF8,
-                CreateNoWindow = true
-            };
-
-            using (var process = System.Diagnostics.Process.Start(startInfo))
-            {
-                if (process == null)
-                {
-                    return Error("runtime_start_failed", "Failed to start litert-lm.");
-                }
-
-                var stdoutTask = process.StandardOutput.ReadToEndAsync();
-                var stderrTask = process.StandardError.ReadToEndAsync();
-                if (!process.WaitForExit(120000))
-                {
-                    try
-                    {
-                        process.Kill();
-                    }
-                    catch (Exception)
-                    {
-                        // Best-effort cleanup.
-                    }
-
-                    return Error("runtime_timeout", "litert-lm did not finish within 120 seconds.");
-                }
-
-                var stdout = stdoutTask.GetAwaiter().GetResult();
-                var stderr = stderrTask.GetAwaiter().GetResult();
-                if (process.ExitCode != 0)
-                {
-                    return Error("runtime_error", string.IsNullOrWhiteSpace(stderr) ? $"litert-lm exited with {process.ExitCode}." : stderr.Trim());
-                }
-
-                timer.Stop();
-                var text = CleanStandaloneOutput(stdout);
-                if (IsStandaloneErrorOutput(text))
-                {
-                    return Error("runtime_error", string.IsNullOrWhiteSpace(stderr) ? text : stderr.Trim());
-                }
-
-                if (string.IsNullOrWhiteSpace(text))
-                {
-                    return Error("empty_response", "litert-lm returned an empty response.");
-                }
-
-                var response = new YuiLocalAiChatResponse
-                {
-                    Success = true,
-                    Text = text,
-                    Face = "Neutral",
-                    Animation = "idle_normal",
-                    VoiceStyle = "normal",
-                    ShouldTts = true,
-                    LatencyMs = timer.ElapsedMilliseconds
-                };
-
-                return new YuiGoogleAiEdgeBridgeResponse
-                {
-                    Ok = true,
-                    ModelId = runtimeModelRef,
-                    PayloadJson = JsonConvert.SerializeObject(response)
-                };
-            }
-        }
-
-        private static bool IsStandaloneGpuInitializationFailure(string message)
-        {
-            if (string.IsNullOrWhiteSpace(message))
-            {
-                return false;
-            }
-
-            return message.Contains("Failed to initialize WebGPU", StringComparison.OrdinalIgnoreCase)
-                || message.Contains("Failed to get WebGPU", StringComparison.OrdinalIgnoreCase)
-                || message.Contains("Failed to create LiteRT-LM engine", StringComparison.OrdinalIgnoreCase)
-                || message.Contains("Failed to create engine", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static string PrepareStandaloneModelPath(string sourceModelPath, string cacheDirectory)
-        {
-            if (string.IsNullOrWhiteSpace(cacheDirectory))
-            {
-                return sourceModelPath;
-            }
-
-            Directory.CreateDirectory(cacheDirectory);
-            var targetModelPath = Path.Combine(cacheDirectory, Path.GetFileName(sourceModelPath));
-            if (File.Exists(targetModelPath))
-            {
-                try
-                {
-                    var sourceInfo = new FileInfo(sourceModelPath);
-                    var targetInfo = new FileInfo(targetModelPath);
-                    if (sourceInfo.Length == targetInfo.Length)
-                    {
-                        return targetModelPath;
-                    }
-
-                    File.Delete(targetModelPath);
-                }
-                catch (Exception)
-                {
-                    return sourceModelPath;
-                }
-            }
-
-            if (TryCreateHardLink(sourceModelPath, targetModelPath))
-            {
-                return targetModelPath;
-            }
-
-            try
-            {
-                File.Copy(sourceModelPath, targetModelPath, overwrite: true);
-                return targetModelPath;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"Yui LiteRT-LM cache model staging failed; using source model path. {ex.Message}");
-                return sourceModelPath;
-            }
-        }
-
-        private static bool TryCreateHardLink(string sourcePath, string targetPath)
-        {
-            try
-            {
-                var startInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = "/bin/ln",
-                    Arguments = $"{QuoteArgument(sourcePath)} {QuoteArgument(targetPath)}",
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                };
-
-                using (var process = System.Diagnostics.Process.Start(startInfo))
-                {
-                    if (process == null)
-                    {
-                        return false;
-                    }
-
-                    process.WaitForExit(10000);
-                    return process.ExitCode == 0 && File.Exists(targetPath);
-                }
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        private static string FindStandaloneLiteRtLmBinary()
-        {
-            var env = Environment.GetEnvironmentVariable("YUI_LITERT_LM_BIN");
-            if (!string.IsNullOrWhiteSpace(env) && File.Exists(env))
-            {
-                return env;
-            }
-
-            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            var candidates = new[]
-            {
-                Path.Combine(YuiPhysicalAI.Backend.YuiDesktopBackendPaths.ResolveMacBackendRoot(Application.dataPath, Application.persistentDataPath), "scripts/run_litert_cli_macos.sh"),
-                Path.Combine(home, ".cache/yui-vrm-ai-studio/litert-lm-venv-py3/bin/litert-lm"),
-                Path.Combine(home, ".cache/yui-vrm-ai-studio/litert-lm-venv/bin/litert-lm"),
-                "/opt/homebrew/bin/litert-lm",
-                "/usr/local/bin/litert-lm"
-            };
-
-            foreach (var candidate in candidates)
-            {
-                if (!string.IsNullOrWhiteSpace(candidate) && File.Exists(candidate))
-                {
-                    return candidate;
-                }
-            }
-
-            return null;
-        }
-
-        private static string CleanStandaloneOutput(string output)
-        {
-            return (output ?? string.Empty).Trim();
-        }
-
-        private static bool IsStandaloneErrorOutput(string output)
-        {
-            if (string.IsNullOrWhiteSpace(output))
-            {
-                return false;
-            }
-
-            return output.StartsWith("An error occurred", StringComparison.OrdinalIgnoreCase)
-                || output.Contains("Traceback (most recent call last)", StringComparison.Ordinal);
-        }
-
-        private static string QuoteArgument(string value)
-        {
-            return "\"" + (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
-        }
-#endif
 
         private static YuiGoogleAiEdgeBridgeResponse Parse(string responseJson)
         {

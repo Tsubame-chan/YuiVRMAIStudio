@@ -15,9 +15,15 @@ public final class YuiAndroidFilePicker {
             return;
         }
 
-        Intent intent = new Intent(activity, YuiFilePickerActivity.class);
-        intent.putExtra(YuiFilePickerActivity.EXTRA_MODE, mode == null ? "image" : mode);
-        intent.putExtra(YuiFilePickerActivity.EXTRA_CALLBACK_OBJECT, callbackObjectName == null ? "" : callbackObjectName);
-        activity.startActivity(intent);
+        activity.runOnUiThread(() -> {
+            try {
+                Intent intent = new Intent(activity, YuiFilePickerActivity.class);
+                intent.putExtra(YuiFilePickerActivity.EXTRA_MODE, mode == null ? "image" : mode);
+                intent.putExtra(YuiFilePickerActivity.EXTRA_CALLBACK_OBJECT, callbackObjectName == null ? "" : callbackObjectName);
+                activity.startActivity(intent);
+            } catch (Throwable ex) {
+                UnityPlayer.UnitySendMessage(callbackObjectName, "OnAndroidFilePickerResult", "__YUI_ERROR__:Could not open the file picker.");
+            }
+        });
     }
 }

@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
 
@@ -29,54 +31,30 @@ namespace YuiPhysicalAI.LocalAI
             }
         }
 
-        public static YuiPlatformVisionResult Analyze(YuiLocalAiVisionRequest request)
+        public static async Task<YuiPlatformVisionResult> AnalyzeAsync(
+            YuiLocalAiVisionRequest request, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (!IsSupported)
-            {
                 return YuiPlatformVisionResult.Error("platform_unsupported", "Platform image recognition is not available.");
-            }
-
             if (request?.ImageBytes == null || request.ImageBytes.Length == 0)
-            {
                 return YuiPlatformVisionResult.Error("invalid_image", "Image bytes are required.");
-            }
-
-            var tempPath = Path.Combine(Application.temporaryCachePath, $"yui-vision-{Guid.NewGuid():N}{ExtensionForMimeType(request.MimeType)}");
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(tempPath));
-                File.WriteAllBytes(tempPath, request.ImageBytes);
-                var payload = JsonConvert.SerializeObject(new
+                return await YuiNativeMediaFile.RunAsync(request.ImageBytes, ExtensionForMimeType(request.MimeType), path =>
                 {
-                    image_path = tempPath,
-                    mime_type = request.MimeType ?? "image/jpeg",
-                    prompt_type = request.PromptType ?? "file"
-                });
-
+                    var payload = JsonConvert.SerializeObject(new {
+                        image_path = path, mime_type = request.MimeType ?? "image/jpeg", prompt_type = request.PromptType ?? "file"
+                    });
 #if UNITY_IOS && !UNITY_EDITOR
-                return Parse(InvokeNativeJson(() => YuiPlatformVisionBridge_Analyze(payload)));
+                    return Parse(InvokeNativeJson(() => YuiPlatformVisionBridge_Analyze(payload)));
 #else
-                return YuiPlatformVisionResult.Error("platform_unsupported", "Platform image recognition is not available.");
+                    return YuiPlatformVisionResult.Error("platform_unsupported", "Platform image recognition is not available.");
 #endif
+                }, cancellationToken);
             }
-            catch (Exception ex)
-            {
-                return YuiPlatformVisionResult.Error("bridge_error", ex.Message);
-            }
-            finally
-            {
-                try
-                {
-                    if (File.Exists(tempPath))
-                    {
-                        File.Delete(tempPath);
-                    }
-                }
-                catch (Exception)
-                {
-                    // Best-effort temp cleanup.
-                }
-            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception ex) { return YuiPlatformVisionResult.Error("bridge_error", ex.Message); }
         }
 
         private static string ExtensionForMimeType(string mimeType)

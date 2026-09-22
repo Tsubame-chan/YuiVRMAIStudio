@@ -35,10 +35,10 @@ namespace YuiPhysicalAI.LocalAI
             "talk_gesture_small"
         };
 
-        public static YuiLocalAiChatResponse NormalizeChat(YuiLocalAiChatResponse response)
+        public static YuiLocalAiChatResponse NormalizeChat(YuiLocalAiChatResponse response, bool workMode = false)
         {
             response = response ?? new YuiLocalAiChatResponse();
-            var parsed = TryParseEmbeddedChatJson(response.Text);
+            var parsed = workMode ? null : TryParseEmbeddedChatJson(response.Text);
             if (parsed != null)
             {
                 response.Text = parsed.Text;
@@ -48,7 +48,7 @@ namespace YuiPhysicalAI.LocalAI
                 response.ShouldTts = parsed.ShouldTts;
             }
 
-            response.Text = CleanSpokenText(response.Text);
+            response.Text = workMode ? (response.Text ?? string.Empty).Trim() : CleanSpokenText(response.Text);
             response.Face = NormalizeFace(response.Face);
             response.Animation = NormalizeAnimation(response.Animation);
             response.VoiceStyle = NormalizeVoiceStyle(response.VoiceStyle);

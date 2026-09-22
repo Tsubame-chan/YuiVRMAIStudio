@@ -28,6 +28,7 @@ for script in \
   start_local_services.ps1 \
   stop_local_services.ps1 \
   run_backend.ps1 \
+  yui_desktop_inference.py \
   run_voicevox_engine_optimized.ps1; do
   cp -p "$ROOT_DIR/scripts/$script" "$BUNDLE_DIR/scripts/$script"
 done
@@ -78,7 +79,18 @@ CFG
     --implementation cp \
     --abi "$PYTHON_ABI" \
     --only-binary=:all: \
-    -r "$TEMP_REQUIREMENTS"
+    -r "$TEMP_REQUIREMENTS" \
+    -r "$ROOT_DIR/backend/requirements-litert-macos.txt"
+  VOICEVOX_CACHE="$ROOT_DIR/.cache/windows-local-ai/voicevox"
+  mkdir -p "$VOICEVOX_CACHE"
+  if [[ ! -f "$VOICEVOX_CACHE/core.zip" ]]; then
+    curl -fL --retry 2 -o "$VOICEVOX_CACHE/core.zip" https://github.com/VOICEVOX/voicevox_core/releases/download/0.16.4/voicevox_core-windows-x64-0.16.4.zip
+  fi
+  if [[ ! -f "$VOICEVOX_CACHE/onnx.tgz" ]]; then
+    curl -fL --retry 2 -o "$VOICEVOX_CACHE/onnx.tgz" https://github.com/VOICEVOX/onnxruntime-builder/releases/download/voicevox_onnxruntime-1.17.3/voicevox_onnxruntime-win-x64-1.17.3.tgz
+  fi
+  "$PIP_PYTHON" "$ROOT_DIR/scripts/prepare_windows_voicevox_runtime.py" --core "$VOICEVOX_CACHE/core.zip" --onnx "$VOICEVOX_CACHE/onnx.tgz" --destination "$BUNDLE_DIR/runtime/voicevox"
+
 fi
 
 if find "$BUNDLE_DIR" \( -name '.env' -o -name 'female_voice_3.aivmx' -o -name 'female_voice_3.json' \) | grep -q .; then

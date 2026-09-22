@@ -2,7 +2,7 @@ namespace YuiPhysicalAI.UI
 {
     public static class YuiTtsModeOptions
     {
-        public const string LocalAiVoiceLabel = "Local Voice/STT (Offline)";
+        public const string LocalAiVoiceLabel = "Device voice";
         public const string OfflineAivisLabel = "AivisSpeech HD (Offline)";
         public const string BackendVoicevoxLabel = "VOICEVOX";
         public const string OfflineVoicevoxLabel = "VOICEVOX";

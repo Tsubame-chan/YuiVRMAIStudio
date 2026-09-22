@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -227,6 +228,16 @@ namespace YuiPhysicalAI.Api
             return PostJsonAsync<MemorySaveRequest, MemoryItem>("/memory/save", request, cancellationToken);
         }
 
+        public Task<MemoryItem> UpdateMemoryAsync(string id, MemorySaveRequest request, CancellationToken cancellationToken = default)
+        {
+            return PostJsonAsync<MemorySaveRequest, MemoryItem>("/memory/" + UnityWebRequest.EscapeURL(id) + "/update", request, cancellationToken);
+        }
+
+        public Task<Dictionary<string, bool>> DeleteMemoryAsync(string id, MemorySaveRequest scope, CancellationToken cancellationToken = default)
+        {
+            return PostJsonAsync<MemorySaveRequest, Dictionary<string, bool>>("/memory/" + UnityWebRequest.EscapeURL(id) + "/delete", scope, cancellationToken);
+        }
+
         public Task<MemorySearchResponse> SearchMemoryAsync(
             MemorySearchRequest request,
             CancellationToken cancellationToken = default)
@@ -247,12 +258,15 @@ namespace YuiPhysicalAI.Api
         public Task<RecentConversationsResponse> GetRecentConversationsAsync(
             string userId = "local_user",
             int limit = 20,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            string characterId = null, string sessionId = null, int offset = 0)
         {
             var path = "/conversations/recent?user_id="
                 + UnityWebRequest.EscapeURL(userId)
                 + "&limit="
-                + limit;
+                + limit + "&offset=" + Math.Max(0, offset);
+            if (characterId != null) path += "&character_id=" + UnityWebRequest.EscapeURL(characterId);
+            if (sessionId != null) path += "&session_id=" + UnityWebRequest.EscapeURL(sessionId);
             return GetJsonAsync<RecentConversationsResponse>(path, cancellationToken);
         }
 
@@ -469,11 +483,12 @@ namespace YuiPhysicalAI.Api
             UnityWebRequest request,
             CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var operation = request.SendWebRequest();
             while (!operation.isDone)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                await Task.Yield();
+                await Task.Delay(25, cancellationToken);
             }
 
             cancellationToken.ThrowIfCancellationRequested();
@@ -506,13 +521,23 @@ namespace YuiPhysicalAI.Api
             return Encoding.UTF8.GetString(bytes);
         }
 
-        private static async Task<byte[]> SendHttpClientBytesAsync(
+        private static Task<byte[]> SendHttpClientBytesAsync(
             HttpMethod method,
             string url,
             HttpContent content,
             int timeoutSeconds,
             string accept,
             CancellationToken cancellationToken)
+        {
+            // Mono's first HTTP request may synchronously load native networking
+            // helpers. Keep that initialization off the Unity thread as well.
+            return Task.Run(() => SendHttpClientBytesWorkerAsync(method, url, content,
+                timeoutSeconds, accept, cancellationToken), cancellationToken);
+        }
+
+        private static async Task<byte[]> SendHttpClientBytesWorkerAsync(
+            HttpMethod method, string url, HttpContent content, int timeoutSeconds,
+            string accept, CancellationToken cancellationToken)
         {
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(TimeSpan.FromSeconds(Math.Max(1, timeoutSeconds)));
@@ -541,6 +566,10 @@ namespace YuiPhysicalAI.Api
                 return bytes;
             }
             catch (YuiBackendException)
+            {
+                throw;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 throw;
             }

@@ -37,9 +37,18 @@ namespace YuiPhysicalAI.Tests.Editor
             Assert.IsTrue(YuiBackendMonitorPolicy.ShouldMonitorBackend(
                 YuiConversationModes.DirectOpenAi,
                 "server-http"));
+            // A local LLM can use backend voices. Only an explicitly native
+            // voice or available native Core makes this combination independent.
             Assert.IsTrue(YuiBackendMonitorPolicy.ShouldMonitorBackend(
                 YuiConversationModes.LocalAi,
                 "server"));
+            Assert.IsFalse(YuiBackendMonitorPolicy.ShouldMonitorBackend(
+                YuiConversationModes.LocalAi, "server", nativeVoicevoxAvailable: true));
+            Assert.IsFalse(YuiBackendMonitorPolicy.ShouldMonitorBackend(
+                YuiConversationModes.LocalAi, "voicevox-native"));
+            Assert.IsTrue(YuiBackendMonitorPolicy.ShouldMonitorBackend(
+                YuiConversationModes.LocalAi,
+                "server-http"));
             Assert.IsTrue(YuiBackendMonitorPolicy.ShouldMonitorBackend(
                 YuiConversationModes.Stable,
                 "voicevox-native"));

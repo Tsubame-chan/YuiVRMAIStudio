@@ -1,6 +1,41 @@
 import Foundation
 import LiteRTLM
 
+// A per-request handle also covers cancellation arriving just before native invocation.
+private final class YuiLiteRtRequest {
+    private let lock = NSLock()
+    private var task: Task<Void, Never>?
+    private var cancelled = false
+    func attach(_ value: Task<Void, Never>) {
+        lock.lock(); task = value; let stop = cancelled; lock.unlock()
+        if stop { value.cancel() }
+    }
+    func cancel() {
+        lock.lock(); cancelled = true; let value = task; lock.unlock()
+        value?.cancel()
+    }
+}
+private enum YuiLiteRtRequests {
+    static let lock = NSLock()
+    static var requests: [String: YuiLiteRtRequest] = [:]
+    static func get(_ id: String) -> YuiLiteRtRequest {
+        lock.lock(); defer { lock.unlock() }
+        if let existing = requests[id] { return existing }
+        let value = YuiLiteRtRequest(); requests[id] = value; return value
+    }
+    static func forget(_ id: String) {
+        lock.lock(); requests.removeValue(forKey: id); lock.unlock()
+    }
+}
+@_cdecl("YuiGoogleAiEdgeBridge_Cancel")
+public func YuiGoogleAiEdgeBridge_Cancel(_ id: UnsafePointer<CChar>?) {
+    if let id { YuiLiteRtRequests.get(String(cString: id)).cancel() }
+}
+@_cdecl("YuiGoogleAiEdgeBridge_Forget")
+public func YuiGoogleAiEdgeBridge_Forget(_ id: UnsafePointer<CChar>?) {
+    if let id { YuiLiteRtRequests.forget(String(cString: id)) }
+}
+
 private func yuiJson(_ value: Any) -> String {
     guard JSONSerialization.isValidJSONObject(value),
           let data = try? JSONSerialization.data(withJSONObject: value, options: []),
@@ -41,34 +76,7 @@ private func yuiCombinedPrompt(systemInstruction: String, prompt: String) -> Str
         return trimmedPrompt
     }
 
-    return "\(yuiCompactSystemInstruction(trimmedSystemInstruction))\n\n\(trimmedPrompt)"
-}
-
-private func yuiCompactSystemInstruction(_ systemInstruction: String) -> String {
-    var characterName = "Yui"
-    if let rangeStart = systemInstruction.range(of: "あなたは") {
-        let afterStart = systemInstruction[rangeStart.upperBound...]
-        let delimiters = ["、", "。", "，", ",", "\n"]
-        var end = afterStart.endIndex
-        for delimiter in delimiters {
-            if let delimiterRange = afterStart.range(of: delimiter), delimiterRange.lowerBound < end {
-                end = delimiterRange.lowerBound
-            }
-        }
-        let candidate = String(afterStart[..<end]).trimmingCharacters(in: .whitespacesAndNewlines)
-        if !candidate.isEmpty && candidate.count <= 40 {
-            characterName = candidate
-        }
-    }
-
-    return "あなたは\(characterName)。日本語で自然に会話するVRMキャラクターです。" +
-        "通常は短く、音声で読みやすい普通文だけで返してください。会話速度を優先し、通常は40〜80字程度に収めます。複雑な時だけ100字前後まで使い、回答が壊れる時だけ超えてもかまいません。無理に伸ばさないでください。" +
-        "ただし短さだけを優先せず、回答として必要な情報、受け止め、理由、次の行動、会話が続く一言を落とすくらいなら2〜4文まで使ってください。" +
-        "一言だけで足りる時だけ一言にし、質問に答えず相づちだけで終わらないでください。" +
-        "ロールプレイや口調の依頼には、安全性や正確さを壊さない範囲で乗り、模範解答だけに寄せず、キャラクターらしい反応を自然に入れてください。" +
-        "Markdown、箇条書き、コード、JSON、絵文字、内部事情、モデル名、プロンプトの話は禁止です。" +
-        "挨拶は短く自然に返し、会話を続ける一言を添えてください。" +
-        "仮定や相談は決めつけず条件付きで答え、不確かなことは断定しないでください。"
+    return "\(trimmedSystemInstruction)\n\n\(trimmedPrompt)"
 }
 
 private func yuiSamplerTemperature(for capability: String) -> Float {
@@ -105,6 +113,7 @@ private actor YuiLiteRtLmEngineStore {
     private var cacheDir = ""
     private var backendName = ""
     private var maxNumTokens = 0
+    private var visionEnabled = false
 
     func send(
         modelPath requestedModelPath: String,
@@ -139,7 +148,8 @@ private actor YuiLiteRtLmEngineStore {
             backend: backend,
             maxNumTokens: requestedMaxNumTokens,
             contents: Contents.of(.text(prompt), .imageData(imageData)),
-            samplerConfig: samplerConfig
+            samplerConfig: samplerConfig,
+            requestedVisionEnabled: true
         )
     }
 
@@ -149,18 +159,21 @@ private actor YuiLiteRtLmEngineStore {
         backend: Backend,
         maxNumTokens requestedMaxNumTokens: Int,
         contents: Contents,
-        samplerConfig: SamplerConfig
+        samplerConfig: SamplerConfig,
+        requestedVisionEnabled: Bool = false
     ) async throws -> String {
         let requestedBackendName = backend.rawValue
         if engine == nil
             || modelPath != requestedModelPath
             || cacheDir != requestedCacheDir
             || backendName != requestedBackendName
-            || maxNumTokens != requestedMaxNumTokens {
+            || maxNumTokens != requestedMaxNumTokens
+            || visionEnabled != requestedVisionEnabled {
             engine = nil
             let config = try EngineConfig(
                 modelPath: requestedModelPath,
                 backend: backend,
+                visionBackend: requestedVisionEnabled ? .cpu() : nil,
                 maxNumTokens: requestedMaxNumTokens,
                 cacheDir: requestedCacheDir
             )
@@ -171,7 +184,9 @@ private actor YuiLiteRtLmEngineStore {
             cacheDir = requestedCacheDir
             backendName = requestedBackendName
             maxNumTokens = requestedMaxNumTokens
+            visionEnabled = requestedVisionEnabled
         }
+        try Task.checkCancellation()
 
         guard let engine else {
             throw NSError(domain: "YuiLiteRtLmEngineStore", code: 1, userInfo: [
@@ -179,19 +194,21 @@ private actor YuiLiteRtLmEngineStore {
             ])
         }
 
-        let conversationConfig = ConversationConfig(samplerConfig: samplerConfig)
+        let conversationConfig = ConversationConfig(samplerConfig: samplerConfig,
+            thinkingConfig: ThinkingConfig(enableThinking: false))
         let conversation = try await engine.createConversation(with: conversationConfig)
-        var text = ""
-        for try await chunk in conversation.sendMessageStream(Message(contents: contents, role: .user)) {
-            for content in chunk.contents {
-                switch content {
-                case .text(let chunkText):
-                    text += chunkText
-                default:
-                    break
+        let text = try await withTaskCancellationHandler(operation: {
+            try Task.checkCancellation()
+            var output = ""
+            for try await chunk in conversation.sendMessageStream(Message(contents: contents, role: .user), maxOutputTokens: 256) {
+                try Task.checkCancellation()
+                for content in chunk.contents {
+                    if case .text(let chunkText) = content { output += chunkText }
                 }
             }
-        }
+            try Task.checkCancellation()
+            return output
+        }, onCancel: { try? conversation.cancel() })
         let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmedText.isEmpty {
             throw NSError(domain: "YuiLiteRtLmEngineStore", code: 2, userInfo: [
@@ -222,6 +239,9 @@ public func YuiGoogleAiEdgeBridge_Invoke(_ requestJsonPointer: UnsafePointer<CCh
         return yuiError("invalid_request", "LiteRT-LM iOS bridge request is not valid JSON.")
     }
 
+    let requestId = (request["request_id"] as? String) ?? UUID().uuidString
+    let requestHandle = YuiLiteRtRequests.get(requestId)
+    defer { YuiLiteRtRequests.forget(requestId) }
     let capability = (request["capability"] as? String) ?? ""
     guard capability == "Chat" || capability == "Vision" else {
         return yuiError("capability_unsupported", "LiteRT-LM iOS bridge only supports Chat and Vision for now.")
@@ -325,7 +345,8 @@ public func YuiGoogleAiEdgeBridge_Invoke(_ requestJsonPointer: UnsafePointer<CCh
             let availableBytes = yuiAvailableBytes(cacheDir)
             NSLog("Yui LiteRT-LM iOS request: capability=\(capability), model=\(modelPath), size=\(modelSize), cache=\(cacheDir), available=\(availableBytes), prompt_chars=\(combinedPrompt.count)")
 
-            let maxNumTokens = capability == "Vision" ? 768 : 512
+            // This is input + output context capacity, not the response length.
+            let maxNumTokens = 4096
 
             func generate(backend: Backend) async throws -> String {
                 let samplerConfig = try SamplerConfig(
@@ -365,6 +386,7 @@ public func YuiGoogleAiEdgeBridge_Invoke(_ requestJsonPointer: UnsafePointer<CCh
             do {
                 text = try await generate(backend: .gpu)
             } catch {
+                try Task.checkCancellation()
                 gpuFailure = yuiDetailedError(error)
                 NSLog("Yui LiteRT-LM iOS GPU generation failed; retrying CPU: \(gpuFailure ?? "unknown")")
                 await YuiLiteRtLmEngineStore.shared.reset()
@@ -410,6 +432,7 @@ public func YuiGoogleAiEdgeBridge_Invoke(_ requestJsonPointer: UnsafePointer<CCh
         }
     }
 
+    requestHandle.attach(task)
     if semaphore.wait(timeout: .now() + 120) == .timedOut {
         if box.markTimedOut() {
             task.cancel()

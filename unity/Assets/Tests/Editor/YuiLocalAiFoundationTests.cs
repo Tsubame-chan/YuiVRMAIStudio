@@ -91,7 +91,8 @@ namespace YuiPhysicalAI.Tests.Editor
             var registry = YuiLocalAiModelRegistry.CreateDefaultLocalAi();
 
             Assert.AreEqual("core_text_e2b", registry.BestFor(YuiLocalAiCapability.Chat, "macos").Id);
-            Assert.IsNull(registry.BestFor(YuiLocalAiCapability.Chat, "windows"));
+            Assert.AreEqual("core_text_e2b", registry.BestFor(YuiLocalAiCapability.Chat, "windows").Id);
+            Assert.AreEqual("stt_gemma4_e2b_desktop", registry.BestFor(YuiLocalAiCapability.Transcription, "windows").Id);
             Assert.AreEqual("core_text_e2b", registry.BestFor(YuiLocalAiCapability.Chat, "ios").Id);
             Assert.AreEqual("core_text_e2b", registry.BestFor(YuiLocalAiCapability.Chat, "android").Id);
             Assert.IsTrue(YuiLocalAiModelRegistry.SupportsPlatform(
@@ -173,7 +174,8 @@ namespace YuiPhysicalAI.Tests.Editor
             var status = runtime.GetStatus();
 
             Assert.AreEqual("composite-local-ai", runtime.RuntimeName);
-            Assert.IsTrue(runtime.Supports(YuiLocalAiCapability.Chat));
+            // A clean public clone has no downloaded desktop worker yet.
+            Assert.AreEqual(YuiGoogleAiEdgeBridge.IsSupported, runtime.Supports(YuiLocalAiCapability.Chat));
             Assert.IsFalse(runtime.Supports(YuiLocalAiCapability.SpeechSynthesis));
             Assert.IsTrue(runtime.Supports(YuiLocalAiCapability.Vision));
             StringAssert.Contains("litert-lm", status.Detail);
@@ -670,7 +672,7 @@ namespace YuiPhysicalAI.Tests.Editor
         }
 
         [Test]
-        public void RuntimePreferences_LocalConversationFallsBackForTranscriptionWhenUnavailable()
+        public void RuntimePreferences_LocalConversationNeverSendsAudioToBackendWhenUnavailable()
         {
             var preferences = YuiLocalAiRuntimePreferencePolicy.For(
                 YuiConversationModes.LocalAi,
@@ -679,10 +681,10 @@ namespace YuiPhysicalAI.Tests.Editor
                 localTranscriptionAvailable: false);
 
             Assert.IsTrue(preferences.PreferLocalChat);
-            Assert.IsFalse(preferences.PreferLocalTranscription);
+            Assert.IsTrue(preferences.PreferLocalTranscription);
             Assert.IsTrue(preferences.PreferLocalVision);
             Assert.IsFalse(preferences.FallbackToBackend);
-            Assert.IsTrue(preferences.FallbackToBackendTranscription);
+            Assert.IsFalse(preferences.FallbackToBackendTranscription);
             Assert.IsFalse(preferences.FallbackToBackendVision);
         }
 

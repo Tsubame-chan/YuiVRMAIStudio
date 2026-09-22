@@ -1,9 +1,11 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using YuiPhysicalAI.Backend;
 using YuiPhysicalAI.LocalAI;
 
@@ -31,6 +33,18 @@ namespace YuiPhysicalAI.UI
         private Button cancelButton;
         private bool checkInProgress;
         private bool optionalTtsDownloadMode;
+        private bool forceDownloadMode;
+
+        private void OnDestroy()
+        {
+            downloadCancellation?.Cancel();
+            if (root != null) Destroy(root);
+        }
+
+        private void Update()
+        {
+            if (root != null && root.activeSelf && Input.GetKeyDown(KeyCode.Escape)) CancelDownload();
+        }
 
         public string CurrentStatusText { get; private set; } = "Local AI data: not checked";
 
@@ -75,6 +89,10 @@ namespace YuiPhysicalAI.UI
             {
                 CurrentStatusText = $"Local AI data: check failed ({ex.Message})";
                 Debug.LogWarning($"Yui Local AI asset check failed: {ex.Message}");
+                EnsureUi();
+                Show();
+                SetBody("会話データを確認できませんでした。", "ネットワーク接続を確認して、もう一度試してください。");
+                SetButtons(download: false, retry: true, cancel: true);
             }
             finally
             {
@@ -100,7 +118,7 @@ namespace YuiPhysicalAI.UI
                 EnsureUi();
                 Show();
                 SetBody("ローカルAIデータの確認に失敗しました。", ex.Message);
-                SetButtons(download: false, retry: true, cancel: false);
+                SetButtons(download: false, retry: true, cancel: true);
             }
         }
 
@@ -123,7 +141,7 @@ namespace YuiPhysicalAI.UI
                 optionalTtsDownloadMode = true;
                 SetTitle("追加音声ダウンロード");
                 SetBody("追加音声データの確認に失敗しました。", ex.Message);
-                SetButtons(download: false, retry: true, cancel: false);
+                SetButtons(download: false, retry: true, cancel: true);
             }
         }
 
@@ -175,26 +193,27 @@ namespace YuiPhysicalAI.UI
         {
             EnsureUi();
             Show();
-            SetTitle(optionalTtsDownloadMode ? "追加音声ダウンロード" : "初回データダウンロード");
-            if (currentPlan == null || currentPlan.State != YuiLocalAiAssetPlanState.NeedsDownload)
+            SetTitle(optionalTtsDownloadMode ? "追加音声ダウンロード" : "会話データの準備");
+            forceDownloadMode = force && currentPlan != null && currentPlan.State == YuiLocalAiAssetPlanState.UpToDate;
+            if (!forceDownloadMode && (currentPlan == null || currentPlan.State != YuiLocalAiAssetPlanState.NeedsDownload))
             {
                 if (optionalTtsDownloadMode && currentPlan != null && currentPlan.State == YuiLocalAiAssetPlanState.NoRequiredAssets)
                 {
                     SetBody(
                         "このOS向けの追加音声パックはまだありません。",
                         CurrentStatusText);
-                    SetButtons(download: false, retry: false, cancel: false);
+                    SetButtons(download: false, retry: false, cancel: true);
                     return;
                 }
 
                 SetBody(
                     optionalTtsDownloadMode ? "追加音声データは準備できています。" : "ローカルAIデータは準備できています。",
                     CurrentStatusText);
-                SetButtons(download: false, retry: false, cancel: false);
+                SetButtons(download: false, retry: false, cancel: true);
                 return;
             }
 
-            var count = currentPlan.AssetsToDownload.Count;
+            var count = forceDownloadMode ? currentPlan.Items.Count : currentPlan.AssetsToDownload.Count;
             if (optionalTtsDownloadMode)
             {
                 SetBody(
@@ -204,22 +223,22 @@ namespace YuiPhysicalAI.UI
             else
             {
                 SetBody(
-                    "初回のデータダウンロードを開始します。",
+                    forceDownloadMode ? "会話データを再取得して修復します。" : "初回のデータダウンロードを開始します。",
                     $"対象: {count}件。必要なデータをGitHub Releasesから取得します。");
             }
-            SetButtons(download: true, retry: false, cancel: false);
-            SetProgress(0f, "待機中");
+            SetButtons(download: true, retry: false, cancel: true);
+            SetProgress(0f, null);
         }
 
         private async void StartDownload()
         {
-            if (currentPlan == null || currentPlan.AssetsToDownload.Count == 0)
+            if (currentPlan == null || (!forceDownloadMode && currentPlan.AssetsToDownload.Count == 0))
             {
                 Hide();
                 return;
             }
 
-            downloadCancellation?.Cancel();
+            if (downloadCancellation != null) return;
             downloadCancellation = new CancellationTokenSource();
             var optionalMode = optionalTtsDownloadMode;
             SetButtons(download: false, retry: false, cancel: true);
@@ -228,11 +247,14 @@ namespace YuiPhysicalAI.UI
                 "完了までアプリを閉じずにお待ちください。");
             try
             {
+                if (optionalMode) await RefreshOptionalTtsPlanAsync(downloadCancellation.Token);
+                else await RefreshPlanAsync(downloadCancellation.Token);
+                var assets = forceDownloadMode ? currentPlan.Items.Select(item => item.Asset).ToArray() : currentPlan.AssetsToDownload;
                 var downloader = CreateDownloader();
                 var progress = new Progress<YuiLocalAiAssetDownloadProgress>(UpdateProgress);
                 var result = await downloader.InstallAssetsAsync(
                     manifest,
-                    currentPlan.AssetsToDownload,
+                    assets,
                     progress,
                     downloadCancellation.Token);
                 if (!result.Success)
@@ -240,7 +262,7 @@ namespace YuiPhysicalAI.UI
                     SetBody(
                         optionalMode ? "追加音声データのインストールに失敗しました。" : "ローカルAIデータのインストールに失敗しました。",
                         result.ErrorMessage);
-                    SetButtons(download: false, retry: true, cancel: false);
+                    SetButtons(download: false, retry: true, cancel: true);
                     CurrentStatusText = optionalMode
                         ? $"Additional voices: failed ({result.ErrorMessage})"
                         : $"Local AI data: failed ({result.ErrorMessage})";
@@ -258,19 +280,19 @@ namespace YuiPhysicalAI.UI
                     chatPanel?.RefreshLocalAiRuntimeAfterAssetInstall();
                 }
                 var backendSupervisor = GetComponent<YuiDesktopBackendSupervisor>();
-                backendSupervisor?.RequestEnsureBackend(forceRestart: true);
+                if (chatPanel != null && chatPanel.RequiresBackend) backendSupervisor?.RequestEnsureBackend(forceRestart: true);
                 SetProgress(1f, "完了");
                 SetBody(
                     optionalMode ? "追加音声データの準備が完了しました。" : "ローカルAIデータの準備が完了しました。",
                     optionalMode ? "必要に応じてBackendを再起動すると追加TTSが有効になります。" : "Local Gemmaを使用できます。");
-                SetButtons(download: false, retry: false, cancel: false);
+                SetButtons(download: false, retry: false, cancel: true);
                 await Task.Delay(1200);
                 Hide();
             }
             catch (OperationCanceledException)
             {
                 SetBody("ダウンロードを中断しました。", "準備できたらもう一度開始してください。");
-                SetButtons(download: true, retry: false, cancel: false);
+                SetButtons(download: true, retry: false, cancel: true);
                 CurrentStatusText = optionalMode
                     ? "Additional voices: download cancelled"
                     : "Local AI data: download cancelled";
@@ -280,16 +302,28 @@ namespace YuiPhysicalAI.UI
                 SetBody(
                     optionalMode ? "追加音声データのダウンロードに失敗しました。" : "ローカルAIデータのダウンロードに失敗しました。",
                     ex.Message);
-                SetButtons(download: false, retry: true, cancel: false);
+                SetButtons(download: false, retry: true, cancel: true);
                 CurrentStatusText = optionalMode
                     ? $"Additional voices: failed ({ex.Message})"
                     : $"Local AI data: failed ({ex.Message})";
+            }
+            finally
+            {
+                downloadCancellation?.Dispose();
+                downloadCancellation = null;
+                if (cancelButton != null) YuiUiLocalization.Set(cancelButton.GetComponentInChildren<Text>(),"Close");
             }
         }
 
         private void CancelDownload()
         {
-            downloadCancellation?.Cancel();
+            if (downloadCancellation != null)
+            {
+                SetBody("中断しています…", "取得済みのデータは保持します。");
+                cancelButton.interactable = false;
+                downloadCancellation.Cancel();
+            }
+            else Hide();
         }
 
         private YuiLocalAiAssetDownloader CreateDownloader()
@@ -367,14 +401,16 @@ namespace YuiPhysicalAI.UI
             }
 
             var canvasObject = new GameObject("YuiLocalAiDownloadOverlay", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
-            canvasObject.transform.SetParent(transform, false);
+            // A root canvas avoids inheriting the chat panel's size, clipping and input state.
+            // It is owned explicitly by this component and removed in OnDestroy.
             root = canvasObject;
             var canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 6000;
             var scaler = canvasObject.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1280f, 720f);
+            scaler.referenceResolution = new Vector2(720f, 720f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
 
             var backdrop = new GameObject("Backdrop", typeof(RectTransform), typeof(Image));
             backdrop.transform.SetParent(canvasObject.transform, false);
@@ -385,38 +421,38 @@ namespace YuiPhysicalAI.UI
             var panel = new GameObject("Panel", typeof(RectTransform), typeof(Image));
             panel.transform.SetParent(canvasObject.transform, false);
             var panelImage = panel.GetComponent<Image>();
-            panelImage.color = new Color(0.08f, 0.09f, 0.12f, 0.98f);
+            YuiUiTheme.SurfaceOn(panelImage,YuiUiTheme.Surface);
             var panelRect = panel.GetComponent<RectTransform>();
             panelRect.anchorMin = new Vector2(0.5f, 0.5f);
             panelRect.anchorMax = new Vector2(0.5f, 0.5f);
             panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.anchoredPosition = new Vector2(0f, 42f);
-            panelRect.sizeDelta = new Vector2(740f, 380f);
+            panelRect.anchoredPosition = Vector2.zero;
+            panelRect.sizeDelta = new Vector2(640f, 440f);
 
-            titleText = CreateText(panel.transform, "Title", 26, TextAnchor.UpperLeft, new Color(1f, 1f, 1f, 1f));
-            titleText.text = "初回データダウンロード";
-            SetRect(titleText.transform, 36f, 30f, 36f, 44f);
+            titleText = CreateText(panel.transform, "Title", YuiUiTypography.AtReferenceWidth(YuiUiTypography.Title,720), TextAnchor.UpperLeft, new Color(1f, 1f, 1f, 1f));
+            YuiUiLocalization.Set(titleText,"初回データダウンロード");
+            SetRect(titleText.transform, 32f, 28f, 32f, 48f);
 
-            bodyText = CreateText(panel.transform, "Body", 18, TextAnchor.UpperLeft, new Color(0.93f, 0.95f, 1f, 1f));
-            SetRect(bodyText.transform, 36f, 86f, 36f, 82f);
+            bodyText = CreateText(panel.transform, "Body", YuiUiTypography.AtReferenceWidth(YuiUiTypography.Body,720), TextAnchor.UpperLeft, YuiUiTheme.Text);
+            SetRect(bodyText.transform, 32f, 94f, 32f, 100f);
 
-            detailText = CreateText(panel.transform, "Detail", 14, TextAnchor.UpperLeft, new Color(0.68f, 0.75f, 0.86f, 1f));
-            SetRect(detailText.transform, 36f, 176f, 36f, 58f);
+            detailText = CreateText(panel.transform, "Detail", YuiUiTypography.AtReferenceWidth(YuiUiTypography.Note,720), TextAnchor.UpperLeft, YuiUiTheme.Muted);
+            SetRect(detailText.transform, 32f, 204f, 32f, 78f);
 
             progressSlider = CreateSlider(panel.transform);
-            SetRect(progressSlider.transform, 36f, 252f, 36f, 18f);
+            SetRect(progressSlider.transform, 32f, 306f, 32f, 14f);
 
             downloadButton = CreateButton(panel.transform, "DownloadButton", "ダウンロードを開始");
             retryButton = CreateButton(panel.transform, "RetryButton", "もう一度試す");
             cancelButton = CreateButton(panel.transform, "CancelButton", "キャンセル");
-            SetRect(downloadButton.transform, 420f, 312f, 36f, 44f);
-            SetRect(retryButton.transform, 420f, 312f, 36f, 44f);
-            SetRect(cancelButton.transform, 552f, 312f, 36f, 44f);
+            SetRect(downloadButton.transform, 260f, 354f, 32f, 56f);
+            SetRect(retryButton.transform, 260f, 354f, 32f, 56f);
+            SetRect(cancelButton.transform, 32f, 354f, 420f, 56f);
 
             downloadButton.onClick.AddListener(StartDownload);
             retryButton.onClick.AddListener(RetryDownloadCheck);
             cancelButton.onClick.AddListener(CancelDownload);
-            Hide();
+            root.SetActive(false);
         }
 
         private void RetryDownloadCheck()
@@ -435,7 +471,7 @@ namespace YuiPhysicalAI.UI
         {
             if (titleText != null)
             {
-                titleText.text = title ?? string.Empty;
+                YuiUiLocalization.Set(titleText,title ?? string.Empty);
             }
         }
 
@@ -451,7 +487,9 @@ namespace YuiPhysicalAI.UI
         {
             if (root != null)
             {
+                var wasVisible = root.activeSelf;
                 root.SetActive(false);
+                if (wasVisible && chatPanel != null) chatPanel.FocusDesktopComposer();
             }
         }
 
@@ -459,12 +497,12 @@ namespace YuiPhysicalAI.UI
         {
             if (bodyText != null)
             {
-                bodyText.text = body ?? string.Empty;
+                YuiUiLocalization.Set(bodyText,body ?? string.Empty,true);
             }
 
             if (detailText != null)
             {
-                detailText.text = detail ?? string.Empty;
+                YuiUiLocalization.Set(detailText,detail ?? string.Empty,true);
             }
         }
 
@@ -492,7 +530,7 @@ namespace YuiPhysicalAI.UI
 
             if (detailText != null && !string.IsNullOrWhiteSpace(detail))
             {
-                detailText.text = detail;
+                YuiUiLocalization.Set(detailText,detail);
             }
         }
 
@@ -501,6 +539,11 @@ namespace YuiPhysicalAI.UI
             SetButtonVisible(downloadButton, download);
             SetButtonVisible(retryButton, retry);
             SetButtonVisible(cancelButton, cancel);
+            if (cancelButton != null) cancelButton.interactable = true;
+            if (cancelButton != null) YuiUiLocalization.Set(cancelButton.GetComponentInChildren<Text>(),downloadCancellation != null ? "Cancel" : "Close");
+            var selected = download ? downloadButton : retry ? retryButton : cancel ? cancelButton : null;
+            if (selected != null && root != null && root.activeInHierarchy && EventSystem.current != null)
+                EventSystem.current.SetSelectedGameObject(selected.gameObject);
         }
 
         private static void SetButtonVisible(Button button, bool visible)
@@ -516,8 +559,9 @@ namespace YuiPhysicalAI.UI
             var obj = new GameObject(name, typeof(RectTransform), typeof(Text));
             obj.transform.SetParent(parent, false);
             var text = obj.GetComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            text.font = YuiUiTypography.Regular;
             text.fontSize = size;
+            text.raycastTarget = false;
             text.alignment = alignment;
             text.color = color;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
@@ -530,11 +574,12 @@ namespace YuiPhysicalAI.UI
             var obj = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
             obj.transform.SetParent(parent, false);
             var image = obj.GetComponent<Image>();
-            image.color = new Color(0.20f, 0.43f, 0.90f, 1f);
+            var primary=name!="CancelButton";
+            YuiUiTheme.SurfaceOn(image,primary ? YuiUiTheme.Accent : YuiUiTheme.Field);
             var button = obj.GetComponent<Button>();
 
-            var labelText = CreateText(obj.transform, "Label", 15, TextAnchor.MiddleCenter, Color.white);
-            labelText.text = label;
+            var labelText = CreateText(obj.transform, "Label", YuiUiTypography.AtReferenceWidth(YuiUiTypography.Button,720), TextAnchor.MiddleCenter, primary ? new Color32(45,32,65,255) : YuiUiTheme.Text);
+            YuiUiLocalization.Set(labelText,label);
             Stretch(labelText.transform);
             return button;
         }
@@ -545,7 +590,7 @@ namespace YuiPhysicalAI.UI
             root.transform.SetParent(parent, false);
             var background = new GameObject("Background", typeof(RectTransform), typeof(Image));
             background.transform.SetParent(root.transform, false);
-            background.GetComponent<Image>().color = new Color(0.18f, 0.20f, 0.26f, 1f);
+            YuiUiTheme.SurfaceOn(background.GetComponent<Image>(),YuiUiTheme.Field);
             Stretch(background.transform);
 
             var fillArea = new GameObject("Fill Area", typeof(RectTransform));
@@ -554,7 +599,7 @@ namespace YuiPhysicalAI.UI
 
             var fill = new GameObject("Fill", typeof(RectTransform), typeof(Image));
             fill.transform.SetParent(fillArea.transform, false);
-            fill.GetComponent<Image>().color = new Color(0.33f, 0.78f, 0.58f, 1f);
+            YuiUiTheme.SurfaceOn(fill.GetComponent<Image>(),YuiUiTheme.Accent);
             Stretch(fill.transform);
 
             var slider = root.GetComponent<Slider>();

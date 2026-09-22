@@ -38,6 +38,15 @@ namespace YuiPhysicalAI.UI
         {
             if (!string.IsNullOrWhiteSpace(nextBackendUrl))
             {
+                if (!string.Equals(backendUrl, nextBackendUrl.Trim(), StringComparison.Ordinal))
+                {
+                    cachedProviderStatus = null;
+                    providerStatusUrl = null;
+                    routingBackendHealth = null;
+                    lastBackendSuccessAt = -999f;
+                    backendConfigLoaded = false;
+                    ttsProviderOptions = Array.Empty<string>();
+                }
                 backendUrl = nextBackendUrl.Trim();
                 client = new YuiBackendClient(backendUrl);
                 ConfigureAiRuntimeRouter();
@@ -134,6 +143,7 @@ namespace YuiPhysicalAI.UI
             {
                 AppendLog("System", YuiConversationModes.ExperimentalWarningText(conversationMode));
             }
+            SaveCharacterProfile();
             EnsureBackendMonitorIfNeeded();
             SetStatus("Settings saved");
         }
@@ -141,7 +151,7 @@ namespace YuiPhysicalAI.UI
         private void LoadSavedRuntimeSettings()
         {
             backendUrl = PlayerPrefs.GetString(BackendUrlKey, backendUrl);
-            openAiApiKey = PlayerPrefs.GetString(OpenAiApiKeyKey, openAiApiKey);
+            openAiApiKey = YuiApiKeyStore.Read();
             openAiModel = YuiDirectOpenAiClient.NormalizeModel(PlayerPrefs.GetString(OpenAiModelKey, openAiModel));
             autoAiFallbackEnabled = PlayerPrefs.GetInt(AutoAiFallbackEnabledKey, 1) == 1;
             speakerId = PlayerPrefs.GetInt(SpeakerIdKey, speakerId);
@@ -180,7 +190,7 @@ namespace YuiPhysicalAI.UI
             characterName = PlayerPrefs.GetString(CharacterNameKey, characterName);
             customInstruction = PlayerPrefs.GetString(CustomInstructionKey, customInstruction);
             var defaultAvatarSlot = GetDefaultAvatarSlot();
-            var savedAvatarSlot = PlayerPrefs.GetString(AvatarSlotPrefsKey, defaultAvatarSlot);
+            var savedAvatarSlot = YuiAvatarSelectionPrefs.Read(defaultAvatarSlot);
             savedAvatarSlot = UpgradeDefaultAvatarSlot(savedAvatarSlot, defaultAvatarSlot);
             avatarSlot = NormalizeAvatarSlot(savedAvatarSlot);
             if (!string.Equals(savedAvatarSlot, avatarSlot, StringComparison.OrdinalIgnoreCase))
@@ -188,6 +198,7 @@ namespace YuiPhysicalAI.UI
                 PlayerPrefs.SetString(AvatarSlotPrefsKey, avatarSlot);
                 PlayerPrefs.Save();
             }
+            SelectCharacterProfile(true);
         }
 
         public void SetDirectOpenAiSettings(string apiKey, string model)
@@ -195,11 +206,12 @@ namespace YuiPhysicalAI.UI
             openAiApiKey = string.IsNullOrWhiteSpace(apiKey) ? string.Empty : apiKey.Trim();
             openAiModel = YuiDirectOpenAiClient.NormalizeModel(model);
             directOpenAiClient = null;
-            PlayerPrefs.SetString(OpenAiApiKeyKey, openAiApiKey);
+            var keySaved = YuiApiKeyStore.Write(openAiApiKey);
             PlayerPrefs.SetString(OpenAiModelKey, openAiModel);
             PlayerPrefs.Save();
             ConfigureAiRuntimeRouter();
-            SetStatus("Settings saved");
+            if (!keySaved) ShowKeyStorageError();
+            SetStatus(keySaved ? "Settings saved" : "API key not saved");
         }
 
         public void SetAutoAiFallbackEnabled(bool enabled)
@@ -256,11 +268,7 @@ namespace YuiPhysicalAI.UI
 
         private static string DefaultConversationMode()
         {
-#if UNITY_IOS || UNITY_ANDROID
             return YuiConversationModes.LocalAi;
-#else
-            return YuiConversationModes.Stable;
-#endif
         }
 
         private static string DefaultTtsMode()
@@ -275,6 +283,7 @@ namespace YuiPhysicalAI.UI
         public void SetCustomInstruction(string value)
         {
             customInstruction = (value ?? string.Empty).Trim();
+            SaveCharacterProfile();
             PlayerPrefs.SetString(CustomInstructionKey, customInstruction);
             PlayerPrefs.Save();
             SetStatus("Settings saved");
@@ -283,51 +292,85 @@ namespace YuiPhysicalAI.UI
         public void SetCharacterName(string value)
         {
             characterName = string.IsNullOrWhiteSpace(value) ? "Yui" : value.Trim();
+            SaveCharacterProfile();
             PlayerPrefs.SetString(CharacterNameKey, characterName);
             PlayerPrefs.Save();
             SetStatus("Settings saved");
         }
 
-        public void SetAvatarSlot(string value)
+        public async void SetAvatarSlot(string value) => await SetAvatarSlotAsync(value);
+
+        public async Task<bool> SetAvatarSlotAsync(string value)
         {
-            avatarSlot = NormalizeAvatarSlot(value);
+            try
+            {
+            var selected = NormalizeAvatarSlot(value);
+            if (selected != avatarSlot && !CanChangeCharacter()) return false;
+            if (YuiAvatarSlots.IsCustomVrm(selected))
+            {
+                var path = runtimeVrmImporter?.GetCustomVrmPath(selected);
+                if (string.IsNullOrWhiteSpace(path) || !System.IO.File.Exists(path))
+                {
+                    SetStatus("This appearance is empty. Import an avatar first.");
+                    return false;
+                }
+                if (avatarSwitcher == null || !avatarSwitcher.HasCustomAvatar || avatarSwitcher.CustomAvatarSlot != selected)
+                {
+                    var id = runtimeVrmImporter.GetCharacterId(selected);
+                    var loaded = await runtimeVrmImporter.ImportFromPathAsync(path, true, selected,
+                        id.StartsWith("builtin:", StringComparison.Ordinal) ? null : id);
+                    if (!loaded) { SetStatus(runtimeVrmImporter.LastImportMessage); return false; }
+                }
+            }
+            avatarSlot = selected;
             PlayerPrefs.SetString(AvatarSlotPrefsKey, avatarSlot);
             PlayerPrefs.Save();
             ApplyAvatarSlot(true);
+            SelectCharacterProfile();
+            return true;
+            }
+            catch (Exception ex) { SetStatus("Could not load this appearance: " + ex.Message); return false; }
         }
 
-        public async void ImportCustomVrmFromFilePicker()
+        public async void ImportCustomVrmFromFilePicker() => await ImportAvatarAsync();
+        public async void ImportCustomVrmIntoSlot(string requestedSlot) => await ImportAvatarAsync(requestedSlot);
+
+        public async System.Threading.Tasks.Task<bool> ImportAvatarAsync(string requestedSlot = null, string characterId = null)
         {
+            if (!CanChangeCharacter()) return false;
             if (runtimeVrmImporter == null)
-            {
                 runtimeVrmImporter = GetComponent<YuiRuntimeVrmImporter>() ?? YuiSceneObjectFinder.FindFirst<YuiRuntimeVrmImporter>();
-            }
-
             if (runtimeVrmImporter == null)
             {
-                SetStatus("Custom avatar importer is not configured");
-                return;
+                ShowAvatarError("Custom avatar importer is not configured", () => ImportCustomVrmFromFilePicker());
+                return false;
             }
-
-            SetStatus("Opening avatar file...");
-            var targetSlot = YuiAvatarSlots.IsCustomVrm(avatarSlot)
-                ? avatarSlot
-                : YuiAvatarSlots.CustomVrm1;
-            var imported = await runtimeVrmImporter.ImportFromFilePickerAsync(targetSlot);
+            var targetSlot = YuiAvatarSlots.IsCustomVrm(requestedSlot) ? requestedSlot : YuiAvatarSlots.CustomVrm1;
+            var imported = await runtimeVrmImporter.ImportFromFilePickerAsync(targetSlot, characterId);
             if (!imported)
             {
-                SetStatus(string.IsNullOrWhiteSpace(runtimeVrmImporter.LastImportMessage)
-                    ? "Avatar import canceled or failed"
-                    : runtimeVrmImporter.LastImportMessage);
-                return;
+                if (!runtimeVrmImporter.LastImportCanceled)
+                    ShowAvatarError(runtimeVrmImporter.LastImportMessage, () => { _ = ImportAvatarAsync(targetSlot, characterId); });
+                return false;
             }
+            SetAvatarSlot(targetSlot);
+            RefreshCharacterSettings();
+            SetStatus(runtimeVrmImporter.LastImportMessage);
+            return true;
+        }
 
-            avatarSlot = targetSlot;
-            PlayerPrefs.SetString(AvatarSlotPrefsKey, avatarSlot);
-            PlayerPrefs.Save();
-            SetStatus(string.IsNullOrWhiteSpace(runtimeVrmImporter.LastImportMessage)
-                ? "Avatar loaded"
-                : runtimeVrmImporter.LastImportMessage);
+        private void RefreshCharacterSettings()
+        {
+            var settings = YuiSceneObjectFinder.FindFirst<YuiSettingsOverlay>();
+            if (settings == null || !settings.RefreshCharacterSelection()) FocusDesktopComposer();
+        }
+
+        private void ShowAvatarError(string message, UnityEngine.Events.UnityAction retry)
+        {
+            var root = CreateSavedDataPanel("Could not load avatar");
+            SavedDataText(root, YuiUiLocalization.Text(message));
+            ComposerButton(root, "Retry", "Try again", () => { Destroy(root.gameObject); retry?.Invoke(); }, .04f, .06f, .60f, .18f);
+            ComposerButton(root, "Library", "My characters", ShowAvatarLibrary, .64f, .06f, .96f, .18f);
         }
 
         public void ClearCustomVrmSlot(string slot)
@@ -345,6 +388,7 @@ namespace YuiPhysicalAI.UI
                 PlayerPrefs.SetString(AvatarSlotPrefsKey, avatarSlot);
                 PlayerPrefs.Save();
                 ApplyAvatarSlot(false);
+                SelectCharacterProfile();
             }
 
             SetStatus($"{GetCustomVrmDisplayName(slot)} cleared");
@@ -352,27 +396,24 @@ namespace YuiPhysicalAI.UI
 
         public string[] GetAvatarSlotOptions()
         {
-            var hasDemoAvatar = avatarSwitcher != null && avatarSwitcher.HasDemoAvatar;
+            var hasDemoAvatar = YuiBuildProfile.Current != YuiBuildProfile.Public && avatarSwitcher != null && avatarSwitcher.HasDemoAvatar;
             if (!hasDemoAvatar)
             {
-                return new[]
-                {
-                    "UnityChan Default",
-                    GetCustomVrmDisplayName(YuiAvatarSlots.CustomVrm1),
-                    GetCustomVrmDisplayName(YuiAvatarSlots.CustomVrm2),
-                    GetCustomVrmDisplayName(YuiAvatarSlots.CustomVrm3),
-                    GetCustomVrmDisplayName(YuiAvatarSlots.CustomVrm4)
-                };
+                var options = new System.Collections.Generic.List<string> { "Demo Avatar" };
+                for (var index = 1; index <= 3; index++) options.Add(GetCustomVrmOptionLabel(YuiAvatarSlots.CustomVrmSlot(index)));
+                if (!string.IsNullOrWhiteSpace(runtimeVrmImporter?.GetCustomVrmPath(YuiAvatarSlots.CustomVrm4)))
+                    options.Add(GetCustomVrmOptionLabel(YuiAvatarSlots.CustomVrm4));
+                return options.ToArray();
             }
 
             return new[]
             {
+                "Personal Avatar",
                 "Demo Avatar",
-                "UnityChan Default",
-                GetCustomVrmDisplayName(YuiAvatarSlots.CustomVrm1),
-                GetCustomVrmDisplayName(YuiAvatarSlots.CustomVrm2),
-                GetCustomVrmDisplayName(YuiAvatarSlots.CustomVrm3),
-                GetCustomVrmDisplayName(YuiAvatarSlots.CustomVrm4)
+                GetCustomVrmOptionLabel(YuiAvatarSlots.CustomVrm1),
+                GetCustomVrmOptionLabel(YuiAvatarSlots.CustomVrm2),
+                GetCustomVrmOptionLabel(YuiAvatarSlots.CustomVrm3),
+                GetCustomVrmOptionLabel(YuiAvatarSlots.CustomVrm4)
             };
         }
 
@@ -384,7 +425,7 @@ namespace YuiPhysicalAI.UI
                 return GetDefaultAvatarSlot();
             }
 
-            var hasDemoAvatar = avatarSwitcher != null && avatarSwitcher.HasDemoAvatar;
+            var hasDemoAvatar = YuiBuildProfile.Current != YuiBuildProfile.Public && avatarSwitcher != null && avatarSwitcher.HasDemoAvatar;
             if (hasDemoAvatar)
             {
                 if (index == 0)
@@ -424,12 +465,24 @@ namespace YuiPhysicalAI.UI
             return 0;
         }
 
+        private string GetCustomVrmOptionLabel(string slot)
+        {
+            var fallback = $"Custom VRM {YuiAvatarSlots.CustomVrmIndex(slot)}";
+            var path = runtimeVrmImporter?.GetCustomVrmPath(slot);
+            if (string.IsNullOrWhiteSpace(path)) return fallback + " · Empty";
+            if (!File.Exists(path)) return fallback + " · File missing";
+            return GetCustomVrmDisplayName(slot);
+        }
+
         public string GetCustomVrmDisplayName(string slot)
         {
-            var index = YuiAvatarSlots.CustomVrmIndex(slot);
-            var fallback = $"Custom VRM {index}";
+            var fallback = $"Custom VRM {YuiAvatarSlots.CustomVrmIndex(slot)}";
             var saved = PlayerPrefs.GetString(CustomVrmNamePrefsKey(slot), fallback);
-            return string.IsNullOrWhiteSpace(saved) ? fallback : saved.Trim();
+            var id = PlayerPrefs.GetString("Yui.CharacterId." + slot, "");
+            var entry = YuiAvatarLibrary.Read().Find(item => item.id == id);
+            var appearance = entry?.appearances?.Find(item => item.file == entry.file);
+            return !string.IsNullOrWhiteSpace(appearance?.name) ? appearance.name
+                : !string.IsNullOrWhiteSpace(entry?.name) ? entry.name : saved;
         }
 
         public void SetCustomVrmDisplayName(string slot, string value)
@@ -442,7 +495,10 @@ namespace YuiPhysicalAI.UI
             var index = YuiAvatarSlots.CustomVrmIndex(slot);
             var fallback = $"Custom VRM {index}";
             var name = string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
-            PlayerPrefs.SetString(CustomVrmNamePrefsKey(slot), name);
+            var id = PlayerPrefs.GetString("Yui.CharacterId." + slot, "");
+            var entry = YuiAvatarLibrary.Read().Find(item => item.id == id);
+            if (entry != null) new YuiAvatarLibraryStore(YuiAvatarLibrary.DirectoryPath).RenameAppearance(entry.id, entry.file, name);
+            else PlayerPrefs.SetString(CustomVrmNamePrefsKey(slot), name);
             PlayerPrefs.Save();
         }
 
@@ -458,7 +514,11 @@ namespace YuiPhysicalAI.UI
 
         public void SetSecretMode(bool enabled)
         {
+            if (enabled != secretMode) { retryChatMessage = null; if (HasStoppableComposerOperation) StopComposerOperation(); }
             secretMode = enabled;
+            if (!secretMode) MigrateRecentDialogue();
+            if(savedDataPanel!=null) Destroy(savedDataPanel);
+            _=RestoreConversationViewAsync();
             PlayerPrefs.SetInt(SecretModeKey, secretMode ? 1 : 0);
             PlayerPrefs.Save();
             UpdateSecretModeUi();
@@ -481,8 +541,8 @@ namespace YuiPhysicalAI.UI
             {
                 SetStatus("Clearing...");
                 var result = await client.ClearConversationsAsync(userId, cancellationTokenSource.Token);
-                chatLogView?.Clear();
-                SetStatus("History cleared");
+                await RestoreConversationViewAsync();
+                SetStatus("Backend history cleared");
                 Debug.Log(
                     $"Yui session cleared: conversations={result?.Conversations ?? 0}, cache={result?.ChatResponses ?? 0}, memories={result?.Memories ?? 0}");
             }
@@ -560,7 +620,7 @@ namespace YuiPhysicalAI.UI
 
         private string RealtimeInstructionsForMode(string mode)
         {
-            return YuiConversationModes.InstructionsForMode(mode, characterName);
+            return YuiConversationModes.InstructionsForMode(mode, characterName, customInstruction);
         }
 
         private bool IsTtsMode(string mode)
@@ -570,6 +630,8 @@ namespace YuiPhysicalAI.UI
 
         private static string NormalizeTtsMode(string mode)
         {
+            if (YuiPhysicalAI.LocalAI.YuiPlatformSpeechBridge.CanSynthesize && string.Equals(mode, "local-ai", StringComparison.OrdinalIgnoreCase))
+                return "local-ai";
             if (string.Equals(mode, "aivis-native", StringComparison.OrdinalIgnoreCase))
             {
                 return "aivis-native";
@@ -655,7 +717,7 @@ namespace YuiPhysicalAI.UI
 
         private static string NormalizeAvatarSlot(string value)
         {
-            return YuiAvatarSlots.Normalize(value);
+            return YuiAvatarSlots.NormalizeForProfile(value, YuiBuildProfile.Current == YuiBuildProfile.Public);
         }
 
         private void ToggleSecretMode()
@@ -677,8 +739,8 @@ namespace YuiPhysicalAI.UI
                 if (image != null)
                 {
                     image.color = secretMode
-                        ? new Color(0.12f, 0.36f, 0.34f, 0.96f)
-                        : new Color(0.08f, 0.10f, 0.13f, 0.78f);
+                        ? YuiUiTheme.Selected
+                        : YuiUiTheme.Field;
                 }
             }
 
@@ -693,6 +755,11 @@ namespace YuiPhysicalAI.UI
         private RequestContext CreateChatContext()
         {
             var context = new RequestContext();
+            if (!secretMode)
+            {
+                try { context.Extra[YuiCharacterDialogueStore.ContextKey] = DialogueStore.Context(ChatCharacterId(), chatInteractionMode); }
+                catch (Exception ex) { Debug.LogWarning("Recent character dialogue: " + ex.Message); }
+            }
             if (latestVision != null)
             {
                 context.VisionResultId = latestVision.VisionResultId;

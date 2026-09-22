@@ -25,6 +25,7 @@ namespace YuiPhysicalAI.UI
             AppendLog("You", "(voice)");
             var timer = System.Diagnostics.Stopwatch.StartNew();
             var mode = RealtimeBackendMode();
+            await EnsureExternalDataPermissionAsync(backendUrl, false, cancellationTokenSource.Token);
             var response = await client.SendRealtimeAudioAsync(
                 wavBytes,
                 mode,
@@ -62,8 +63,12 @@ namespace YuiPhysicalAI.UI
             SetStatus("Ready");
         }
 
+        private CancellationTokenSource realtimeTranslateCancellation;
+
         private async Task SendRealtimeTranslatePhraseAsync(byte[] pcm16, int chunks)
         {
+            using var operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token);
+            realtimeTranslateCancellation = operation;
             try
             {
                 if (pcm16 == null || pcm16.Length < 2)
@@ -77,14 +82,16 @@ namespace YuiPhysicalAI.UI
                 SetPendingLine(CharacterName, "Translating...");
                 var timer = System.Diagnostics.Stopwatch.StartNew();
                 var wavBytes = Pcm16BytesToWav(pcm16, 24000);
+                await EnsureExternalDataPermissionAsync(backendUrl, false, operation.Token);
                 var response = await client.SendRealtimeAudioAsync(
                     wavBytes,
                     YuiConversationModes.BackendTranslate,
                     RealtimeInstructionsForMode(YuiConversationModes.BackendTranslate),
                     "realtime_translate_phrase.wav",
-                    cancellationTokenSource.Token);
+                    operation.Token);
+                operation.Token.ThrowIfCancellationRequested();
                 Debug.Log(
-                    $"Yui realtime translate phrase latency: {timer.ElapsedMilliseconds} ms, chunks={chunks}, pcm_bytes={pcm16.Length}, input_text={response.InputText}, events={YuiRealtimeLog.FormatEvents(response.Events, YuiRealtimeLog.VerboseEnabled)}");
+                    $"Yui realtime translate phrase latency: {timer.ElapsedMilliseconds} ms, chunks={chunks}, pcm_bytes={pcm16.Length}, input_chars={response.InputText?.Length ?? 0}, events={YuiRealtimeLog.FormatEvents(response.Events, YuiRealtimeLog.VerboseEnabled)}");
 
                 ClearPendingLine();
                 if (!string.IsNullOrWhiteSpace(response.Text))
@@ -123,6 +130,10 @@ namespace YuiPhysicalAI.UI
                 SetStatus("Realtime error");
                 AppendLog("System", ex is YuiBackendException backendException ? backendException.UserMessage : ex.Message);
                 Debug.LogError(ex);
+            }
+            finally
+            {
+                if (realtimeTranslateCancellation == operation) realtimeTranslateCancellation = null;
             }
         }
 
@@ -204,6 +215,8 @@ namespace YuiPhysicalAI.UI
 
             realtimeCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token);
             realtimeSocket = new ClientWebSocket();
+            var connectingSocket = realtimeSocket;
+            var connectingToken = realtimeCancellationTokenSource.Token;
             realtimeTextBuffer.Clear();
             realtimeVoicevoxPendingText.Clear();
             realtimeVoicevoxSpeechCancellationTokenSource?.Cancel();
@@ -232,7 +245,9 @@ namespace YuiPhysicalAI.UI
             try
             {
                 SetStatus("Realtime connecting...");
-                await realtimeSocket.ConnectAsync(uri, realtimeCancellationTokenSource.Token);
+                await EnsureExternalDataPermissionAsync(backendUrl, false, connectingToken);
+                await connectingSocket.ConnectAsync(uri, connectingToken);
+                connectingToken.ThrowIfCancellationRequested();
                 var mode = RealtimeBackendMode();
                 realtimeActiveBackendMode = mode;
                 await SendRealtimeJsonAsync(new
@@ -243,6 +258,7 @@ namespace YuiPhysicalAI.UI
                     character_name = characterName,
                     instructions = RealtimeInstructionsForMode(mode)
                 });
+                connectingToken.ThrowIfCancellationRequested();
                 realtimeStreamActive = true;
                 if (!StartMacEditorRealtimeMicrophoneStreamer())
                 {
@@ -255,11 +271,14 @@ namespace YuiPhysicalAI.UI
                     await CloseRealtimeStreamAsync();
                     return;
                 }
-                _ = ReceiveRealtimeLoopAsync(realtimeSocket, realtimeCancellationTokenSource.Token);
+                _ = ReceiveRealtimeLoopAsync(connectingSocket, connectingToken);
                 SetStatus("Realtime listening...");
             }
+            catch (Exception) when (connectingToken.IsCancellationRequested || connectingSocket != realtimeSocket) { }
             catch (Exception ex)
             {
+                StopRecordingAfterRealtimeError();
+                await CloseRealtimeStreamAsync();
                 realtimeStreamActive = false;
                 realtimeAssistantTurnActive = false;
                 SetStatus("Realtime failed");
@@ -290,7 +309,7 @@ namespace YuiPhysicalAI.UI
             }
         }
 
-        private async Task CloseRealtimeStreamAsync()
+        private Task CloseRealtimeStreamAsync()
         {
             realtimeStreamActive = false;
             realtimeAssistantTurnActive = false;
@@ -298,31 +317,17 @@ namespace YuiPhysicalAI.UI
             var cancellationToDispose = realtimeCancellationTokenSource;
             realtimeSocket = null;
             realtimeCancellationTokenSource = null;
-            try
-            {
-                if (socketToClose != null && socketToClose.State == WebSocketState.Open)
-                {
-                    await SendRealtimeJsonAsync(socketToClose, new { type = "close" }, CancellationToken.None);
-                    await socketToClose.CloseAsync(
-                        WebSocketCloseStatus.NormalClosure,
-                        "closed",
-                        CancellationToken.None);
-                }
-            }
-            catch
-            {
-                // Best-effort cleanup only.
-            }
-            finally
-            {
-                cancellationToDispose?.Cancel();
-                cancellationToDispose?.Dispose();
-                StopMacEditorRealtimeMicrophoneStreamer();
-                socketToClose?.Dispose();
-                realtimeTranslatePcmBuffer.Clear();
-                ResetRealtimeClientVadState();
-                SyncRealtimeActiveBackendModeWithConversation();
-            }
+            // Cancel/abort synchronously: a close handshake can wait forever for a
+            // disconnected peer, and deferred cleanup can erase a newer session.
+            cancellationToDispose?.Cancel();
+            socketToClose?.Abort();
+            socketToClose?.Dispose();
+            cancellationToDispose?.Dispose();
+            StopMacEditorRealtimeMicrophoneStreamer();
+            realtimeTranslatePcmBuffer.Clear();
+            ResetRealtimeClientVadState();
+            SyncRealtimeActiveBackendModeWithConversation();
+            return Task.CompletedTask;
         }
 
         private void SendRealtimeMicrophoneDelta(int currentPosition)
@@ -512,7 +517,7 @@ namespace YuiPhysicalAI.UI
         private async Task ReceiveRealtimeLoopAsync(ClientWebSocket socket, CancellationToken cancellationToken)
         {
             var buffer = new byte[64 * 1024];
-            var stream = new MemoryStream();
+            using var stream = new MemoryStream();
             try
             {
                 while (!cancellationToken.IsCancellationRequested
@@ -532,6 +537,7 @@ namespace YuiPhysicalAI.UI
                     }
                     while (!result.EndOfMessage);
 
+                    if (cancellationToken.IsCancellationRequested || socket != realtimeSocket) return;
                     var json = Encoding.UTF8.GetString(stream.ToArray());
                     HandleRealtimeMessage(JObject.Parse(json));
                 }
@@ -539,11 +545,23 @@ namespace YuiPhysicalAI.UI
             catch (OperationCanceledException)
             {
             }
+            catch (Exception) when (cancellationToken.IsCancellationRequested || socket != realtimeSocket) { }
             catch (Exception ex)
             {
                 SetStatus("Realtime error");
                 AppendLog("System", $"Realtime受信に失敗しました: {ex.Message}");
                 Debug.LogError(ex);
+            }
+            finally
+            {
+                // Only the session that still owns the socket may clear live UI state.
+                if (socket == realtimeSocket)
+                {
+                    StopRecordingAfterRealtimeError();
+                    realtimeWaitingForResponse = false;
+                    await CloseRealtimeStreamAsync();
+                    SetStatus("Realtime disconnected");
+                }
             }
         }
 
@@ -567,7 +585,7 @@ namespace YuiPhysicalAI.UI
                     && !string.IsNullOrWhiteSpace(inputTranscript))
                 {
                     var trimmedTranscript = inputTranscript.Trim();
-                    Debug.Log($"Yui realtime input transcript: {trimmedTranscript}");
+                    Debug.Log($"Yui realtime input transcript: {trimmedTranscript.Length} chars");
                     if (!IsRealtimeTranslateMode())
                     {
                         AppendLog("You", trimmedTranscript);
@@ -751,10 +769,9 @@ namespace YuiPhysicalAI.UI
 
         private void StopRealtimeAudioPlayback()
         {
+            realtimeVoicevoxGeneration++;
+            realtimeVoicevoxPendingText.Clear();
             realtimeVoicevoxSpeechCancellationTokenSource?.Cancel();
-            realtimeVoicevoxSpeechCancellationTokenSource?.Dispose();
-            realtimeVoicevoxSpeechCancellationTokenSource = null;
-            realtimeVoicevoxSpeechActive = false;
             lock (realtimeVoicevoxLock)
             {
                 realtimeVoicevoxSpeechQueue.Clear();

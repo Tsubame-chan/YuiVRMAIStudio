@@ -133,6 +133,23 @@ public func YuiPlatformSpeechBridge_Synthesize(_ requestJsonPointer: UnsafePoint
     ]))
 }
 
+// Recognition snapshots can restart after a pause on recent iOS versions.
+// Preserve earlier audio ranges, but replace revised overlapping hypotheses.
+struct YuiSpeechTranscriptTimeline {
+    struct Segment {
+        let start: Double
+        let duration: Double
+        let text: String
+    }
+    private(set) var segments: [Segment] = []
+    mutating func update(_ incoming: [Segment]) {
+        guard let first = incoming.first else { return }
+        segments.removeAll { $0.start >= first.start - 0.05 || $0.start + $0.duration > first.start + 0.05 }
+        segments.append(contentsOf: incoming)
+    }
+    var text: String { segments.map { $0.text }.joined() }
+}
+
 @_cdecl("YuiPlatformSpeechBridge_Transcribe")
 public func YuiPlatformSpeechBridge_Transcribe(_ requestJsonPointer: UnsafePointer<CChar>?) -> UnsafePointer<CChar>? {
     guard let request = yuiSpeechParse(requestJsonPointer) else {
@@ -144,7 +161,7 @@ public func YuiPlatformSpeechBridge_Transcribe(_ requestJsonPointer: UnsafePoint
         return yuiSpeechError("audio_missing", "Recorded audio file was not found.")
     }
 
-    let authorization = requestSpeechAuthorization()
+    let authorization = SFSpeechRecognizer.authorizationStatus()
     guard authorization == .authorized else {
         return yuiSpeechError("speech_not_authorized", "Speech recognition permission is not granted.")
     }
@@ -161,7 +178,7 @@ public func YuiPlatformSpeechBridge_Transcribe(_ requestJsonPointer: UnsafePoint
     }
 
     let recognitionRequest = SFSpeechURLRecognitionRequest(url: URL(fileURLWithPath: audioPath))
-    recognitionRequest.shouldReportPartialResults = false
+    recognitionRequest.shouldReportPartialResults = true
     if #available(iOS 16.0, *) {
         recognitionRequest.addsPunctuation = true
     }
@@ -170,30 +187,52 @@ public func YuiPlatformSpeechBridge_Transcribe(_ requestJsonPointer: UnsafePoint
     }
 
     let semaphore = DispatchSemaphore(value: 0)
-    var recognizedText = ""
+    var timeline = YuiSpeechTranscriptTimeline()
+    let resultLock = NSLock()
+    var completed = false
     var confidence: Float?
     var failure: Error?
     var task: SFSpeechRecognitionTask?
     task = recognizer.recognitionTask(with: recognitionRequest) { result, error in
+        resultLock.lock()
+        defer { resultLock.unlock() }
+        guard !completed else { return }
         if let result {
-            recognizedText = result.bestTranscription.formattedString
+            let transcription = result.bestTranscription
+            let formatted = transcription.formattedString as NSString
+            timeline.update(transcription.segments.enumerated().map { index, segment in
+                let start = index == 0 ? 0 : segment.substringRange.location
+                let end = index + 1 < transcription.segments.count
+                    ? transcription.segments[index + 1].substringRange.location : formatted.length
+                let text = start <= end && end <= formatted.length
+                    ? formatted.substring(with: NSRange(location: start, length: end - start)) : segment.substring
+                return YuiSpeechTranscriptTimeline.Segment(start: segment.timestamp, duration: segment.duration, text: text)
+            })
             confidence = result.bestTranscription.segments.last?.confidence
             if result.isFinal {
+                completed = true
                 semaphore.signal()
             }
         }
         if let error {
             failure = error
+            completed = true
             semaphore.signal()
         }
     }
 
     if semaphore.wait(timeout: .now() + 30) == .timedOut {
+        resultLock.lock(); completed = true; resultLock.unlock()
         task?.cancel()
         return yuiSpeechError("stt_timeout", "Platform STT timed out.")
     }
 
-    if let failure {
+    resultLock.lock()
+    let recognizedText = timeline.text
+    let finalFailure = failure
+    let finalConfidence = confidence
+    resultLock.unlock()
+    if let failure = finalFailure {
         return yuiSpeechError("stt_error", failure.localizedDescription)
     }
 
@@ -206,7 +245,7 @@ public func YuiPlatformSpeechBridge_Transcribe(_ requestJsonPointer: UnsafePoint
         "ok": true,
         "text": text
     ]
-    if let confidence {
+    if let confidence = finalConfidence {
         response["confidence"] = confidence
     }
     return yuiSpeechCString(yuiSpeechJson(response))
@@ -231,20 +270,18 @@ private func preferredJapaneseVoice() -> AVSpeechSynthesisVoice? {
     return AVSpeechSynthesisVoice(language: "ja-JP")
 }
 
-private func requestSpeechAuthorization() -> SFSpeechRecognizerAuthorizationStatus {
-    let current = SFSpeechRecognizer.authorizationStatus()
-    if current != .notDetermined {
-        return current
-    }
+@_cdecl("YuiPlatformSpeechBridge_AuthorizationStatus")
+public func YuiPlatformSpeechBridge_AuthorizationStatus() -> Int32 {
+    return Int32(SFSpeechRecognizer.authorizationStatus().rawValue)
+}
 
-    let semaphore = DispatchSemaphore(value: 0)
-    var status = current
-    SFSpeechRecognizer.requestAuthorization { nextStatus in
-        status = nextStatus
-        semaphore.signal()
+@_cdecl("YuiPlatformSpeechBridge_RequestAuthorization")
+public func YuiPlatformSpeechBridge_RequestAuthorization() {
+    DispatchQueue.main.async {
+        if SFSpeechRecognizer.authorizationStatus() == .notDetermined {
+            SFSpeechRecognizer.requestAuthorization { _ in }
+        }
     }
-    _ = semaphore.wait(timeout: .now() + 15)
-    return status
 }
 
 private func yuiSpeechWavData(samples: [Int16], sampleRate: Int) -> Data {

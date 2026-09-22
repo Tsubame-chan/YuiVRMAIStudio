@@ -6,18 +6,17 @@ using YuiPhysicalAI.LocalAI;
 
 namespace YuiPhysicalAI.UI
 {
-    public sealed class YuiHelpOverlay : MonoBehaviour
+    public sealed partial class YuiHelpOverlay : MonoBehaviour
     {
         [SerializeField] private GameObject helpRoot;
         [SerializeField] private Button helpButton;
         [SerializeField] private Button closeButton;
         [SerializeField] private string backendUrl = "http://127.0.0.1:8000";
 
-        private string providerStatusBody = "Backendの接続状態を確認中です。";
-        private string providerStatusDetail = "少し待ってからもう一度Helpを開いてください。";
 
         private void Awake()
         {
+            YuiUiLocalization.Changed += RefreshUiLanguage;
             if (helpButton != null)
             {
                 helpButton.onClick.AddListener(Show);
@@ -34,6 +33,8 @@ namespace YuiPhysicalAI.UI
 
         private void OnDestroy()
         {
+            YuiUiLocalization.Changed -= RefreshUiLanguage;
+            StopStatusPolling();
             if (helpButton != null)
             {
                 helpButton.onClick.RemoveListener(Show);
@@ -77,6 +78,7 @@ namespace YuiPhysicalAI.UI
 
         public void Show()
         {
+            previousSelection = UnityEngine.EventSystems.EventSystem.current?.currentSelectedGameObject;
             if (helpRoot != null)
             {
                 helpRoot.SetActive(true);
@@ -85,7 +87,7 @@ namespace YuiPhysicalAI.UI
 
             EnsureOverlayCanvas(helpRoot, 5010);
             ApplyResponsiveLayout();
-            _ = RefreshProviderStatusAsync();
+            StartStatusPolling();
             if (helpRoot != null)
             {
                 helpRoot.SetActive(true);
@@ -93,109 +95,24 @@ namespace YuiPhysicalAI.UI
             }
 
             Canvas.ForceUpdateCanvases();
+            UnityEngine.EventSystems.EventSystem.current?.SetSelectedGameObject(connectionsTab?.gameObject);
         }
 
         public void Hide()
         {
+            StopStatusPolling();
             if (helpRoot != null)
             {
                 helpRoot.SetActive(false);
+                if (previousSelection != null && previousSelection.activeInHierarchy)
+                    UnityEngine.EventSystems.EventSystem.current?.SetSelectedGameObject(previousSelection);
             }
         }
 
-        private void ApplyResponsiveLayout()
+        private void ApplyResponsiveLayout() => RenderModernHelp();
+        private void RefreshUiLanguage()
         {
-            if (helpRoot == null)
-            {
-                return;
-            }
-
-            var rootRect = helpRoot.GetComponent<RectTransform>();
-            if (rootRect != null)
-            {
-                rootRect.anchorMin = Vector2.zero;
-                rootRect.anchorMax = Vector2.one;
-                rootRect.offsetMin = Vector2.zero;
-                rootRect.offsetMax = Vector2.zero;
-            }
-
-            var rootImage = helpRoot.GetComponent<Image>();
-            if (rootImage != null)
-            {
-                rootImage.color = new Color(0.02f, 0.025f, 0.03f, 0.72f);
-            }
-
-            var panel = helpRoot.transform.Find("Panel");
-            if (panel == null)
-            {
-                return;
-            }
-
-            SetAnchors(panel, new Vector2(0.04f, 0.08f), new Vector2(0.96f, 0.94f));
-            var panelImage = panel.GetComponent<Image>();
-            if (panelImage != null)
-            {
-                panelImage.color = new Color(0.075f, 0.08f, 0.095f, 1f);
-            }
-
-            EnsureOpaqueBacking(panel);
-
-            SetAnchors(panel.Find("Title"), new Vector2(0.06f, 0.91f), new Vector2(0.72f, 0.985f));
-            SetAnchors(closeButton != null ? closeButton.transform : panel.Find("CloseButton"), new Vector2(0.86f, 0.91f), new Vector2(0.96f, 0.985f));
-            SetText(panel.Find("Title"), "Yuiでできること", 22, FontStyle.Bold);
-            SetText(panel.Find("Subtitle"), "会話、音声、画像、カメラ、VRM、表示、記憶をまとめて扱うAIアバターです。シークレットモードでは履歴を残さず会話できます。", 16, FontStyle.Normal);
-            SetAnchors(panel.Find("Subtitle"), new Vector2(0.06f, 0.815f), new Vector2(0.94f, 0.895f));
-            ReflowCard(panel, "TalkCard", new Vector2(0.06f, 0.66f), new Vector2(0.94f, 0.80f),
-                "接続状態", providerStatusBody, providerStatusDetail);
-            ReflowCard(panel, "VisionCard", new Vector2(0.06f, 0.50f), new Vector2(0.94f, 0.64f),
-                "AIモード", "ローカルAIはオフライン優先で軽く使えます。API Modeは通信とAPI利用量が発生します。",
-                "高精度な画像理解、長い文脈、複雑な推論はAPI向きです。Local AI時はAPIへ自動切替しません。");
-            ReflowCard(panel, "AvatarCard", new Vector2(0.06f, 0.34f), new Vector2(0.94f, 0.48f),
-                "Direct API", "BackendなしでAPIチャットとAPI画像理解を使えます。声はTTS Modeで別に選びます。",
-                "できないこと: Realtime会話/翻訳、メモリDB、Web検索、外部ツール、Backend TTSにはBackendが必要です。");
-            ReflowCard(panel, "ViewerCard", new Vector2(0.06f, 0.18f), new Vector2(0.94f, 0.32f),
-                "話す/見せる", "Message or taskに入力してSend。Micは音声入力、画像・カメラ・アバターは「添付」から選びます。",
-                "画像は送信前に確認・解除できます。添付欄の処理先を確認してください。停止後や失敗後は再試行できます。");
-            ReflowCard(panel, "SettingsCard", new Vector2(0.06f, 0.045f), new Vector2(0.94f, 0.16f),
-                "Avatarと声", "AvatarでUnityChanまたはCustom Avatarを選びます。声はTTS ModeでAIモードとは別に選べます。",
-                "Load Avatarは.vrmまたはAvatar Bridgeの標準ZIP向けです。Backend URLはYui backendだけを指定します。");
-            var oldFooter = panel.Find("Footer");
-            if (oldFooter != null)
-            {
-                oldFooter.gameObject.SetActive(false);
-            }
-        }
-
-        private async System.Threading.Tasks.Task RefreshProviderStatusAsync()
-        {
-            try
-            {
-                var savedBackendUrl = PlayerPrefs.GetString(YuiPrefsKeys.BackendUrl, backendUrl);
-                var client = new YuiBackendClient(savedBackendUrl);
-                try
-                {
-                    var status = await client.GetProviderStatusAsync();
-                    var snapshot = CapabilitySnapshotFromProviderStatus(status, backendReachable: true);
-                    providerStatusBody = YuiCapabilityDiagnostics.FormatBody(snapshot);
-                    providerStatusDetail = YuiCapabilityDiagnostics.FormatDetail(snapshot);
-                }
-                catch (YuiBackendException ex) when (ex.StatusCode == 404)
-                {
-                    var health = await client.GetHealthAsync();
-                    var snapshot = CapabilitySnapshotFromHealth(health, backendReachable: true);
-                    providerStatusBody = YuiCapabilityDiagnostics.FormatBody(snapshot);
-                    providerStatusDetail = "Backendは起動していますが、接続診断APIが古い可能性があります。Backendを再起動してください。";
-                }
-            }
-            catch (System.Exception ex)
-            {
-                var snapshot = CapabilitySnapshotFromProviderStatus(null, backendReachable: false);
-                providerStatusBody = YuiCapabilityDiagnostics.FormatBody(snapshot);
-                providerStatusDetail = $"Backendに接続できません。ローカル機能で継続できますが、Realtime/Backend TTSにはローカルサービスが必要です: {ShortMessage(ex.Message)}";
-            }
-
-            ApplyResponsiveLayout();
-            Canvas.ForceUpdateCanvases();
+            if (helpRoot != null && helpRoot.activeSelf) RenderModernHelp();
         }
 
         private static string FormatProviderStatusBody(ProviderStatusResponse status)
@@ -220,7 +137,7 @@ namespace YuiPhysicalAI.UI
                 backendReachable,
                 YuiVoicevoxCoreBridge.IsSupported,
                 localChatAvailable: true,
-                directOpenAiConfigured: !string.IsNullOrWhiteSpace(PlayerPrefs.GetString(YuiPrefsKeys.OpenAiApiKey, "")));
+                directOpenAiConfigured: !string.IsNullOrWhiteSpace(YuiApiKeyStore.Read()));
         }
 
         private static YuiCapabilitySnapshot CapabilitySnapshotFromHealth(HealthResponse health, bool backendReachable)
@@ -230,7 +147,7 @@ namespace YuiPhysicalAI.UI
                 backendReachable,
                 YuiVoicevoxCoreBridge.IsSupported,
                 localChatAvailable: true,
-                directOpenAiConfigured: !string.IsNullOrWhiteSpace(PlayerPrefs.GetString(YuiPrefsKeys.OpenAiApiKey, "")));
+                directOpenAiConfigured: !string.IsNullOrWhiteSpace(YuiApiKeyStore.Read()));
         }
 
         private static string FormatStatusLine(string label, string status)
@@ -348,8 +265,7 @@ namespace YuiPhysicalAI.UI
             var textObject = new GameObject(name, typeof(RectTransform), typeof(Text));
             textObject.transform.SetParent(card, false);
             var text = textObject.GetComponent<Text>();
-            text.font = Font.CreateDynamicFontFromOSFont(new[] { "Meiryo", "Yu Gothic", "MS Gothic", "Arial" }, 12)
-                ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.font = YuiUiTypography.Regular;
             text.color = Color.white;
             text.alignment = TextAnchor.MiddleLeft;
         }

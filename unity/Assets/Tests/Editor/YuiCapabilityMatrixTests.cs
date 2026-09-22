@@ -49,7 +49,7 @@ namespace YuiPhysicalAI.Tests.Editor
                 Providers = new Dictionary<string, ProviderStatusItem>
                 {
                     ["voicevox"] = new ProviderStatusItem { Status = "ok" },
-                    ["aivis"] = new ProviderStatusItem { Status = "configured" },
+                    ["aivis"] = new ProviderStatusItem { Status = "ok" },
                     ["http_tts"] = new ProviderStatusItem { Status = "not_configured" },
                 }
             };
@@ -93,7 +93,7 @@ namespace YuiPhysicalAI.Tests.Editor
                 {
                     ["openai"] = new ProviderStatusItem { Status = "missing_key" },
                     ["voicevox"] = new ProviderStatusItem { Status = "ok" },
-                    ["aivis"] = new ProviderStatusItem { Status = "configured" },
+                    ["aivis"] = new ProviderStatusItem { Status = "ok" },
                     ["http_tts"] = new ProviderStatusItem { Status = "configured" },
                 }
             };

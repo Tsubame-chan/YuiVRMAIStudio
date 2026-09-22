@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 
 class ProviderStatusItem(BaseModel):
     status: str
+    selectable: bool = False
     detail: str = ""
     category: str = ""
     requires_api_key: bool = False
@@ -24,6 +25,7 @@ class SystemStatusItem(BaseModel):
 
 
 class ProviderStatusResponse(BaseModel):
+    chat_provider: str = "openai"
     status: str
     backend: SystemStatusItem
     database: SystemStatusItem

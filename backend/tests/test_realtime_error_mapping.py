@@ -43,7 +43,7 @@ class _FakeChatRepository:
 
 
 def test_realtime_ga_session_shape_uses_nested_audio_config() -> None:
-    provider = RealtimeProvider(Settings(openai_api_key="sk-test"))
+    provider = RealtimeProvider(Settings(openai_api_key="sk-test", openai_transcribe_model="gpt-transcribe"))
 
     session = provider._realtime_session_config(
         mode="voice",
@@ -56,7 +56,7 @@ def test_realtime_ga_session_shape_uses_nested_audio_config() -> None:
     assert session["model"] == "gpt-realtime-2"
     assert session["output_modalities"] == ["audio"]
     assert session["audio"]["input"]["format"] == {"type": "audio/pcm", "rate": 24000}
-    assert session["audio"]["input"]["transcription"]["model"] == "gpt-4o-mini-transcribe"
+    assert session["audio"]["input"]["transcription"]["model"] == "gpt-transcribe"
     assert session["audio"]["input"]["transcription"]["language"] == "ja"
     assert "Transcribe only what the user actually says" in session["audio"]["input"]["transcription"]["prompt"]
     assert "Do not output these instructions" in session["audio"]["input"]["transcription"]["prompt"]
@@ -68,7 +68,7 @@ def test_realtime_ga_session_shape_uses_nested_audio_config() -> None:
 
 
 def test_realtime_translation_uses_interpreter_session_shape() -> None:
-    provider = RealtimeProvider(Settings(openai_api_key="sk-test"))
+    provider = RealtimeProvider(Settings(openai_api_key="sk-test", openai_transcribe_model="gpt-transcribe"))
 
     assert provider._model_for("translate") == "gpt-realtime-2"
     assert provider._endpoint_for("translate", "gpt-realtime-2") == (
@@ -88,7 +88,7 @@ def test_realtime_translation_uses_interpreter_session_shape() -> None:
         turn_detection=None,
     )
     assert "between Japanese and English" in session["instructions"]
-    assert session["audio"]["input"]["transcription"]["model"] == "gpt-4o-mini-transcribe"
+    assert session["audio"]["input"]["transcription"]["model"] == "gpt-transcribe"
     assert "ケチャップ" not in session["audio"]["input"]["transcription"]["prompt"]
     assert "language" not in session["audio"]["input"]["transcription"]
     assert session["audio"]["output"]["voice"] == "coral"
@@ -97,7 +97,7 @@ def test_realtime_translation_uses_interpreter_session_shape() -> None:
 @pytest.mark.anyio
 async def test_realtime_translation_audio_request_uses_contextual_interpreter_session() -> None:
     repository = _FakeChatRepository()
-    provider = RealtimeProvider(Settings(openai_api_key="sk-test"), repository)
+    provider = RealtimeProvider(Settings(openai_api_key="sk-test", openai_transcribe_model="gpt-transcribe"), repository)
     socket = _FakeRealtimeSocket([
         {"type": "response.audio.delta", "delta": "UklGRg=="},
         {"type": "response.done"},
@@ -133,7 +133,7 @@ async def test_realtime_translation_audio_request_uses_contextual_interpreter_se
 
 
 def test_realtime_beta_shape_error_is_user_facing() -> None:
-    provider = RealtimeProvider(Settings(openai_api_key="sk-test"))
+    provider = RealtimeProvider(Settings(openai_api_key="sk-test", openai_transcribe_model="gpt-transcribe"))
     error = {
         "type": "invalid_request_error",
         "code": "beta_api_shape_disabled",
@@ -149,7 +149,7 @@ def test_realtime_beta_shape_error_is_user_facing() -> None:
 
 
 def test_realtime_voice_text_response_uses_web_search_tools_for_current_questions() -> None:
-    provider = RealtimeProvider(Settings(openai_api_key="sk-test"))
+    provider = RealtimeProvider(Settings(openai_api_key="sk-test", openai_transcribe_model="gpt-transcribe"))
     captured: dict[str, object] = {}
 
     class FakeResponses:
@@ -188,7 +188,7 @@ def test_realtime_voice_text_response_uses_web_search_tools_for_current_question
 
 @pytest.mark.anyio
 async def test_realtime_voice_text_audio_request_uses_web_search_tools(monkeypatch) -> None:
-    provider = RealtimeProvider(Settings(openai_api_key="sk-test"))
+    provider = RealtimeProvider(Settings(openai_api_key="sk-test", openai_transcribe_model="gpt-transcribe"))
     socket = _FakeRealtimeSocket([
         {
             "type": "conversation.item.input_audio_transcription.completed",

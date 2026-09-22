@@ -1,0 +1,10 @@
+{
+  "name": "Yui.Avatar.SpringInitialization",
+  "references": [
+    "VRM10",
+    "FastSpringBone10",
+    "SpringBoneJobs",
+    "Unity.Collections"
+  ],
+  "autoReferenced": true
+}

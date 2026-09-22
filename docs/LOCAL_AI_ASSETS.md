@@ -1,217 +1,48 @@
-# Local AI And TTS Assets
+# Local AI and TTS assets
 
-Yui VRM AI Studio keeps large local AI/TTS assets out of git history. The code,
-settings, and lightweight manifests live in the repository. The model files,
-voice dictionaries, voice models, and generated app builds are distributed as
-GitHub Release assets or prepared locally before building.
+Large model weights, dictionaries and generated apps are distributed through GitHub Releases, not Git. This page separates the published beta.5 downloads from the newer source snapshot.
 
-## Quick Choice
+## Published downloads
 
-| Case | What to download |
-| --- | --- |
-| I want to run the app now | Download the current `v0.2.0-beta.3` Desktop Public Beta app ZIP and checksum for your OS from GitHub Releases. |
-| I want optional/high-quality voices | On macOS, use Settings > `Additional Voices` for the packaged AivisSpeech HD add-on. Irodori and Windows add-ons are not in the current manifest and remain developer-preview paths. |
-| I downloaded `Code > Download ZIP` | That is source code only. It does not include generated app builds or large local AI/TTS assets. |
-| I want to build from source | Clone the repo, then restore the local AI/TTS assets before building. |
+The [beta.5 release](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.0-beta.5) contains Windows/macOS apps, the first-run manifest, Local AI data and platform Backend bundles. The first-run downloader verifies and installs the selected assets.
 
-## Why The Assets Are Separate
+The beta.5 Local AI archive includes:
 
-The local asset set can include multi-GB Gemma files and large voice runtimes.
-Those files do not belong in normal git commits because they make clone/pull
-slow, can exceed GitHub file limits, and may have different redistribution
-rules from the project code.
+- `Models/gemma-4-E2B-it.litertlm`
+- `Voicevox/Models/meimei_himari_1.vvm`
+- `Voicevox/open_jtalk_dic_utf_8-1.11/`
+- its model registry file
 
-The source repository intentionally keeps only files such as:
+The manifest also references the **macOS AivisSpeech HD add-on hosted under beta.3**. That archive exists, and its GitHub digest matches the beta.5 manifest. Additional Voices downloads it when applicable. It contains the selected voices, runtime and Japanese BERT dependency. It is not an iOS/Android add-on.
 
-- `unity/Assets/StreamingAssets/YuiLocalAI/local_ai_model_packs.json`
-- runtime selection code
-- capability diagnostics
-- setup scripts and documentation
+Irodori and Windows voice add-ons are not present in this manifest. Their source adapters do not imply that their runtime data is shipped.
 
-The first-run downloader uses the Release manifest to restore the minimum user-facing local set when it is missing. Normal users do not install VOICEVOX separately:
+## Current source: five standard voices
 
-- one desktop Local Gemma SLM pack
-- local VOICEVOX voice model and OpenJTalk dictionary
-- the platform Yui Backend bundle, when the manifest includes it
+The [source snapshot](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/dev-snapshot-20260923) contains `Yui_StandardVoices_20260923.zip` and a checksum. It adds the four VVM files used by the five standard voices in current source. See [SOURCE_STATUS.md](SOURCE_STATUS.md) for IDs, model names and limitations.
 
-The source repository intentionally does not commit:
+This separate archive is for source validation. Beta.5's downloader is unchanged and does not install it automatically. It is not a replacement for Gemma, the dictionary, native libraries or the Backend bundle.
 
-- `*.litertlm` Gemma model files
-- `*.vvm` VOICEVOX voice model files
-- OpenJTalk dictionary binaries
-- Aivis embedded model/runtime files
-- downloaded Yui Backend bundles
-- generated Windows/macOS app builds
+## Restore data for source builds
 
-## Expected Release Assets
+1. Download both `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.5.zip.part-*` files and the matching `.sha256` from beta.5.
+2. Join the parts in filename order and verify the resulting archive against the manifest/checksum. Extract it to a temporary directory.
+3. Copy its `Models` and `Voicevox` data into `unity/Assets/StreamingAssets/YuiLocalAI/`. Keep the current source's `local_ai_model_packs.json`; do not replace it with an older registry.
+4. Verify the new standard-voices ZIP checksum and extract it at the repository root. Its paths already start with `unity/Assets/StreamingAssets/YuiLocalAI/Voicevox/`.
+5. Prepare the OS-specific native runtime/SDK and build. Mobile build guards require all declared bundled files; compiling without model data is not a working mobile application.
 
-A complete Beta Release should include the app artifacts and checksum files.
-Large artifacts may be uploaded as split `.part-*` files instead of one ZIP.
-
-```text
-YuiVRMAIStudio_WindowsPublicBeta_<version>_windows.zip.part-*
-YuiVRMAIStudio_WindowsPublicBeta_<version>_windows.zip.sha256
-YuiVRMAIStudio_MacOSPublicBeta_<version>_macos.zip.part-*
-YuiVRMAIStudio_MacOSPublicBeta_<version>_macos.zip.sha256
-YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_<version>.zip.part-*
-YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_<version>.zip.sha256
-YuiVRMAIStudio_BackendBundle_<version>_macos.zip.part-*
-YuiVRMAIStudio_BackendBundle_<version>_macos.zip.sha256
-YuiVRMAIStudio_BackendBundle_<version>_windows.zip.part-*
-YuiVRMAIStudio_BackendBundle_<version>_windows.zip.sha256
-YuiVRMAIStudio_TTSAddon_AivisSpeechHD_<version>_macos.zip
-YuiVRMAIStudio_TTSAddon_AivisSpeechHD_<version>_macos.zip.sha256
-```
-
-The app ZIP is for normal users and contains the Unity app. Large runtime data
-can be restored by the first-run downloader from the Release manifest. Because
-these files are large, Release assets may be split into `.part-*` files.
-The `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` ZIP, and the older
-`LocalAIAssets_Minimum` ZIP naming, are mainly for source builders, first-run
-download installs, or as a fallback distribution when a platform artifact must
-be split because of hosting limits.
-Optional voice packs are separate from the first-run minimum. The current
-macOS AivisSpeech HD add-on is downloaded by the app from the Release manifest
-when the user chooses Settings > `Additional Voices`. It includes the Aivis
-runtime, selected AIVMX files, and the Japanese ONNX BERT dependency used by
-AivisSpeech Engine, so it is intentionally much larger than a voice-only pack.
-Irodori TTS and Windows voice add-ons are not currently present in the Release
-manifest. They should follow the same manifest path once their redistributable
-runtime assets and health checks are ready; until then Irodori is a manual,
-developer-preview integration rather than an end-user installation promise.
-
-## Optional TTS Add-On Policy
-
-The first-run download stays focused on the minimum useful experience:
-Local Gemma, Local VOICEVOX, and the desktop backend bundle. Higher-quality TTS
-engines such as AivisSpeech HD and Irodori TTS should be distributed as optional
-add-on packs or runtime installers after their exact assets pass redistribution
-checks.
-
-The first shipped entry point is Settings > `Additional Voices`. The longer-term
-UI should move this closer to voice selection, because that is where users
-discover that a better voice exists. Advanced settings should remain the place
-for diagnostics, manual paths, provider URLs, and experimental overrides.
-
-Each optional TTS pack must include:
-
-- a manifest entry with platform, size, sha256, provider id, and install path;
-- license, notice, attribution, and source-reference files;
-- runtime dependencies that the provider otherwise downloads on startup;
-- an install health check that falls back to VOICEVOX if the provider fails; and
-- no restricted voices, including the removed Aivis `female_voice_3` model.
-
-## Restore Assets For A Source Build
-
-Extract the minimum LocalAI asset ZIP into the repository root so these paths
-exist:
-
-```text
-unity/Assets/StreamingAssets/YuiLocalAI/Models/gemma-4-E4B-it.litertlm
-unity/Assets/StreamingAssets/YuiLocalAI/Voicevox/Models/meimei_himari_1.vvm
-unity/Assets/StreamingAssets/YuiLocalAI/Voicevox/open_jtalk_dic_utf_8-1.11/
-```
-
-Optional embedded voice assets, when distributed, restore under:
-
-```text
-unity/Assets/StreamingAssets/YuiLocalAI/Aivis/
-```
-
-After restoring assets, open the Unity project and build the target platform.
-If the assets are absent, the app should still compile, but Local Gemma and
-local VOICEVOX may appear unavailable until the matching files are installed or
-bundled. Release app ZIPs should not put normal users in this state.
-
-## Backend Bundle
-
-The backend source is in this repository. For desktop releases, the backend can
-also be packaged as a GitHub Release asset and installed by the first-run
-downloader under the app's user data folder as `YuiBackend`.
-
-Backend runtime data, `.env`, local databases, generated audio, and private
-caches are never shipped through git or public release bundles.
-
-Backend-only features include:
-
-- realtime talk modes
-- realtime translation
-- memory DB
-- backend VOICEVOX/Aivis/Irodori TTS routing
-- backend provider integrations that need local service state
-
-Local Gemma and local VOICEVOX are fallback paths, not a replacement for the
-full backend feature set. The PC edition is the complete host; mobile editions
-can run locally but work best when connected to the user's PC backend over LAN
-or a private VPN.
-
-## Future Download And Update Direction
-
-The current Beta can fetch the minimum Local Gemma and Local VOICEVOX set from
-GitHub Releases on first run when those files are not already present.
-
-The preferred longer-term distribution model is:
-
-- keep the app download smaller,
-- let the app download large Local Gemma data and the desktop Backend bundle
-  from GitHub Releases on first run,
-- verify downloaded files with sha256 before enabling the local model, and
-- expose app update checks through the app UI while still using GitHub Releases
-  as the trusted source.
-
-This keeps the public distribution on GitHub while reducing the need for users
-to manually choose and join multiple large `.part-*` files.
-
-## Maintainer Packaging
-
-Set `YUI_RELEASE_VERSION` to the release version being prepared. Do not reuse
-older release tags for rebuilt app ZIPs, because those tags may not include the
-current first-run downloader behavior.
-
-On macOS, create the macOS app archive with:
+Example on macOS/Linux, after downloading into one directory:
 
 ```bash
-YUI_RELEASE_VERSION=v0.2.0-beta.3 ./scripts/package_macos_public_beta_macos.sh
+cat YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.5.zip.part-* > YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.5.zip
+shasum -a 256 -c YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.5.zip.sha256
+shasum -a 256 -c Yui_StandardVoices_20260923.zip.sha256
 ```
 
-Create the minimum source-build asset pack with:
+Voice output must follow the included individual voice terms and credits. VVM files share several styles; only supported standard styles are exposed by the app. No character artwork is included in the voice snapshot.
 
-```bash
-YUI_RELEASE_VERSION=v0.2.0-beta.3 ./scripts/package_minimum_local_ai_assets_macos.sh
-```
+## Backend and distribution boundary
 
-Create the optional macOS AivisSpeech HD add-on and merge it into the Release
-manifest with:
+Backend source lives in `backend/`. The beta.5 Backend bundles are older than current main; use the current Backend source when testing current code. Never ship a local `.env`, conversation DB, generated speech or user cache.
 
-```bash
-YUI_RELEASE_VERSION=v0.2.0-beta.3 ./scripts/package_optional_tts_addons_macos.sh
-```
-
-By default the script also creates `.part-000`, `.part-001`, ... files beside
-the ZIP. Upload the split parts if the hosting target has a per-file size
-limit, and keep the `.sha256` file with them. Users can reassemble split parts
-on macOS/Linux with:
-
-```bash
-cat YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.3.zip.part-* > YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.3.zip
-shasum -a 256 -c YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.3.zip.sha256
-```
-
-## Local model verification — 2026-09-09
-
-The installed normal E2B artifact matches the current upstream normal artifact (2,588,147,712 bytes; SHA-256 `181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c`). A distinct GPU artifact was identified at upstream revision `6b78abd019e61a1ca4cbe3b212d2c9ce8ff38a94` (2,008,432,640 bytes; SHA-256 `a53a59001894c58e6bdb5b9b227709f91a2e3e556baa7d85acf9c55402ba5cf5`). This is a candidate, not confirmation of which artifact the user originally meant.
-
-On Apple M5 with isolated LiteRT-LM 0.17.0, short GPU benchmarks measured normal/GPU-candidate decode at 81.83/76.64 tokens per second and initialization at 2.10/1.59 seconds. Seven Japanese prompts and ten successive turns per artifact completed; strict JSON-only and concise-summary fidelity still had issues. Process RSS is not total GPU memory. No manifest or user model was replaced. Native embedded-runtime, Windows/mobile, sustained-load and E4B tests remain open.
-
-The macOS LiteRT server launcher now requires Python 3.10+, selects a suitable existing interpreter, separates its new virtual environment from legacy Python 3.9, and pins new LiteRT-LM installations to 0.17.0 unless explicitly overridden.
-
-Source: https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm
-
-
-## beta.5 source and runtime update (2026-09-09)
-
-The earlier candidate comparison above is historical. The current standard E2B file was downloaded and verified again at revision `b3ca0d2f076785a8f4b2219ddbd2bdb99954eae1`; its weights are unchanged. beta.5 updates the macOS bundled runtime to LiteRT-LM 0.17.0 and explicitly enables GPU speculative decoding. CPU fallback disables speculative decoding. GPU-specific E2B is not the selected default. Mobile native runtimes have not received this macOS CLI setting.
-
-For source preparation, run `scripts/setup_backend_byok_macos.sh` with Python 3.12+, then `scripts/prepare_desktop_local_ai_assets_macos.sh`. The latter defaults to the verified standard E2B revision, stages the download in a temporary directory, verifies SHA-256, atomically replaces the model and removes temporary files. Custom repositories must set `YUI_DESKTOP_LITERT_LM_REPO`, `YUI_DESKTOP_LITERT_LM_FILE`, and `YUI_DESKTOP_LITERT_LM_REVISION` together. Packaging checks the pinned macOS runtime before copying files.
-
-Application downloads use the beta.5 release manifest; the existing optional Aivis asset remains at its earlier version. Historical release assets may still reference older packs. UI/library changes are described in `docs/AVATAR_IMPORT.md`.
+Packaging scripts explicitly select the reviewed model files. `package_minimum_local_ai_assets_macos.sh` packages source-build data; `package_desktop_local_ai_release_assets_macos.sh` packages runtime data and its manifest. Both require the assets to be restored first. Use a new version/output directory for a new candidate and verify its app, Backend, model archives and checksums together. Do not overwrite old released archives.

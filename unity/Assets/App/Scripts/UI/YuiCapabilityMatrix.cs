@@ -160,7 +160,9 @@ namespace YuiPhysicalAI.UI
                 nativeVoicevoxAvailable,
                 localChatAvailable,
                 directOpenAiConfigured,
-                backendIsRemote);
+                backendIsRemote,
+                IsReadyStatus(ProviderStatus(providerStatus, providerStatus?.ChatProvider ?? "openai")),
+                IsReadyStatus(openAiStatus));
         }
 
         public static YuiCapabilitySnapshot FromHealth(
@@ -173,7 +175,7 @@ namespace YuiPhysicalAI.UI
         {
             var backendOk = backendReachable || IsReadyStatus(health?.Status);
             var openAiConfigured = directOpenAiConfigured || HealthBool(health, "openai_configured");
-            var voicevoxStatus = HealthFeature(health, "local_voicevox_tts") ? "ok" : "offline";
+            var voicevoxStatus = HealthFeature(health, "local_voicevox_tts") ? "configured" : "offline";
             var httpTtsStatus = HealthFeature(health, "external_http_tts") ? "configured" : "not_configured";
 
             return Build(
@@ -188,8 +190,10 @@ namespace YuiPhysicalAI.UI
                 httpTtsStatus,
                 nativeVoicevoxAvailable,
                 localChatAvailable,
-                openAiConfigured,
-                backendIsRemote);
+                directOpenAiConfigured,
+                backendIsRemote,
+                YuiPhysicalAI.LocalAI.YuiAiEndpointPolicy.BackendConfigured(health, YuiPhysicalAI.LocalAI.YuiLocalAiCapability.Chat),
+                HealthBool(health, "openai_configured"));
         }
 
         private static YuiCapabilitySnapshot Build(
@@ -203,22 +207,26 @@ namespace YuiPhysicalAI.UI
             bool nativeVoicevoxAvailable,
             bool localChatAvailable,
             bool directOpenAiConfigured,
-            bool backendIsRemote)
+            bool backendIsRemote,
+            bool backendChatConfigured,
+            bool backendOpenAiConfigured)
         {
             var conversations = new Dictionary<string, YuiCapabilityItem>(StringComparer.OrdinalIgnoreCase)
             {
-                [YuiConversationModes.Stable] = backendReachable
+                [YuiConversationModes.Stable] = backendReachable && backendChatConfigured
                     ? new YuiCapabilityItem(YuiConversationModes.Stable, "Auto Select", YuiCapabilityState.Ready, YuiCapabilityRoute.Backend, "Backend is preferred; local fallback remains available.")
+                    : directOpenAiConfigured
+                        ? new YuiCapabilityItem(YuiConversationModes.Stable, "Automatic", YuiCapabilityState.Ready, YuiCapabilityRoute.DirectApi, "Uses the OpenAI key saved on this device.")
                     : localChatAvailable
-                        ? new YuiCapabilityItem(YuiConversationModes.Stable, "Auto Select", YuiCapabilityState.Ready, YuiCapabilityRoute.Local, "Backend is offline; local AI fallback is ready.")
+                        ? new YuiCapabilityItem(YuiConversationModes.Stable, "Auto Select", YuiCapabilityState.Ready, YuiCapabilityRoute.Local, "Backend AI is unavailable; local AI is ready.")
                         : new YuiCapabilityItem(YuiConversationModes.Stable, "Auto Select", YuiCapabilityState.NeedsBackend, YuiCapabilityRoute.Backend, "Backend is required until local AI is available."),
-                [YuiConversationModes.BackendAi] = backendReachable
+                [YuiConversationModes.BackendAi] = backendReachable && backendChatConfigured
                     ? new YuiCapabilityItem(YuiConversationModes.BackendAi, "Backend Talk", YuiCapabilityState.Ready, YuiCapabilityRoute.Backend, "Backend standard talk is reachable.")
-                    : new YuiCapabilityItem(YuiConversationModes.BackendAi, "Backend Talk", YuiCapabilityState.NeedsBackend, YuiCapabilityRoute.Backend, "Start or reconnect the backend to use this mode."),
-                [YuiConversationModes.RealtimeVoice] = RealtimeItem(YuiConversationModes.RealtimeVoice, "Realtime Talk (OpenAI Voice)", backendReachable),
-                [YuiConversationModes.RealtimeVoicevox] = RealtimeItem(YuiConversationModes.RealtimeVoicevox, "Realtime Talk (VOICEVOX)", backendReachable),
-                [YuiConversationModes.RealtimeAivis] = RealtimeItem(YuiConversationModes.RealtimeAivis, "Realtime Talk (AivisSpeech HD)", backendReachable),
-                [YuiConversationModes.RealtimeTranslate] = RealtimeItem(YuiConversationModes.RealtimeTranslate, "Realtime Translation", backendReachable),
+                    : new YuiCapabilityItem(YuiConversationModes.BackendAi, "Backend Talk", backendReachable ? YuiCapabilityState.SetupRequired : YuiCapabilityState.NeedsBackend, YuiCapabilityRoute.Backend, "Configure the AI provider on the backend. The app key is separate."),
+                [YuiConversationModes.RealtimeVoice] = RealtimeItem(YuiConversationModes.RealtimeVoice, "Realtime Talk (OpenAI Voice)", backendReachable, backendOpenAiConfigured),
+                [YuiConversationModes.RealtimeVoicevox] = RealtimeItem(YuiConversationModes.RealtimeVoicevox, "Realtime Talk (VOICEVOX)", backendReachable, backendOpenAiConfigured),
+                [YuiConversationModes.RealtimeAivis] = RealtimeItem(YuiConversationModes.RealtimeAivis, "Realtime Talk (AivisSpeech HD)", backendReachable, backendOpenAiConfigured),
+                [YuiConversationModes.RealtimeTranslate] = RealtimeItem(YuiConversationModes.RealtimeTranslate, "Realtime Translation", backendReachable, backendOpenAiConfigured),
                 [YuiConversationModes.DirectOpenAi] = directOpenAiConfigured
                     ? new YuiCapabilityItem(YuiConversationModes.DirectOpenAi, "Direct OpenAI", YuiCapabilityState.Ready, YuiCapabilityRoute.DirectApi, "OpenAI API key is configured.")
                     : new YuiCapabilityItem(YuiConversationModes.DirectOpenAi, "Direct OpenAI", YuiCapabilityState.SetupRequired, YuiCapabilityRoute.DirectApi, "OpenAI API key is required."),
@@ -246,11 +254,19 @@ namespace YuiPhysicalAI.UI
                 ["silent"] = new YuiCapabilityItem("silent", "Silent", YuiCapabilityState.Ready, YuiCapabilityRoute.None, "Voice playback is disabled.")
             };
 
+            foreach (var pair in new[] { (YuiConversationModes.RealtimeVoicevox, "server"), (YuiConversationModes.RealtimeAivis, "aivis") })
+            {
+                if (conversations[pair.Item1].Ready && !tts[pair.Item2].Ready)
+                    conversations[pair.Item1] = new YuiCapabilityItem(pair.Item1, conversations[pair.Item1].Label,
+                        tts[pair.Item2].State, YuiCapabilityRoute.Backend, tts[pair.Item2].Detail);
+            }
             return new YuiCapabilitySnapshot(backendReachable, backend, database, openAi, conversations, tts);
         }
 
-        private static YuiCapabilityItem RealtimeItem(string id, string label, bool backendReachable)
+        private static YuiCapabilityItem RealtimeItem(string id, string label, bool backendReachable, bool openAiConfigured)
         {
+            if (backendReachable && !openAiConfigured)
+                return new YuiCapabilityItem(id, label, YuiCapabilityState.SetupRequired, YuiCapabilityRoute.Backend, "Configure the OpenAI key on the backend for Realtime.");
             return backendReachable
                 ? new YuiCapabilityItem(id, label, YuiCapabilityState.Ready, YuiCapabilityRoute.Backend, "Backend realtime endpoint is reachable.")
                 : new YuiCapabilityItem(id, label, YuiCapabilityState.NeedsBackend, YuiCapabilityRoute.Backend, "Realtime modes require the backend.");
@@ -263,7 +279,7 @@ namespace YuiPhysicalAI.UI
             bool backendReachable,
             bool advertiseWhenMissing)
         {
-            if (backendReachable && IsReadyStatus(status))
+            if (backendReachable && string.Equals(status, "ok", StringComparison.OrdinalIgnoreCase))
             {
                 return new YuiCapabilityItem(id, label, YuiCapabilityState.Ready, YuiCapabilityRoute.Backend, $"{label} backend provider is ready.");
             }

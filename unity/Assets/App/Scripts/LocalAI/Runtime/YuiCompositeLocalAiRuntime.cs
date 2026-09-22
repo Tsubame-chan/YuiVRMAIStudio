@@ -70,33 +70,33 @@ namespace YuiPhysicalAI.LocalAI
         {
             return Invoke(
                 YuiLocalAiCapability.Chat,
-                runtime => runtime.ChatAsync(request, cancellationToken));
+                runtime => runtime.ChatAsync(request, cancellationToken), cancellationToken);
         }
 
         public Task<YuiLocalAiTranscriptionResponse> TranscribeAsync(YuiLocalAiAudioRequest request, CancellationToken cancellationToken)
         {
             return Invoke(
                 YuiLocalAiCapability.Transcription,
-                runtime => runtime.TranscribeAsync(request, cancellationToken));
+                runtime => runtime.TranscribeAsync(request, cancellationToken), cancellationToken);
         }
 
         public Task<YuiLocalAiSpeechResponse> SynthesizeSpeechAsync(YuiLocalAiSpeechRequest request, CancellationToken cancellationToken)
         {
             return Invoke(
                 YuiLocalAiCapability.SpeechSynthesis,
-                runtime => runtime.SynthesizeSpeechAsync(request, cancellationToken));
+                runtime => runtime.SynthesizeSpeechAsync(request, cancellationToken), cancellationToken);
         }
 
         public Task<YuiLocalAiVisionResponse> AnalyzeImageAsync(YuiLocalAiVisionRequest request, CancellationToken cancellationToken)
         {
             return Invoke(
                 YuiLocalAiCapability.Vision,
-                runtime => runtime.AnalyzeImageAsync(request, cancellationToken));
+                runtime => runtime.AnalyzeImageAsync(request, cancellationToken), cancellationToken);
         }
 
         private async Task<TResponse> Invoke<TResponse>(
             YuiLocalAiCapability capability,
-            Func<IYuiLocalAiRuntime, Task<TResponse>> invoke)
+            Func<IYuiLocalAiRuntime, Task<TResponse>> invoke, CancellationToken cancellationToken)
             where TResponse : YuiLocalAiResponse, new()
         {
             var candidates = runtimes
@@ -115,7 +115,9 @@ namespace YuiPhysicalAI.LocalAI
             TResponse lastFailure = null;
             foreach (var runtime in candidates)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var response = await invoke(runtime);
+                cancellationToken.ThrowIfCancellationRequested();
                 if (response == null)
                 {
                     lastFailure = new TResponse
