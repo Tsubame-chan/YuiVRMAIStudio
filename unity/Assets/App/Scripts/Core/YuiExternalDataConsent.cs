@@ -10,7 +10,7 @@ namespace YuiPhysicalAI.Core
     public static class YuiExternalDataConsent
     {
         public const string OpenAiDestination = "https://api.openai.com";
-        private const string Ledger = "Yui.Privacy.ExternalDataConsent.v1";
+        private const string Ledger = "Yui.Privacy.ExternalDataConsent.v2";
         public static string Destination(string url)
         {
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||

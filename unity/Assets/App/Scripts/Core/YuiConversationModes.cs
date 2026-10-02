@@ -260,6 +260,7 @@ namespace YuiPhysicalAI.Core
         public static string InstructionsForMode(string mode, string characterName, string customInstruction = null)
         {
             var instructions = BaseInstructionsForMode(mode, characterName);
+            if (!IsRealtimeTranslate(mode)) instructions += "\n" + YuiConversationRolePolicy.Text;
             // Interpreter mode has a separate job and must not start role-playing.
             if (string.Equals(mode, BackendTranslate, StringComparison.OrdinalIgnoreCase)
                 || string.IsNullOrWhiteSpace(customInstruction)) return instructions;

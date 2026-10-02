@@ -31,8 +31,8 @@ namespace YuiPhysicalAI.Tests.Editor
                     }
                     else
                     {
-                        var task = Vrm10.LoadPathAsync(path, canLoadVrm0X: true, controlRigGenerationOption: ControlRigGenerationOption.None,
-                            showMeshes: false, awaitCaller: new ImmediateCaller(), materialGenerator: new BuiltInVrm10MaterialDescriptorGenerator());
+                        var task = YuiNativeVrmLoader.LoadPathAsync(path, canLoadVrm0X: true, controlRigGenerationOption: ControlRigGenerationOption.None,
+                            showMeshes: false, immediate: true, materialGenerator: new BuiltInVrm10MaterialDescriptorGenerator());
                         while (!task.IsCompleted) yield return null;
                         root = task.GetAwaiter().GetResult().gameObject;
                     }

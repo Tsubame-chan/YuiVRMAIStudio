@@ -10,6 +10,28 @@ namespace YuiPhysicalAI.Tests.Editor
     public sealed class YuiAvatarBetaTests
     {
         [Test]
+        public void SavedAvatarSurvivesDataContainerRelocationWithoutAliasingAnotherCharacter()
+        {
+            var dir = Path.Combine(Path.GetTempPath(), "yui-relocation-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(dir);
+            try {
+                var source = Path.Combine(dir, "source.vrm"); File.WriteAllText(source, "avatar");
+                var oldDirectory = Path.Combine(dir, "old-container", "AvatarLibrary");
+                var store = new YuiAvatarLibraryStore(oldDirectory);
+                var entry = store.Register(source); var oldPath = store.Resolve(entry);
+                var newDirectory = Path.Combine(dir, "new-container", "AvatarLibrary");
+                Directory.CreateDirectory(Path.GetDirectoryName(newDirectory));
+                Directory.Move(oldDirectory, newDirectory);
+                var relocated = new YuiAvatarLibraryStore(newDirectory);
+                Assert.IsFalse(File.Exists(oldPath));
+                Assert.AreEqual(relocated.Resolve(entry), relocated.ResolveSavedPath(oldPath, entry.id));
+                Assert.AreEqual(oldPath, relocated.ResolveSavedPath(oldPath, "another-character"));
+                Assert.AreEqual(oldPath, relocated.ResolveSavedPath(oldPath, entry.id + "-missing"));
+                File.Delete(relocated.Resolve(entry));
+                Assert.AreEqual(oldPath, relocated.ResolveSavedPath(oldPath, entry.id));
+            } finally { Directory.Delete(dir, true); }
+        }
+        [Test]
         public void AppearanceNameBelongsToCharacterAndFileRatherThanRuntimeSlot()
         {
             var dir = Path.Combine(Path.GetTempPath(), "yui-appearance-" + Guid.NewGuid().ToString("N"));
@@ -42,14 +64,14 @@ namespace YuiPhysicalAI.Tests.Editor
                 Assert.IsEmpty(store.Read("a", "talk")); Assert.AreEqual(1, store.Read("b", "talk").Count);
             } finally { if (Directory.Exists(dir)) Directory.Delete(dir, true); }
         }
-        [Test] public void LocalAndDirectPromptsReceivePriorDialogueAndDirectSecretOmitsIt()
+        [Test] public void LocalAndDirectPromptsReceiveSavedDialogueIncludingReadOnlySecretContext()
         {
             var extra = new System.Collections.Generic.Dictionary<string, object> { [YuiCharacterDialogueStore.ContextKey] = "Yesterday we chose a blue hat." };
             StringAssert.Contains("blue hat", YuiPhysicalAI.LocalAI.YuiLocalAiPromptBuilder.BuildPrompt(new YuiPhysicalAI.LocalAI.YuiLocalAiChatRequest { Message = "What color?", Extra = extra }));
             var request = new YuiPhysicalAI.Api.ChatRequest { Message = "What color?", Context = new YuiPhysicalAI.Api.RequestContext { Extra = extra } };
             StringAssert.Contains("blue hat", YuiPhysicalAI.Api.YuiDirectOpenAiClient.BuildResponsesPayload(request, "test").ToString());
             request.Secret = true;
-            StringAssert.DoesNotContain("blue hat", YuiPhysicalAI.Api.YuiDirectOpenAiClient.BuildResponsesPayload(request, "test").ToString());
+            StringAssert.Contains("blue hat", YuiPhysicalAI.Api.YuiDirectOpenAiClient.BuildResponsesPayload(request, "test").ToString());
         }
         [Test] public void AppearanceUpdateRetainsCharacterIdentityAndSettingsAcrossRestart()
         {

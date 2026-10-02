@@ -26,6 +26,11 @@ namespace YuiPhysicalAI.UI
         public YuiTextArchive(string path) { this.path = path; }
         public long Length => File.Exists(path) ? new FileInfo(path).Length : 0;
 
+        public void Clear()
+        {
+            lock (WriteGate) { if (File.Exists(path)) File.Delete(path); }
+        }
+
         public void Remove(string id)
         {
             if (string.IsNullOrEmpty(id)) throw new ArgumentException("Entry ID required.");

@@ -31,7 +31,7 @@ namespace YuiPhysicalAI.UI
                 && string.IsNullOrWhiteSpace(openAiApiKey))
                 displayedStatus = string.IsNullOrEmpty(YuiApiKeyStore.LastError) ? "API key required" : "Unlock API key in Settings";
             statusText.text = (string.IsNullOrEmpty(heading) ? "" : $"<color=#f5c542><b>{heading}</b></color>\n")
-                + YuiUiLocalization.Text(displayedStatus);
+                + CharacterName.Replace("<", "＜").Replace(">", "＞") + " · " + YuiUiLocalization.Text(displayedStatus);
             if (!string.IsNullOrWhiteSpace(appContextStatus))
             {
                 statusText.text += $"\n<color=#a8c7ff>{appContextStatus}</color>";

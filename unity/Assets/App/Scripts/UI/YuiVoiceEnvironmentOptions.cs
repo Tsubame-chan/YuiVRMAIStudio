@@ -24,16 +24,19 @@ namespace YuiPhysicalAI.UI
                 if (available || string.Equals(selected, mode, StringComparison.OrdinalIgnoreCase))
                     options.Add(new KeyValuePair<string, string>(mode, available ? label : label + " · Unavailable"));
             }
-            Add("server", "VOICEVOX", nativeVoicevox || BackendHas("voicevox"));
-            Add("aivis-native", "AivisSpeech · This device", nativeAivis);
+            if (string.Equals(selected, "voicevox-native", StringComparison.OrdinalIgnoreCase))
+            {
+                Add("voicevox-native", "VOICEVOX · Recommended", nativeVoicevox);
+                Add("server", "VOICEVOX · Backend", BackendHas("voicevox"));
+            }
+            else Add("server", "VOICEVOX · Recommended", nativeVoicevox || BackendHas("voicevox"));
+            Add("aivis-native", "AivisSpeech · Experimental", nativeAivis);
             Add("aivis", "AivisSpeech · Backend", BackendHas("aivis"));
             var httpLabel = knownBackend?.Providers != null && knownBackend.Providers.TryGetValue("http_tts", out var http)
                 && (http.Engine ?? "").StartsWith("irodori", StringComparison.OrdinalIgnoreCase) ? "Irodori" : "External voice";
             Add("server-http", httpLabel + " · Backend", BackendHas("http_tts"));
             Add("local-ai", "Device voice", deviceSpeech);
             options.Add(new KeyValuePair<string, string>("silent", "Silent"));
-            // Preserve explicit native VOICEVOX from older versions without silently using a backend.
-            if (selected == "voicevox-native") Add("voicevox-native", "VOICEVOX · This device", nativeVoicevox);
             return options;
         }
     }

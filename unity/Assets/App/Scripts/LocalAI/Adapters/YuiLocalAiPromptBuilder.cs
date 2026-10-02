@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace YuiPhysicalAI.LocalAI
 {
@@ -16,24 +18,71 @@ namespace YuiPhysicalAI.LocalAI
                 Message = request.Message,
                 CharacterName = request.CharacterName,
                 CustomInstruction = request.CustomInstruction,
+                ResponseInstruction = request.ResponseInstruction,
                 ScreenContext = request.ScreenContext,
                 Extra = request.Extra,
-                SystemInstruction = compactSystemInstruction
+                SystemInstruction = (compactSystemInstruction
                     ? BuildCompactSystemInstruction(request)
-                    : BuildSystemInstruction(request),
-                Prompt = BuildPrompt(request)
+                    : BuildSystemInstruction(request)) + "\n" + YuiPhysicalAI.Core.YuiConversationRolePolicy.Text,
+                Prompt = BuildPrompt(request),
+                Input = BuildCurrentInput(request),
+                History = BuildHistory(request)
             };
 
             return prepared;
         }
 
+        private static string BuildCurrentInput(YuiLocalAiChatRequest request)
+        {
+            var text = new StringBuilder();
+            var memories = YuiPhysicalAI.Avatar.YuiCharacterMemoryStore.FromExtra(request.Extra);
+            if (!string.IsNullOrEmpty(memories)) text.AppendLine(YuiPhysicalAI.Avatar.YuiCharacterMemoryStore.ReferenceLabel + memories);
+            if (!string.IsNullOrWhiteSpace(request.CustomInstruction))
+                text.AppendLine("ユーザーの希望する口調・応答方法:\n" + Limit(request.CustomInstruction.Trim(), 900));
+            if (!string.IsNullOrWhiteSpace(request.ResponseInstruction))
+                text.AppendLine("ユーザーが設定した回答の方針:\n" + Limit(request.ResponseInstruction.Trim(), 1200));
+            if (!string.IsNullOrWhiteSpace(request.ScreenContext))
+                text.AppendLine("直前の画像について確認できた内容:\n" + Limit(request.ScreenContext.Trim(), 600));
+            if (text.Length > 0) text.AppendLine();
+            return text.Append(request.Message ?? string.Empty).ToString();
+        }
+
+        private static List<YuiLocalAiChatMessage> BuildHistory(YuiLocalAiChatRequest request)
+        {
+            var history = new List<YuiLocalAiChatMessage>();
+            var json = YuiPhysicalAI.Avatar.YuiCharacterDialogueStore.FromExtra(request.Extra);
+            if (string.IsNullOrWhiteSpace(json)) return history;
+            List<YuiPhysicalAI.Avatar.YuiCharacterDialogueStore.Turn> turns;
+            try { turns = JsonConvert.DeserializeObject<List<YuiPhysicalAI.Avatar.YuiCharacterDialogueStore.Turn>>(json); }
+            catch (JsonException) { return history; } // Ignore invalid context; never rewrite saved dialogue.
+            if (turns == null) return history;
+            var chars = 0;
+            for (var i = turns.Count - 1; i >= Math.Max(0, turns.Count - 4); i--)
+            {
+                var turn = turns[i];
+                if (turn == null || string.IsNullOrWhiteSpace(turn.User) || string.IsNullOrWhiteSpace(turn.Assistant)) continue;
+                var user = Limit(turn.User, 600); var assistant = Limit(turn.Assistant, 600);
+                if (chars + user.Length + assistant.Length > 2400) break;
+                chars += user.Length + assistant.Length;
+                history.Insert(0, new YuiLocalAiChatMessage { Role = "assistant", Content = assistant });
+                history.Insert(0, new YuiLocalAiChatMessage { Role = "user", Content = user });
+            }
+            return history;
+        }
+
+        private static string Limit(string text, int max)
+        {
+            if (text.Length <= max) return text;
+            if (char.IsHighSurrogate(text[max - 1])) max--;
+            return text.Substring(0, max);
+        }
+
         private static bool IsWork(YuiLocalAiChatRequest request) => string.Equals(request?.Mode, "work", StringComparison.OrdinalIgnoreCase);
         private static string WorkInstruction(YuiLocalAiChatRequest request) =>
-            "あなたは" + (string.IsNullOrWhiteSpace(request?.CharacterName) ? "Yui" : request.CharacterName.Substring(0, Math.Min(40, request.CharacterName.Length))) + "。作業を支援するキャラクターAIです。日本語で、依頼の成果物を先に示してください。"
-            + "要約、文章の下書き、手順整理、コードの作成など、依頼された作業を具体的に進めます。"
-            + "必要なら箇条書き・Markdown・コードを使い、指定された形式や長さを守ってください。"
-            + "不明な事実や実行していない作業を完了したと作り話にせず、できる範囲と不足情報を明確にしてください。"
-            + "無関係な挨拶や質問を付け加えず、簡潔で使える回答にしてください。";
+            "あなたは" + (string.IsNullOrWhiteSpace(request?.CharacterName) ? "Yui" : request.CharacterName.Substring(0, Math.Min(40, request.CharacterName.Length))) + "。日本語でユーザーの依頼に答えてください。"
+            + "質問や計算には答えと必要な説明だけを簡潔に返します。単純な計算の途中式は求められたときだけ示します。依頼に合う形式と詳しさを選び、不要な見出しや定型の項目は付けません。"
+            + "必要なら箇条書きなどを使い、ユーザーが指定した形式を守ってください。"
+            + "不明な事実は作り話にせず、実行していない作業を完了したと伝えないでください。";
 
         public static string BuildSystemInstruction(YuiLocalAiChatRequest request)
         {
@@ -86,20 +135,20 @@ namespace YuiPhysicalAI.LocalAI
                 characterName = characterName.Substring(0, 40);
             }
 
-            return
-                $"あなたは{characterName}。日本語で自然に会話するVRMキャラクターです。"
-                + "通常は短く、音声で読みやすい普通文だけで返してください。会話速度を優先し、通常は40〜80字程度に収めます。複雑な時だけ100字前後まで使い、回答が壊れる時だけ超えてもかまいません。無理に伸ばさないでください。"
-                + "ただし短さだけを優先せず、回答として必要な情報、受け止め、理由、次の行動、会話が続く一言を落とすくらいなら2〜4文まで使ってください。"
-                + "一言だけで足りる時だけ一言にし、質問に答えず相づちだけで終わらないでください。"
-                + "ロールプレイや口調の依頼には、安全性や正確さを壊さない範囲で乗り、模範解答だけに寄せず、キャラクターらしい反応を自然に入れてください。"
-                + "Markdown、箇条書き、コード、JSON、絵文字、内部事情、モデル名、プロンプトの話は禁止です。"
-                + "質問には答えを先に示し、指定された形式・長さを優先してください。会話を続ける一言は自然な時だけ添えてください。"
-                + "仮定や相談は決めつけず条件付きで答え、不確かなことは断定しないでください。";
+            // Keep the deliberation independent of the length of the spoken final answer.
+            return $"You are {characterName}, a helpful conversational character. Reply in natural Japanese. "
+                + "Reason carefully about the facts and all given conditions before answering. "
+                + "Keep the final answer concise, usually 1–3 sentences, including the answer and any necessary explanation. "
+                + "Use more detail when it is needed for a correct, useful answer. "
+                + "Use plain sentences suitable for speech unless the user requests another format. "
+                + "Do not add unnecessary greetings, headings, or follow-up questions. Correct mistakes in earlier replies.";
         }
 
         public static string BuildPrompt(YuiLocalAiChatRequest request)
         {
             var builder = new StringBuilder();
+            var memories = YuiPhysicalAI.Avatar.YuiCharacterMemoryStore.FromExtra(request?.Extra);
+            if (!string.IsNullOrEmpty(memories)) builder.AppendLine(YuiPhysicalAI.Avatar.YuiCharacterMemoryStore.ReferenceLabel + memories);
             var dialogue = YuiPhysicalAI.Avatar.YuiCharacterDialogueStore.FromExtra(request?.Extra);
             if (!string.IsNullOrEmpty(dialogue) && dialogue != "[]")
             {

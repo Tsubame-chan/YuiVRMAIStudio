@@ -17,8 +17,9 @@ namespace YuiPhysicalAI.UI
                     Speaker=speaker,Text=displayText,Mode=chatInteractionMode,Metadata=resultMetadata }); }
                 catch (System.Exception ex) { SetStatus("History could not be saved. Free some space and try again.");Debug.LogWarning(ex.Message); }
             }
-            if (!secretMode) Debug.Log($"{speaker}: {displayText}");
-            chatLogView?.AppendLog(speaker, displayText, resultMetadata);
+            // ConversationHistory is the user-controlled archive. Player.log
+            // must not become a second, separately retained copy of its body.
+            chatLogView?.AppendLog(speaker, displayText, resultMetadata, chatInteractionMode);
         }
 
         private void SetPendingLine(string speaker, string text)

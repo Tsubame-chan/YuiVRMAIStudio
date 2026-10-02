@@ -15,6 +15,7 @@ except ImportError:  # pragma: no cover - removed in newer Python versions
     audioop = None
 
 from app.core.config import Settings
+from app.core.conversation_roles import ROLE_GUIDANCE
 from app.db.repositories import ChatRepository, MemoryRepository
 from app.models.chat import ChatResponse
 from app.models.memory import MemorySaveRequest
@@ -108,13 +109,14 @@ class RealtimeProvider:
         wav_bytes: bytes,
         mode: RealtimeMode,
         instructions: str = "",
+        user_id: str = "", character_id: str | None = None, secret: bool = False,
     ) -> RealtimeAudioResponse:
         if not self.settings.openai_api_key:
             raise RealtimeProviderError("OpenAI API key is not configured.")
         if mode == "transcribe":
             mode = "voice"
         if mode == "translate":
-            return await self._respond_to_translate_wav(wav_bytes)
+            return await self._respond_to_translate_wav(wav_bytes, user_id, character_id, secret)
 
         model = self._model_for(mode)
         endpoint = self._endpoint_for(mode, model)
@@ -137,10 +139,13 @@ class RealtimeProvider:
             system_instructions = self._with_realtime_context(
                 self._default_stream_instructions(mode),
                 self.settings.default_user_id,
-                mode,
+                mode, character_id=character_id, secret=secret,
             )
         elif mode == "voice_text":
             system_instructions = instructions.strip() or self._default_stream_instructions(mode)
+
+        if mode != "translate":
+            system_instructions = self._with_realtime_context(system_instructions, user_id or self.settings.default_user_id, mode, character_id, secret)
 
         try:
             response_modalities = ["text"] if mode == "voice_text" else ["audio"]
@@ -209,10 +214,10 @@ class RealtimeProvider:
             response_text = self._extract_response_text(event)
         if input_transcript and response_text:
             self._save_realtime_turn(
-                self.settings.default_user_id,
+                user_id or self.settings.default_user_id,
                 input_transcript,
                 response_text,
-                mode,
+                mode, character_id=character_id, secret=secret,
             )
         return RealtimeAudioResponse(
             text=response_text,
@@ -221,7 +226,7 @@ class RealtimeProvider:
             events=events[-40:],
         )
 
-    async def _respond_to_translate_wav(self, wav_bytes: bytes) -> RealtimeAudioResponse:
+    async def _respond_to_translate_wav(self, wav_bytes: bytes, user_id: str = "", character_id: str | None = None, secret: bool = False) -> RealtimeAudioResponse:
         input_transcript = await run_in_threadpool(
             self._transcribe_wav_for_translate,
             wav_bytes,
@@ -234,7 +239,7 @@ class RealtimeProvider:
         translated_text = await run_in_threadpool(
             self._translate_text_for_realtime,
             input_transcript,
-            self.settings.default_user_id,
+            (user_id or self.settings.default_user_id) if not (secret or character_id) else "isolated-translation",
         )
         translated_text = translated_text.strip()
         if not translated_text:
@@ -299,10 +304,10 @@ class RealtimeProvider:
             await websocket.close()
 
         self._save_realtime_turn(
-            self.settings.default_user_id,
+            user_id or self.settings.default_user_id,
             input_transcript,
             translated_text,
-            "translate",
+            "translate", character_id=character_id, secret=secret,
         )
         return RealtimeAudioResponse(
             text=translated_text,
@@ -322,6 +327,8 @@ class RealtimeProvider:
         openai_socket = None
         mode: RealtimeMode = "voice"
         user_id = self.settings.default_user_id
+        character_id = None
+        secret = False
         current_instructions = self._default_stream_instructions(mode)
         last_user_text = ""
         response_text_parts: list[str] = []
@@ -329,7 +336,7 @@ class RealtimeProvider:
         response_active = False
 
         async def unity_to_openai() -> None:
-            nonlocal openai_socket, mode, user_id, current_instructions, response_active
+            nonlocal openai_socket, mode, user_id, character_id, secret, current_instructions, response_active
             while True:
                 message = await unity_socket.receive_json()
                 message_type = message.get("type")
@@ -342,10 +349,12 @@ class RealtimeProvider:
                     else:
                         mode = "voice"
                     user_id = (message.get("user_id") or user_id or self.settings.default_user_id).strip()
+                    character_id = message.get("character_id") or None
+                    secret = message.get("secret") is True
                     endpoint = self._stream_endpoint_for(mode, self._stream_model_for(mode))
                     openai_socket = await self._connect(endpoint)
                     instructions = message.get("instructions") or self._default_stream_instructions(mode)
-                    instructions = self._with_realtime_context(instructions, user_id, mode)
+                    instructions = self._with_realtime_context(instructions, user_id, mode, character_id, secret)
                     current_instructions = instructions
                     response_modalities = ["text"] if mode == "voice_text" else ["audio"]
                     session = (
@@ -448,7 +457,7 @@ class RealtimeProvider:
                         if transcript and self._looks_like_spoken_input(transcript):
                             last_user_text = transcript
                             if pending_response_text:
-                                self._save_realtime_turn(user_id, last_user_text, pending_response_text, mode)
+                                self._save_realtime_turn(user_id, last_user_text, pending_response_text, mode, character_id, secret)
                                 pending_response_text = ""
                             if mode == "voice_text":
                                 response_active = True
@@ -475,7 +484,7 @@ class RealtimeProvider:
                                         "type": "text_delta",
                                         "delta": response_text,
                                     })
-                                    self._save_realtime_turn(user_id, transcript, response_text, mode)
+                                    self._save_realtime_turn(user_id, transcript, response_text, mode, character_id, secret)
                                     last_user_text = ""
                                 await unity_socket.send_json({"type": "done"})
                         elif mode == "voice_text":
@@ -507,7 +516,7 @@ class RealtimeProvider:
                             continue
                     response_text = "".join(response_text_parts).strip() or self._extract_response_text(event)
                     if last_user_text:
-                        self._save_realtime_turn(user_id, last_user_text, response_text, mode)
+                        self._save_realtime_turn(user_id, last_user_text, response_text, mode, character_id, secret)
                     else:
                         pending_response_text = response_text
                     await unity_socket.send_json({"type": "done"})
@@ -858,11 +867,13 @@ class RealtimeProvider:
         collect(response.get("output", response))
         return "".join(parts).strip()
 
-    def _with_realtime_context(self, instructions: str, user_id: str, mode: RealtimeMode) -> str:
+    def _with_realtime_context(self, instructions: str, user_id: str, mode: RealtimeMode, character_id: str | None = None, secret: bool = False) -> str:
+        if mode != "translate" and ROLE_GUIDANCE not in instructions:
+            instructions = instructions.rstrip() + "\n" + ROLE_GUIDANCE
         context_parts: list[str] = []
         if self.memory_repository is not None:
             try:
-                memories = self.memory_repository.list_recent(user_id, limit=5)
+                memories = self.memory_repository.list_recent(user_id, limit=5, character_id=character_id)
                 if memories:
                     context_parts.append(
                         "保存済みメモリ:\n" + "\n".join(f"- {item.content}" for item in memories)
@@ -872,7 +883,7 @@ class RealtimeProvider:
 
         if self.chat_repository is not None:
             try:
-                messages = self.chat_repository.list_recent_messages(user_id, limit=8)
+                messages = self.chat_repository.list_recent_messages(user_id, limit=8, character_id=character_id)
                 if messages:
                     lines = []
                     for message in messages:
@@ -900,8 +911,9 @@ class RealtimeProvider:
         user_text: str,
         response_text: str,
         mode: RealtimeMode,
+        character_id: str | None = None, secret: bool = False,
     ) -> None:
-        if self.chat_repository is None:
+        if secret or self.chat_repository is None:
             return
         if not user_text or not response_text:
             return
@@ -916,6 +928,7 @@ class RealtimeProvider:
                 provider="openai-realtime",
                 model=self._model_for(mode),
                 usage_metadata={"mode": mode},
+                character_id=character_id,
             )
         except Exception:
             return
@@ -928,6 +941,7 @@ class RealtimeProvider:
             self.memory_repository.save(MemorySaveRequest(
                 user_id=user_id or self.settings.default_user_id,
                 content=user_text,
+                character_id=character_id,
                 importance=4,
                 tags=["realtime", "user-requested"],
             ))

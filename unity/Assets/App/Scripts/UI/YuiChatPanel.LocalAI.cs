@@ -25,9 +25,10 @@ namespace YuiPhysicalAI.UI
 
         public void RequestLocalAiAssetRepairDownload()
         {
-            EnsureLocalAiDownloadOverlay();
-            localAiDownloadOverlay?.ShowRepairDownload();
+            YuiLocalModelMenu.Show(this);
         }
+
+        public bool CanSwitchLocalModel => !isSending && !HasStoppableComposerOperation;
 
         public void RequestOptionalTtsAssetDownload()
         {

@@ -27,6 +27,7 @@ namespace YuiPhysicalAI.UI
         private Vector2 lastViewportSize;
 
         public bool IsEmpty => messages.Count == 0 && legacyLogBuilder.Length == 0;
+        public System.Action<string> EditRequested;
 
         public void Configure(Text targetLogText, ScrollRect targetScrollRect)
         {
@@ -40,7 +41,7 @@ namespace YuiPhysicalAI.UI
             RenderAll();
         }
 
-        public void AppendLog(string speaker, string text, string resultMetadata = null)
+        public void AppendLog(string speaker, string text, string resultMetadata = null, string mode = null)
         {
             var safeSpeaker = string.IsNullOrWhiteSpace(speaker) ? "System" : speaker.Trim();
             var safeText = text ?? string.Empty;
@@ -48,13 +49,13 @@ namespace YuiPhysicalAI.UI
 
             if (!bubbleMode)
             {
-                messages.Add(new MessageEntry { Speaker = safeSpeaker, Text = safeText });
+                messages.Add(new MessageEntry { Speaker = safeSpeaker, Text = safeText, Mode = mode, ResultMetadata = resultMetadata });
                 TrimOldMessages();
                 RenderLegacy(null, null);
                 return;
             }
 
-            messages.Add(CreateBubble(safeSpeaker, safeText, pending: false, resultMetadata: resultMetadata));
+            messages.Add(CreateBubble(safeSpeaker, safeText, pending: false, resultMetadata: resultMetadata, mode: mode));
             TrimOldMessages();
             RebuildLayoutAndScroll();
         }
@@ -65,7 +66,7 @@ namespace YuiPhysicalAI.UI
             try
             {
                 Clear();
-                foreach (var item in oldestFirst) AppendLog(item.Speaker, item.Text, item.Metadata);
+                foreach (var item in oldestFirst) AppendLog(item.Speaker, item.Text, item.Metadata, item.Mode);
             }
             finally { deferLayout = false; RenderAll(); }
         }
@@ -306,10 +307,11 @@ namespace YuiPhysicalAI.UI
             ScrollToBottom();
         }
 
-        private MessageEntry CreateBubble(string speaker, string text, bool pending, string resultMetadata = null)
+        private MessageEntry CreateBubble(string speaker, string text, bool pending, string resultMetadata = null, string mode = null)
         {
             var entry = new MessageEntry
             {
+                Mode = mode,
                 ResultMetadata = resultMetadata,
                 Speaker = speaker,
                 Text = text,
@@ -357,7 +359,7 @@ namespace YuiPhysicalAI.UI
                 chatFont,
                 bubbleSprite,
                 entry.Text,
-                parsedText.Links, entry.ResultMetadata, entry.Root != null && entry.Root.name == "PendingMessageBubble");
+                parsedText.Links, entry.ResultMetadata, entry.Root != null && entry.Root.name == "PendingMessageBubble", EditRequested, entry.Mode);
         }
 
         private void TrimOldMessages()
@@ -470,6 +472,7 @@ namespace YuiPhysicalAI.UI
 
         private sealed class MessageEntry
         {
+            public string Mode;
             public string ResultMetadata;
             public string Speaker;
             public string Text;

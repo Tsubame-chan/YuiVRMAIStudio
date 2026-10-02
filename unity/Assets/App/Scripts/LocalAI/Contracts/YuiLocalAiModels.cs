@@ -60,6 +60,34 @@ namespace YuiPhysicalAI.LocalAI
         [JsonProperty("runtime_model_ref")]
         public string RuntimeModelRef { get; set; }
 
+        // Runtime features belong to the registered artifact, not its filename.
+        [JsonProperty("supports_thinking")]
+        public bool SupportsThinking { get; set; }
+
+        [JsonProperty("thinking_token_budget")]
+        public int ThinkingTokenBudget { get; set; } = 768;
+
+        [JsonProperty("work_thinking_token_budget")]
+        public int WorkThinkingTokenBudget { get; set; } = 768;
+
+        [JsonProperty("talk_output_token_budget")]
+        public int TalkOutputTokenBudget { get; set; } = 1280;
+
+        [JsonProperty("work_output_token_budget")]
+        public int WorkOutputTokenBudget { get; set; } = 2304;
+
+        [JsonProperty("download_url")]
+        public string DownloadUrl { get; set; }
+
+        [JsonProperty("sha256")]
+        public string Sha256 { get; set; }
+
+        [JsonProperty("supports_speculative_decoding")]
+        public bool SupportsSpeculativeDecoding { get; set; }
+
+        [JsonProperty("apple_asset_pack_id")]
+        public string AppleAssetPackId { get; set; }
+
         [JsonProperty("local_server_base_url")]
         public string LocalServerBaseUrl { get; set; }
 
@@ -129,10 +157,20 @@ namespace YuiPhysicalAI.LocalAI
         public string Message { get; set; }
         public string CharacterName { get; set; }
         public string CustomInstruction { get; set; }
+        public string ResponseInstruction { get; set; }
         public string ScreenContext { get; set; }
         public string SystemInstruction { get; set; }
         public string Prompt { get; set; }
+        // Structured LiteRT conversation input; Prompt remains for older adapters.
+        public string Input { get; set; }
+        public List<YuiLocalAiChatMessage> History { get; set; } = new List<YuiLocalAiChatMessage>();
         public Dictionary<string, object> Extra { get; set; } = new Dictionary<string, object>();
+    }
+
+    public sealed class YuiLocalAiChatMessage
+    {
+        [JsonProperty("role")] public string Role { get; set; }
+        [JsonProperty("content")] public string Content { get; set; }
     }
 
     public sealed class YuiLocalAiChatResponse : YuiLocalAiResponse

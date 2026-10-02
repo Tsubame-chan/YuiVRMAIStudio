@@ -1,54 +1,88 @@
 # Yui VRM AI Studio
 
-[日本語](README.md)
+[日本語](README.md) · [Help & FAQ](docs/HELP.md) · [Report an issue](https://github.com/Tsubame-chan/YuiVRMAIStudio/issues)
 
-A Unity application for talking with your VRM avatar using text, voice and images. Use the included public default avatar or import your own VRM.
+**AI chat with your own VRM avatar.**
 
-## Downloads and source status
+Bring your favorite avatar into everyday conversation, advice and small tasks. Describe its personality and speaking style in your own words, or take a break and view it from any angle.
 
-| Item | Status |
+<p>
+  <img src="docs/images/avatar-chat.jpg" width="300" alt="Unity-chan speaking during an actual AI conversation">
+  <img src="docs/images/avatar-viewer.jpg" width="300" alt="Rotate and zoom your avatar in the viewer">
+</p>
+
+These promotional images use the included Unity-chan in the real Mac application. Their captions are Japanese; the app has Japanese and English UI. Layout varies with the device and window size.
+
+## Download
+
+[Planned App Store page](https://apps.apple.com/jp/app/id6815341780) — available after approval/publication.
+
+| Platform | Availability |
 | --- | --- |
-| Windows / macOS apps | Available in [v0.2.0-beta.5](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.0-beta.5) |
-| main branch | Updated source as of 2026-09-23; newer than the beta.5 binaries |
-| [Source validation snapshot](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/dev-snapshot-20260923) | Standard VOICEVOX models and terms, not a finished application release |
-| iOS / Android | Implementation and validation source; no store release |
+| macOS / Windows | [v0.2.4-beta.1](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.1) |
+| iPhone / iPad | 0.2.4 (14) submitted to App Review. Free launch in Japan after approval; not publicly available yet |
+| Android | Development source; distribution and device acceptance remain incomplete |
 
-`Code → Download ZIP` contains source, not built apps or large AI models. To try the published app, download the beta.5 ZIP for your OS. Its first-run downloader installs Local AI, VOICEVOX and the platform-specific Backend bundle. Keep its manifest, split archives and checksums together.
+Download and extract the application ZIP for your desktop OS. On first launch, confirm the download of AI, voice and runtime data. Use Wi-Fi and allow enough free storage. Once prepared, on-device chat works offline.
 
-See [Windows setup](docs/SETUP_GUIDE.md), [macOS setup](docs/MAC_PUBLIC_BETA.en.md), [large assets](docs/LOCAL_AI_ASSETS.md) and [current source status](docs/SOURCE_STATUS.md).
+**`Code → Download ZIP` is source for developers. It does not include built applications or large models.**
 
-## Implemented in the current source
+Setup: [macOS](docs/MAC_PUBLIC_BETA.en.md) / [Windows](docs/SETUP_GUIDE.md). The Mac runtime targets Apple Silicon; code signing and notarization are not yet provided. Windows is distributed as a beta.
 
-- VRM 0.x / 1.0 import, characters and outfits, lip sync, blinking and Humanoid idle-pose adjustment.
-- Short conversation in Talk; detailed screen output and spoken summaries in Work.
-- Text, microphone and image input. On mobile the paperclip opens the photo picker; take a photo in the camera app first. Desktop retains image/camera selection.
-- On-device Gemma, Direct OpenAI and Backend AI. Choose the voice engine independently of the language model.
-- Persistent local conversation history, saved answers, read-aloud and Secret Mode.
-- Japanese / English UI, shared typography, Soft Gradient backgrounds and connection diagnostics.
-- Backend web search, speech and image processing. Realtime conversation/translation remain experimental advanced options.
+## Make it your companion
 
-Availability depends on the OS, runtime, models and connected services. This list does not claim acceptance on every device.
+- **Bring your avatar.** Import VRM 0.x / 1.0, manage characters and outfits, and display blinking, lip sync and supported secondary motion.
+- **Shape its personality and replies.** Combine character personality, shared AI instructions and per-model instructions. Local inference settings include context, output/thinking budgets and temperature, saved separately for Talk and Work.
+- **Keep a shared history with each character.** Character-scoped memories persist on the device across restarts and switches between local AI and API chat. Inspect, edit or delete them; other characters do not share them.
+- **Choose the task.** Talk favors short conversations; Work provides longer explanations and task assistance. Send text, microphone input and images, save replies or read them aloud.
+- **Enjoy a digital figure.** Rotate and zoom in the viewer. A four-page tutorial introduces the basics and can be reopened from Help.
 
-## AI and voices
+<details>
+<summary>Show personality, model settings and offline chat</summary>
 
-Direct OpenAI uses the key saved in the app and does not require a PC Backend. API usage charges apply. Backend requests use the Backend's own configuration; the app key is not forwarded to it. An on-device language model can use a reachable Backend voice engine.
+<p>
+  <img src="docs/images/customization.jpg" width="300" alt="Character personality and local inference settings">
+  <img src="docs/images/offline-chat.jpg" width="300" alt="Standard 2B and optional 4B model selection">
+</p>
 
-On-device VOICEVOX requires Core, its dictionary and model files. Beta.5 provides the Meimei Himari model. The separate source snapshot supplies the current source's five standard voices; see [source status](docs/SOURCE_STATUS.md). The beta.5 manifest references the published beta.3 macOS AivisSpeech HD add-on. Irodori and Windows voice add-ons are not included in that manifest. Backend VOICEVOX, AivisSpeech and HTTP TTS require separately configured engines.
+</details>
 
-## Bring your avatar
+## Choose AI and voice separately
 
-In the current source, use Settings → Character → Import avatar. My characters → Change outfit keeps the character identity while changing appearance.
+| Conversation route | What to expect |
+| --- | --- |
+| On-device AI | Standard Gemma 4 E2B. macOS and iOS also offer optional E4B in Settings: higher quality, with more storage, memory use and latency |
+| OpenAI API | Recommended for higher-quality conversation. Requires an API key, connectivity and API usage charges, separate from a ChatGPT subscription |
+| PC Backend | Optional extensions using configured TTS/STT, search and other services. Management remains CLI-based and some features are experimental |
 
-Export VRChat avatars from their configured Unity project with an existing VRM converter. Custom shaders, clothing menus and contact features are not reproduced completely. Purchased ZIPs, `.unitypackage` files and FBX cannot be imported directly. See the [avatar guide](docs/AVATAR_IMPORT.md).
+On-device VOICEVOX supplies five standard Japanese voices. English UI is available, but a dedicated English TTS model is not included yet. A configured Backend can provide additional voice engines.
 
-## Privacy and development
+The app's OpenAI key is for direct access and is separate from the Backend's `.env`; it is not forwarded to the Backend. Desktop setup downloads a runtime bundle containing a local inference worker. On-device AI does not require the Backend server to be running.
 
-The current Apple implementation stores API keys in Keychain and asks before first sending content to external AI or a Backend. Secret Mode does not prevent requests to the selected external service. These changes do not retroactively update beta.5. See [privacy](docs/PRIVACY.md).
+## Import your avatar
 
-Development uses Unity 2022.3.62f3. Model weights, generated builds, personal avatars, conversations and secrets are excluded from Git. Source builds also require the relevant SDKs, native libraries, models and signing configuration.
+Use Settings → Character → Import avatar. My characters → Change outfit changes appearance while retaining character identity.
 
-- [Source status and known limits](docs/SOURCE_STATUS.md)
-- [Runtime support](docs/RUNTIME_SUPPORT.md)
-- [Quality and validation](docs/QUALITY_AND_VALIDATION.md)
-- [Public player asset validation](docs/PUBLIC_PLAYER_ASSET_VALIDATION.md)
+Export Unity/VRChat avatars as VRM from their configured Unity project. Purchased ZIPs, `.unitypackage` files and FBX cannot be loaded directly. Custom shaders, clothing menus and PhysBone behavior are not reproduced completely. Use models you have permission to use. See the [avatar guide](docs/AVATAR_IMPORT.md).
+
+## Memory and privacy
+
+Secret Mode can read the selected character's existing memories, but does not save new conversation history or memories. Its private conversation is not carried forward after leaving Secret Mode. Memories are not synchronized between devices.
+
+External AI receives conversation content and relevant personality settings and memories. Secret Mode does not prevent those requests. Apple builds store API keys in Keychain. See [privacy](docs/PRIVACY.md).
+
+**Replies and memory retrieval can be wrong.** Local models still make speaker-attribution, knowledge and arithmetic mistakes. A larger model or different settings cannot guarantee correctness. Verify important information.
+
+## Development and specifications
+
+Unity **2022.3.62f3** / UniVRM **0.131.2**. Unity 6 migration has not been performed. Unity-chan is the public default avatar; personal avatars, keys and conversations are not distributed. Source builds need model data, platform SDKs, native libraries and signing configuration separately.
+
+- [Source and validation status](docs/SOURCE_STATUS.md)
+- [Platform support and limits](docs/RUNTIME_SUPPORT.md)
+- [AI and voice data](docs/LOCAL_AI_ASSETS.md)
+- [Conversation, character and memory identity](docs/CONVERSATION_IDENTITY.md)
+- [Quality and public asset checks](docs/QUALITY_AND_VALIDATION.md)
+- [Distribution architecture](docs/DISTRIBUTION.md)
 - [API](docs/api.md)
+
+Verification differs between platforms and devices. The linked documents distinguish implemented source, shipped binaries and actual device acceptance.

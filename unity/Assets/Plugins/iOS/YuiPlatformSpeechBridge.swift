@@ -133,8 +133,10 @@ public func YuiPlatformSpeechBridge_Synthesize(_ requestJsonPointer: UnsafePoint
     ]))
 }
 
-// Recognition snapshots can restart after a pause on recent iOS versions.
-// Preserve earlier audio ranges, but replace revised overlapping hypotheses.
+// On-device Speech can return one utterance at a time. Provisional segments
+// commonly have zero/revised timestamps, even for later utterances. Only the
+// snapshots with recognition metadata (or the final result) may edit the audio
+// timeline. Keep the current hypothesis separate until it is committed.
 struct YuiSpeechTranscriptTimeline {
     struct Segment {
         let start: Double
@@ -142,12 +144,18 @@ struct YuiSpeechTranscriptTimeline {
         let text: String
     }
     private(set) var segments: [Segment] = []
-    mutating func update(_ incoming: [Segment]) {
+    private(set) var pendingText = ""
+    mutating func update(_ incoming: [Segment], isFinal: Bool, hasMetadata: Bool) {
         guard let first = incoming.first else { return }
+        guard isFinal || hasMetadata else {
+            pendingText = incoming.map { $0.text }.joined()
+            return
+        }
         segments.removeAll { $0.start >= first.start - 0.05 || $0.start + $0.duration > first.start + 0.05 }
         segments.append(contentsOf: incoming)
+        pendingText = ""
     }
-    var text: String { segments.map { $0.text }.joined() }
+    var text: String { segments.map { $0.text }.joined() + pendingText }
 }
 
 @_cdecl("YuiPlatformSpeechBridge_Transcribe")
@@ -207,7 +215,7 @@ public func YuiPlatformSpeechBridge_Transcribe(_ requestJsonPointer: UnsafePoint
                 let text = start <= end && end <= formatted.length
                     ? formatted.substring(with: NSRange(location: start, length: end - start)) : segment.substring
                 return YuiSpeechTranscriptTimeline.Segment(start: segment.timestamp, duration: segment.duration, text: text)
-            })
+            }, isFinal: result.isFinal, hasMetadata: result.speechRecognitionMetadata != nil)
             confidence = result.bestTranscription.segments.last?.confidence
             if result.isFinal {
                 completed = true

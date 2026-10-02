@@ -184,6 +184,9 @@ async def realtime_audio(
     audio: UploadFile = File(...),
     mode: str = Form("voice"),
     instructions: str = Form(""),
+    user_id: str = Form(""),
+    character_id: str = Form(""),
+    secret: bool = Form(False),
     settings: Settings = Depends(get_settings),
     repository: ChatRepository = Depends(get_chat_repository),
     memory_repository: MemoryRepository = Depends(get_memory_repository),
@@ -193,7 +196,7 @@ async def realtime_audio(
         return await provider.respond_to_wav(
             await audio.read(),
             _normalize_realtime_audio_mode(mode),  # type: ignore[arg-type]
-            instructions=instructions,
+            instructions=instructions, user_id=user_id, character_id=character_id or None, secret=secret,
         )
     except RealtimeProviderError as exc:
         raise HTTPException(
@@ -236,19 +239,18 @@ async def chat(
     provider_router = ProviderRouter(settings)
     try:
         provider = provider_router.chat()
-        history = [] if request.secret else repository.list_recent_messages(request.user_id, character_id=request.character_id, session_id=request.session_id)
-        if not request.secret:
-            if request.context.extra is None:
-                request.context.extra = {}
-            request.context.extra["memories"] = [
-                item.model_dump()
-                for item in _memory_context(
-                    memory_repository=memory_repository,
-                    user_id=request.user_id,
-                    query=request.message,
-                    character_id=request.character_id,
-                )
-            ]
+        history = repository.list_recent_messages(request.user_id, character_id=request.character_id, session_id=request.session_id)
+        if request.context.extra is None:
+            request.context.extra = {}
+        request.context.extra["memories"] = [
+            item.model_dump()
+            for item in _memory_context(
+                memory_repository=memory_repository,
+                user_id=request.user_id,
+                query=request.message,
+                character_id=request.character_id,
+            )
+        ]
         response = await provider.generate(request, history=history)
     except ProviderConfigurationError as exc:
         raise HTTPException(
@@ -283,6 +285,7 @@ async def chat(
         memory_repository.save(
             MemorySaveRequest(
                 user_id=request.user_id,
+                character_id=request.character_id,
                 content=f"User said: {request.message}",
                 importance=3,
                 tags=["auto", "chat"],

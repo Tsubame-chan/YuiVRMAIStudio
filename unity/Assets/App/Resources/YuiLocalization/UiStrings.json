@@ -729,9 +729,10 @@
     },
     {
       "en": "Cancel",
-      "ja": "Cancel",
+      "ja": "キャンセル",
       "aliases": [
-        "中断"
+        "中断",
+        "Cancel"
       ]
     },
     {
@@ -2571,20 +2572,20 @@
       "ja": "APIキーを安全に保存できませんでした。今回の起動中は使えますが、再起動後は設定し直してください。"
     },
     {
-      "en": "Messages and recent conversation context, character instructions, recorded audio, and images you choose are sent to OpenAI to generate replies, transcribe speech, and analyze images. Web search may send a search query to search providers. Your API key is sent only to OpenAI.",
-      "ja": "応答の生成・文字起こし・画像解析のために、メッセージと最近の会話、キャラクターの設定、録音した音声、選択した画像をOpenAIへ送信します。Web検索では検索語が検索サービスへ送られることがあります。APIキーはOpenAIだけに送信します。"
+      "en": "Messages, recent conversation context and relevant saved character memories, character instructions, recorded audio, and images you choose are sent to OpenAI to generate replies, transcribe speech, and analyze images. Web search may send a search query to search providers. Your API key is sent only to OpenAI.",
+      "ja": "応答の生成・文字起こし・画像解析のために、メッセージと最近の会話と関連するキャラクターの記憶、キャラクターの設定、録音した音声、選択した画像をOpenAIへ送信します。Web検索では検索語が検索サービスへ送られることがあります。APIキーはOpenAIだけに送信します。"
     },
     {
-      "en": "Messages and recent conversation context, character instructions, recorded audio, selected images, and text to read aloud are sent to this Backend. Its administrator chooses AI and voice providers, which may include OpenAI or other external services. Use a Backend you trust.",
-      "ja": "メッセージと最近の会話、キャラクターの設定、録音した音声、選択した画像、読み上げる文章を、このBackendへ送信します。Backendの設定により、OpenAIなどの外部AI・音声サービスへ転送される場合があります。信頼できるBackendを指定してください。"
+      "en": "Messages, recent conversation context and relevant saved character memories, character instructions, recorded audio, selected images, and text to read aloud are sent to this Backend. Its administrator chooses AI and voice providers, which may include OpenAI or other external services. Use a Backend you trust.",
+      "ja": "メッセージと最近の会話と関連するキャラクターの記憶、キャラクターの設定、録音した音声、選択した画像、読み上げる文章を、このBackendへ送信します。Backendの設定により、OpenAIなどの外部AI・音声サービスへ転送される場合があります。信頼できるBackendを指定してください。"
     },
     {
       "en": "Secret mode does not prevent this transfer or control the provider's retention. You can withdraw permission in Help → Quick guide → Privacy.",
       "ja": "Secret Modeでも送信先の保存方針は変わりません。同意はヘルプ → 使い方 → プライバシーから取り消せます。"
     },
     {
-      "en": "Conversation text, saved answers, and imported avatars are stored on this device until you delete them. Secret mode skips conversation history, but still sends requests through your selected AI and voice connections. OpenAI mode sends data directly to OpenAI; Backend mode uses the server and providers configured by its administrator. On-device AI does not send your messages to an AI server. Model downloads contact the hosting service. The iOS/macOS app stores your API key in Keychain. Windows/Android currently use app settings. Removing an API key in Settings deletes the saved key.",
-      "ja": "会話の本文・保存した回答・読み込んだアバターは、削除するまでこの端末に保存します。Secret Modeでは会話履歴を残しませんが、選択したAI・音声サービスへの送信は行います。OpenAIモードはOpenAIへ直接、Backendモードは指定サーバーとその管理者が設定したサービスへ送信します。端末内AIは会話をAIサーバーへ送りません。モデルの取得時は配布サーバーへ接続します。APIキーはiOS/macOSではKeychainに、Windows/Androidでは現在アプリの設定領域に保存します。設定でAPIキーを空にして保存すると、保存済みのキーを削除します。"
+      "en": "Conversation text, character memories, saved answers, and imported avatars are stored on this device until you delete them. Secret mode reads existing character memories without saving new conversations or memories, but still sends requests through your selected AI and voice connections. OpenAI mode sends data directly to OpenAI; Backend mode uses the server and providers configured by its administrator. On-device AI does not send your messages to an AI server. Model downloads contact the hosting service. The iOS/macOS app stores your API key in Keychain. Windows/Android currently use app settings. Removing an API key in Settings deletes the saved key.",
+      "ja": "会話履歴・キャラクターの記憶・保存済み回答・アバターは、削除するまで端末に保存されます。シークレットモードは既存の記憶を参照しますが、新しい会話や記憶を保存しません。選択中のAIと音声接続への通信は行います。OpenAIは直接OpenAIへ、Backendは設定されたサーバーとプロバイダーへ送信します。端末内AIはAIサーバーへメッセージを送信しません。モデル取得は配信サービスへ通信します。iOS/macOSのAPIキーはKeychain、Windows/Androidはアプリ設定に保存されます。設定からAPIキーを削除すると保存されたキーを消去します。"
     },
     {
       "en": "Withdrawing permission affects future requests; it does not delete data already received by a server. For server retention or deletion, contact its administrator or provider.",
@@ -2637,6 +2638,186 @@
     {
       "en": "VOICEVOX:冥鳴ひまり / 四国めたん / ずんだもん / 九州そら / 小夜/SAYO\nVoice use and sharing must follow each voice library’s terms. See https://github.com/VOICEVOX/voicevox_vvm for the terms.",
       "ja": "VOICEVOX:冥鳴ひまり / 四国めたん / ずんだもん / 九州そら / 小夜/SAYO\n音声の利用・共有には各音声ライブラリの規約が適用されます。規約一覧：https://github.com/VOICEVOX/voicevox_vvm"
+    },
+    {
+      "en": "VOICEVOX · Recommended",
+      "ja": "VOICEVOX（推奨）"
+    },
+    {
+      "en": "VOICEVOX · Recommended · Unavailable",
+      "ja": "VOICEVOX（推奨・利用不可）"
+    },
+    {
+      "en": "AivisSpeech · Experimental",
+      "ja": "AivisSpeech（試験的）"
+    },
+    {
+      "en": "AivisSpeech · Experimental · Unavailable",
+      "ja": "AivisSpeech（試験的・利用不可）"
+    },
+    {
+      "en": "Experimental on-device voice. Speech can take several seconds to start. VOICEVOX is recommended for faster conversation.",
+      "ja": "試験的な端末内音声です。発声開始まで数秒かかる場合があります。テンポよく会話するにはVOICEVOXを推奨します。"
+    },
+    {
+      "en": "On-device data",
+      "ja": "端末内のデータ"
+    },
+    {
+      "en": "Standard AI and voice data are included in this app. Additional downloads are available in the desktop app.",
+      "ja": "標準のAI・音声データはアプリに含まれています。追加ダウンロードはPC版で利用できます。"
+    },
+    {
+      "en": "API model ID",
+      "ja": "APIモデルID"
+    },
+    {
+      "en": "OpenAI official model list ↗",
+      "ja": "OpenAI公式モデル一覧 ↗"
+    },
+    {
+      "en": "Restore default model",
+      "ja": "初期モデルに戻す"
+    },
+    {
+      "en": "Input example: {0} — include the entire ID and its hyphens. You can keep the default.",
+      "ja": "入力例：{0}（ハイフンを含む文字列全体）。初期設定のまま利用できます。"
+    },
+    {
+      "en": "What is an API key?",
+      "ja": "APIキーとは？"
+    },
+    {
+      "en": "How to enter a model",
+      "ja": "モデル名の入力方法"
+    },
+    {
+      "en": "Use a key to access OpenAI's more capable AI models. Create one and set up billing on OpenAI Platform, then paste it here. You pay OpenAI for usage, separately from a ChatGPT subscription.",
+      "ja": "より高性能なAIを使うための専用キーです。OpenAI Platformで登録・キー作成・支払い設定を行い、ここへ貼り付けます。料金は使った分だけOpenAIに支払います。ChatGPTの月額プランとは別料金です。"
+    },
+    {
+      "en": "Example to enter:\n{0}\nCopy this whole string, including every hyphen. Do not include quotes, model:, or a URL.",
+      "ja": "入力する内容の例：\n{0}\n先頭から末尾まで、ハイフンも含めて入力します。引用符（\"）、model:、URLは不要です。"
+    },
+    {
+      "en": "To change models, copy the complete Model ID from the official list, replace this field, then Save at the top. Include any date suffix. Choose Responses API + Structured outputs support; check image input and Web search if needed.",
+      "ja": "変更する場合は公式一覧の「Model ID」を丸ごとコピーし、この欄を置き換えて上部の「保存」を押します。末尾に日付があればそれも含めます。Responses API・Structured outputs対応のモデルを選び、写真や検索を使う場合は画像入力・Web search対応も確認してください。"
+    },
+    {
+      "en": "Create a key on OpenAI ↗",
+      "ja": "OpenAIでキーを用意する ↗"
+    },
+    {
+      "en": "Import a VRM\nOpen Settings → Character → Import avatar and choose your .vrm file. VRM 0.x and 1.0 are supported.\n\n",
+      "ja": "VRMを読み込む\n設定 → キャラクター → アバターを読み込むで、.vrmファイルを選びます。VRM 0.x / 1.0に対応しています。\n\n"
+    },
+    {
+      "en": "If your download is a ZIP, extract it first and choose the .vrm inside.\n\n",
+      "ja": "ダウンロードしたファイルがZIPの場合は、先に展開して中の.vrmを選びます。\n\n"
+    },
+    {
+      "en": "Need to create a VRM? (PC required)\n1. For a .unitypackage or FBX, set up the avatar in Unity following its author’s instructions. You can use your customized project.\n",
+      "ja": "VRMへ変換する場合（PCが必要）\n1. .unitypackageやFBXは、作者の案内に沿ってUnityでセットアップします。カスタマイズ済みのプロジェクトも使えます。\n"
+    },
+    {
+      "en": "2. Export a VRM with NDMF VRM Exporter or a compatible converter.\n",
+      "ja": "2. NDMF VRM Exporterなど、対応する変換ツールでVRMを書き出します。\n"
+    },
+    {
+      "en": "Backend (optional)",
+      "ja": "Backend（任意）"
+    },
+    {
+      "en": "What is Backend?",
+      "ja": "Backendとは？"
+    },
+    {
+      "en": "Backend is an optional service running on a PC or server. It lets you use more natural-sounding speech and AI services beyond those included on your device.",
+      "ja": "Backendは、PCやサーバーで動かす任意のサービスです。端末に内蔵された機能に加え、人の声に近い自然な音声合成やAIサービスを利用できます。"
+    },
+    {
+      "en": "It can use API keys set up on that PC or server, separately from the app's key. Available features depend on the connected service.",
+      "ja": "アプリとは別に、PC・サーバー側で設定したAPIキーも利用できます。使える機能は接続先の構成によって異なります。"
+    },
+    {
+      "en": "Originally used by the desktop app, Backend is optional on mobile. On-device AI, VOICEVOX and direct OpenAI access work without it. Only enter a Backend URL if you have a service ready.",
+      "ja": "もともとPC版を支えていた仕組みですが、モバイル版では任意です。端末内AI・VOICEVOX・OpenAIへの直接接続には不要です。接続先を用意している場合だけBackend URLを設定してください。"
+    },
+    {
+      "en": "Optional PC/server connection. No setup is needed for on-device AI, VOICEVOX or direct OpenAI access.",
+      "ja": "PC・サーバーへの接続は任意です。端末内AI・VOICEVOX・OpenAIへの直接接続には設定不要です。"
+    },
+    {
+      "en": "AI and voice services for this connection are configured on the PC or server. This app's OpenAI API key is not shared with it.",
+      "ja": "接続先のAI・音声サービスはPC・サーバー側で設定します。このアプリのOpenAI APIキーは共有されません。"
+    },
+    {
+      "en": "Backend connects to AI and voice services set up on a PC or server, including more natural-sounding speech. On-device AI, VOICEVOX and direct OpenAI access do not need it.",
+      "ja": "Backendは、PC・サーバー側のAIや、人の声に近い音声合成を利用するための接続先です。端末内AI・VOICEVOX・OpenAIへの直接接続には不要です。"
+    },
+    {
+      "en": "Could not open the file picker. Please try again.",
+      "ja": "ファイル選択を開けませんでした。もう一度お試しください。"
+    },
+    {
+      "en": "Conversation data is delivered by Apple during setup. Once ready, you can chat offline. Standard voice data is included in the app.",
+      "ja": "会話データは初回準備時にAppleから取得します。準備後はオフラインで会話できます。標準音声データはアプリに含まれます。"
+    },
+    {
+      "en": "Manage character memories",
+      "ja": "キャラクターの記憶を管理"
+    },
+    {
+      "en": "Character memory",
+      "ja": "キャラクターの記憶"
+    },
+    {
+      "en": "Realtime voice and translation require a configured backend. Direct OpenAI supports text, microphone transcription, images and web search without a PC.",
+      "ja": "Realtimeの音声会話と翻訳にはBackendが必要です。直接OpenAIは、PCなしでテキスト・音声入力・画像・Web検索に対応します。"
+    },
+    {
+      "en": "Secret mode can use this character’s existing memories, but does not save its conversations or create new memories. Other characters cannot read them. Requests still use your selected AI connection.",
+      "ja": "シークレットモードでは、このキャラクターの既存の記憶を参照しますが、新しい会話や記憶は保存しません。他のキャラクターには共有しません。AIへの通信は選択中の接続方法で行われます。"
+    },
+    {
+      "en": "Preferences and promises are stored separately for each character on this device and used by both local AI and API. Settings → Character → Manage character memories lets you add, edit, prioritize or delete them. Only relevant excerpts are passed to the AI; recall is not guaranteed. Conversation history and memory are deleted separately. Backend memories remain on your server.",
+      "ja": "好みや約束は、端末内でキャラクターごとに保存し、ローカルAIとAPIの両方で参照します。設定 → キャラクター → キャラクターの記憶を管理から、追加・編集・優先参照・削除ができます。AIには関連する記録の抜粋を渡しますが、必ず思い出せるとは限りません。会話履歴と記憶の削除は別々です。Backendの記憶はサーバー側に残ります。"
+    },
+    {
+      "en": "Character memories · On this device",
+      "ja": "このキャラクターの記憶 · 端末内"
+    },
+    {
+      "en": "On-device memories",
+      "ja": "端末内の記憶へ"
+    },
+    {
+      "en": "Backend memories",
+      "ja": "Backendの記憶"
+    },
+    {
+      "en": "Prioritize: ON",
+      "ja": "優先して参照: ON"
+    },
+    {
+      "en": "Prioritize: OFF",
+      "ja": "優先して参照: OFF"
+    },
+    {
+      "en": "Delete this character’s memories",
+      "ja": "このキャラクターの記憶を削除"
+    },
+    {
+      "en": "Delete memories",
+      "ja": "記憶の削除"
+    },
+    {
+      "en": "Delete all on-device memories for this character. Conversation history, personality settings, other characters’ memories and backend memories remain. This cannot be undone.",
+      "ja": "このキャラクターの端末内の記憶をすべて削除します。会話履歴・人格設定・他のキャラクターの記憶・Backendの記憶は残ります。取り消せません。"
+    },
+    {
+      "en": "No memories yet. Preferences and promises from normal conversations are saved. Use Add to register something important.\n\nLocal AI and API share these memories. Other characters do not. Secret conversations are not saved.",
+      "ja": "記憶はまだありません。通常の会話で伝えた好みや約束を記録します。追加ボタンから、必ず覚えてほしい内容を登録できます。\n\nローカルAIとAPIで共有します。他のキャラクターには共有しません。シークレット会話は記録しません。"
     }
   ]
 }

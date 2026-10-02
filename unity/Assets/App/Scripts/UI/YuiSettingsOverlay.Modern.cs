@@ -32,6 +32,7 @@ namespace YuiPhysicalAI.UI
         private void RenderSettingsPage(Transform content)
         {
             if (renderingSettings) return;
+            CloseSettingsHelp();
             renderingSettings = true;
             var selected = UnityEngine.EventSystems.EventSystem.current?.currentSelectedGameObject;
             try
@@ -51,7 +52,7 @@ namespace YuiPhysicalAI.UI
                 SetLabelTextRuntime(panel.Find("Title"), "Settings");
                 SetAnchorsRuntime(panel.Find("Title"), new Vector2(.05f,.925f), new Vector2(.48f,.98f));
                 SetAnchorsRuntime(applyButton.transform, new Vector2(.68f,.92f), new Vector2(.86f,.98f));
-                SetButtonCaption(applyButton, "Save");
+                SetButtonCaption(applyButton, YuiSimpleDialog.L("設定を保存", "Save settings"));
                 SetAnchorsRuntime(closeButton.transform, new Vector2(.88f,.92f), new Vector2(.96f,.98f));
                 SetButtonCaption(closeButton, "×");
                 var tabs = new[] { "AI", "Voice", "Character", "Display", "Advanced" };
@@ -87,7 +88,21 @@ namespace YuiPhysicalAI.UI
                     }
                     var snapshot = chatPanel != null ? chatPanel.CurrentCapabilitySnapshot() : null;
                     Note(content, snapshot?.Conversation(ConversationModeValue()).Detail ?? "Choose a connection to get started.", ref row);
-                    Row(content, "OpenAiApiKeyLabel", "OpenAI API key", "OpenAiApiKeyInput", ref row);
+                    var modelLabel = YuiSimpleDialog.L("端末内AI · 2B / 4Bを選ぶ", "On-device AI · Choose 2B / 4B");
+                    ModernButton(content, "LocalModelMenu", modelLabel, () => YuiLocalModelMenu.Show(chatPanel));
+                    Full(content, "LocalModelMenu", modelLabel, ref row);
+                    var policyLabel=YuiSimpleDialog.L("回答の方針 · API/端末内AI共通", "Response style · API and on-device AI");
+                    ModernButton(content,"ResponsePolicy",policyLabel,()=> {
+                        var draft=PlayerPrefs.GetString(YuiPrefsKeys.ResponseInstruction,"");
+                        var policy=YuiSimpleDialog.Create(policyLabel,YuiSimpleDialog.L("例: 結論を先に、必要な説明は箇条書きで。\nキャラクターの性格・口調とは別に保存し、APIと端末内AIの両方へ伝えます。", "Example: Start with the conclusion, then use bullets for detail. Saved separately from character personality and used by both API and on-device AI."));
+                        var input=policy.AddInput(YuiSimpleDialog.L("回答の方針（1200文字まで）", "Response instructions (up to 1200 characters)"),draft,v=>draft=v);
+                        input.characterLimit=1200;
+                        policy.AddButton(YuiSimpleDialog.L("保存", "Save"),()=>{PlayerPrefs.SetString(YuiPrefsKeys.ResponseInstruction,draft);PlayerPrefs.Save();policy.Close();});
+                        policy.AddButton(YuiSimpleDialog.L("変更せず閉じる", "Close without saving"),()=>policy.Close());
+                        policy.Compact(600);
+                    });
+                    Full(content,"ResponsePolicy",policyLabel,ref row);
+                    SettingsHelpRow(content, "OpenAiApiKeyLabel", "OpenAI API key", "OpenAiApiKeyInput", "ApiKeyHelp", ref row);
                     Note(content, "Used by this app only. Backend credentials stay separate.", ref row);
                     if (!string.IsNullOrEmpty(YuiApiKeyStore.LastError) || YuiApiKeyStore.IsRecovering)
                     {
@@ -100,7 +115,8 @@ namespace YuiPhysicalAI.UI
                         recover.interactable = !YuiApiKeyStore.IsRecovering;
                         Place(recover.transform, row, 58); row += 72;
                     }
-                    Row(content, "OpenAiModelLabel", "Model", "OpenAiModelInput", ref row);
+                    SettingsHelpRow(content, "OpenAiModelLabel", "API model ID", "OpenAiModelInput", "ApiModelHelp", ref row);
+                    Note(content, string.Format("Input example: {0} — include the entire ID and its hyphens. You can keep the default.", Api.YuiDirectOpenAiClient.DefaultModel), ref row);
                     Row(content, "MicrophoneLabel", "Microphone", "MicrophoneDropdown", ref row);
                     Full(content, "MicrophoneTestButton", "Test microphone", ref row);
                     ShowAt(content, "MicrophoneTestMeter", row, 18); row += 24;
@@ -113,6 +129,8 @@ namespace YuiPhysicalAI.UI
                     if (YuiConversationModes.IsRealtime(mode))
                         Note(content, "This Realtime mode uses its own voice engine. Change the mode in Advanced.", ref row);
                     else Row(content, "TtsModeLabel", "Voice engine", "TtsModeDropdown", ref row);
+                    if (Application.isMobilePlatform && TtsModeValue() == "aivis-native")
+                        Note(content, "Experimental on-device voice. Speech can take several seconds to start. VOICEVOX is recommended for faster conversation.", ref row);
                     if (YuiConversationModes.IsRealtime(mode) || TtsModeValue() != "silent") SliderRow(content, "Volume", "Volume", ref row);
                     if ((!YuiConversationModes.IsRealtime(mode) || YuiConversationModes.IsRealtimeTextTts(mode)) && TtsModeValue() != "silent")
                     {
@@ -138,13 +156,25 @@ namespace YuiPhysicalAI.UI
                     Heading(content, "Your character", ref row);
                     ModernButton(content, "CharacterLibraryButton", "My characters", () => { ApplyFieldsToRuntime(false); chatPanel?.OpenCharacterLibrary(); });
                     Full(content, "CharacterLibraryButton", "My characters", ref row);
+                    Note(content, YuiSimpleDialog.L("キャラクターを選ぶと、その場で切り替わります。読み込み中は表示が出ます。", "Selecting a character switches it immediately. A loading indicator appears while it loads."), ref row);
                     Full(content, "CustomVrmImportButton", "Import avatar", ref row);
                     ModernButton(content, "AvatarGuideButton", "Avatar guide", () => { ApplyFieldsToRuntime(false); chatPanel?.OpenAvatarGuide(); });
                     Full(content, "AvatarGuideButton", "Avatar guide", ref row);
                     if (YuiAvatarSlots.IsCustomVrm(chatPanel?.AvatarSlot))
                         Row(content, "CustomVrmNameLabel", "Appearance name", "CustomVrmNameInput", ref row);
                     Row(content, "CharacterNameLabel", "Character name", "CharacterNameInput", ref row);
-                    Row(content, "CustomInstructionLabel", "Personality", "CustomInstructionInput", ref row, 180);
+                    Row(content, "CustomInstructionLabel", YuiSimpleDialog.L("キャラクターの性格・口調", "Character personality / Tone"), "CustomInstructionInput", ref row, 180);
+                    var personalityField=content.Find("CustomInstructionInput")?.GetComponent<InputField>();
+                    if(personalityField?.placeholder is Text personalityHint)
+                        YuiUiLocalization.Set(personalityHint,YuiSimpleDialog.L("話し方・役柄・性格を自由に指定", "Describe tone, role and personality"));
+                    Note(content,YuiSimpleDialog.L("口調・役柄・性格を指定できます。APIと端末内AIの両方に伝えます。回答形式はAIタブの「回答の方針」で設定できます。", "Describe personality, tone and role. Used by both API and on-device AI. Set response format under Response style in the AI tab."),ref row);
+                    var viewer = FindObjectOfType<YuiConsoleVisibilityController>();
+                    var viewerLabel = "鑑賞操作: " + (viewer != null && viewer.ViewerRotatesAvatar ? "本体回転" : "カメラ周回");
+                    ModernButton(content,"ViewerModeSettings",viewerLabel,()=> {
+                        if(viewer!=null)viewer.SetViewerRotatesAvatar(!viewer.ViewerRotatesAvatar);
+                        SetButtonCaption(content.Find("ViewerModeSettings")?.GetComponent<Button>(), "鑑賞操作: " + (viewer!=null && viewer.ViewerRotatesAvatar ? "本体回転" : "カメラ周回"));
+                    });
+                    Full(content,"ViewerModeSettings",viewerLabel,ref row);
                     Row(content, "CameraPresetLabel", "Camera view", "CameraPresetDropdown", ref row);
                     Full(content, "CameraAdjustButton", "Adjust view", ref row);
                     Full(content, "CameraAutoButton", "Auto frame", ref row);
@@ -157,13 +187,15 @@ namespace YuiPhysicalAI.UI
                     EnsureLanguageControl(content);
                     Row(content, "UiLanguageLabel", "Language", "UiLanguageDropdown", ref row);
                     Row(content, "BackgroundLabel", "Background", "BackgroundDropdown", ref row);
-                    Row(content, "ResolutionLabel", "Window size", "ResolutionDropdown", ref row);
-                    Row(content, "LookCameraLabel", "Image camera", "LookCameraDropdown", ref row);
+                    if (!Application.isMobilePlatform)
+                        Row(content, "ResolutionLabel", "Window size", "ResolutionDropdown", ref row);
+                    if (!Application.isMobilePlatform)
+                        Row(content, "LookCameraLabel", "Image camera", "LookCameraDropdown", ref row);
                 }
                 else
                 {
-                    Heading(content, "Backend & experiments", ref row);
-                    Note(content, "These modes require a configured backend. They are optional for phone-only use.", ref row);
+                    BackendHelpHeading(content, ref row);
+                    Note(content, "Optional PC/server connection. No setup is needed for on-device AI, VOICEVOX or direct OpenAI access.", ref row);
                     if (advancedModeDropdown == null)
                     {
                         advancedModeDropdown = Instantiate(conversationModeDropdown, content);
@@ -179,15 +211,25 @@ namespace YuiPhysicalAI.UI
                     Place(advancedModeDropdown.transform, row, 88); row += 104;
                     Note(content, chatPanel?.CurrentCapabilitySnapshot().Conversation(ConversationModeValue()).Detail ?? "", ref row);
                     Row(content, "BackendLabel", "Backend URL", "BackendInput", ref row);
-                    Note(content, "Backend modes read the backend's own .env. The app API key is never sent to it.", ref row);
+                    Note(content, "AI and voice services for this connection are configured on the PC or server. This app's OpenAI API key is not shared with it.", ref row);
                     Row(content, "AutoAiFallbackLabel", "If a request fails", "AutoAiFallbackToggle", ref row, 116);
-                    Heading(content, "Downloads", ref row);
-                    ShowAt(content, "LocalAiAssetStatusText", row, 68); row += 80;
-                    Full(content, "LocalAiAssetRepairButton", "Manage on-device models", ref row);
-                    Full(content, "OptionalTtsDownloadButton", "Download additional voices", ref row);
+                    if (Application.isMobilePlatform)
+                    {
+                        Heading(content, "On-device data", ref row);
+                        Note(content, YuiPhysicalAI.LocalAI.YuiAppleHostedAssets.Enabled
+                            ? "Conversation data is delivered by Apple during setup. Once ready, you can chat offline. Standard voice data is included in the app."
+                            : "Standard AI and voice data are included in this app. Additional downloads are available in the desktop app.", ref row);
+                    }
+                    else
+                    {
+                        Heading(content, "Downloads", ref row);
+                        ShowAt(content, "LocalAiAssetStatusText", row, 68); row += 80;
+                        Full(content, "LocalAiAssetRepairButton", "Manage on-device models", ref row);
+                        Full(content, "OptionalTtsDownloadButton", "Download additional voices", ref row);
+                    }
                     Heading(content, "Conversation data", ref row);
-                    ModernButton(content, "BackendMemoryButton", "Manage backend memories", () => chatPanel?.OpenBackendMemories());
-                    Full(content, "BackendMemoryButton", "Manage backend memories", ref row);
+                    ModernButton(content, "BackendMemoryButton", "Manage character memories", () => chatPanel?.OpenCharacterMemories());
+                    Full(content, "BackendMemoryButton", "Manage character memories", ref row);
                     Full(content, "ClearHistoryButton", "Clear backend conversations & memories", ref row);
                     Note(content, "On-device history is managed from History in the console.", ref row);
                 }

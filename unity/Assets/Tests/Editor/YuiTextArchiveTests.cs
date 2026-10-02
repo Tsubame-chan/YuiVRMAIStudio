@@ -17,6 +17,39 @@ namespace YuiPhysicalAI.Tests
         [TearDown] public void Cleanup() { Directory.Delete(directory,true); }
         private static YuiTextArchive.Entry Record(int i,string text=null,string mode="talk") => new YuiTextArchive.Entry {Id="id-"+i,Text=text??"message "+i,Mode=mode};
 
+        [Test] public void SavedAnswersRetainOriginalSpeakerAndMode()
+        {
+            var saved = new YuiSavedResultStore(Path.Combine(directory, "saved"));
+            saved.Save("work answer", "metadata", "Original character", "work");
+            var entry = new YuiSavedResultStore(Path.Combine(directory, "saved")).Page(0,10).Items.Single();
+            Assert.AreEqual("Original character", entry.Speaker);
+            Assert.AreEqual("work", entry.Mode);
+            Assert.AreEqual("metadata", entry.Metadata);
+            saved.Save("legacy", null);
+            var legacy = saved.Page(0,10).Items.Single(x => x.Text == "legacy");
+            Assert.IsNull(legacy.Speaker); Assert.IsNull(legacy.Mode);
+        }
+
+        [Test] public void HundredEntryPagesAreCompleteAndClearDoesNotTouchSavedAnswers()
+        {
+            var archive=new YuiTextArchive(path);
+            for(var i=0;i<236;i++)archive.Append(Record(i));
+            var items=Enumerable.Range(0,3).SelectMany(i=>archive.ReadPage(i*100,100).Items).ToArray();
+            Assert.AreEqual(236,items.Length);Assert.AreEqual(236,items.Select(x=>x.Id).Distinct().Count());
+            var saved=new YuiSavedResultStore(Path.Combine(directory,"saved"));var id=saved.Save("keep",null);
+            archive.Clear();Assert.IsFalse(File.Exists(path));Assert.IsEmpty(archive.ReadPage(0,100).Items);
+            Assert.AreEqual("keep",saved.Read(id));
+            archive.Append(Record(300));Assert.AreEqual("id-300",archive.ReadPage(0,100).Items.Single().Id);
+        }
+
+        [Test] public void ClearingAllRecentDialoguePreventsHistoryFromBeingRecreatedFromContext()
+        {
+            var store=new YuiPhysicalAI.Avatar.YuiCharacterDialogueStore(Path.Combine(directory,"context"));
+            foreach(var character in new[]{"one","two"})foreach(var mode in new[]{"talk","work"})store.Append(character,mode,"q","a");
+            store.ClearAll();
+            foreach(var character in new[]{"one","two"})foreach(var mode in new[]{"talk","work"})Assert.IsEmpty(store.Read(character,mode));
+        }
+
         [TestCase(true)] [TestCase(false)] public void PrivacyHeadingPreservesConnectivityOnSecondLine(bool hasKey)
         {
             var go=new GameObject("status-test",typeof(RectTransform));go.SetActive(false);

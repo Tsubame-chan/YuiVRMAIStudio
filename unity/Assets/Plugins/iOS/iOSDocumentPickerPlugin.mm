@@ -10,18 +10,21 @@ extern "C" UIViewController* UnityGetGLViewController(void);
 static NSString *const YuiDocumentPickerCancelled = @"__YUI_CANCELLED__";
 static NSString *const YuiDocumentPickerErrorPrefix = @"__YUI_ERROR__:";
 
-@interface YuiIOSDocumentPickerDelegate : NSObject <UIDocumentPickerDelegate>
+@interface YuiIOSPickerSession : NSObject <UIAdaptivePresentationControllerDelegate>
 @property(nonatomic, copy) NSString *callbackObjectName;
+@property(nonatomic, assign) BOOL processing;
+@property(nonatomic, assign) BOOL finished;
+- (void)finish:(NSString *)message;
+@end
+
+@interface YuiIOSDocumentPickerDelegate : YuiIOSPickerSession <UIDocumentPickerDelegate>
 @property(nonatomic, copy) NSString *mode;
 @end
 
-static YuiIOSDocumentPickerDelegate *YuiDocumentPickerSharedDelegate;
-
-@interface YuiIOSPhotoPickerDelegate : NSObject <PHPickerViewControllerDelegate>
-@property(nonatomic, copy) NSString *callbackObjectName;
+@interface YuiIOSPhotoPickerDelegate : YuiIOSPickerSession <PHPickerViewControllerDelegate>
 @end
 
-static YuiIOSPhotoPickerDelegate *YuiPhotoPickerSharedDelegate;
+static YuiIOSPickerSession *YuiIOSActivePickerSession;
 
 static void YuiDocumentPickerSend(NSString *objectName, NSString *message)
 {
@@ -30,6 +33,43 @@ static void YuiDocumentPickerSend(NSString *objectName, NSString *message)
         return;
     }
     UnitySendMessage(objectName.UTF8String, "OnIOSDocumentPickerResult", message.UTF8String);
+}
+
+@implementation YuiIOSPickerSession
+- (void)finish:(NSString *)message
+{
+    if (self.finished) return;
+    self.finished = YES;
+    NSString *callback = self.callbackObjectName;
+    if (YuiIOSActivePickerSession == self) YuiIOSActivePickerSession = nil;
+    YuiDocumentPickerSend(callback, message);
+}
+
+- (void)presentationControllerDidDismiss:(UIPresentationController *)presentationController
+{
+    // A swipe-to-dismiss does not reliably call the file/photo picker cancel callback.
+    // The sheet also disappears after selection while iCloud/photo data is still copying.
+    if (!self.processing) [self finish:YuiDocumentPickerCancelled];
+}
+@end
+
+static void YuiPresentPicker(UIViewController *picker, YuiIOSPickerSession *session)
+{
+    UIViewController *presenting = UnityGetGLViewController();
+    while (presenting.presentedViewController != nil) presenting = presenting.presentedViewController;
+    if (presenting == nil || presenting.view.window == nil || presenting.isBeingDismissed)
+    {
+        [session finish:[YuiDocumentPickerErrorPrefix stringByAppendingString:@"Could not open the file picker. Please try again."]];
+        return;
+    }
+    YuiIOSActivePickerSession = session;
+    [presenting presentViewController:picker animated:YES completion:nil];
+    picker.presentationController.delegate = session;
+    // UIKit can reject presentation without invoking the completion block.
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        if (!session.finished && !session.processing && picker.presentingViewController == nil)
+            [session finish:[YuiDocumentPickerErrorPrefix stringByAppendingString:@"Could not open the file picker. Please try again."]];
+    });
 }
 
 static NSString *YuiDocumentPickerTargetRoot(NSString *mode)
@@ -110,21 +150,20 @@ static NSString *YuiDocumentPickerCopyImageURL(NSURL *url, NSError **error)
 
 - (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller
 {
-    YuiDocumentPickerSend(self.callbackObjectName, YuiDocumentPickerCancelled);
-    YuiDocumentPickerSharedDelegate = nil;
+    if (!self.processing) [self finish:YuiDocumentPickerCancelled];
 }
 
 - (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls
 {
+    if (self.finished || self.processing) return;
     NSURL *url = urls.firstObject;
     if (url == nil)
     {
-        YuiDocumentPickerSend(self.callbackObjectName, [YuiDocumentPickerErrorPrefix stringByAppendingString:@"ファイルが選択されませんでした。"]);
-        YuiDocumentPickerSharedDelegate = nil;
+        [self finish:[YuiDocumentPickerErrorPrefix stringByAppendingString:@"ファイルが選択されませんでした。"]];
         return;
     }
 
-    NSString *callback = self.callbackObjectName;
+    self.processing = YES;
     NSString *mode = self.mode ?: @"image";
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         BOOL scoped = [url startAccessingSecurityScopedResource];
@@ -142,8 +181,7 @@ static NSString *YuiDocumentPickerCopyImageURL(NSURL *url, NSError **error)
         if (scoped) [url stopAccessingSecurityScopedResource];
         NSString *message = path.length > 0 ? path : [YuiDocumentPickerErrorPrefix stringByAppendingString:copyError.localizedDescription ?: coordinationError.localizedDescription ?: @"Could not read the selected file. Please select it again."];
         dispatch_async(dispatch_get_main_queue(), ^{
-            YuiDocumentPickerSend(callback, message);
-            YuiDocumentPickerSharedDelegate = nil;
+            [self finish:message];
         });
     });
 }
@@ -154,25 +192,24 @@ static NSString *YuiDocumentPickerCopyImageURL(NSURL *url, NSError **error)
 
 - (void)picker:(PHPickerViewController *)picker didFinishPicking:(NSArray<PHPickerResult *> *)results API_AVAILABLE(ios(14))
 {
+    if (self.finished || self.processing) return;
+    self.processing = results.count > 0;
     [picker dismissViewControllerAnimated:YES completion:nil];
 
     PHPickerResult *result = results.firstObject;
     if (result == nil)
     {
-        YuiDocumentPickerSend(self.callbackObjectName, YuiDocumentPickerCancelled);
-        YuiPhotoPickerSharedDelegate = nil;
+        [self finish:YuiDocumentPickerCancelled];
         return;
     }
 
     NSItemProvider *provider = result.itemProvider;
     if (![provider hasItemConformingToTypeIdentifier:UTTypeImage.identifier])
     {
-        YuiDocumentPickerSend(self.callbackObjectName, [YuiDocumentPickerErrorPrefix stringByAppendingString:@"画像ファイルを取得できませんでした。"]);
-        YuiPhotoPickerSharedDelegate = nil;
+        [self finish:[YuiDocumentPickerErrorPrefix stringByAppendingString:@"画像ファイルを取得できませんでした。"]];
         return;
     }
 
-    NSString *callbackObjectName = self.callbackObjectName;
     [provider loadFileRepresentationForTypeIdentifier:UTTypeImage.identifier completionHandler:^(NSURL * _Nullable url, NSError * _Nullable error) {
         NSString *message = nil;
         if (url != nil)
@@ -196,8 +233,7 @@ static NSString *YuiDocumentPickerCopyImageURL(NSURL *url, NSError **error)
         }
 
         dispatch_async(dispatch_get_main_queue(), ^{
-            YuiDocumentPickerSend(callbackObjectName, message);
-            YuiPhotoPickerSharedDelegate = nil;
+            [self finish:message];
         });
     }];
 }
@@ -220,14 +256,13 @@ static void YuiDocumentPicker_OpenPhoto(NSString *objectName)
             configuration.filter = [PHPickerFilter imagesFilter];
             configuration.selectionLimit = 1;
 
-            YuiPhotoPickerSharedDelegate = [YuiIOSPhotoPickerDelegate new];
-            YuiPhotoPickerSharedDelegate.callbackObjectName = objectName;
+            YuiIOSPhotoPickerDelegate *delegate = [YuiIOSPhotoPickerDelegate new];
+            delegate.callbackObjectName = objectName;
 
             PHPickerViewController *picker = [[PHPickerViewController alloc] initWithConfiguration:configuration];
-            picker.delegate = YuiPhotoPickerSharedDelegate;
+            picker.delegate = delegate;
 
-            UIViewController *presenting = root.presentedViewController ?: root;
-            [presenting presentViewController:picker animated:YES completion:nil];
+            YuiPresentPicker(picker, delegate);
             return;
         }
 
@@ -266,16 +301,15 @@ static void YuiDocumentPicker_OpenDocument(NSString *mode, NSString *objectName)
             types = @[UTTypeImage];
         }
 
-        YuiDocumentPickerSharedDelegate = [YuiIOSDocumentPickerDelegate new];
-        YuiDocumentPickerSharedDelegate.callbackObjectName = objectName;
-        YuiDocumentPickerSharedDelegate.mode = mode;
+        YuiIOSDocumentPickerDelegate *delegate = [YuiIOSDocumentPickerDelegate new];
+        delegate.callbackObjectName = objectName;
+        delegate.mode = mode;
 
         UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:types asCopy:YES];
-        picker.delegate = YuiDocumentPickerSharedDelegate;
+        picker.delegate = delegate;
         picker.allowsMultipleSelection = NO;
 
-        UIViewController *presenting = root.presentedViewController ?: root;
-        [presenting presentViewController:picker animated:YES completion:nil];
+        YuiPresentPicker(picker, delegate);
     });
 }
 

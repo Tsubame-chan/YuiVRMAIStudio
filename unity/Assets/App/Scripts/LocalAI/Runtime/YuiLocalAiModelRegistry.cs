@@ -47,7 +47,8 @@ namespace YuiPhysicalAI.LocalAI
         {
             var registry = FromStreamingAssets(relativePath);
 
-            return registry.Packs.Count > 0 ? registry : CreateDefaultLocalAi();
+            var builtin = registry.Packs.Count > 0 ? registry : CreateDefaultLocalAi();
+            return new YuiLocalAiModelRegistry(YuiLocalModelCatalog.Merge(builtin.Packs));
         }
 
         public static YuiLocalAiModelRegistry CreateDefaultLocalAi()
@@ -63,6 +64,10 @@ namespace YuiPhysicalAI.LocalAI
                         ModelId = "litert-community/gemma-4-E4B-it-litert-lm",
                         Format = "litert-lm",
                         RuntimeModelRef = "gemma-4-E4B-it.litertlm",
+                        SupportsThinking = true, SupportsSpeculativeDecoding = true,
+                        ThinkingTokenBudget = 128, WorkThinkingTokenBudget = 768, TalkOutputTokenBudget = 512,
+                        Sha256 = "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0",
+                        AppleAssetPackId = "yui-gemma-e4b-v1",
                         DeploymentKind = YuiLocalAiDeploymentKind.OnDeviceEmbedded,
                         Capabilities = new[]
                         {
@@ -71,14 +76,14 @@ namespace YuiPhysicalAI.LocalAI
                             YuiLocalAiCapability.Translation,
                             YuiLocalAiCapability.Extraction
                         },
-                        EnabledByDefault = false,
+                        EnabledByDefault = true,
                         DownloadRequired = true,
-                        MemoryBudgetMb = 2600,
-                        DiskBudgetMb = 3400,
-                        Priority = 8,
+                        MemoryBudgetMb = 4000,
+                        DiskBudgetMb = 3660,
+                        Priority = 12,
                         StartupPolicy = YuiLocalAiStartupPolicy.WarmTextOnly,
-                        Platforms = new[] { "macos" },
-                        Notes = "Desktop offline default chat candidate for Mac/Windows. Keep out of the mobile default package because its memory footprint can prevent repeated local TTS/chat turns."
+                        Platforms = new[] { "ios", "macos" },
+                        Notes = "Optional higher-quality conversation model. Longer responses and increased device load."
                     },
                     new YuiLocalAiModelPack
                     {
@@ -88,6 +93,10 @@ namespace YuiPhysicalAI.LocalAI
                         ModelId = "litert-community/gemma-4-E2B-it-litert-lm",
                         Format = "litert-lm",
                         RuntimeModelRef = "gemma-4-E2B-it.litertlm",
+                        SupportsThinking = true,
+                        ThinkingTokenBudget = 128, WorkThinkingTokenBudget = 768, TalkOutputTokenBudget = 512,
+                        WorkOutputTokenBudget = 1536,
+                        Sha256 = "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c",
                         DeploymentKind = YuiLocalAiDeploymentKind.OnDeviceEmbedded,
                         Capabilities = new[]
                         {
@@ -110,11 +119,23 @@ namespace YuiPhysicalAI.LocalAI
                         Id = "stt_gemma4_e2b_desktop", DisplayName = "Gemma 4 E2B Speech Recognition",
                         Provider = "google-litert-lm", ModelId = "litert-community/gemma-4-E2B-it-litert-lm",
                         Format = "litert-lm", RuntimeModelRef = "gemma-4-E2B-it.litertlm",
+                        SupportsThinking = true,
                         DeploymentKind = YuiLocalAiDeploymentKind.OnDeviceEmbedded,
                         Capabilities = new[] { YuiLocalAiCapability.Transcription }, EnabledByDefault = true,
                         DownloadRequired = true, MemoryBudgetMb = 1800, DiskBudgetMb = 0, Priority = 12,
                         StartupPolicy = YuiLocalAiStartupPolicy.OnDemand, Platforms = new[] { "macos", "windows" },
                         Notes = "Reuses the chat model for offline Japanese transcription; no additional download or server."
+                    },
+                    new YuiLocalAiModelPack
+                    {
+                        Id = "vision_gemma4_e4b", DisplayName = "Gemma 4 E4B LiteRT-LM Vision",
+                        Provider = "google-litert-lm", ModelId = "litert-community/gemma-4-E4B-it-litert-lm",
+                        Format = "litert-lm", RuntimeModelRef = "gemma-4-E4B-it.litertlm",
+                        DeploymentKind = YuiLocalAiDeploymentKind.OnDeviceEmbedded,
+                        Capabilities = new[] { YuiLocalAiCapability.Vision }, EnabledByDefault = true,
+                        DownloadRequired = true, MemoryBudgetMb = 4000, DiskBudgetMb = 0, Priority = 10,
+                        StartupPolicy = YuiLocalAiStartupPolicy.OnDemand, Platforms = new[] { "ios" },
+                        Notes = "Shares the Apple-hosted E4B model with chat."
                     },
                     new YuiLocalAiModelPack
                     {
@@ -124,6 +145,7 @@ namespace YuiPhysicalAI.LocalAI
                         ModelId = "litert-community/gemma-4-E2B-it-litert-lm",
                         Format = "litert-lm",
                         RuntimeModelRef = "gemma-4-E2B-it.litertlm",
+                        SupportsThinking = true,
                         DeploymentKind = YuiLocalAiDeploymentKind.OnDeviceEmbedded,
                         Capabilities = new[] { YuiLocalAiCapability.Vision },
                         EnabledByDefault = true,

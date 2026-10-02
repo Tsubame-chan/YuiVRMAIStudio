@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using UnityEngine;
 using Newtonsoft.Json;
 
 namespace YuiPhysicalAI.LocalAI
@@ -12,11 +13,22 @@ namespace YuiPhysicalAI.LocalAI
     {
         private readonly YuiLocalAiModelRegistry registry;
         private readonly bool bridgeAvailable;
+        private readonly Func<YuiLocalAiModelPack, CancellationToken, Task<string>> resolveModel;
+        private readonly Func<YuiGoogleAiEdgeBridgeRequest, CancellationToken, YuiGoogleAiEdgeBridgeResponse> invokeBridge;
 
         public YuiGoogleAiEdgeLocalAiRuntime(YuiLocalAiModelRegistry registry)
+            : this(registry, YuiLocalAiModelPathResolver.EnsureLocalFileAsync, YuiGoogleAiEdgeBridge.Invoke,
+                YuiGoogleAiEdgeBridge.IsSupported) { }
+
+        public YuiGoogleAiEdgeLocalAiRuntime(YuiLocalAiModelRegistry registry,
+            Func<YuiLocalAiModelPack, CancellationToken, Task<string>> resolveModel,
+            Func<YuiGoogleAiEdgeBridgeRequest, CancellationToken, YuiGoogleAiEdgeBridgeResponse> invokeBridge,
+            bool bridgeAvailable)
         {
             this.registry = registry ?? new YuiLocalAiModelRegistry(Array.Empty<YuiLocalAiModelPack>());
-            bridgeAvailable = YuiGoogleAiEdgeBridge.IsSupported;
+            this.resolveModel = resolveModel ?? throw new ArgumentNullException(nameof(resolveModel));
+            this.invokeBridge = invokeBridge ?? throw new ArgumentNullException(nameof(invokeBridge));
+            this.bridgeAvailable = bridgeAvailable;
         }
 
         public string RuntimeName => "litert-lm";
@@ -110,13 +122,17 @@ namespace YuiPhysicalAI.LocalAI
             }
 
             TResponse lastFailure = null;
+            TResponse firstRuntimeFailure = null;
             foreach (var pack in packs)
             {
+                var isWork = string.Equals((request as YuiLocalAiChatRequest)?.Mode,"work",StringComparison.OrdinalIgnoreCase);
+                // PlayerPrefs is captured before dispatching the native worker.
+                var options = YuiLocalModelOptions.Load(pack,isWork);
                 string modelPath;
                 string cacheDirectory;
                 try
                 {
-                    modelPath = await YuiLocalAiModelPathResolver.EnsureLocalFileAsync(pack, cancellationToken);
+                    modelPath = await resolveModel(pack, cancellationToken);
                     cacheDirectory = YuiLocalAiModelPathResolver.RuntimeCacheDirectory(pack);
                     Directory.CreateDirectory(cacheDirectory);
                     YuiLocalAiRuntimeCachePruner.PruneForActivePack(pack, cacheDirectory);
@@ -138,21 +154,34 @@ namespace YuiPhysicalAI.LocalAI
                     {
                         cancellationToken.ThrowIfCancellationRequested();
                         var chatRequest = request as YuiLocalAiChatRequest;
-                        var bridgeResponse = YuiGoogleAiEdgeBridge.Invoke(new YuiGoogleAiEdgeBridgeRequest
+                        var inferenceTimer=System.Diagnostics.Stopwatch.StartNew();
+                        Debug.Log($"Local AI request: model={pack.Id}, mode={(isWork?"work":"talk")}, context={options.ContextTokens}, output={options.OutputTokens}, thinking={options.ThinkingTokens}, temperature={options.Temperature}, top_k={options.TopK}, top_p={options.TopP}, deadline={options.TimeoutSeconds}s");
+                        var bridgeResponse = invokeBridge(new YuiGoogleAiEdgeBridgeRequest
                         {
                             Capability = capability.ToString(),
                             ModelPackId = pack.Id,
                             ModelPath = modelPath,
                             CacheDirectory = cacheDirectory,
                             RuntimeModelRef = pack.RuntimeModelRef,
-                            SystemInstruction = chatRequest?.SystemInstruction,
+                            SupportsThinking = pack.SupportsThinking,
+                            ThinkingTokenBudget = options.ThinkingTokens,
+                            MaxOutputTokens = options.OutputTokens,
+                            ContextTokens = options.ContextTokens,
+                            TimeoutSeconds = options.TimeoutSeconds,
+                            Temperature = options.Temperature, TopK = options.TopK, TopP = options.TopP,
+                            SupportsSpeculativeDecoding = pack.SupportsSpeculativeDecoding,
+                            SystemInstruction = (chatRequest?.SystemInstruction??"")+
+                                (string.IsNullOrWhiteSpace(options.CustomPrompt)?"":"\nユーザーが設定したLLMへの追加指示（標準の口調・書式より優先）:\n"+options.CustomPrompt),
                             PayloadJson = JsonConvert.SerializeObject(request)
                         }, cancellationToken);
+                        Debug.Log($"Local AI completed: model={pack.Id}, ok={bridgeResponse.Ok}, error={bridgeResponse.ErrorCode}, elapsed_ms={inferenceTimer.ElapsedMilliseconds}");
                         cancellationToken.ThrowIfCancellationRequested();
 
                         if (!bridgeResponse.Ok)
                         {
                             var errorCode = bridgeResponse.ErrorCode;
+                            if (string.Equals(errorCode, "cancelled", StringComparison.Ordinal))
+                                throw new OperationCanceledException("Local AI generation stopped.", cancellationToken);
                             if (capability == YuiLocalAiCapability.Vision
                                 && IsRecoverableVisionBridgeFailure(errorCode))
                             {
@@ -180,10 +209,13 @@ namespace YuiPhysicalAI.LocalAI
                     return response;
                 }
 
+                // A missing optional fallback must not hide the failure of an installed model.
+                if (firstRuntimeFailure == null && !string.Equals(response.ErrorCode,
+                    "model_file_missing", StringComparison.OrdinalIgnoreCase)) firstRuntimeFailure = response;
                 lastFailure = response;
             }
 
-            return lastFailure ?? await Unsupported<TResponse>(capability);
+            return firstRuntimeFailure ?? lastFailure ?? await Unsupported<TResponse>(capability);
         }
 
         private static Task<TResponse> Unsupported<TResponse>(YuiLocalAiCapability capability)
@@ -213,7 +245,12 @@ namespace YuiPhysicalAI.LocalAI
 
         private IEnumerable<YuiLocalAiModelPack> CandidatePacks(YuiLocalAiCapability capability)
         {
-            return registry.EnabledFor(capability).Where(IsGoogleAiEdgePack);
+            var candidates = registry.EnabledFor(capability).Where(IsGoogleAiEdgePack);
+            var selected = YuiLocalModelSelection.SelectedId;
+            if (capability == YuiLocalAiCapability.Chat) return YuiLocalModelSelection.Order(candidates, selected);
+            var selectedPack = registry.Packs.FirstOrDefault(pack => pack.Id == selected);
+            return selectedPack == null ? candidates : candidates.OrderBy(pack =>
+                pack.RuntimeModelRef == selectedPack.RuntimeModelRef ? 0 : 1).ThenBy(pack => pack.Priority);
         }
 
         private static bool CanTryNextModelPack(YuiLocalAiResponse response)

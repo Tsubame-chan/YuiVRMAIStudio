@@ -22,8 +22,8 @@ namespace YuiPhysicalAI.UI
             var rect = (RectTransform)transform;
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(.5f,0);
             var width = Mathf.Min(1080,size.x*.94f);
-            var height = Mathf.Min(size.y*.78f,Mathf.Max(530,size.y*(work ? .49f : .34f)));
-            rect.sizeDelta = new Vector2(width,height); rect.anchoredPosition = new Vector2(0,size.y*.035f);
+            var height = Mathf.Min(size.y*.78f,Mathf.Max(530,size.y*(work ? .49f : .40f)));
+            rect.sizeDelta = new Vector2(width,height); rect.anchoredPosition = new Vector2(0,size.y*(work ? .035f : .02f));
             ConversationRect(transform.Find("ChatInteractionMode"),24,height-96,238,80);
             ConversationRect(statusText?.transform,282,height-100,width-548,88);
             ConversationRect(historyButton?.transform,width-238,height-96,120,80);

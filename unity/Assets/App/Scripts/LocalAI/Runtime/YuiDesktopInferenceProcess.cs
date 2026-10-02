@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 using YuiPhysicalAI.Backend;
+using Newtonsoft.Json.Linq;
 
 namespace YuiPhysicalAI.LocalAI
 {
@@ -42,6 +43,7 @@ namespace YuiPhysicalAI.LocalAI
             if (string.IsNullOrEmpty(python) || string.IsNullOrEmpty(worker))
                 throw new InvalidOperationException("端末内AIの実行データが未準備です。設定からデータを取得してください。");
             token.ThrowIfCancellationRequested();
+            var timeoutSeconds=Mathf.Clamp((int?)JObject.Parse(requestJson)["timeout_seconds"]??120,30,600);
             var start = new ProcessStartInfo {
                 FileName = python, Arguments = QuoteArgument(worker), UseShellExecute = false,
                 RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
@@ -59,11 +61,11 @@ namespace YuiPhysicalAI.LocalAI
                 // Do not put conversation text in command-line arguments or write it to disk.
                 var bytes = Encoding.UTF8.GetBytes(requestJson);
                 var writing = process.StandardInput.BaseStream.WriteAsync(bytes, 0, bytes.Length, token);
-                while (!writing.IsCompleted) { token.ThrowIfCancellationRequested(); if (timer.Elapsed.TotalSeconds > 120) throw new TimeoutException("端末内AIの応答がタイムアウトしました。"); Thread.Sleep(20); }
+                while (!writing.IsCompleted) { token.ThrowIfCancellationRequested(); if (timer.Elapsed.TotalSeconds > timeoutSeconds) throw new TimeoutException("端末内AIの応答がタイムアウトしました。"); Thread.Sleep(20); }
                 writing.GetAwaiter().GetResult(); process.StandardInput.Close();
                 while (!process.WaitForExit(50)) {
                     token.ThrowIfCancellationRequested();
-                    if (timer.Elapsed.TotalSeconds > 120) throw new TimeoutException("端末内AIの応答がタイムアウトしました。もう一度お試しください。");
+                    if (timer.Elapsed.TotalSeconds > timeoutSeconds) throw new TimeoutException("端末内AIの応答がタイムアウトしました。もう一度お試しください。");
                 }
                 token.ThrowIfCancellationRequested();
                 if (process.ExitCode != 0) throw new InvalidOperationException("端末内AIが終了しました (" + process.ExitCode + ")。実行データと空きメモリを確認してください。");

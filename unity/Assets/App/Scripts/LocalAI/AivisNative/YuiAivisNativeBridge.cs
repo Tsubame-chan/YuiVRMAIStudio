@@ -44,7 +44,9 @@ namespace YuiPhysicalAI.LocalAI
             get
             {
 #if UNITY_IOS && !UNITY_EDITOR
-                return true;
+                // The first public iOS beta ships VOICEVOX; Aivis remains
+                // available in personal builds for future optimization work.
+                return YuiPhysicalAI.Core.YuiBuildProfile.Current != YuiPhysicalAI.Core.YuiBuildProfile.Public;
 #elif UNITY_ANDROID && !UNITY_EDITOR
                 return true;
 #else
@@ -67,7 +69,8 @@ namespace YuiPhysicalAI.LocalAI
             });
 
 #if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
-            var nativeRuntimeLinked = TryGetNativeStatus(payload, out var nativeStatus);
+            YuiAivisNativeStatus nativeStatus = null;
+            var nativeRuntimeLinked = IsPlatformSupported && TryGetNativeStatus(payload, out nativeStatus);
             var status = YuiAivisNativeStatus.FromCoreStatus(
                 YuiAivisCoreProbe.Evaluate(root, nativeRuntimeLinked, RuntimePlatformName()));
 

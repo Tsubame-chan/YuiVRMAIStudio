@@ -294,6 +294,9 @@ namespace YuiPhysicalAI.Api
         [JsonProperty("custom_instruction")]
         public string CustomInstruction { get; set; } = "";
 
+        [JsonProperty("response_instruction")]
+        public string ResponseInstruction { get; set; } = "";
+
         [JsonProperty("character_name")]
         public string CharacterName { get; set; } = "";
     }

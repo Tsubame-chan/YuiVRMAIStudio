@@ -1,75 +1,86 @@
 # Yui VRM AI Studio
 
-[English](README.en.md)
+[English](README.en.md) · [ヘルプ・FAQ](docs/HELP.md) · [不具合報告](https://github.com/Tsubame-chan/YuiVRMAIStudio/issues)
 
-VRMアバターと、文字・音声・画像で会話するUnityアプリです。公開用のデフォルトアバターを使うほか、自分のVRMを読み込めます。
+**自分のVRMアバターとAIチャット。**
 
-## 配布版と現在のソース
+お気に入りのアバターを会話相手にして、雑談や相談、ちょっとした作業を一緒に。性格や話し方は文章で自由に設定できます。会話の合間には、好きな角度からアバターを鑑賞できます。
 
-| 対象 | 状態 |
+<p>
+  <img src="docs/images/avatar-chat.jpg" width="300" alt="自分のアバターとAIチャット：実際に発話するUnityちゃん">
+  <img src="docs/images/avatar-viewer.jpg" width="300" alt="360度回転・拡大でアバターを鑑賞">
+</p>
+
+画像は付属Unityちゃんを使った実アプリのMac描画です。端末・ウィンドウサイズによって画面配置が変わります。
+
+## ダウンロード
+
+| 対象 | 入手先・状態 |
 | --- | --- |
-| Windows / macOSの実行アプリ | [v0.2.0-beta.5](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.0-beta.5)を配布中 |
-| このリポジトリのmain | 2026-09-23時点の改修ソース。beta.5より新しく、同じ動作・画面ではありません |
-| [ソース検証用スナップショット](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/dev-snapshot-20260923) | 追加の標準VOICEVOXモデルと規約。完成アプリの配布ではありません |
-| iOS / Android | 実装・検証用ソースあり。ストア公開版はありません |
+| macOS / Windows | [v0.2.4-beta.1](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.1) |
+| iPhone / iPad | 0.2.4 (14)をApp Store審査へ提出済み。承認後、日本で無料公開予定。[App Store予定ページ](https://apps.apple.com/jp/app/id6815341780)（公開後に利用可） |
+| Android | 開発用ソースあり。配布・実機受入は未完了 |
 
-`Code → Download ZIP`には実行アプリや大型AIモデルは入りません。アプリを試す場合はbeta.5のReleaseを利用してください。最新ソースの実機検証は継続中です。[確認済み範囲と既知の制限](docs/SOURCE_STATUS.md)を参照してください。
+デスクトップ版はReleaseからOSに合うアプリZIPを展開して起動します。初回は確認画面からAI・音声・実行環境データを取得します。Wi-Fiと十分な空き容量をご用意ください。取得後の端末内AIとの会話にインターネット接続は不要です。
 
-## アプリを試す
+**`Code → Download ZIP`は開発者向けのソースです。実行アプリや大型モデルは含みません。**
 
-beta.5のReleaseから、OSに合うファイルを展開して起動します。
+導入手順: [macOS](docs/MAC_PUBLIC_BETA.md) / [Windows](docs/SETUP_GUIDE.md)。macOS配布物はApple Silicon向けの実行環境を使用し、署名・公証は未整備です。Windows版もベータとして提供します。
 
-- macOS: `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.5_macos.zip`
-- Windows: `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.5_windows.zip`
+## あなたの会話相手を作る
 
-初回ダウンロードでLocal AI / VOICEVOX / OS別Backend bundleを取得します。Releaseのmanifest・分割ZIP・SHA-256はその配布版の組み合わせです。別版のファイルを混ぜないでください。
+- **好きな外見へ。** VRM 0.x / 1.0を読み込み、キャラクターや衣装を切り替えられます。まばたき・口パク・対応する揺れを表示します。
+- **性格と応答を調整。** キャラクターごとの性格・口調、AI共通の回答方針、ローカルモデル別の追加指示を組み合わせます。ローカルAIではコンテキスト、生成・推論上限、温度などもTalk/Work別に設定できます。
+- **会話を重ねる。** 記憶はキャラクターごとに端末へ保存。再起動や端末内AI／APIの切替後も参照し、確認・編集・削除できます。別キャラクターとは共有しません。
+- **用途に合わせる。** Talkは短い会話、Workは詳しい説明や作業支援。テキスト・マイク・画像入力、回答の保存・読み上げに対応します。
+- **デジタルフィギュアとして。** 鑑賞モードで360°回転・拡大。日英UIと、ヘルプから再表示できる4ページのチュートリアルがあります。
 
-詳しくは[Windows設定](docs/SETUP_GUIDE.md)、[macOS設定](docs/MAC_PUBLIC_BETA.md)、[大型データの扱い](docs/LOCAL_AI_ASSETS.md)へ。
+<details>
+<summary>性格・モデル設定とオフライン会話の画面を見る</summary>
 
-## 現在のソースにある機能
+<p>
+  <img src="docs/images/customization.jpg" width="300" alt="キャラクターの性格とAIの応答設定">
+  <img src="docs/images/offline-chat.jpg" width="300" alt="標準2Bと任意4Bモデルの選択">
+</p>
 
-- VRM 0.x / 1.0の読み込み、キャラクターと衣装の管理、口パク・まばたき・Humanoid待機姿勢の補正。
-- `Talk`の短い会話、`Work`の詳しい画面出力と要点の読み上げ。
-- テキスト、マイク、画像の入力。モバイルのクリップは写真選択を開きます。撮影は標準カメラで行ってから添付します。PCには画像/カメラ選択があります。
-- 端末内Gemma、Direct OpenAI API、Backend経由のAI。AIと音声エンジンは独立して選べます。
-- 端末会話履歴、回答の保存・読み上げ、Secret Mode。
-- 日本語/English、共通フォント、Soft Gradient背景、接続状態の確認。
-- Backend経由のweb検索、音声・画像処理。Realtime会話/翻訳は詳細設定にある実験機能です。
+</details>
 
-すべての機能がすべてのOS・端末で検証済みという意味ではありません。必要なモデル・ネイティブ実行環境・サービスの有無によって選択肢が変わります。
+## AIと音声を選ぶ
 
-## AIと音声
-
-| 経路 | 必要なもの |
+| 会話の方法 | 特徴・必要なもの |
 | --- | --- |
-| 端末内AI | 対応するGemmaモデルとOS別ランタイム |
-| Direct OpenAI | 設定画面のOpenAI APIキー。PC Backend不要、API利用料あり |
-| Backend AI | 起動済みのYui Backendと、そのサービス側の設定 |
-| 端末内VOICEVOX | Core・辞書・音声モデル |
-| Backend VOICEVOX / AivisSpeech / HTTP TTS | 接続先に導入・設定された音声エンジン |
+| 端末内AI | 標準Gemma 4 E2B。macOS / iOSではE4Bを設定から任意取得でき、回答品質と引き換えに容量・負荷・応答時間が増えます |
+| OpenAI API | より高品質な会話に推奨。APIキー、通信、API利用料金が必要です。ChatGPTの有料プランとは別です |
+| PC Backend | 任意の拡張経路。設定済みのTTS/STT、検索などを利用できます。CLIでの管理と実験的機能を含みます |
 
-アプリ内のOpenAIキーは直接接続用です。Backendの`.env`のキーとは独立し、アプリのキーをBackendへ転送しません。端末内AIでも、接続可能なBackendがあればBackendの音声を使えます。
+AIと音声エンジンは独立して選べます。端末内音声は日本語VOICEVOXの標準5声。英語UIはありますが、英語専用TTSはまだ同梱していません。Backendで設定した追加の音声エンジンも利用できます。
 
-beta.5の初回音声モデルは冥鳴ひまりです。最新ソース用の標準5声データは別スナップショットにあります。追加手順は[ソースの状態](docs/SOURCE_STATUS.md#音声データ)。macOSのAivisSpeech HDはbeta.5 manifestが参照するbeta.3の追加パックとして公開済みで、追加音声のダウンロードから取得できます。IrodoriとWindows用追加音声は同manifestにありません。
+アプリのOpenAIキーは直接接続用で、Backendの`.env`とは別です。アプリのキーをBackendへ転送しません。デスクトップの初回取得にはローカル推論workerを含む実行環境も入りますが、端末内AIはBackendサーバーの起動を必要としません。
 
-## 自分のアバター
+## アバターを持ち込む
 
-最新ソースでは「設定 → キャラクター → アバターを読み込む」からVRMを選択します。「マイキャラクター → 着替え」は人格を保ったまま別の外見へ切り替える機能です。
+「設定 → キャラクター → アバターを読み込む」からVRMを選びます。「マイキャラクター → 着替え」は、人格を保ったまま外見だけ変える機能です。
 
-VRChat用のアバターは、衣装・体型・シェーダーを設定したUnityプロジェクトから既存の変換ツールでVRMへ書き出します。VRChatの独自シェーダー、衣装メニュー、接触ギミック等の完全再現には対応しません。`.unitypackage`・購入ZIP・FBXをそのまま読み込むこともできません。[アバター導入ガイド](docs/AVATAR_IMPORT.md)を参照してください。
+Unity／VRChat向けアバターは、設定済みのUnityプロジェクトからVRMへ書き出してください。購入ZIP、`.unitypackage`、FBXは直接読み込めません。独自シェーダー・衣装メニュー・PhysBone等の完全再現は保証しません。利用権のあるモデルをご使用ください。[アバター導入ガイド](docs/AVATAR_IMPORT.md)へ。
 
-## 保存とプライバシー
+## 記憶とプライバシー
 
-最新ソースのApple向け実装はAPIキーをKeychainへ保存し、外部AI / Backendへの初回送信前に確認を表示します。Secret Modeも、選んだ外部サービスへの通信自体を停止するものではありません。beta.5へこれらの変更が遡って反映されるわけではありません。[プライバシー説明](docs/PRIVACY.md)を確認してください。
+シークレットモードでは選択中のキャラクターの既存記憶を参照できますが、新しい会話は履歴・記憶へ保存しません。解除後に内緒話を引き継ぐこともありません。記憶は端末間では同期しません。
 
-## 開発・検証
+外部AIを選んだ場合は、会話や関連する性格設定・記憶などを送信します。シークレットモードも外部送信を止める機能ではありません。Apple版のAPIキーはKeychainに保存します。詳しくは[プライバシー](docs/PRIVACY.md)。
 
-Unity 2022.3.62f3を使用しています。モデル重みや生成済みビルド、利用者のアバター・履歴・秘密値はGit管理に含めません。
+**AIの回答と記憶の参照には誤りがあります。** ローカルモデルは主語の混同や知識・計算の誤答が残ります。大きいモデルや設定の変更も正確さを保証しません。重要な内容は確認してください。
 
-- [ソースの状態・データ・検証上の制限](docs/SOURCE_STATUS.md)
-- [実行環境の対応状況](docs/RUNTIME_SUPPORT.md)
-- [品質と検証](docs/QUALITY_AND_VALIDATION.md)
-- [公開Playerのアセット検査](docs/PUBLIC_PLAYER_ASSET_VALIDATION.md)
+## 開発・詳しい仕様
+
+Unity **2022.3.62f3** / UniVRM **0.131.2**。Unity 6への移行はまだ行っていません。公開版の標準アバターはUnityちゃんで、私用アバター・キー・会話データを配布しません。モデル、生成ビルド、端末別SDK・署名設定はソースとは別に必要です。
+
+- [ソースと検証の現在地](docs/SOURCE_STATUS.md)
+- [OS別の対応と制限](docs/RUNTIME_SUPPORT.md)
+- [モデル・音声データ](docs/LOCAL_AI_ASSETS.md)
+- [会話・キャラクター・記憶](docs/CONVERSATION_IDENTITY.md)
+- [品質と公開アセット監査](docs/QUALITY_AND_VALIDATION.md)
+- [情報・データの配信方針](docs/DISTRIBUTION.md)
 - [API仕様](docs/api.md)
 
-ソース取得だけで全OSの完成アプリが生成できるとは限りません。OS別SDK、ネイティブライブラリ、大型モデル、署名設定を揃えてビルド・実機確認してください。
+すべてのOS・端末で同じ受入が完了しているわけではありません。配布物とソースの検証範囲は上記の資料で区別しています。

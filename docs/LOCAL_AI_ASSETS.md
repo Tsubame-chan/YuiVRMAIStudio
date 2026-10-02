@@ -1,48 +1,41 @@
 # Local AI and TTS assets
 
-Large model weights, dictionaries and generated apps are distributed through GitHub Releases, not Git. This page separates the published beta.5 downloads from the newer source snapshot.
+Current desktop data: [v0.2.4-beta.1](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.1), asset version **2026.10.03**. Large weights, dictionaries and generated apps are Release assets, not Git source. Older beta.5/snapshot data remains unchanged and should not be mixed with this release.
 
-## Published downloads
+## Normal installation
 
-The [beta.5 release](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.0-beta.5) contains Windows/macOS apps, the first-run manifest, Local AI data and platform Backend bundles. The first-run downloader verifies and installs the selected assets.
+Download the app ZIP for your OS. The desktop app asks before fetching its required data, verifies SHA-256, extracts into staging, checks required files and records installed versions. It uses the manifest pinned to its own release. Normally you do not manually join files or install Python.
 
-The beta.5 Local AI archive includes:
+The common archive is approximately **2.46GB**, split into two `.part-*` files to stay below GitHub's per-file limit. It contains standard E2B, four VOICEVOX VVM files for five standard voices, the Open JTalk dictionary, license notices and the model catalog. macOS/Windows runtime bundles are separate, approximately **76MB / 67MB**. They include the local inference worker and Backend source; local inference does not require its HTTP server.
 
-- `Models/gemma-4-E2B-it.litertlm`
-- `Voicevox/Models/meimei_himari_1.vvm`
-- `Voicevox/open_jtalk_dic_utf_8-1.11/`
-- its model registry file
+| Standard voice | Style ID | VVM |
+| --- | --- | --- |
+| 冥鳴ひまり / Meimei Himari | 14 | meimei_himari_1.vvm |
+| 四国めたん / Shikoku Metan | 2 | metan_zundamon_0.vvm |
+| ずんだもん / Zundamon | 3 | metan_zundamon_0.vvm |
+| 九州そら / Kyushu Sora | 16 | kyushu_sora_2.vvm |
+| 小夜/SAYO | 46 | sayo_15.vvm |
 
-The manifest also references the **macOS AivisSpeech HD add-on hosted under beta.3**. That archive exists, and its GitHub digest matches the beta.5 manifest. Additional Voices downloads it when applicable. It contains the selected voices, runtime and Japanese BERT dependency. It is not an iOS/Android add-on.
+The app exposes standard styles only; VVMs may contain shared weights for other styles. Follow the individual terms in `Voicevox/Licenses` and credit speech output as required. The archive does not include voice-character artwork or private avatars.
 
-Irodori and Windows voice add-ons are not present in this manifest. Their source adapters do not imply that their runtime data is shipped.
+macOS/iOS offer optional E4B in Settings. macOS uses the model catalog's HTTPS source; iOS uses Apple-Hosted Background Assets. iOS includes the standard E2B/voice data and has no mandatory first-run extra download. Desktop and iOS distribution are different. Additional experimental voice packs are not included in this manifest.
 
-## Current source: five standard voices
+## Restore source-build data
 
-The [source snapshot](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/dev-snapshot-20260923) contains `Yui_StandardVoices_20260923.zip` and a checksum. It adds the four VVM files used by the five standard voices in current source. See [SOURCE_STATUS.md](SOURCE_STATUS.md) for IDs, model names and limitations.
-
-This separate archive is for source validation. Beta.5's downloader is unchanged and does not install it automatically. It is not a replacement for Gemma, the dictionary, native libraries or the Backend bundle.
-
-## Restore data for source builds
-
-1. Download both `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.5.zip.part-*` files and the matching `.sha256` from beta.5.
-2. Join the parts in filename order and verify the resulting archive against the manifest/checksum. Extract it to a temporary directory.
-3. Copy its `Models` and `Voicevox` data into `unity/Assets/StreamingAssets/YuiLocalAI/`. Keep the current source's `local_ai_model_packs.json`; do not replace it with an older registry.
-4. Verify the new standard-voices ZIP checksum and extract it at the repository root. Its paths already start with `unity/Assets/StreamingAssets/YuiLocalAI/Voicevox/`.
-5. Prepare the OS-specific native runtime/SDK and build. Mobile build guards require all declared bundled files; compiling without model data is not a working mobile application.
-
-Example on macOS/Linux, after downloading into one directory:
+Download both common `.part-*` files and the matching `.sha256`, join them in filename order, then verify. On macOS/Linux:
 
 ```bash
-cat YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.5.zip.part-* > YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.5.zip
-shasum -a 256 -c YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.0-beta.5.zip.sha256
-shasum -a 256 -c Yui_StandardVoices_20260923.zip.sha256
+cat YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.4-beta.1.zip.part-* > YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.4-beta.1.zip
+shasum -a 256 -c YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.4-beta.1.zip.sha256
+unzip YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.4-beta.1.zip -d restored-data
 ```
 
-Voice output must follow the included individual voice terms and credits. VVM files share several styles; only supported standard styles are exposed by the app. No character artwork is included in the voice snapshot.
+Copy the extracted `Models`, `Voicevox` and matching catalog into `unity/Assets/StreamingAssets/YuiLocalAI/`. Inspect the ZIP's directory layout first; do not blindly overwrite other project files. Prepare OS-specific SDK/native libraries/runtime separately. Compiling without required mobile data is not a usable mobile build.
 
-## Backend and distribution boundary
+Runtime archives are delivered as `.zip.part-000` plus checksum. For manual recovery, copy/join parts into the manifest's full `.zip` filename and verify the full SHA-256; keep the `YuiBackend` directory layout. A source build's local `.venv` is not interchangeable with every shipped OS runtime.
 
-Backend source lives in `backend/`. The beta.5 Backend bundles are older than current main; use the current Backend source when testing current code. Never ship a local `.env`, conversation DB, generated speech or user cache.
+## Release policy
 
-Packaging scripts explicitly select the reviewed model files. `package_minimum_local_ai_assets_macos.sh` packages source-build data; `package_desktop_local_ai_release_assets_macos.sh` packages runtime data and its manifest. Both require the assets to be restored first. Use a new version/output directory for a new candidate and verify its app, Backend, model archives and checksums together. Do not overwrite old released archives.
+Never ship `.env`, conversation databases, generated speech, private avatars or user caches. Use a fresh public source and new release/output directory, validate app/data/runtime together, and do not overwrite old releases. See [distribution architecture](DISTRIBUTION.md), [public asset validation](PUBLIC_PLAYER_ASSET_VALIDATION.md) and [runtime support](RUNTIME_SUPPORT.md).
+
+日本語: 通常はOS別アプリZIPだけ取得し、初回案内から必要データを導入します。GitのソースZIPにモデルはありません。標準はE2Bと日本語5声。macOS/iOSのE4Bは任意です。iOSは標準データ同梱、desktopは初回取得という違いがあります。異なる版のmanifest/runtime/モデルを手動で混ぜないでください。

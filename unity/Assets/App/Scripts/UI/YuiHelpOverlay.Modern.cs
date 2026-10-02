@@ -142,14 +142,23 @@ namespace YuiPhysicalAI.UI
             }
             else if (guideVisible)
             {
+                var tutorial = modernContent.Find("Tutorial")?.GetComponent<Button>();
+                if (tutorial == null) tutorial = HelpButton(modernContent, "Tutorial", YuiSimpleDialog.L("チュートリアルをもう一度見る", "Show tutorial again"), () => { Hide(); YuiTutorial.Show(); });
+                YuiUiLocalization.Set(tutorial.GetComponentInChildren<Text>(),YuiSimpleDialog.L("チュートリアルをもう一度見る", "Show tutorial again"));
+                tutorial.gameObject.SetActive(true); RowRect((RectTransform)tutorial.transform, top, 88); top += 100;
+                Guide(YuiSimpleDialog.L("端末内AIを選ぶ", "Choose on-device AI"), YuiSimpleDialog.L("標準の2Bは同梱済みです。設定の「端末内AI」から、より高品質な4Bを追加ダウンロードできます。4Bは応答時間・必要容量・端末の負荷が増えます。取得中もアプリを使え、完了後に自分で切り替えられます。", "Standard 2B is included. Download the more capable 4B from On-device AI in Settings. It needs more time, storage and memory. Keep using the app during download, then select it when ready."), ref top, "LocalModelsGuide");
+                Guide(YuiSimpleDialog.L("推奨: OpenAI APIで会話", "Recommended: OpenAI API"), YuiSimpleDialog.L("高品質な会話には、設定 → AIのOpenAI APIをおすすめします。OpenAI APIキーとインターネット接続が必要で、通信料とOpenAIのAPI利用料金がかかります。ChatGPTの月額プランとは別料金です。", "For high-quality conversations, choose OpenAI API in Settings → AI. It requires an OpenAI API key and internet access. Data charges and OpenAI API fees apply, separately from a ChatGPT subscription."), ref top, "RecommendedApiGuide");
+                Guide(YuiSimpleDialog.L("性格と回答の方針", "Personality and response style"), YuiSimpleDialog.L("設定 → キャラクターの「キャラクターの性格・口調」で役柄や話し方を指定します。設定 → AIの「回答の方針」で結論を先にするなどの回答形式を指定します。両方ともAPIと端末内AIに引き継ぎます。変更した設定は保存してください。", "Set role and tone under Settings → Character → Character personality / Tone. Set answer format under Settings → AI → Response style. Both apply to API and on-device AI. Save your settings after editing."), ref top, "PersonalityGuide");
+                Guide(YuiSimpleDialog.L("端末内AIの詳細設定", "Advanced on-device AI settings"), YuiSimpleDialog.L("端末内AIのモデル選択から「選択中のモデル · 詳細設定」を開けます。モデルごと・Talk/Workごとに、コンテキスト、生成・推論上限、温度、Top K/Top P、待ち時間、LLMへの追加指示を保存できます。値を増やすと応答時間やメモリ使用量が増えます。困ったら「このモードを既定値に戻す」で戻せます。\n\nモデルへの追加指示は、性格・口調と共通の回答方針に加えて読み込まれます。APIには適用しません。", "Open Selected model → Advanced from the on-device model list. Each model has separate Talk/Work settings for context, output/thinking limits, temperature, Top K/Top P, timeout and LLM instructions. Higher limits can use more memory and take longer. Use Reset this mode to restore defaults.\n\nModel instructions are read alongside personality and shared response style. These advanced settings do not apply to API connections."), ref top, "LocalAdvancedGuide");
                 Guide("Talk & Work","Talk keeps replies brief. Work shows a fuller answer and speaks only the key points. Copy or save the full result from its message.",ref top);
                 Guide("Ask, show, listen","Type a message or use Mic. Use the paperclip to choose a photo. On mobile, take a photo with your camera app first. Log is in the console header; avatars are in Settings → Character. Send becomes Stop while a request or voice is active.",ref top);
                 Guide("History","Conversation text stays on this device until you delete it. Open History to browse older messages and saved answers. Secret mode does not save conversations.",ref top);
+                Guide("Character memory","Preferences and promises are stored separately for each character on this device and used by both local AI and API. Settings → Character → Manage character memories lets you add, edit, prioritize or delete them. Only relevant excerpts are passed to the AI; recall is not guaranteed. Conversation history and memory are deleted separately. Backend memories remain on your server.",ref top,"CharacterMemoryGuide");
                 Guide("Search & sources","With OpenAI API or an OpenAI backend, ask Yui to search the web or check today's weather in a named city. Sources opens the returned links. On-device AI works offline and does not search the web.",ref top);
                 Guide("Voice credits", "VOICEVOX:冥鳴ひまり / 四国めたん / ずんだもん / 九州そら / 小夜/SAYO\nVoice use and sharing must follow each voice library’s terms. See https://github.com/VOICEVOX/voicevox_vvm for the terms.", ref top);
                 Guide("Connection & voice","AI and voice are separate choices in Settings. This app's API key is for direct OpenAI access; a backend uses its own key. Voice engines appear when available in your environment.",ref top);
-                Guide("Advanced features","Realtime voice and translation, plus the memory database, require a configured backend. Direct OpenAI supports text, microphone transcription, images and web search without a PC.",ref top);
-                Guide("Private conversation","The crossed-eye button enables Secret mode: Yui does not save conversation history. Requests still use the AI connection you selected.",ref top);
+                Guide("Advanced features","Realtime voice and translation require a configured backend. Direct OpenAI supports text, microphone transcription, images and web search without a PC.",ref top);
+                Guide("Private conversation","Secret mode can use this character’s existing memories, but does not save its conversations or create new memories. Other characters cannot read them. Requests still use your selected AI connection.",ref top);
                 var privacy = modernContent.Find("PrivacyInfo")?.GetComponent<Button>();
                 if (privacy == null) privacy = HelpButton(modernContent, "PrivacyInfo", "Privacy", () => { Hide(); chatPanel?.ShowPrivacyInformation(); });
                 privacy.gameObject.SetActive(true); RowRect((RectTransform)privacy.transform, top, 88); top += 100;
@@ -165,11 +174,11 @@ namespace YuiPhysicalAI.UI
         }
         private void SelectHelpPage(bool guide)
         { avatarGuideVisible=false;guideVisible=guide;RenderModernHelp();modernScroll.verticalNormalizedPosition=1; }
-        private void Guide(string title,string body,ref float top)
+        private void Guide(string title,string body,ref float top,string key=null)
         {
-            var heading=HelpText(modernContent,"Heading"+title,title,YuiUiTypography.Heading,true);
+            var heading=HelpText(modernContent,"Heading"+(key ?? title),title,YuiUiTypography.Heading,true);
             RowRect(heading.rectTransform,top,58);top+=64;
-            var text=HelpText(modernContent,"Body"+title,body,YuiUiTypography.Note,false);text.color=YuiUiTheme.Muted;
+            var text=HelpText(modernContent,"Body"+(key ?? title),body,YuiUiTypography.Note,false);text.color=YuiUiTheme.Muted;
             var width=Mathf.Max(400,modernContent.rect.width);
             var height=Mathf.Max(75,text.cachedTextGeneratorForLayout.GetPreferredHeight(text.text,text.GetGenerationSettings(new Vector2(width,0)))/text.pixelsPerUnit+18);
             RowRect(text.rectTransform,top,height);top+=height+30;

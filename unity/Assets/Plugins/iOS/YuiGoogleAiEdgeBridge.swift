@@ -1,5 +1,6 @@
 import Foundation
 import LiteRTLM
+import UIKit
 
 // A per-request handle also covers cancellation arriving just before native invocation.
 private final class YuiLiteRtRequest {
@@ -22,6 +23,10 @@ private enum YuiLiteRtRequests {
         lock.lock(); defer { lock.unlock() }
         if let existing = requests[id] { return existing }
         let value = YuiLiteRtRequest(); requests[id] = value; return value
+    }
+    static func cancelAll() {
+        lock.lock(); let active = Array(requests.values); lock.unlock()
+        for request in active { request.cancel() }
     }
     static func forget(_ id: String) {
         lock.lock(); requests.removeValue(forKey: id); lock.unlock()
@@ -69,18 +74,21 @@ private func yuiError(_ code: String, _ message: String) -> UnsafePointer<CChar>
     ]))
 }
 
-private func yuiCombinedPrompt(systemInstruction: String, prompt: String) -> String {
-    let trimmedSystemInstruction = systemInstruction.trimmingCharacters(in: .whitespacesAndNewlines)
-    let trimmedPrompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
-    if trimmedSystemInstruction.isEmpty {
-        return trimmedPrompt
+private func yuiChatHistory(_ payload: [String: Any]) -> [Message] {
+    guard let history = payload["History"] as? [[String: Any]] else { return [] }
+    var result: [Message] = []
+    for item in history.suffix(8) {
+        let expected = result.count.isMultiple(of: 2) ? "user" : "assistant"
+        guard item["role"] as? String == expected, let content = item["content"] as? String,
+              !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
+        result.append(Message(String(content.prefix(600)), role: expected == "user" ? .user : .model))
     }
-
-    return "\(trimmedSystemInstruction)\n\n\(trimmedPrompt)"
+    if !result.count.isMultiple(of: 2) { result.removeLast() }
+    return result
 }
 
 private func yuiSamplerTemperature(for capability: String) -> Float {
-    capability == "Chat" ? 0.70 : 0.45
+    capability == "Chat" ? 0.65 : 0.45
 }
 
 private func yuiFileSize(_ path: String) -> UInt64 {
@@ -114,6 +122,61 @@ private actor YuiLiteRtLmEngineStore {
     private var backendName = ""
     private var maxNumTokens = 0
     private var visionEnabled = false
+    private var speculativeEnabled = false
+    private var idleReleaseTask: Task<Void, Never>?
+    private var releaseRequested = false
+    private var lifecycleObservers: [NSObjectProtocol] = []
+    private var inferenceBusy = false
+    private var inferenceWaiters: [(UUID, CheckedContinuation<Void, Error>)] = []
+
+    private init() {
+        for name in [UIApplication.didReceiveMemoryWarningNotification, UIApplication.didEnterBackgroundNotification] {
+            lifecycleObservers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: nil) { _ in
+                // Metal inference cannot continue safely after the app leaves
+                // the foreground. Cancel instead of retrying a model on CPU.
+                if name == UIApplication.didEnterBackgroundNotification { YuiLiteRtRequests.cancelAll() }
+                Task { await YuiLiteRtLmEngineStore.shared.reset() }
+            })
+        }
+    }
+
+    private func acquireInferenceSlot() async throws {
+        try Task.checkCancellation()
+        idleReleaseTask?.cancel()
+        idleReleaseTask = nil
+        if !inferenceBusy { inferenceBusy = true; return }
+        let id = UUID()
+        try await withTaskCancellationHandler(operation: {
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                if Task.isCancelled { continuation.resume(throwing: CancellationError()) }
+                else { inferenceWaiters.append((id, continuation)) }
+            }
+        }, onCancel: { Task { await self.cancelWaiter(id) } })
+    }
+    private func cancelWaiter(_ id: UUID) {
+        guard let index = inferenceWaiters.firstIndex(where: { $0.0 == id }) else { return }
+        inferenceWaiters.remove(at: index).1.resume(throwing: CancellationError())
+    }
+    private func releaseInferenceSlot() {
+        // A lifecycle notification must never destroy an engine in use. Honor
+        // it between requests, before handing the slot to a waiting caller.
+        if releaseRequested { clearEngine() }
+        if inferenceWaiters.isEmpty {
+            inferenceBusy = false
+            idleReleaseTask = Task {
+                do { try await Task.sleep(nanoseconds: 30_000_000_000) }
+                catch { return }
+                self.releaseIdleEngine()
+            }
+        } else {
+            inferenceWaiters.removeFirst().1.resume()
+        }
+    }
+
+    private func releaseIdleEngine() {
+        guard !inferenceBusy else { return }
+        clearEngine()
+    }
 
     func send(
         modelPath requestedModelPath: String,
@@ -121,6 +184,12 @@ private actor YuiLiteRtLmEngineStore {
         backend: Backend,
         maxNumTokens requestedMaxNumTokens: Int,
         prompt: String,
+        systemInstruction: String,
+        history: [Message],
+        outputTokens: Int,
+        supportsThinking: Bool,
+        thinkingTokenBudget: Int,
+        speculativeDecoding: Bool,
         samplerConfig: SamplerConfig
     ) async throws -> String {
         return try await sendContents(
@@ -129,7 +198,13 @@ private actor YuiLiteRtLmEngineStore {
             backend: backend,
             maxNumTokens: requestedMaxNumTokens,
             contents: Contents.of(.text(prompt)),
-            samplerConfig: samplerConfig
+            samplerConfig: samplerConfig,
+            systemInstruction: systemInstruction,
+            history: history,
+            outputTokens: outputTokens,
+            supportsThinking: supportsThinking,
+            thinkingTokenBudget: thinkingTokenBudget,
+            speculativeDecoding: speculativeDecoding
         )
     }
 
@@ -160,31 +235,54 @@ private actor YuiLiteRtLmEngineStore {
         maxNumTokens requestedMaxNumTokens: Int,
         contents: Contents,
         samplerConfig: SamplerConfig,
-        requestedVisionEnabled: Bool = false
+        systemInstruction: String = "",
+        history: [Message] = [],
+        outputTokens: Int = 256,
+        requestedVisionEnabled: Bool = false,
+        supportsThinking: Bool = false,
+        thinkingTokenBudget: Int = 768,
+        speculativeDecoding: Bool = false
     ) async throws -> String {
         let requestedBackendName = backend.rawValue
+        // Actor methods can interleave at await. Keep model replacement and the
+        // SDK's process-wide experimental settings stable for the whole request.
+        try await acquireInferenceSlot()
+        defer { releaseInferenceSlot() }
+        try Task.checkCancellation()
         if engine == nil
             || modelPath != requestedModelPath
             || cacheDir != requestedCacheDir
             || backendName != requestedBackendName
             || maxNumTokens != requestedMaxNumTokens
-            || visionEnabled != requestedVisionEnabled {
+            || visionEnabled != requestedVisionEnabled
+            || speculativeEnabled != speculativeDecoding {
             engine = nil
+            ExperimentalFlags.optIntoExperimentalAPIs()
+            ExperimentalFlags.enableSpeculativeDecoding = speculativeDecoding
+            // Compiled GPU caches depend on decoding mode. A failed draft
+            // initialization must not poison a normal-GPU or CPU retry.
+            let profile = requestedBackendName.lowercased().contains("gpu")
+                ? (speculativeDecoding ? "gpu-speculative" : "gpu-standard") : "cpu"
+            let engineCacheDir = (requestedCacheDir as NSString).appendingPathComponent(profile)
+            try FileManager.default.createDirectory(atPath: engineCacheDir, withIntermediateDirectories: true)
             let config = try EngineConfig(
                 modelPath: requestedModelPath,
                 backend: backend,
                 visionBackend: requestedVisionEnabled ? .cpu() : nil,
                 maxNumTokens: requestedMaxNumTokens,
-                cacheDir: requestedCacheDir
+                cacheDir: engineCacheDir
             )
             let newEngine = Engine(engineConfig: config)
+            let initializeStarted = Date()
             try await newEngine.initialize()
+            NSLog("Yui LiteRT-LM engine ready: backend=\(requestedBackendName), context=\(requestedMaxNumTokens), seconds=\(Date().timeIntervalSince(initializeStarted))")
             engine = newEngine
             modelPath = requestedModelPath
             cacheDir = requestedCacheDir
             backendName = requestedBackendName
             maxNumTokens = requestedMaxNumTokens
             visionEnabled = requestedVisionEnabled
+            speculativeEnabled = speculativeDecoding
         }
         try Task.checkCancellation()
 
@@ -194,16 +292,36 @@ private actor YuiLiteRtLmEngineStore {
             ])
         }
 
-        let conversationConfig = ConversationConfig(samplerConfig: samplerConfig,
-            thinkingConfig: ThinkingConfig(enableThinking: false))
+        let conversationConfig = ConversationConfig(
+            systemMessage: systemInstruction.isEmpty ? nil : Message(systemInstruction, role: .system),
+            initialMessages: history,
+            samplerConfig: samplerConfig,
+            thinkingConfig: supportsThinking ? ThinkingConfig(enableThinking: true, thinkingTokenBudget: max(1, min(2048, thinkingTokenBudget))) : nil)
         let conversation = try await engine.createConversation(with: conversationConfig)
         let text = try await withTaskCancellationHandler(operation: {
             try Task.checkCancellation()
             var output = ""
-            for try await chunk in conversation.sendMessageStream(Message(contents: contents, role: .user), maxOutputTokens: 256) {
+            for try await chunk in conversation.sendMessageStream(Message(contents: contents, role: .user), maxOutputTokens: outputTokens) {
                 try Task.checkCancellation()
                 for content in chunk.contents {
                     if case .text(let chunkText) = content { output += chunkText }
+                }
+                // A small model can enter an endless repeated phrase. Do not
+                // spend the whole request deadline generating that loop.
+                let tail = Array(output.suffix(384))
+                if tail.count >= 144 {
+                    for width in 24...min(64, tail.count / 6) {
+                        let end = tail.count
+                        let phrase = Array(tail[(end-width)..<end])
+                        if (2...6).allSatisfy({ repeatIndex in
+                            Array(tail[(end-width*repeatIndex)..<(end-width*(repeatIndex-1))]) == phrase
+                        }) {
+                            try? conversation.cancel()
+                            throw NSError(domain: "YuiRepetitiveResponse", code: 1, userInfo: [
+                                NSLocalizedDescriptionKey: "The local model repeated the same phrase. Please shorten or rephrase the request."
+                            ])
+                        }
+                    }
                 }
             }
             try Task.checkCancellation()
@@ -219,11 +337,21 @@ private actor YuiLiteRtLmEngineStore {
     }
 
     func reset() {
+        idleReleaseTask?.cancel()
+        idleReleaseTask = nil
+        if inferenceBusy { releaseRequested = true; return }
+        clearEngine()
+    }
+
+    private func clearEngine() {
         engine = nil
         modelPath = ""
         cacheDir = ""
         backendName = ""
         maxNumTokens = 0
+        visionEnabled = false
+        speculativeEnabled = false
+        releaseRequested = false
     }
 }
 
@@ -269,7 +397,8 @@ public func YuiGoogleAiEdgeBridge_Invoke(_ requestJsonPointer: UnsafePointer<CCh
     } else {
         imageData = nil
         prompt = (
-            (payload["prompt"] as? String)
+            (payload["Input"] as? String)
+            ?? (payload["prompt"] as? String)
             ?? (payload["Prompt"] as? String)
             ?? (payload["message"] as? String)
             ?? (payload["Message"] as? String)
@@ -281,12 +410,8 @@ public func YuiGoogleAiEdgeBridge_Invoke(_ requestJsonPointer: UnsafePointer<CCh
     }
 
     let systemInstruction = (request["system_instruction"] as? String) ?? ""
-    let combinedPrompt: String
-    if capability == "Vision" {
-        combinedPrompt = prompt
-    } else {
-        combinedPrompt = yuiCombinedPrompt(systemInstruction: systemInstruction, prompt: prompt)
-    }
+    let history = capability == "Chat" ? yuiChatHistory(payload) : []
+    let workMode = ((payload["Mode"] as? String) ?? "").lowercased() == "work"
     let runtimeModelRef = (request["runtime_model_ref"] as? String) ?? "litert-lm"
     let semaphore = DispatchSemaphore(value: 0)
     final class Box {
@@ -343,16 +468,16 @@ public func YuiGoogleAiEdgeBridge_Invoke(_ requestJsonPointer: UnsafePointer<CCh
             )
             let modelSize = yuiFileSize(modelPath)
             let availableBytes = yuiAvailableBytes(cacheDir)
-            NSLog("Yui LiteRT-LM iOS request: capability=\(capability), model=\(modelPath), size=\(modelSize), cache=\(cacheDir), available=\(availableBytes), prompt_chars=\(combinedPrompt.count)")
+            NSLog("Yui LiteRT-LM iOS request: capability=\(capability), model=\(modelPath), size=\(modelSize), cache=\(cacheDir), available=\(availableBytes), prompt_chars=\(prompt.count)")
 
             // This is input + output context capacity, not the response length.
-            let maxNumTokens = 4096
+            let maxNumTokens = capability == "Chat" ? max(4096,min(8192,(request["context_tokens"] as? Int) ?? 8192)) : 4096
 
-            func generate(backend: Backend) async throws -> String {
+            func generate(backend: Backend, speculativeDecoding: Bool = false) async throws -> String {
                 let samplerConfig = try SamplerConfig(
-                    topK: 30,
-                    topP: 0.85,
-                    temperature: yuiSamplerTemperature(for: capability)
+                    topK: max(1,min(100,(request["top_k"] as? Int) ?? 30)),
+                    topP: max(0.1,min(1,(request["top_p"] as? NSNumber)?.floatValue ?? 0.85)),
+                    temperature: max(0,min(1.5,(request["temperature"] as? NSNumber)?.floatValue ?? (workMode ? 0.45 : yuiSamplerTemperature(for: capability))))
                 )
                 if capability == "Vision" {
                     guard let imageData else {
@@ -365,7 +490,7 @@ public func YuiGoogleAiEdgeBridge_Invoke(_ requestJsonPointer: UnsafePointer<CCh
                         cacheDir: cacheDir,
                         backend: backend,
                         maxNumTokens: maxNumTokens,
-                        prompt: combinedPrompt,
+                        prompt: prompt,
                         imageData: imageData,
                         samplerConfig: samplerConfig
                     )
@@ -376,7 +501,13 @@ public func YuiGoogleAiEdgeBridge_Invoke(_ requestJsonPointer: UnsafePointer<CCh
                     cacheDir: cacheDir,
                     backend: backend,
                     maxNumTokens: maxNumTokens,
-                    prompt: combinedPrompt,
+                    prompt: prompt,
+                    systemInstruction: systemInstruction,
+                    history: history,
+                    outputTokens: max(256, min(4096, (request["max_output_tokens"] as? Int) ?? (workMode ? 2304 : 1280))),
+                    supportsThinking: (request["supports_thinking"] as? Bool) ?? false,
+                    thinkingTokenBudget: (request["thinking_token_budget"] as? Int) ?? 768,
+                    speculativeDecoding: speculativeDecoding,
                     samplerConfig: samplerConfig
                 )
             }
@@ -384,9 +515,22 @@ public func YuiGoogleAiEdgeBridge_Invoke(_ requestJsonPointer: UnsafePointer<CCh
             let text: String
             var gpuFailure: String? = nil
             do {
-                text = try await generate(backend: .gpu)
+                let useDraft = capability == "Chat" && ((request["supports_speculative_decoding"] as? Bool) ?? false)
+                do {
+                    text = try await generate(backend: .gpu, speculativeDecoding: useDraft)
+                } catch {
+                    guard useDraft else { throw error }
+                    try Task.checkCancellation()
+                    if (error as NSError).domain == "YuiRepetitiveResponse" { throw error }
+                    // A draft model is an optional speed optimization. Retry the
+                    // same installed model on GPU without its extra allocations.
+                    NSLog("Yui LiteRT-LM speculative GPU failed: \(yuiDetailedError(error))")
+                    await YuiLiteRtLmEngineStore.shared.reset()
+                    text = try await generate(backend: .gpu)
+                }
             } catch {
                 try Task.checkCancellation()
+                if (error as NSError).domain == "YuiRepetitiveResponse" { throw error }
                 gpuFailure = yuiDetailedError(error)
                 NSLog("Yui LiteRT-LM iOS GPU generation failed; retrying CPU: \(gpuFailure ?? "unknown")")
                 await YuiLiteRtLmEngineStore.shared.reset()
@@ -394,12 +538,15 @@ public func YuiGoogleAiEdgeBridge_Invoke(_ requestJsonPointer: UnsafePointer<CCh
                     text = try await generate(backend: .cpu())
                 } catch {
                     await YuiLiteRtLmEngineStore.shared.reset()
+                    try Task.checkCancellation()
                     let message = "GPU failed: \(gpuFailure ?? "unknown"). CPU failed: \(yuiDetailedError(error)). model_size=\(modelSize), cache_available=\(availableBytes)"
                     box.complete(yuiError("litert_lm_error", message))
                     return
                 }
             }
-            await YuiLiteRtLmEngineStore.shared.reset()
+            // Keep a successful engine briefly for the next turn. Idle,
+            // background and memory-pressure paths release it; repeated
+            // destruction/reinitialization otherwise grows Metal allocations.
 
             let payload: String
             if capability == "Vision" {
@@ -427,17 +574,22 @@ public func YuiGoogleAiEdgeBridge_Invoke(_ requestJsonPointer: UnsafePointer<CCh
                 "model_id": runtimeModelRef,
                 "payload_json": payload
             ])))
+        } catch is CancellationError {
+            box.complete(yuiError("cancelled", "Local AI generation stopped."))
         } catch {
             box.complete(yuiError("litert_lm_error", error.localizedDescription))
         }
     }
 
     requestHandle.attach(task)
-    if semaphore.wait(timeout: .now() + 120) == .timedOut {
+    let timeoutSeconds = max(30,min(600,(request["timeout_seconds"] as? Int) ?? 120))
+    if semaphore.wait(timeout: .now() + .seconds(timeoutSeconds)) == .timedOut {
         if box.markTimedOut() {
             task.cancel()
+            return yuiError("litert_lm_timeout", "LiteRT-LM iOS generation timed out.")
         }
-        return yuiError("litert_lm_timeout", "LiteRT-LM iOS generation timed out.")
+        // Completion can win the race with the semaphore deadline. Return its
+        // owned result instead of discarding it and leaking the native string.
     }
 
     return box.result ?? yuiError("litert_lm_timeout", "LiteRT-LM iOS generation timed out.")

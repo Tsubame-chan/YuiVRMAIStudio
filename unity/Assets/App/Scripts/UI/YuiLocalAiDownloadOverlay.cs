@@ -31,6 +31,8 @@ namespace YuiPhysicalAI.UI
         private Button downloadButton;
         private Button retryButton;
         private Button cancelButton;
+        private YuiFirstLaunchView firstLaunchView;
+        private const string AppleWelcomeCompletedKey = "yui.apple-assets.welcome.completed";
         private bool checkInProgress;
         private bool optionalTtsDownloadMode;
         private bool forceDownloadMode;
@@ -38,6 +40,7 @@ namespace YuiPhysicalAI.UI
         private void OnDestroy()
         {
             downloadCancellation?.Cancel();
+            if (firstLaunchView != null) Destroy(firstLaunchView.gameObject);
             if (root != null) Destroy(root);
         }
 
@@ -67,6 +70,11 @@ namespace YuiPhysicalAI.UI
 
         public async Task CheckAndPromptIfNeededAsync(CancellationToken cancellationToken)
         {
+            if (YuiAppleHostedAssets.Enabled)
+            {
+                await PrepareAppleAssetsAsync(cancellationToken);
+                return;
+            }
             if (!IsDesktopSupported || checkInProgress)
             {
                 return;
@@ -102,6 +110,11 @@ namespace YuiPhysicalAI.UI
 
         public async void ShowRepairDownload()
         {
+            if (YuiAppleHostedAssets.Enabled)
+            {
+                await PrepareAppleAssetsAsync(CancellationToken.None);
+                return;
+            }
             if (!IsDesktopSupported)
             {
                 return;
@@ -164,6 +177,65 @@ namespace YuiPhysicalAI.UI
                 AssetStorageRoot(),
                 YuiLocalAiModelRegistry.CurrentPlatformKey());
             CurrentStatusText = FormatPlanStatus(currentPlan);
+        }
+
+        private async Task PrepareAppleAssetsAsync(CancellationToken cancellationToken)
+        {
+            if (checkInProgress) return;
+            checkInProgress = true;
+            try
+            {
+                var ready = YuiAppleHostedAssets.HasLocalConversationModel();
+                if (ready && PlayerPrefs.GetInt(AppleWelcomeCompletedKey, 0) == 1) return;
+                if (firstLaunchView == null) firstLaunchView = YuiFirstLaunchView.Create();
+                if (!ready)
+                {
+                    await WaitForAppleDownloadApprovalAsync(cancellationToken);
+                    firstLaunchView.ShowDownloading(-1);
+                    YuiAppleHostedAssets.Prepare();
+                    while (true)
+                    {
+                        await Task.Delay(200, cancellationToken);
+                        var status = YuiAppleHostedAssets.Status();
+                        if (status.state == "failed") throw new IOException(status.message);
+                        firstLaunchView.ShowDownloading(status.progress, status.state == "paused");
+                        if (status.state != "ready") continue;
+                        if (!YuiAppleHostedAssets.HasLocalConversationModel())
+                            throw new FileNotFoundException("Downloaded conversation model is missing.");
+                        chatPanel?.RefreshLocalAiRuntimeAfterAssetInstall();
+                        break;
+                    }
+                }
+                CurrentStatusText = "Local AI data: ready";
+                firstLaunchView.ShowReady(() => {
+                    PlayerPrefs.SetInt(AppleWelcomeCompletedKey, 1); PlayerPrefs.Save();
+                    if (firstLaunchView != null) Destroy(firstLaunchView.gameObject);
+                });
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("Apple conversation data preparation failed: " + ex.Message);
+                if (firstLaunchView == null) firstLaunchView = YuiFirstLaunchView.Create();
+                firstLaunchView.ShowFailure(ShowRepairDownload);
+            }
+            finally { checkInProgress = false; }
+        }
+
+        private async Task WaitForAppleDownloadApprovalAsync(CancellationToken cancellationToken)
+        {
+            while (true)
+            {
+                var choice = new TaskCompletionSource<bool>();
+                firstLaunchView.ShowDownloadConsent(() => choice.TrySetResult(true), () => choice.TrySetResult(false));
+                using (cancellationToken.Register(() => choice.TrySetCanceled()))
+                {
+                    if (await choice.Task) return;
+                }
+                var resume = new TaskCompletionSource<bool>();
+                firstLaunchView.ShowDeferred(() => resume.TrySetResult(true));
+                using (cancellationToken.Register(() => resume.TrySetCanceled())) await resume.Task;
+            }
         }
 
         private async Task RefreshOptionalTtsPlanAsync(CancellationToken cancellationToken)

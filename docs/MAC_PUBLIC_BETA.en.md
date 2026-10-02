@@ -1,141 +1,48 @@
-# macOS Desktop Public Beta Setup
+# macOS setup
 
-This page is the entry point for trying the macOS build. Start from the macOS Beta release files on GitHub Releases. GitHub `Code > Download ZIP` is source code only and does not include the built app or large local AI/TTS data.
+[日本語](MAC_PUBLIC_BETA.md) · [Help & FAQ](HELP.md)
 
-`v0.2.0-beta.5` is the current macOS runnable app Release. On first launch, the app downloads missing Local AI/TTS data and the macOS backend bundle automatically.
+## Run the app
 
-- Japanese guide: [`MAC_PUBLIC_BETA.md`](MAC_PUBLIC_BETA.md)
+1. Download `YuiVRMAIStudio_MacOSPublicBeta_v0.2.4-beta.1_macos.zip` from [v0.2.4-beta.1](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.1).
+2. Extract and open `Yui VRM AI Studio.app`. The bundled local runtime targets Apple Silicon.
+3. Read the first-run notice and start the data download. It installs standard E2B, five Japanese voices, a dictionary and the Mac runtime: approximately 2.5GB, plus space needed for extraction.
+4. Send a message, then use Settings to customize personality, voice and your VRM. Replay the illustrated tutorial from Help.
 
-## Run It First
+Signing/notarization are not yet provided. If macOS blocks launch, verify the download source and follow the OS Privacy & Security prompt to allow it. Do not disable system-wide security. The `.sha256` file verifies the app ZIP.
 
-1. From the `v0.2.0-beta.5` GitHub Release, download the app ZIP whose name includes `MacOSPublicBeta`.
-   - `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.5_macos.zip`
-2. Extract the ZIP and launch `Yui VRM AI Studio.app`.
-3. Start the first-run download when prompted. The required Local AI/TTS data and macOS backend bundle are installed automatically.
+Normally you only need the app ZIP; its installer handles the split data and runtime. `Code > Download ZIP` contains source, not runnable apps or model weights.
 
-This beta is not fully signed/notarized yet. If macOS blocks the first launch, confirm that you trust the downloaded artifact, then allow it from System Settings or the right-click open flow.
+## Choose AI and speech
 
-The `.sha256` file is optional and only needed if you want to verify download integrity. Optional voices such as AivisSpeech HD can be installed later from Settings through `Additional Voices`.
+- Local AI: E2B by default, usable offline after setup. Optional E4B can be downloaded in Settings; it uses more storage, memory and response time.
+- OpenAI API: enter an API key in Settings. Recommended for higher-quality chat; connectivity and API charges apply separately from a ChatGPT subscription.
+- Backend: optional extension route. Configure its own `.env`; the app's Direct API key is not forwarded to it.
 
-`WindowsPublicBeta` is for Windows. `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum`, `YuiVRMAIStudio_BackendBundle`, and older `LocalAIAssets_Minimum` downloads are normally fetched by the app or used by people validating the first-run downloader. You do not need to download them manually just to try the macOS app.
+AI and speech engines are independent. Standard speech uses five Japanese VOICEVOX voices. Local chat/STT inference uses the downloaded `YuiBackend` runtime worker without requiring its HTTP server. Experimental voice adapters do not mean their data packs are included in this release.
 
-## Download Types
+## Import your avatar
 
-| Download | Use |
-| --- | --- |
-| macOS app ZIP from Releases | For normal users. Download this, unzip it, and launch the app. |
-| `.sha256` | Optional integrity check for the app ZIP. |
-| `Code > Download ZIP` | Source code only. Does not include the app bundle or large models. |
-| `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | Normally downloaded by the app. Manual use is for source builds, validation, or recovery. |
-| `YuiVRMAIStudio_BackendBundle` | Normally downloaded by the app for full PC features; source builders can inspect it manually. |
-| macOS AivisSpeech HD add-on | Optional runtime and model bundle installed from Settings through `Additional Voices`; no manual installation required. |
-| Irodori / other external runtimes | Developer-preview integrations not included in the current Release. Not required for default speech. |
+Select a `.vrm` from character Settings and wait for loading. Change appearance from My characters to retain personality, voice and memories. Export Unity/VRChat avatars to VRM first; purchase ZIPs, prefabs, FBX and unitypackage files are not direct inputs. See [avatar import](AVATAR_IMPORT.md).
 
-## What Works
+## Optional Backend
 
-- No backend: Local Gemma SLM, Local VOICEVOX, VRM display, basic chat.
-- With an OpenAI API key: Direct OpenAI API, stronger chat/vision/STT paths.
-- With the downloaded backend: realtime talk, realtime translation, memory DB, web search, and backend TTS. AivisSpeech HD works after its optional download; Irodori requires manual developer configuration.
+Use `Start_Yui_Backend.command` / `Stop_Yui_Backend.command` inside the downloaded `YuiBackend`. Configure its provider keys and selected STT/TTS runtime separately. For a remote PC, use a reachable VPN address and server listen configuration (`BACKEND_HOST` defaults to `127.0.0.1`, `BACKEND_PORT` to `8000`; bind to the PC VPN IP and use `http://<VPN IP>:8000` in the app); a localhost-only server is not reachable from another device merely because both use a VPN.
 
-The default `Auto Select` mode is recommended. It prefers the backend when healthy and falls back to local/direct modes when the backend is unavailable.
-
-## Backend Setup
-
-Normally the first-run downloader installs `YuiBackend` and the app auto-starts it for the full PC feature set. Manual setup is mainly for source builds, debugging, or replacing the downloaded backend.
-
-Requirements:
-
-- Apple Silicon Mac
-- Downloaded `YuiBackend`
-- OpenAI API key
-- A separate runtime only for optional voices. macOS AivisSpeech HD is available in-app; default Local VOICEVOX needs no external runtime
-
-The macOS backend bundle includes a runnable `.venv`. Install Homebrew and
-Python only for source builds or fallback setup when the bundled venv is
-missing.
-
-```bash
-brew install python@3.12 git git-lfs
-git lfs install
-```
-
-Initialize the backend:
+For source setup:
 
 ```bash
 PYTHON_BIN=/opt/homebrew/bin/python3.12 ./scripts/setup_backend_byok_macos.sh
-```
-
-Set your OpenAI API key in `.env`:
-
-```bash
 open -e .env
-```
-
-```env
-OPENAI_API_KEY=sk-...
-```
-
-## Start And Stop Backend
-
-If the first-run downloader installed `YuiBackend`, use the downloaded commands:
-
-```text
-YuiBackend/Start_Yui_Backend.command
-```
-
-```text
-YuiBackend/Stop_Yui_Backend.command
-```
-
-For source checkouts, start:
-
-```bash
 ./scripts/start_local_services_macos.sh
-```
-
-Finder launcher:
-
-```text
-Start_Yui_Local_Services.command
-```
-
-Stop:
-
-```bash
+# Stop
 ./scripts/stop_local_services_macos.sh
 ```
 
-Or:
+Follow the scripts' prerequisites for Python and other dependencies. Backend `.env` credentials do not configure the app's Direct API key. Backend VOICEVOX or other speech engines also need their runtime.
 
-```text
-Stop_Yui_Local_Services.command
-```
+## Build from source
 
-## VOICEVOX
+Use Unity **2022.3.62f3** and UniVRM **0.131.2**, restore [model/voice data](LOCAL_AI_ASSETS.md) and install the appropriate SDK/runtime. Unity 6 migration has not been performed. Public builds require [asset validation](PUBLIC_PLAYER_ASSET_VALIDATION.md).
 
-The bundled Local VOICEVOX fallback is enough for minimum Japanese speech. Install VOICEVOX Engine separately when you want backend VOICEVOX tuning or your own Engine-side voice setup.
-
-The macOS launcher mainly searches:
-
-```text
-/Applications/VOICEVOX.app/Contents/Resources/vv-engine/run
-~/Applications/VOICEVOX.app/Contents/Resources/vv-engine/run
-```
-
-If VOICEVOX Engine is somewhere else, set `VOICEVOX_ENGINE_EXE`:
-
-```bash
-export VOICEVOX_ENGINE_EXE="/path/to/VOICEVOX.app/Contents/Resources/vv-engine/run"
-```
-
-## Use Your Own VRM
-
-The app imports `.vrm` files. It cannot directly load VRChat SDK avatars, Unity prefabs, Unity scenes, `.unitypackage` files, or avatars that only exist as uploaded VRChat avatars.
-
-Open Settings in the app and choose your `.vrm` from Custom VRM.
-
-## Source Builds
-
-Restore the `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` asset pack, or the older `LocalAIAssets_Minimum` release asset, into the repository root before opening the Unity project. See [`LOCAL_AI_ASSETS.md`](LOCAL_AI_ASSETS.md).
-
-Current build verification uses Unity `2022.3.62f3`.
+[Runtime support](RUNTIME_SUPPORT.md) · [Source status](SOURCE_STATUS.md) · [API](api.md)

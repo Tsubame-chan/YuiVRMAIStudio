@@ -42,6 +42,7 @@ namespace YuiPhysicalAI.Core
 
         // User-facing context
         public const string CustomInstruction = "Yui.Settings.CustomInstruction";
+        public const string ResponseInstruction = "Yui.Settings.ResponseInstruction";
         public const string CharacterName = "Yui.Settings.CharacterName";
 
         // Avatar

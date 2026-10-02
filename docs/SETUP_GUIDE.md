@@ -1,154 +1,45 @@
-# Windows Desktop Public Beta セットアップ
+# Windowsセットアップ / Windows setup
 
-このページはWindows版を試す人向けの入口です。まずはGitHub ReleasesのWindows Beta配布物を使ってください。GitHubの `Code > Download ZIP` はソースコード用で、実行ファイルや大型AI/TTSデータを含まないため、そのままでは完成アプリとして動きません。
+[FAQ](HELP.md) · [macOS](MAC_PUBLIC_BETA.md)
 
-現在のWindows実行用ZIPは `v0.2.0-beta.5` です。この版では、初回起動時に不足しているLocal AI/TTSデータとWindows Backend bundleをアプリが自動で取得します。
+現在のWindows配布版は **v0.2.4-beta.1** です。
 
-macOS版は [`MAC_PUBLIC_BETA.md`](MAC_PUBLIC_BETA.md) を見てください。
+## アプリを使う
 
-## まず動かす
+1. [Release](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.1)から `YuiVRMAIStudio_WindowsPublicBeta_v0.2.4-beta.1_windows.zip` を取得します。
+2. フォルダ全体を展開して `Yui VRM AI Studio.exe` を起動します。`YuiFilePickerHelper.exe` とDataフォルダ等を移動・削除しないでください。
+3. 初回案内を確認して、AI/音声とWindows runtimeを取得します。約2.5GBに加え展開用空き容量が必要です。通常Pythonを別に導入する必要はありません。
+4. 端末内AI、または設定したOpenAI APIで会話します。高品質なAPI会話にはAPIキー・通信・API利用料金が必要です。
 
-1. GitHub Releasesの `v0.2.0-beta.5` で、名前に `WindowsPublicBeta` が入っているアプリ本体ZIPをダウンロードします。
-   - `YuiVRMAIStudio_WindowsPublicBeta_v0.2.0-beta.5_windows.zip`
-2. ZIPを展開します。
-3. `Yui VRM AI Studio.exe` を起動します。
-4. 初回ダウンロード画面で開始すると、基本動作に必要なLocal AI/TTSデータとWindows Backend bundleが自動で入ります。
+SmartScreenが出る場合は配布元を確認し、OSの案内で許可します。`.sha256` はZIPの破損確認用。Code ZIPはソースで実行アプリではありません。
 
-WindowsのSmartScreenが表示された場合は、信頼できる配布物であることを確認してから `詳細情報` -> `実行` を選びます。
+現在のソースにはE2BのLiteRT-LM workerとローカルVOICEVOX workerがあります。古いbeta.5の「WindowsローカルGemma未対応」とは異なりますが、今回のruntimeがすべてのWindows GPU/CPUで動作するという保証ではありません。標準音声は日本語5声です。
 
-`YuiFilePickerHelper.exe` は画像やVRMファイルを選ぶための補助ツールで、アプリZIPに同梱されています。展開後にファイル構成を崩さず、そのまま使ってください。
+## アバター・設定
 
-`.sha256` はダウンロード破損を確認したい場合だけ使います。通常はアプリ本体ZIPだけで始められます。
+設定から `.vrm` を選びます。Unity/VRChatアバターは先にVRM化してください。「着替え」は人格と記憶を維持します。[導入ガイド](AVATAR_IMPORT.md)。性格はキャラクター設定、ローカルAIの上限・温度等は詳細設定から変更できます。案内はHelpから再表示できます。
 
-`MacOSPublicBeta` はmacOS用、`YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `YuiVRMAIStudio_BackendBundle` / `LocalAIAssets_Minimum` は通常アプリ内の初回ダウンローダーが取得します。Windowsアプリを試すだけなら手動ダウンロード不要です。
+## Backendを使う場合
 
-## ダウンロードの違い
+初回取得した `YuiBackend` の `Start_Yui_Backend.bat` / `Stop_Yui_Backend.bat` を使います。端末内workerはこのHTTPサーバーを必要としません。拡張機能を使う場合はBackend `.env` のキーと対象STT/TTSエンジンを設定します。アプリのDirect APIキーとは別です。
 
-| 入手方法 | 用途 |
-| --- | --- |
-| ReleaseのWindowsアプリZIP | すぐ使う人向け。通常はこれだけ落として展開します。 |
-| `.sha256` | ダウンロード破損を確認したい人向けです。 |
-| `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` | 初回起動時にアプリが取得する最小ローカルAI/TTSデータです。手動取得は通常不要です。 |
-| `YuiVRMAIStudio_BackendBundle_*_windows` | 初回起動時にアプリが取得するWindows Backend bundleです。portable Python runtimeを含むため、通常ユーザーがPythonを別途入れる必要はありません。 |
-| `Code > Download ZIP` | ソースを読む/改造する人向け。実行ファイルや大型モデルは含みません。 |
-| Optional voice / 外部runtime | AivisSpeech HDやIrodori TTSなど、声の選択肢を増やすための任意追加です。対応パックはSettingsの `Additional Voices` から取得します。 |
-
-## できることの目安
-
-- バックエンドなし: VRM / Avatar Bridge ZIP表示、設定済みキーによるDirect OpenAI API。Windowsの端末内GemmaとネイティブVOICEVOX Coreは未対応です。
-- OpenAI APIキーあり: Direct OpenAI API、より高品質な会話/画像理解/STT。
-- バックエンドあり: リアルタイム会話、リアルタイム翻訳、会話DB、Backend VOICEVOX、AivisSpeech HD、Irodori TTS。
-
-Windowsの会話にはDirect OpenAI API、または設定済みBackendを使ってください。音声合成にはBackend経由のVOICEVOX Engineが必要です。データの取得成功だけでは端末内Gemmaを実行できません。
-
-## バックエンドを使う場合
-
-Release版でフル機能を使う場合、通常は初回ダウンローダーが取得したWindows Backend bundleをアプリが自動起動します。
-
-手動で起動・停止したい場合は、ユーザーデータ領域に展開された `YuiBackend` 内の `Start_Yui_Backend.bat` / `Stop_Yui_Backend.bat` を使います。
-
-必要なもの:
-
-- 初回ダウンロード済みの `YuiBackend`
-- OpenAI APIキー
-- VOICEVOX Engine、AivisSpeech HD、Irodori TTSなど、使いたい外部TTS runtime
-
-PythonはWindows Backend bundleに同梱されています。以下のPython導入と `setup_backend_byok.ps1` は、ソースから起動する場合や、bundle内の `backend\.venv\Scripts\python.exe` が欠けている場合だけ必要です。
-
-```text
-https://www.python.org/downloads/windows/
-```
-
-ソースから起動する場合は、PowerShellでリポジトリフォルダを開き、初期化します。
+ソースからのセットアップではPowerShellで:
 
 ```powershell
 .\scripts\setup_backend_byok.ps1
-```
-
-スクリプト実行がブロックされる場合は、一度だけ以下を実行します。
-
-```powershell
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
-
-`.env` を開き、OpenAI APIキーを入れます。
-
-```powershell
 notepad .env
+.\scripts\start_local_services.ps1
+# 停止
+.\scripts\stop_local_services.ps1
 ```
 
-```env
-OPENAI_API_KEY=sk-...
-```
+前提ツール・実行ポリシーの案内はスクリプトを参照してください。リモート接続は双方で到達できるVPNアドレスとlisten設定が必要です。
 
-## バックエンドの起動と停止
+## 困ったとき
 
-起動:
+- ファイル選択が出ない: `YuiFilePickerHelper.exe` が本体と同じフォルダか確認。
+- データ取得が失敗: 接続・空き容量を確認し、同じReleaseのmanifest/データを使って再試行。
+- ローカルAI/音声が失敗: 設定で選んだエンジンとインストール状態を確認。エラー全文、OS、GPU、版、モデルと再現手順を[Issue](https://github.com/Tsubame-chan/YuiVRMAIStudio/issues)へ。APIキー・私的な会話は載せないでください。
+- APIが失敗: アプリのキーとモデル利用権、通信・利用枠を確認。
 
-```text
-YuiBackend\Start_Yui_Backend.bat
-```
-
-このウィンドウはアプリ使用中は開いたままにします。終了するときは、起動ウィンドウでEnterを押します。
-
-うまく止まらない場合:
-
-```text
-YuiBackend\Stop_Yui_Backend.bat
-```
-
-古いバックエンドが残っていると、別のコピーの会話履歴や設定を見てしまうことがあります。新しく展開したZIPを試す前に、必要ならStop BATで止めてから起動し直してください。
-
-## VOICEVOX Engine
-
-Release ZIP内のLocal VOICEVOXだけでも最低限の日本語音声は使えます。Backend VOICEVOXで細かく調整したい場合や、自分のVOICEVOX環境を使いたい場合はVOICEVOX Engineを追加します。
-
-通常のVOICEVOXアプリにEngineが含まれています。
-
-```text
-https://voicevox.hiroshiba.jp/
-```
-
-起動スクリプトは主に以下を探します。
-
-```text
-%LOCALAPPDATA%\Programs\VOICEVOX\vv-engine\run.exe
-%ProgramFiles%\VOICEVOX\vv-engine\run.exe
-```
-
-別の場所にある場合は `VOICEVOX_ENGINE_EXE` に `vv-engine\run.exe` のフルパスを指定してください。
-
-## 自分のVRMを使う
-
-読み込めるのは `.vrm` ファイルです。VRChat SDKアバター、Unity prefab、Unityシーン、`.unitypackage`、VRChatにアップロード済みのアバターそのものは直接読み込めません。
-
-アプリ内でSettingsを開き、Custom VRMから `.vrm` を選びます。読み込みに成功すると、その場でアバターが切り替わります。
-
-## よくあるトラブル
-
-チャットが反応しない:
-
-- `Auto Select` のまま再度試してください。
-- API機能を使う場合は `.env` の `OPENAI_API_KEY` を確認してください。
-- バックエンド機能を使う場合は、アプリが自動起動したYui Backend、または `YuiBackend\Start_Yui_Backend.bat` が起動中か確認してください。
-
-音声が出ない:
-
-- Voice EngineをLocal VOICEVOXにして試してください。
-- Backend VOICEVOX/Aivis/Irodoriを使う場合は、バックエンドと対象runtimeが起動しているか確認してください。
-
-ファイル選択が開かない:
-
-- `YuiFilePickerHelper.exe` を `Yui VRM AI Studio.exe` と同じフォルダに置いてください。
-
-Release ZIPではなくCode ZIPを落としてしまった:
-
-- それはソースコードです。すぐ使う場合はGitHub ReleasesのWindows Beta配布物を落としてください。
-
-## ソースからビルドする場合
-
-Releaseの `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` または旧 `LocalAIAssets_Minimum` をリポジトリ直下へ展開してからUnityで開きます。詳しくは [`LOCAL_AI_ASSETS.md`](LOCAL_AI_ASSETS.md) を参照してください。
-
-## ソース更新と配布版の違い
-
-Release beta.5は2026-09-09のバイナリです。それ以降のソース改修（送信前画像確認、停止・再試行、保存ID、取得失敗時の保護）は、次の検証候補に含まれます。既存のbeta.5 ZIPへ反映されたとは扱わないでください。OS別経路と制限は [対応状況](RUNTIME_SUPPORT.md) を参照してください。
+English: download and extract the entire Windows app ZIP, keep the helper/Data files together, and confirm first-run data installation. Python is bundled. Local E2B/STT/VOICEVOX run through the bundled worker. API keys and charges apply to Direct API. See [HELP](HELP.md) for the English FAQ and [runtime support](RUNTIME_SUPPORT.md) for boundaries.

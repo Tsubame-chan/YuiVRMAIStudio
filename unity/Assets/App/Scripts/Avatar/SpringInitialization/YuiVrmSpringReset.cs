@@ -4,6 +4,11 @@ namespace YuiPhysicalAI.Avatar
 {
     public static class YuiVrmSpringReset
     {
+        public static void SetAmbientForce(Vrm10Instance vrm, UnityEngine.Vector3 force)
+        {
+            vrm.Runtime.SpringBone.SetModelLevel(vrm.transform, new UniGLTF.SpringBoneJobs.Blittables.BlittableModelLevel(
+                externalForce:force, supportsScalingAtRuntime:true));
+        }
         public static void ResetParticlePositions(Vrm10Instance vrm)
         {
             // UniVRM's shared-job reset initializes tails in world space, while
@@ -12,6 +17,10 @@ namespace YuiPhysicalAI.Avatar
             // Only this avatar is changed. No private reflection or vendor patch.
             if (!(vrm.Runtime.SpringBone is Vrm10FastSpringboneRuntime)) return;
             var combiner = UniVRM10.FastSpringBones.FastSpringBoneService.Instance.BufferCombiner;
+            ResetParticlePositions(vrm.transform,combiner);
+        }
+        public static void ResetParticlePositions(UnityEngine.Transform root,UniGLTF.SpringBoneJobs.FastSpringBoneBufferCombiner combiner)
+        {
             combiner.ReconstructIfDirty(default).Complete();
             var buffer = combiner.Combined;
             if (buffer == null) return;
@@ -24,7 +33,7 @@ namespace YuiPhysicalAI.Avatar
                 {
                     var logic = buffer.Logics[i];
                     var head = buffer.TransformAccessArray[logic.headTransformIndex + offset];
-                    if (!head.IsChildOf(vrm.transform)) continue;
+                    if (!head.IsChildOf(root)) continue;
                     var tail = buffer.TransformAccessArray[(logic.tailTransformIndex >= 0 ? logic.tailTransformIndex : logic.headTransformIndex) + offset];
                     var position = center != null ? center.InverseTransformPoint(tail.position) : tail.position;
                     current[i] = previous[i] = next[i] = position;

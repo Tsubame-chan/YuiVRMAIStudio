@@ -25,11 +25,11 @@ namespace YuiPhysicalAI.UI
             if (string.IsNullOrEmpty(id) || id != Path.GetFileName(id) || id.Contains("\\") || id.Contains(":"))
                 throw new ArgumentException("Invalid saved answer ID.");
         }
-        public string Save(string text, string metadata)
+        public string Save(string text, string metadata, string speaker = null, string mode = null)
         {
             MigrateLegacy();
             var id = "answer_" + Guid.NewGuid().ToString("N");
-            ArchiveStore.Append(new YuiTextArchive.Entry { Id = id, CreatedUtc = DateTime.UtcNow.ToString("o"), Text = text ?? "", Metadata = metadata });
+            ArchiveStore.Append(new YuiTextArchive.Entry { Id = id, CreatedUtc = DateTime.UtcNow.ToString("o"), Text = text ?? "", Metadata = metadata, Speaker = speaker, Mode = mode });
             return id;
         }
         public void Remove(string id)

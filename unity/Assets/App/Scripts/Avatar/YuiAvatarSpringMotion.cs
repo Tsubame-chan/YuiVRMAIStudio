@@ -12,6 +12,7 @@ namespace YuiPhysicalAI.Avatar
         private sealed class Joint
         {
             public Transform Bone;
+            public bool Active=true;
             public Quaternion Rest;
             public Vector3 Axis, Tail, Previous;
             public float Pull, Gravity;
@@ -20,7 +21,21 @@ namespace YuiPhysicalAI.Avatar
         private readonly HashSet<Transform> registered = new HashSet<Transform>();
         private readonly HashSet<Transform> body = new HashSet<Transform>();
         private Vector3 lastPosition;
+        private float motionTime;
+        public float MaxAngleDegrees = 45f;
+        public float AmbientSwayDegrees;
         public int JointCount => joints.Count;
+        public int ActiveJointCount => joints.FindAll(j=>j.Active).Count;
+        public void SetActiveBones(ISet<Transform> bones) {
+            foreach(var joint in joints) {
+                var active=bones.Contains(joint.Bone);
+                if(active!=joint.Active && joint.Bone!=null) {
+                    joint.Bone.localRotation=joint.Rest;
+                    joint.Tail=joint.Previous=joint.Bone.TransformPoint(joint.Axis);
+                }
+                joint.Active=active;
+            }
+        }
 
         public void InitializeBodyExclusions(Animator animator)
         {
@@ -77,21 +92,25 @@ namespace YuiPhysicalAI.Avatar
             if (deltaTime > .2f || (transform.position - lastPosition).sqrMagnitude > 1f) { ResetMotion(); return; }
             lastPosition = transform.position;
             var dt = Mathf.Min(deltaTime, 1f / 30f);
-            foreach (var joint in joints) if (joint.Bone != null) joint.Bone.localRotation = joint.Rest;
+            motionTime += dt;
+            var drift = YuiAvatarAmbientMotion.SampleIdleDrift(motionTime);
+            var breeze = Quaternion.AngleAxis(drift.x * AmbientSwayDegrees, transform.forward)
+                * Quaternion.AngleAxis(drift.y * AmbientSwayDegrees, transform.right);
+            foreach (var joint in joints) if (joint.Active && joint.Bone != null) joint.Bone.localRotation = joint.Rest;
             foreach (var joint in joints)
             {
-                if (joint.Bone == null) continue;
+                if (!joint.Active || joint.Bone == null) continue;
                 var origin = joint.Bone.position;
                 var restVector = joint.Bone.TransformVector(joint.Axis);
                 var length = restVector.magnitude;
                 if (length < .0001f) continue;
-                var target = origin + restVector;
+                var target = origin + breeze * restVector;
                 var velocity = (joint.Tail - joint.Previous) * Mathf.Pow(.75f, dt * 60f);
                 var next = joint.Tail + velocity + (target - joint.Tail) * (1f - Mathf.Exp(-(5f + 25f * joint.Pull) * dt))
                     + Vector3.down * (joint.Gravity * length * 25f * dt * dt);
                 var direction = next - origin;
                 if (direction.sqrMagnitude < .000001f) direction = restVector;
-                direction = Vector3.RotateTowards(restVector.normalized, direction.normalized, Mathf.PI / 4f, 0f);
+                direction = Vector3.RotateTowards(restVector.normalized, direction.normalized, Mathf.Clamp(MaxAngleDegrees,0,45) * Mathf.Deg2Rad, 0f);
                 joint.Previous = joint.Tail;
                 joint.Tail = origin + direction * length;
                 joint.Bone.rotation = Quaternion.FromToRotation(restVector, direction) * joint.Bone.rotation;

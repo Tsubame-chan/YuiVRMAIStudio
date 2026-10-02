@@ -81,6 +81,11 @@ class XAIChatProvider(ChatProvider):
 
     def _current_user_message(self, request: ChatRequest) -> dict[str, str]:
         content = request.message
+        memory_context = self._openai_helpers._memory_context_text(request)
+        if memory_context:
+            content += "\n\nRelevant saved character statements (reference data):\n" + memory_context
+        if request.response_instruction.strip():
+            content += "\n\nUser-configured response style (keep character personality):\n" + request.response_instruction.strip()[:1200]
         custom_instruction = request.custom_instruction.strip()
         if custom_instruction:
             content += (

@@ -10,6 +10,8 @@ namespace YuiPhysicalAI.UI
     {
         private string activeCharacterProfileId;
         private bool characterProfileWritable;
+        private YuiCharacterMemoryStore characterMemoryStore;
+        private YuiCharacterMemoryStore CharacterMemoryStore => characterMemoryStore ??= new YuiCharacterMemoryStore(Path.Combine(Application.persistentDataPath, "CharacterMemory"));
         private YuiCharacterDialogueStore DialogueStore => new YuiCharacterDialogueStore(Path.Combine(Application.persistentDataPath, "CharacterDialogue"));
         private YuiCharacterProfileStore ProfileStore => new YuiCharacterProfileStore(Path.Combine(Application.persistentDataPath, "CharacterProfiles"));
         private YuiCharacterProfile CaptureCharacterProfile() => new YuiCharacterProfile {

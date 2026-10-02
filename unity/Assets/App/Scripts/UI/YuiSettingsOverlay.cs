@@ -289,6 +289,7 @@ namespace YuiPhysicalAI.UI
 
         public void Hide()
         {
+            CloseSettingsHelp();
             settingsOpenGeneration++;
             StopMicrophoneMonitor();
             HideClearConfirm();

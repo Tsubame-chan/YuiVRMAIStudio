@@ -15,16 +15,24 @@
         "Translation",
         "Extraction"
       ],
-      "enabled_by_default": false,
+      "enabled_by_default": true,
       "download_required": true,
-      "memory_budget_mb": 2600,
-      "disk_budget_mb": 3400,
-      "priority": 8,
+      "memory_budget_mb": 4000,
+      "disk_budget_mb": 3660,
+      "priority": 12,
       "startup_policy": "WarmTextOnly",
       "platforms": [
+        "ios",
         "macos"
       ],
-      "notes": "Optional higher-memory desktop model; not included in the standard E2B pack. Windows embedded runtime is unavailable; use API or a configured Backend instead."
+      "notes": "Optional higher-quality model. Download and select in Settings; slower responses and increased device load.",
+      "supports_thinking": true,
+      "supports_speculative_decoding": true,
+      "apple_asset_pack_id": "yui-gemma-e4b-v1",
+      "thinking_token_budget": 128,
+      "work_thinking_token_budget": 768,
+      "talk_output_token_budget": 512,
+      "sha256": "0b2a8980ce155fd97673d8e820b4d29d9c7d99b8fa6806f425d969b145bd52e0"
     },
     {
       "id": "core_text_e2b",
@@ -52,7 +60,37 @@
         "macos",
         "windows"
       ],
-      "notes": "Standard E2B model. Desktop uses the bundled LiteRT-LM worker without a backend service."
+      "notes": "Standard E2B model. Desktop uses the bundled LiteRT-LM worker without a backend service.",
+      "supports_thinking": true,
+      "supports_speculative_decoding": false,
+      "thinking_token_budget": 128,
+      "work_thinking_token_budget": 768,
+      "talk_output_token_budget": 512,
+      "work_output_token_budget": 1536,
+      "sha256": "181938105e0eefd105961417e8da75903eacda102c4fce9ce90f50b97139a63c"
+    },
+    {
+      "id": "vision_gemma4_e4b",
+      "display_name": "Gemma 4 E4B LiteRT-LM Vision",
+      "provider": "google-litert-lm",
+      "model_id": "litert-community/gemma-4-E4B-it-litert-lm",
+      "format": "litert-lm",
+      "runtime_model_ref": "gemma-4-E4B-it.litertlm",
+      "deployment_kind": "OnDeviceEmbedded",
+      "capabilities": [
+        "Vision"
+      ],
+      "enabled_by_default": true,
+      "download_required": true,
+      "memory_budget_mb": 4000,
+      "disk_budget_mb": 0,
+      "priority": 10,
+      "startup_policy": "OnDemand",
+      "platforms": [
+        "ios"
+      ],
+      "notes": "Uses the same Apple-hosted E4B file as chat, without a second model download. Image inference device acceptance is separate.",
+      "apple_asset_pack_id": "yui-gemma-e4b-v1"
     },
     {
       "id": "vision_gemma4_e2b",
@@ -101,7 +139,9 @@
         "macos",
         "windows"
       ],
-      "notes": "Desktop/high-memory experiment only. Keep off for iPhone 16 / Pixel 8a class mobile defaults until real device benchmarks prove otherwise."
+      "notes": "Desktop/high-memory experiment only. Keep off for iPhone 16 / Pixel 8a class mobile defaults until real device benchmarks prove otherwise.",
+      "supports_thinking": true,
+      "supports_speculative_decoding": false
     },
     {
       "id": "tts_kokoro_sherpa_onnx",

@@ -7,6 +7,19 @@ namespace YuiPhysicalAI.Tests.Editor
 {
     public sealed class YuiDirectOpenAiClientTests
     {
+        [TestCase("talk")]
+        [TestCase("work")]
+        public void ApiKeepsCharacterAndResponseInstructionsWithoutChangingSampling(string mode)
+        {
+            var payload=YuiDirectOpenAiClient.BuildResponsesPayload(new ChatRequest {
+                Mode=mode,Message="こんにちは",CharacterName="ユイ",CustomInstruction="親しい友達のように話して",ResponseInstruction="結論から話して"
+            },"gpt-test");
+            StringAssert.Contains("ユイ",payload["instructions"].ToString());
+            StringAssert.Contains("親しい友達",payload["input"].ToString());
+            StringAssert.Contains("結論から",payload["input"].ToString());
+            Assert.That(payload["temperature"],Is.Null);
+            Assert.That(payload["top_p"],Is.Null);
+        }
         [Test]
         public void BuildResponsesPayload_IncludesStructuredSchemaAndAttachedImage()
         {

@@ -4,12 +4,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using YuiPhysicalAI.Api;
 using YuiPhysicalAI.Core;
+using YuiPhysicalAI.LocalAI;
 
 namespace YuiPhysicalAI.UI
 {
     public sealed partial class YuiHelpOverlay
     {
-        private bool deviceExpanded, backendExpanded, allBackendServices;
+        private bool deviceExpanded, modelsExpanded, backendExpanded, allBackendServices;
         private Button deviceGroup, backendGroup, allServicesButton;
 
         private void RenderConnectionGroups(ref float top)
@@ -23,7 +24,20 @@ namespace YuiPhysicalAI.UI
                 deviceExpanded,()=>{deviceExpanded=!deviceExpanded;RenderModernHelp();},ref top);
             if(deviceExpanded)
             {
-                StatusRow("On-device AI",localAi?"installed":"not_installed",ref top,true);
+                ConnectionGroup("LocalModels",YuiSimpleDialog.L("端末内のAI · モデル一覧", "On-device AI · Models"),
+                    localAi?YuiSimpleDialog.L("導入済み", "Installed"):YuiSimpleDialog.L("未導入", "Not installed"),
+                    modelsExpanded,()=>{modelsExpanded=!modelsExpanded;RenderModernHelp();},ref top);
+                if(modelsExpanded)
+                {
+                    foreach(var pack in YuiLocalModelSelection.Available)
+                        ConnectionNote("LocalModel"+pack.Id,YuiLocalModelSelection.Name(pack)+" · "+
+                            (YuiLocalModelSelection.Installed(pack)?
+                                pack.Id==YuiLocalModelSelection.SelectedId?YuiSimpleDialog.L("選択中", "Selected"):YuiSimpleDialog.L("導入済み", "Installed"):
+                                YuiSimpleDialog.L("未ダウンロード", "Not downloaded")),ref top);
+                    var choose=modernContent.Find("ChooseLocalModel")?.GetComponent<Button>();
+                    if(choose==null)choose=HelpButton(modernContent,"ChooseLocalModel",YuiSimpleDialog.L("モデルを選ぶ・追加する", "Choose or download a model"),()=>{Hide();YuiLocalModelMenu.Show(chatPanel);});
+                    choose.gameObject.SetActive(true);RowRect((RectTransform)choose.transform,top,64);top+=76;
+                }
                 StatusRow("On-device VOICEVOX",localVoice?"installed":"not_installed",ref top,true);
                 top+=12;
             }
@@ -31,10 +45,11 @@ namespace YuiPhysicalAI.UI
             var mode=chatPanel!=null?chatPanel.ConversationMode:PlayerPrefs.GetString(YuiPrefsKeys.ConversationMode,YuiConversationModes.LocalAi);
             var voice=chatPanel!=null?chatPanel.TtsMode:PlayerPrefs.GetString(YuiPrefsKeys.TtsMode,"silent");
             var state=backendOnline?BackendGroupStatus(latestStatus,mode,voice):statusChecked?"offline":"unknown";
-            backendGroup=ConnectionGroup("BackendGroup","Backend",HumanStatus(state),backendExpanded,
+            backendGroup=ConnectionGroup("BackendGroup","Backend (optional)",HumanStatus(state),backendExpanded,
                 ()=>{backendExpanded=!backendExpanded;RenderModernHelp();},ref top);
             var badge=backendGroup.transform.Find("Status").GetComponent<Text>();
             badge.color=state=="degraded"?new Color32(240,195,135,255):backendOnline?YuiUiTheme.Accent:YuiUiTheme.Muted;
+            ConnectionNote("BackendPurpose", "Backend connects to AI and voice services set up on a PC or server, including more natural-sounding speech. On-device AI, VOICEVOX and direct OpenAI access do not need it.", ref top);
             if(backendExpanded)
             {
                 if(backendOnline)
