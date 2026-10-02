@@ -1,29 +1,17 @@
-# Irodori TTS Windows NVIDIA Notes
+# WindowsでIrodoriをBackendに接続する
 
-VOICEVOX remains the default TTS for all public builds. Irodori-TTS-Server is a Windows NVIDIA candidate, not a replacement for the macOS MLX VoiceDesign path.
+Irodori-TTS-Serverを導入して起動し、Yui Backendから接続する手順です。必要なGPU・CUDA・モデルは[公式の導入案内](https://github.com/Aratako/Irodori-TTS-Server#readme)を確認してください。
 
-## Recommended Split
+Backend Consoleがある版では、[音声導入ガイドのWindows手順](BACKEND_TTS_GUIDE.md#irodori-windows)から設定できます。管理画面のない版や設定ファイルを使う場合は、次の手順で接続します。
 
-| Environment | Recommended TTS |
-| --- | --- |
-| macOS Apple Silicon | Irodori MLX VoiceDesign, optional |
-| Windows NVIDIA | Irodori-TTS-Server CUDA, candidate |
-| Windows CPU only | VOICEVOX; Irodori is not recommended |
-| Mobile / low-spec PC | OS TTS or future cloud TTS candidate |
+<a id="settings-file"></a>
 
-## Phase 1 Setup Target
+## 設定ファイルから接続する
 
-For the first Windows NVIDIA validation, use Irodori-TTS-Server through Docker or a local Python environment with CUDA support.
-
-This repository does not bundle Irodori model files or the Irodori-TTS-Server runtime. Install the server separately, then point Yui's HTTP TTS adapter at it.
-
-The Windows app should still use the Yui backend URL, normally `http://127.0.0.1:8000`. Do not put the Irodori server URL into the app's Backend URL field. `HTTP_TTS_BASE_URL` is a backend-side setting used by the Yui backend to call Irodori.
-
-The initial Yui-side settings are:
+Backendの `.env` に以下を設定します。例のURL・モデル名は、起動したIrodoriサーバーの設定に合わせて変更してください。
 
 ```env
 TTS_PROVIDER=http
-TTS_FALLBACK_PROVIDER=voicevox
 HTTP_TTS_BASE_URL=http://127.0.0.1:8088
 HTTP_TTS_ENDPOINT=/v1/audio/speech
 HTTP_TTS_HEALTH_ENDPOINT=/health
@@ -31,92 +19,43 @@ HTTP_TTS_PROVIDER_ID=irodori-server
 HTTP_TTS_PAYLOAD_FORMAT=irodori_openai_speech
 HTTP_TTS_VOICE=none
 HTTP_TTS_MODEL=irodori-tts
+HTTP_TTS_INSTRUCT=明るく、聞き取りやすい自然な声。
 HTTP_TTS_FORMAT=wav
-HTTP_TTS_AUDIO_PROCESSOR=soundstretch
+HTTP_TTS_AUDIO_PROCESSOR=none
 HTTP_TTS_IRODORI_NUM_STEPS=24
-HTTP_TTS_IRODORI_SEED=1234
 HTTP_TTS_IRODORI_CHUNKING_ENABLED=false
-HTTP_TTS_IRODORI_CHUNK_MIN_CHARS=120
+```
+
+設定後にBackendを再起動します。`HTTP_TTS_VOICE=none` は声の説明から生成する設定です。声を固定する場合は、Irodoriサーバーに登録した声の名前を指定してください。
+
+アプリのBackend URLには、Yui BackendのURL（同じPCなら通常 `http://127.0.0.1:8000`）を設定します。IrodoriのURLは `.env` の `HTTP_TTS_BASE_URL` へ設定してください。
+
+<a id="connection-check"></a>
+
+## 接続を確認する
+
+Irodoriサーバーを起動した後、PowerShellで確認します。異なるポートを使っている場合はURLを変更してください。
+
+```powershell
+curl.exe http://127.0.0.1:8088/health
+curl.exe http://127.0.0.1:8088/v1/models
+curl.exe http://127.0.0.1:8000/providers/status
+```
+
+`/health` はサーバーの起動状態、`/v1/models` は使用できるモデルを確認するためのURLです。Yuiの `/providers/status` では `providers.http_tts.status` が `ok` または `configured` になっているかを確認します。その後、短い文章で音声生成を試してください。
+
+接続できない場合は、サーバーとBackendの起動状態・URL・ポートを確認します。接続できても生成が失敗する場合は、モデル名・登録した声の名前・GPUの空きメモリを確認してください。
+
+## 起動をまとめる場合
+
+起動するたびにIrodoriを手動で開く代わりに、Backendのサービス起動ファイルから起動できます。`.env` に以下を追加してください。
+
+```env
 IRODORI_ENABLE=auto
 IRODORI_BASE_URL=http://127.0.0.1:8088
 IRODORI_START_COMMAND=
 ```
 
-If `IRODORI_START_COMMAND` is set, `scripts/start_local_services.ps1` starts Irodori-TTS-Server before launching the Yui backend. For Docker-based installs, put the full Docker command there. If it is empty, the script warns and continues with VOICEVOX plus the Yui backend, so the app can still run with fallback TTS.
+`IRODORI_START_COMMAND` に、導入した環境でサーバーを起動するコマンドを設定します。Dockerを使っている場合はDockerの起動コマンドです。空欄の場合は、Irodoriを別途起動してください。
 
-Use `ref_audio` only after no-ref quality is checked. On macOS/MPS, the first ref run was slow, and ref-enabled short text was not faster than MLX VoiceDesign. The sample starts at `24` steps to avoid defaulting new users to the rejected fastest profile.
-
-## Health Check
-
-After starting Irodori-TTS-Server, verify that the server is reachable:
-
-```powershell
-curl http://127.0.0.1:8088/health
-curl http://127.0.0.1:8088/v1/models
-```
-
-Then verify that Yui can see the configured HTTP TTS provider:
-
-```powershell
-curl http://127.0.0.1:8000/providers/status
-```
-
-Expected Yui-side signals:
-
-- `providers.http_tts.status` is `ok` or `configured`.
-- `providers.http_tts.engine` is `irodori_server`.
-- `providers.http_tts.recommendation` mentions Windows NVIDIA.
-- `TTS_FALLBACK_PROVIDER=voicevox` is set so failed experimental TTS requests can fall back to VOICEVOX.
-
-## Benchmark Gate
-
-Run the benchmark with environment metadata preserved:
-
-```powershell
-python scripts/bench_tts.py `
-  --engine irodori-server-direct `
-  --text short_b --text medium_c `
-  --iterations 5 `
-  --num-steps 24 `
-  --seed 1234 `
-  --chunking-enabled false `
-  --phase windows-nvidia-warm-cache-miss `
-  --run-id windows-nvidia-irodori-server-steps24
-```
-
-Then repeat for `--num-steps 16`, `20`, and `32` so speed and quality can be compared on the actual Windows GPU.
-
-For ref-enabled tests, add:
-
-```powershell
---server-ref-wav "C:\path\to\reference.wav" `
---server-caption "若い女性の、明るく聞き取りやすい声で話してください。"
-```
-
-Record and compare:
-
-- `summary.md`: median and max elapsed time.
-- `results.jsonl`: per-file latency and audio metrics.
-- `environment.json`: OS, CPU, Docker, and NVIDIA GPU hints.
-
-## Adoption Gate
-
-Treat Irodori-TTS-Server as a Windows NVIDIA TTS candidate only if:
-
-- `short_b` warm cache-miss median is within 2-4 seconds.
-- `medium_c` warm cache-miss median is within 5-9 seconds.
-- Failed generations are 0-1 out of 5.
-- no-ref voice quality is useful enough compared with VOICEVOX.
-- ref-enabled mode either improves enough on CUDA or has a clear prewarm UX.
-
-If these are not met, keep Irodori-TTS-Server behind advanced settings and leave VOICEVOX as the practical Windows default.
-
-## UI Policy
-
-Use labels that make the engines visibly different:
-
-- `VOICEVOX`: standard, stable default.
-- `Irodori MLX VoiceDesign`: macOS Apple Silicon, high-quality character voice candidate.
-- `Irodori-TTS-Server for Windows NVIDIA`: Windows NVIDIA candidate, experimental elsewhere. Keep it behind setup guidance until Windows real-device listening confirms voice quality.
-
-Do not label both Irodori paths as the same engine. They have different runtime requirements and different VoiceDesign compatibility risks.
+音声モデルの利用条件は、使用するモデルの配布ページを確認してください。
