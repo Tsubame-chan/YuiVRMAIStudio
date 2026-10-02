@@ -225,6 +225,12 @@ namespace YuiPhysicalAI.LocalAI
 
             var root = Path.Combine(assetStorageRoot ?? string.Empty, NormalizeRelativePath(asset.InstallRoot));
             var installedPaths = asset.InstalledPaths ?? Array.Empty<string>();
+            if(string.Equals(platform,"windows",StringComparison.OrdinalIgnoreCase)
+                && string.Equals(asset.Kind,"desktop_backend_bundle",StringComparison.OrdinalIgnoreCase))
+                installedPaths = installedPaths.Concat(YuiDesktopInferenceProcess.WindowsChatFiles)
+                    .Concat(new[]{"runtime/voicevox/voicevox_core.dll","runtime/voicevox/voicevox_onnxruntime.dll"}).Distinct().ToArray();
+            if(string.Equals(asset.Kind,"desktop_local_ai_minimum",StringComparison.OrdinalIgnoreCase))
+                installedPaths = installedPaths.Concat(new[]{"Voicevox/open_jtalk_dic_utf_8-1.11/sys.dic"}).Distinct().ToArray();
             var checkedPaths = installedPaths
                 .Select(path => Path.Combine(root, NormalizeRelativePath(path)))
                 .ToArray();

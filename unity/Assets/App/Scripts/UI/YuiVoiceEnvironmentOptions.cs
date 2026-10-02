@@ -35,6 +35,7 @@ namespace YuiPhysicalAI.UI
             var httpLabel = knownBackend?.Providers != null && knownBackend.Providers.TryGetValue("http_tts", out var http)
                 && (http.Engine ?? "").StartsWith("irodori", StringComparison.OrdinalIgnoreCase) ? "Irodori" : "External voice";
             Add("server-http", httpLabel + " · Backend", BackendHas("http_tts"));
+            Add("backend-profile", "Saved voice · Backend", string.Equals(selected,"backend-profile",StringComparison.OrdinalIgnoreCase));
             Add("local-ai", "Device voice", deviceSpeech);
             options.Add(new KeyValuePair<string, string>("silent", "Silent"));
             return options;

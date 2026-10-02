@@ -11,7 +11,8 @@ param(
     [int]$StartupTimeoutSeconds = 90,
     [switch]$SkipIrodori,
     [switch]$SkipVoicevox,
-    [switch]$NoWait
+    [switch]$NoWait,
+    [switch]$OpenConsole
 )
 
 $ErrorActionPreference = "Stop"
@@ -328,7 +329,7 @@ else {
     Write-Step "Backend logs: $backendOut / $backendErr"
 
     $backendProcess = Start-Process -FilePath $backendPython `
-        -ArgumentList @("-m", "uvicorn", "main:app", "--host", $BackendHost, "--port", "$BackendPort", "--no-use-colors") `
+        -ArgumentList @("-m", "uvicorn", "main:app", "--host", $BackendHost, "--port", "$BackendPort", "--no-use-colors", "--no-proxy-headers") `
         -WorkingDirectory $backendDir `
         -WindowStyle Hidden `
         -RedirectStandardOutput $backendOut `
@@ -352,6 +353,10 @@ if (Test-IrodoriConfigured) {
 }
 Write-Host "  Backend : $backendBaseUrl/health"
 Write-Host ""
+Write-Host "  Console : http://127.0.0.1:$BackendPort/admin/"
+if ($OpenConsole) {
+    Start-Process "http://127.0.0.1:$BackendPort/admin/"
+}
 Write-Host "Open the Unity editor or Windows app now."
 Write-Host "Keep this window open while using Yui."
 Write-Host "When you are done, press Enter here to stop local Yui services."

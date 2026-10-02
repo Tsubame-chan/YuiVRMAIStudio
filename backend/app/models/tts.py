@@ -7,6 +7,7 @@ class TTSRequest(BaseModel):
     request_id: str | None = None
     provider: str | None = None
     text: str
+    voice_profile_id: str | None = Field(default=None, max_length=64, pattern=r"^[A-Za-z0-9_.-]+$")
     speaker_id: int = 14
     speed_scale: float | None = Field(default=1.0, ge=0.5, le=2.0)
     pitch_scale: float | None = Field(default=0.0, ge=-0.5, le=0.5)

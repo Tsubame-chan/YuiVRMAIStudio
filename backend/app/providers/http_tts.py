@@ -7,6 +7,8 @@ import struct
 import tempfile
 import time
 import wave
+import os
+from urllib.parse import urlsplit
 from pathlib import Path
 import audioop
 
@@ -66,14 +68,22 @@ class HttpTTSProvider(TTSProvider):
             headers["Authorization"] = f"Bearer {self.settings.http_tts_api_key}"
 
         payload = self._payload(request, audio_format)
-        if self._should_use_voice_reference(request):
-            payload["ref_audio"] = str(await self._ensure_voice_reference(request))
-            payload["ref_text"] = IRODORI_VOICE_REFERENCE_TEXT
-
         try:
             remote_started_at = time.perf_counter()
-            response = await self._client.post(self._endpoint(request), json=payload, headers=headers)
-            response.raise_for_status()
+            if self._should_use_voice_reference(request):
+                reference = await self._ensure_voice_reference(request)
+                # A GUI-launched MLX process may not have access to Documents.
+                # Share only this generated sample, for the lifetime of the local call.
+                with tempfile.TemporaryDirectory(prefix="yui-tts-reference-") as shared:
+                    sample=Path(shared)/reference.name
+                    sample.write_bytes(reference.read_bytes());os.chmod(sample,0o600)
+                    payload["ref_audio"]=str(sample)
+                    payload["ref_text"]=IRODORI_VOICE_REFERENCE_TEXT
+                    response=await self._client.post(self._endpoint(request),json=payload,headers=headers)
+                    response.raise_for_status()
+            else:
+                response = await self._client.post(self._endpoint(request), json=payload, headers=headers)
+                response.raise_for_status()
         except httpx.HTTPError as exc:
             raise TTSProviderError(str(exc)) from exc
         remote_ms = int((time.perf_counter() - remote_started_at) * 1000)
@@ -143,18 +153,18 @@ class HttpTTSProvider(TTSProvider):
             )
             instruct = request_instruct if request_instruct is not None else self.settings.http_tts_instruct
             lang_code = request_lang_code if request_lang_code is not None else self.settings.http_tts_lang_code
-            if gender:
-                payload["gender"] = gender
-            if instruct:
-                payload["instruct"] = instruct
-            if lang_code:
-                payload["lang_code"] = lang_code
+            if self.settings.http_tts_payload_format == "openai_speech":
+                if gender:
+                    payload["gender"] = gender
+                if instruct:
+                    payload["instruct"] = instruct
+                if lang_code:
+                    payload["lang_code"] = lang_code
             if self.settings.http_tts_payload_format == "irodori_openai_speech":
                 irodori_options: dict[str, object] = {
                     "chunking_enabled": self.settings.http_tts_irodori_chunking_enabled,
                 }
                 if instruct:
-                    payload["caption"] = instruct
                     irodori_options["caption"] = instruct
                 if self.settings.http_tts_irodori_num_steps > 0:
                     irodori_options["num_steps"] = self.settings.http_tts_irodori_num_steps
@@ -201,7 +211,11 @@ class HttpTTSProvider(TTSProvider):
         return "irodori" in provider_key
 
     def _should_use_voice_reference(self, request: TTSRequest) -> bool:
-        if not self._is_irodori_openai_speech():
+        # Only the local MLX API reads ref_audio from the same filesystem.
+        # Irodori-TTS-Server uses registered voices / irodori.ref_wav instead.
+        if (not self._is_irodori_openai_speech()
+            or self.settings.http_tts_payload_format != "openai_speech"
+            or urlsplit(self.settings.http_tts_base_url).hostname not in {"localhost","127.0.0.1","::1"}):
             return False
 
         return bool(

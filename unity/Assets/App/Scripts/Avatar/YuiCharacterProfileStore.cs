@@ -10,6 +10,7 @@ namespace YuiPhysicalAI.Avatar
     public sealed class YuiCharacterProfile
     {
         public string Name = "Yui", Instruction = "", TtsMode = "server", VoiceGender = "female", VoiceInstruction = "";
+        public string BackendVoiceProfileId = "", BackendVoiceProfileName = "", BackendVoiceServer = "";
         public int SpeakerId = 14;
         public float Speed = 1, Pitch, Intonation = 1, SynthesisVolume = 1, PrePhoneme = .1f, PostPhoneme = .1f;
     }

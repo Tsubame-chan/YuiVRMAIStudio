@@ -7,6 +7,8 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, W
 from fastapi.responses import FileResponse
 
 from app.core.config import Settings, get_settings
+from app.core.capabilities import provider_options
+from app.core.runtime_events import record, diagnose, classify_error
 from app.core.provider_status import build_provider_status, probe_http_tts, probe_voicevox
 from app.core.tts_voices import default_voices_for_config, voice_options_for_config
 from app.db.repositories import ChatRepository, MemoryRepository, UsageRepository
@@ -98,7 +100,7 @@ def health(settings: Settings = Depends(get_settings)) -> HealthResponse:
 
 @router.get("/config", response_model=ConfigResponse)
 def config(settings: Settings = Depends(get_settings)) -> ConfigResponse:
-    chat_providers = ["openai", "lmstudio", "litert_lm"]
+    chat_providers = [p for p in provider_options("chat") if p != "xai"]
     if settings.xai_api_key:
         chat_providers.append("xai")
     vision_providers = ["openai"]
@@ -192,6 +194,7 @@ async def realtime_audio(
     memory_repository: MemoryRepository = Depends(get_memory_repository),
 ) -> RealtimeAudioResponse:
     provider = RealtimeProvider(settings, repository, memory_repository)
+    record("generating", operation="realtime", provider="openai", model=settings.openai_realtime_model)
     try:
         return await provider.respond_to_wav(
             await audio.read(),
@@ -199,6 +202,7 @@ async def realtime_audio(
             instructions=instructions, user_id=user_id, character_id=character_id or None, secret=secret,
         )
     except RealtimeProviderError as exc:
+        diagnose(exc, operation="realtime", provider="openai")
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=str(exc),
@@ -212,6 +216,11 @@ async def realtime_stream(
     repository: ChatRepository = Depends(get_chat_repository),
     memory_repository: MemoryRepository = Depends(get_memory_repository),
 ) -> None:
+    origin = websocket.headers.get("origin")
+    expected = ("https" if websocket.url.scheme == "wss" else "http") + "://" + websocket.headers.get("host", "")
+    if origin and origin != expected:
+        await websocket.close(code=1008)
+        return
     await websocket.accept()
     try:
         await RealtimeProvider(settings, repository, memory_repository).relay_unity_stream(websocket)
@@ -234,6 +243,7 @@ async def chat(
 ) -> ChatResponse:
     cached = None if request.secret else repository.get_cached_response(request.request_id, request.user_id, request.character_id, request.session_id, request.task_id)
     if cached is not None:
+        record("cached", operation="chat")
         return cached
 
     provider_router = ProviderRouter(settings)
@@ -251,8 +261,15 @@ async def chat(
                 character_id=request.character_id,
             )
         ]
+        record("context_ready", operation="chat", provider=provider.name, counts={
+            "history": len(history), "memories": len(request.context.extra["memories"]),
+            "local_memory_chars": len(str(request.context.extra.get("character_memory") or "")),
+            "screen_chars": len(request.context.screen_context or ""),
+        })
+        record("generating", operation="chat", provider=provider.name, model=_chat_model_name(settings, provider.name))
         response = await provider.generate(request, history=history)
     except ProviderConfigurationError as exc:
+        diagnose(exc, operation="chat", provider=settings.chat_provider)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(exc),
@@ -263,6 +280,7 @@ async def chat(
             detail=str(exc),
         ) from exc
     except ChatProviderError as exc:
+        diagnose(exc, operation="chat", provider=settings.chat_provider)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Chat provider request failed.",
@@ -361,9 +379,10 @@ async def tts(
             model=None,
             operation="tts",
             metadata={
-                "speaker_id": request.speaker_id,
                 "format": response.format,
-                "speed_scale": request.speed_scale,
+                **({"voice_profile_id": request.voice_profile_id} if request.voice_profile_id else {
+                    "speaker_id": request.speaker_id, "speed_scale": request.speed_scale,
+                }),
             },
         )
         return response
@@ -373,6 +392,8 @@ async def tts(
             detail=str(exc),
         ) from exc
     except TTSProviderError as exc:
+        if not request.voice_profile_id:
+            diagnose(exc, operation="tts", provider=request.provider or settings.tts_provider)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="TTS provider request failed.",
@@ -398,9 +419,10 @@ async def tts_audio(
             model=None,
             operation="tts",
             metadata={
-                "speaker_id": request.speaker_id,
                 "format": response.format,
-                "speed_scale": request.speed_scale,
+                **({"voice_profile_id": request.voice_profile_id} if request.voice_profile_id else {
+                    "speaker_id": request.speaker_id, "speed_scale": request.speed_scale,
+                }),
                 "direct_audio": True,
             },
         )
@@ -412,6 +434,8 @@ async def tts_audio(
             detail=str(exc),
         ) from exc
     except TTSProviderError as exc:
+        if not request.voice_profile_id:
+            diagnose(exc, operation="tts", provider=request.provider or settings.tts_provider)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="TTS provider request failed.",
@@ -423,10 +447,35 @@ async def _synthesize_tts_with_fallback(
     request: TTSRequest,
     settings: Settings,
 ):
+    if request.voice_profile_id:
+        from app.core.voice_library import resolve_profile
+        try:
+            resolved, profile_settings, profile, snapshot = resolve_profile(request.voice_profile_id, request, settings)
+        except ValueError:
+            raise HTTPException(422, "音声プリセットまたは対応する調整値を確認してください。") from None
+        if request.provider and request.provider != resolved.provider:
+            raise HTTPException(422, "音声プリセットと指定した提供元が一致しません。")
+        selected = ProviderRouter(profile_settings).tts(resolved.provider)
+        record("generating", operation="tts", provider=selected.name)
+        try:
+            return selected, await selected.synthesize(resolved)
+        except TTSProviderError as exc:
+            if not profile['fallback_profile_id']:
+                diagnose(exc, operation="tts", provider=selected.name)
+                raise
+            alternate, alternate_settings, _, _ = resolve_profile(profile['fallback_profile_id'], request, settings, snapshot, apply_overrides=False)
+            record("fallback", operation="tts", provider=alternate.provider, code=classify_error(exc))
+            fallback = ProviderRouter(alternate_settings).tts(alternate.provider)
+            try:
+                return fallback, await fallback.synthesize(alternate)
+            except TTSProviderError as error:
+                diagnose(error, operation="tts", provider=fallback.name)
+                raise
     provider = provider_router.tts(request.provider)
+    record("generating", operation="tts", provider=provider.name)
     try:
         return provider, await provider.synthesize(request)
-    except TTSProviderError:
+    except TTSProviderError as exc:
         fallback_provider_name = (settings.tts_fallback_provider or "").strip().lower()
         if (
             request.provider is not None
@@ -434,6 +483,7 @@ async def _synthesize_tts_with_fallback(
             or fallback_provider_name == (provider.name or "").strip().lower()
         ):
             raise
+        record("fallback", operation="tts", provider=fallback_provider_name, code=classify_error(exc))
         fallback_provider = provider_router.tts(fallback_provider_name)
         return fallback_provider, await fallback_provider.synthesize(request)
 
@@ -481,6 +531,7 @@ async def stt(
     usage_repository: UsageRepository = Depends(get_usage_repository),
 ) -> STTResponse:
     if settings.stt_provider == "openai" and not settings.openai_api_key:
+        record("issue", operation="stt", provider="openai", code="missing_key")
         raise HTTPException(status_code=503, detail="Backend OpenAI key is not configured. Configure OPENAI_API_KEY for this backend, or use OpenAI API mode with the app's key.")
     audio_bytes = await audio.read()
     if not audio_bytes:
@@ -494,6 +545,7 @@ async def stt(
     provider_router = ProviderRouter(settings)
     try:
         provider = provider_router.stt()
+        record("generating", operation="stt", provider=provider.name, model=settings.openai_transcribe_model)
         response = await provider.transcribe(
             audio_bytes=audio_bytes,
             filename=audio.filename or "audio.wav",
@@ -518,6 +570,7 @@ async def stt(
             detail=str(exc),
         ) from exc
     except STTProviderError as exc:
+        diagnose(exc, operation="stt", provider=settings.stt_provider)
         logger.exception(
             "STT provider request failed. filename=%s content_type=%s bytes=%s duration_ms=%s",
             audio.filename,
@@ -557,6 +610,7 @@ async def vision(
     provider_router = ProviderRouter(settings)
     try:
         provider = provider_router.vision()
+        record("generating", operation="vision", provider=provider.name, model=settings.openai_vision_model if provider.name=="openai" else settings.gemini_vision_model)
         response = await provider.analyze_image(
             image_bytes=image_bytes,
             prompt_type=prompt_type,
@@ -668,3 +722,11 @@ def usage(
             tts_count=settings.daily_tts_limit,
         ),
     )
+
+@router.get('/tts/profiles')
+def tts_profiles(settings: Settings = Depends(get_settings)):
+    from app.core.voice_library import load, endpoints
+    data, _ = load()
+    known = endpoints(data, settings)
+    return {'items': [{'id':p['id'], 'name':p['name'], 'provider':known[p['endpoint_id']]['provider_type']}
+                      for p in data['profiles'] if p['endpoint_id'] in known]}

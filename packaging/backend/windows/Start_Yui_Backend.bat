@@ -15,7 +15,7 @@ if not exist "backend\.venv\Scripts\python.exe" (
   )
 )
 
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\start_local_services.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\start_local_services.ps1" -OpenConsole
 echo.
 echo [Yui Backend] Backend window closed.
 pause

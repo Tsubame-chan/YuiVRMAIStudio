@@ -209,6 +209,9 @@ $WINDOWS_BACKEND_PARTS_JSON
         \"scripts/setup_backend_byok.ps1\",
         \"scripts/stop_local_services.ps1\",
         \"backend/.venv/Scripts/python.exe\",
+        \"backend/.venv/Lib/site-packages/litert_lm/litert-lm.dll\",
+        \"backend/.venv/Lib/site-packages/litert_lm/dxcompiler.dll\",
+        \"backend/.venv/Lib/site-packages/litert_lm/dxil.dll\",
         \"runtime/voicevox/voicevox_core.dll\",
         \"runtime/voicevox/voicevox_onnxruntime.dll\",
         \"scripts/yui_desktop_inference.py\",
@@ -248,7 +251,7 @@ $PARTS_JSON
         "Voicevox/Models/kyushu_sora_2.vvm",
         "Voicevox/Models/sayo_15.vvm",
         "Voicevox/Licenses/VOICEVOX_VVM_TERMS.txt",
-        "Voicevox/open_jtalk_dic_utf_8-1.11"
+        "Voicevox/open_jtalk_dic_utf_8-1.11/sys.dic"
       ]
     }$BACKEND_ASSET_JSON
   ]

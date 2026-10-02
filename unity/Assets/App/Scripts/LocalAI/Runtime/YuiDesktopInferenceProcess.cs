@@ -31,11 +31,24 @@ namespace YuiPhysicalAI.LocalAI
                 python = Path.Combine(root, windows ? "backend/.venv/Scripts/python.exe" : "backend/.venv/bin/python3");
                 worker = Path.Combine(root, "scripts/yui_desktop_inference.py");
                 nativeLibraries = Path.Combine(root, "runtime/voicevox");
-                return File.Exists(python) && File.Exists(worker);
+                return windows ? WindowsChatFilesReady(root) : File.Exists(python) && File.Exists(worker);
 #else
                 return false;
 #endif
             }
+        }
+
+        public static readonly string[] WindowsChatFiles = {
+            "backend/.venv/Scripts/python.exe", "scripts/yui_desktop_inference.py",
+            "backend/.venv/Lib/site-packages/litert_lm/litert-lm.dll",
+            "backend/.venv/Lib/site-packages/litert_lm/dxcompiler.dll",
+            "backend/.venv/Lib/site-packages/litert_lm/dxil.dll"
+        };
+        public static bool WindowsChatFilesReady(string root)
+        {
+            foreach(var relative in WindowsChatFiles)
+                if(!File.Exists(Path.Combine(root, relative))) return false;
+            return true;
         }
 
         public static string Invoke(string requestJson, CancellationToken token)

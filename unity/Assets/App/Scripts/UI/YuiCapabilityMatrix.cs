@@ -107,6 +107,7 @@ namespace YuiPhysicalAI.UI
                 return "aivis";
             }
 
+            if (string.Equals(mode,"backend-profile",StringComparison.OrdinalIgnoreCase))return "backend-profile";
             if (string.Equals(mode, "server-http", StringComparison.OrdinalIgnoreCase))
             {
                 return "server-http";
@@ -249,6 +250,7 @@ namespace YuiPhysicalAI.UI
             {
                 ["server"] = voicevoxItem,
                 ["aivis"] = BackendProviderItem("aivis", "AivisSpeech HD", aivisStatus, backendReachable, advertiseWhenMissing: true),
+                ["backend-profile"] = new YuiCapabilityItem("backend-profile", "Saved voice", backendReachable?YuiCapabilityState.Ready:YuiCapabilityState.NeedsBackend, YuiCapabilityRoute.Backend, "Select a saved voice from the configured Backend; synthesis availability is checked when requested."),
                 ["server-http"] = BackendProviderItem("server-http", "Irodori TTS", httpTtsStatus, backendReachable, advertiseWhenMissing: true),
                 ["local-ai"] = new YuiCapabilityItem("local-ai", "Local Voice/STT", YuiCapabilityState.Unavailable, YuiCapabilityRoute.Local, "Local generic TTS is hidden on desktop unless a platform runtime provides it."),
                 ["silent"] = new YuiCapabilityItem("silent", "Silent", YuiCapabilityState.Ready, YuiCapabilityRoute.None, "Voice playback is disabled.")

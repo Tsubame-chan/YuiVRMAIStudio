@@ -120,7 +120,11 @@ async def test_http_tts_can_post_openai_speech_payload_for_irodori(tmp_path: Pat
     captured_payloads: list[dict[str, object]] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
-        captured_payloads.append(json.loads(request.content))
+        payload=json.loads(request.content)
+        if "ref_audio" in payload:
+            assert Path(payload["ref_audio"]).read_bytes()==b"RIFF-irodori-audio"
+            assert not Path(payload["ref_audio"]).is_relative_to(tmp_path)
+        captured_payloads.append(payload)
         return httpx.Response(200, content=b"RIFF-irodori-audio", headers={"content-type": "audio/wav"})
 
     provider = HttpTTSProvider(
@@ -147,7 +151,7 @@ async def test_http_tts_can_post_openai_speech_payload_for_irodori(tmp_path: Pat
     )
 
     assert response.format == "wav"
-    assert (tmp_path / captured_payloads[1]["ref_audio"]).exists()
+    assert not Path(captured_payloads[1]["ref_audio"]).exists(), "Shared sample must be removed after the call"
     assert len(captured_payloads) == 2
     assert captured_payloads[0] == {
         "model": "mlx-community/Irodori-TTS-600M-v3-VoiceDesign-8bit",
@@ -255,17 +259,13 @@ async def test_http_tts_can_post_irodori_openai_server_payload(tmp_path: Path) -
 
     await provider.synthesize(TTSRequest(text="こんにちは", speed_scale=1.0, pitch_scale=-0.1))
 
-    assert len(captured_payloads) == 2
+    assert len(captured_payloads) == 1
     assert captured_payloads[0] == {
         "model": "irodori-tts",
-        "input": "こんにちは、声の基準を作ります。",
+        "input": "こんにちは",
         "response_format": "wav",
         "voice": "none",
         "speed": 1.0,
-        "gender": "female",
-        "instruct": "若い女性の、明るく聞き取りやすい声で話してください。",
-        "lang_code": "ja",
-        "caption": "若い女性の、明るく聞き取りやすい声で話してください。",
         "irodori": {
             "chunking_enabled": False,
             "caption": "若い女性の、明るく聞き取りやすい声で話してください。",
@@ -275,11 +275,11 @@ async def test_http_tts_can_post_irodori_openai_server_payload(tmp_path: Path) -
             "chunk_min_chars": 120,
         },
     }
-    assert captured_payloads[1]["irodori"]["chunking_enabled"] is False
-    assert captured_payloads[1]["irodori"]["num_steps"] == 16
-    assert captured_payloads[1]["irodori"]["seed"] == 1234
-    assert captured_payloads[1]["ref_audio"]
-    assert "pitch" not in captured_payloads[1]
+    assert captured_payloads[0]["irodori"]["chunking_enabled"] is False
+    assert captured_payloads[0]["irodori"]["num_steps"] == 16
+    assert captured_payloads[0]["irodori"]["seed"] == 1234
+    assert "ref_audio" not in captured_payloads[0]
+    assert "pitch" not in captured_payloads[0]
 
 
 def test_http_tts_rejects_unsupported_audio_format(tmp_path: Path) -> None:

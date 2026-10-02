@@ -663,6 +663,7 @@ namespace YuiPhysicalAI.UI
 #endif
             if (string.Equals(mode, "server", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(mode, "local", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "backend-profile", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(mode, "server-http", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(mode, "aivis", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(mode, "aivis-native", StringComparison.OrdinalIgnoreCase)

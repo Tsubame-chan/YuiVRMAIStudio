@@ -23,7 +23,7 @@ Write-Host "Stderr log: $errLogFile"
 
 Set-Content -LiteralPath $logFile -Value "==== Backend reload start $(Get-Date -Format o) ===="
 $process = Start-Process -FilePath $python `
-    -ArgumentList @("-m", "uvicorn", "main:app", "--reload", "--host", "127.0.0.1", "--port", "8000", "--no-use-colors") `
+    -ArgumentList @("-m", "uvicorn", "main:app", "--reload", "--host", "127.0.0.1", "--port", "8000", "--no-use-colors", "--no-proxy-headers") `
     -WorkingDirectory $backendDir `
     -NoNewWindow `
     -RedirectStandardOutput $outLogFile `

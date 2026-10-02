@@ -1,6 +1,7 @@
 from functools import lru_cache
 
 from app.core.config import Settings
+from app.core.capabilities import provider_options
 from app.providers.gemini_vision import GeminiVisionProvider
 from app.providers.http_tts import HttpTTSProvider
 from app.providers.lmstudio_chat import LMStudioChatProvider
@@ -65,42 +66,27 @@ class ProviderRouter:
         self.settings = settings
 
     def chat(self):
-        if self.settings.chat_provider == "openai":
-            return _openai_chat_provider(self.settings)
-        if self.settings.chat_provider == "lmstudio":
-            return _lmstudio_chat_provider(self.settings)
-        if self.settings.chat_provider == "litert_lm":
-            return _lmstudio_chat_provider(self.settings)
-        if self.settings.chat_provider == "xai":
-            return _xai_chat_provider(self.settings)
-        raise ProviderNotImplementedError(
-            f"Chat provider is not implemented: {self.settings.chat_provider}"
-        )
+        return self._resolve("chat", self.settings.chat_provider)
 
     def vision(self):
-        if self.settings.vision_provider == "openai":
-            return _openai_vision_provider(self.settings)
-        if self.settings.vision_provider == "gemini":
-            return _gemini_vision_provider(self.settings)
-        raise ProviderNotImplementedError(
-            f"Vision provider is not implemented: {self.settings.vision_provider}"
-        )
+        return self._resolve("vision", self.settings.vision_provider)
 
     def tts(self, provider: str | None = None):
         selected_provider = (provider or self.settings.tts_provider).strip().lower()
-        if selected_provider == "voicevox":
-            return _voicevox_tts_provider(self.settings)
-        if selected_provider == "aivis":
-            return _aivis_tts_provider(self.settings)
-        if selected_provider == "http":
-            return _http_tts_provider(self.settings)
-        raise ProviderNotImplementedError(
-            f"TTS provider is not implemented: {selected_provider}"
-        )
+        return self._resolve("tts", selected_provider)
 
     def stt(self):
-        if self.settings.stt_provider == "openai":
-            return _openai_stt_provider(self.settings)
-        raise ProviderNotImplementedError(
-            f"STT provider is not implemented: {self.settings.stt_provider}"
-        )
+        return self._resolve("stt", self.settings.stt_provider)
+
+    def _resolve(self, capability: str, selected: str):
+        factories = {
+            ("chat", "openai"): _openai_chat_provider, ("chat", "lmstudio"): _lmstudio_chat_provider,
+            ("chat", "litert_lm"): _lmstudio_chat_provider, ("chat", "xai"): _xai_chat_provider,
+            ("vision", "openai"): _openai_vision_provider, ("vision", "gemini"): _gemini_vision_provider,
+            ("tts", "voicevox"): _voicevox_tts_provider, ("tts", "aivis"): _aivis_tts_provider,
+            ("tts", "http"): _http_tts_provider, ("stt", "openai"): _openai_stt_provider,
+        }
+        factory = factories.get((capability, selected))
+        if selected not in provider_options(capability) or factory is None:
+            raise ProviderNotImplementedError(f"{capability} provider is not implemented: {selected}")
+        return factory(self.settings)

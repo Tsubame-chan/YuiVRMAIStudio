@@ -14,7 +14,7 @@ if [[ ! -x "backend/.venv/bin/python" ]]; then
   fi
 fi
 
-YUI_REUSE_EXISTING_BACKEND=1 ./scripts/start_local_services_detached_macos.sh
+YUI_OPEN_BACKEND_CONSOLE=1 YUI_REUSE_EXISTING_BACKEND=1 ./scripts/start_local_services_detached_macos.sh
 echo
 echo "[Yui Backend] Backend startup requested."
 echo "[Yui Backend] You can close this window."

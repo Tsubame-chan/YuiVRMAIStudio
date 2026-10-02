@@ -340,7 +340,7 @@ else
   echo "[Yui services] Starting backend on $BACKEND_BASE_URL"
   (
     cd "$BACKEND_DIR"
-    "$PYTHON_BIN" -m uvicorn main:app --host "$BACKEND_HOST" --port "$BACKEND_PORT" --no-use-colors
+    "$PYTHON_BIN" -m uvicorn main:app --host "$BACKEND_HOST" --port "$BACKEND_PORT" --no-use-colors --no-proxy-headers
   ) >"$BACKEND_OUT" 2>"$BACKEND_ERR" &
   BACKEND_PID=$!
   wait_http_ok "Backend" "$BACKEND_BASE_URL/health" 90 || true
