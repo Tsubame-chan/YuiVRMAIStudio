@@ -1,88 +1,69 @@
 # Yui VRM AI Studio
 
-[日本語](README.md) · [Help & FAQ](docs/HELP.md) · [Report an issue](https://github.com/Tsubame-chan/YuiVRMAIStudio/issues)
+[日本語](README.md) · [Help](docs/HELP.md) · [Report an issue](https://github.com/Tsubame-chan/YuiVRMAIStudio/issues)
 
-**AI chat with your own VRM avatar.**
+**Make your favorite VRM avatar your conversation partner.**
 
-Bring your favorite avatar into everyday conversation, advice and small tasks. Describe its personality and speaking style in your own words, or take a break and view it from any angle.
+Import your avatar for AI conversation, advice and small tasks. Describe its personality and speaking style in your own words. No avatar yet? Start with the included Unity-chan.
 
 <p>
-  <img src="docs/images/avatar-chat.jpg" width="300" alt="Unity-chan speaking during an actual AI conversation">
+  <img src="docs/images/avatar-chat.jpg" width="300" alt="An avatar replying with speech and lip movement">
   <img src="docs/images/avatar-viewer.jpg" width="300" alt="Rotate and zoom your avatar in the viewer">
 </p>
 
-These promotional images use the included Unity-chan in the real Mac application. Their captions are Japanese; the app has Japanese and English UI. Layout varies with the device and window size.
+## What you can do
+
+- **Bring your own appearance.** Import VRM avatars. Change outfits while keeping the same character's personality and memories.
+- **Choose its personality and replies.** Give instructions such as “be more friendly” or “start with the conclusion.” Advanced local-AI settings are also available.
+- **Keep the conversation going.** Character memories are saved on your device and used across restarts and AI switches. View, edit or delete them.
+- **Enjoy the avatar from any angle.** Switch to the viewer to rotate and zoom, like a digital figure.
+
+<details>
+<summary>See personality and AI settings</summary>
+
+<p>
+  <img src="docs/images/customization.jpg" width="300" alt="Character personality and response settings">
+  <img src="docs/images/offline-chat.jpg" width="300" alt="Lightweight and higher-quality local models">
+</p>
+
+The images show the real app with the included Unity-chan. Captions are Japanese; the app has Japanese and English menus. Layout varies by device and window size.
+</details>
 
 ## Download
 
-[Planned App Store page](https://apps.apple.com/jp/app/id6815341780) — available after approval/publication.
-
-| Platform | Availability |
+| Your device | Download |
 | --- | --- |
-| macOS / Windows | [v0.2.4-beta.1](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.1) |
-| iPhone / iPad | 0.2.4 (14) submitted to App Review. Free launch in Japan after approval; not publicly available yet |
-| Android | Development source; distribution and device acceptance remain incomplete |
+| Mac | [macOS app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.1/YuiVRMAIStudio_MacOSPublicBeta_v0.2.4-beta.1_macos.zip) (Apple Silicon runtime) |
+| Windows | [Windows app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.1/YuiVRMAIStudio_WindowsPublicBeta_v0.2.4-beta.1_windows.zip) |
+| iPhone / iPad | iOS 26+. [Planned App Store page](https://apps.apple.com/jp/app/id6815341780): free Japan release under review, available after publication |
 
-Download and extract the application ZIP for your desktop OS. On first launch, confirm the download of AI, voice and runtime data. Use Wi-Fi and allow enough free storage. Once prepared, on-device chat works offline.
+The desktop version is **v0.2.4-beta.1**. Extract the ZIP, open the app and follow the first-run data notice. Allow approximately 2.5GB of downloads plus room for extraction; Wi-Fi is recommended. Mac signing/notarization is not yet provided. Setup: [Mac](docs/MAC_PUBLIC_BETA.en.md) / [Windows](docs/SETUP_GUIDE.md).
 
-**`Code → Download ZIP` is source for developers. It does not include built applications or large models.**
+**GitHub's “Code → Download ZIP” is source code.** To use the app, choose a download above.
 
-Setup: [macOS](docs/MAC_PUBLIC_BETA.en.md) / [Windows](docs/SETUP_GUIDE.md). The Mac runtime targets Apple Silicon; code signing and notarization are not yet provided. Windows is distributed as a beta.
+## Get started
 
-## Make it your companion
+1. Send a message to begin. Use Talk for short conversations, or Work for longer advice and tasks.
+2. Change personality, voice and avatar in Settings. Your own avatar needs a **VRM file**. See [avatar preparation and import](docs/AVATAR_IMPORT.md).
+3. Replay the tutorial from Help whenever you need it.
 
-- **Bring your avatar.** Import VRM 0.x / 1.0, manage characters and outfits, and display blinking, lip sync and supported secondary motion.
-- **Shape its personality and replies.** Combine character personality, shared AI instructions and per-model instructions. Local inference settings include context, output/thinking budgets and temperature, saved separately for Talk and Work.
-- **Keep a shared history with each character.** Character-scoped memories persist on the device across restarts and switches between local AI and API chat. Inspect, edit or delete them; other characters do not share them.
-- **Choose the task.** Talk favors short conversations; Work provides longer explanations and task assistance. Send text, microphone input and images, save replies or read them aloud.
-- **Enjoy a digital figure.** Rotate and zoom in the viewer. A four-page tutorial introduces the basics and can be reopened from Help.
+Choose **offline, on-device AI** or **OpenAI API**. The lightweight E2B model is standard; Mac and iOS offer optional E4B for better responses at the cost of longer waits and higher device load. OpenAI API is recommended for higher-quality conversation. **An API key and API charges are required**, separately from a ChatGPT subscription.
 
-<details>
-<summary>Show personality, model settings and offline chat</summary>
-
-<p>
-  <img src="docs/images/customization.jpg" width="300" alt="Character personality and local inference settings">
-  <img src="docs/images/offline-chat.jpg" width="300" alt="Standard 2B and optional 4B model selection">
-</p>
-
-</details>
-
-## Choose AI and voice separately
-
-| Conversation route | What to expect |
-| --- | --- |
-| On-device AI | Standard Gemma 4 E2B. macOS and iOS also offer optional E4B in Settings: higher quality, with more storage, memory use and latency |
-| OpenAI API | Recommended for higher-quality conversation. Requires an API key, connectivity and API usage charges, separate from a ChatGPT subscription |
-| PC Backend | Optional extensions using configured TTS/STT, search and other services. Management remains CLI-based and some features are experimental |
-
-On-device VOICEVOX supplies five standard Japanese voices. English UI is available, but a dedicated English TTS model is not included yet. A configured Backend can provide additional voice engines.
-
-The app's OpenAI key is for direct access and is separate from the Backend's `.env`; it is not forwarded to the Backend. Desktop setup downloads a runtime bundle containing a local inference worker. On-device AI does not require the Backend server to be running.
-
-## Import your avatar
-
-Use Settings → Character → Import avatar. My characters → Change outfit changes appearance while retaining character identity.
-
-Export Unity/VRChat avatars as VRM from their configured Unity project. Purchased ZIPs, `.unitypackage` files and FBX cannot be loaded directly. Custom shaders, clothing menus and PhysBone behavior are not reproduced completely. Use models you have permission to use. See the [avatar guide](docs/AVATAR_IMPORT.md).
+Standard speech uses five Japanese VOICEVOX voices. Menus support Japanese and English, but an English speech model is not included. Optional PC Backend features are covered in [Help](docs/HELP.md).
 
 ## Memory and privacy
 
-Secret Mode can read the selected character's existing memories, but does not save new conversation history or memories. Its private conversation is not carried forward after leaving Secret Mode. Memories are not synchronized between devices.
+Memories are separate for each character and are not synchronized between devices. Secret mode reads existing memories without saving the new conversation. When you choose an external API, conversation and relevant personality settings/memories are sent to that service.
 
-External AI receives conversation content and relevant personality settings and memories. Secret Mode does not prevent those requests. Apple builds store API keys in Keychain. See [privacy](docs/PRIVACY.md).
+AI replies and memory retrieval can be wrong. Check important information. [How memory works](docs/CONVERSATION_IDENTITY.md) · [Privacy](docs/PRIVACY.md)
 
-**Replies and memory retrieval can be wrong.** Local models still make speaker-attribution, knowledge and arithmetic mistakes. A larger model or different settings cannot guarantee correctness. Verify important information.
+<details>
+<summary>Developer documentation</summary>
 
-## Development and specifications
+Unity **2022.3.62f3** / UniVRM **0.131.2**. Model/voice data and platform SDKs/runtimes are separate from source. No public Android app is provided.
 
-Unity **2022.3.62f3** / UniVRM **0.131.2**. Unity 6 migration has not been performed. Unity-chan is the public default avatar; personal avatars, keys and conversations are not distributed. Source builds need model data, platform SDKs, native libraries and signing configuration separately.
+- [Source status](docs/SOURCE_STATUS.md) / [Runtime support](docs/RUNTIME_SUPPORT.md)
+- [Model and voice data](docs/LOCAL_AI_ASSETS.md) / [Distribution](docs/DISTRIBUTION.md)
+- [Quality and asset checks](docs/QUALITY_AND_VALIDATION.md) / [API](docs/api.md)
 
-- [Source and validation status](docs/SOURCE_STATUS.md)
-- [Platform support and limits](docs/RUNTIME_SUPPORT.md)
-- [AI and voice data](docs/LOCAL_AI_ASSETS.md)
-- [Conversation, character and memory identity](docs/CONVERSATION_IDENTITY.md)
-- [Quality and public asset checks](docs/QUALITY_AND_VALIDATION.md)
-- [Distribution architecture](docs/DISTRIBUTION.md)
-- [API](docs/api.md)
-
-Verification differs between platforms and devices. The linked documents distinguish implemented source, shipped binaries and actual device acceptance.
+</details>
