@@ -28,6 +28,8 @@ rsync -a --delete \
 
 mkdir -p "$BUNDLE_DIR/scripts"
 for script in \
+  service_ownership.py \
+  effective_service_settings.py \
   setup_backend_byok.ps1 \
   start_local_services.ps1 \
   stop_local_services.ps1 \

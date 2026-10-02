@@ -9,6 +9,7 @@ from app.api.routes import router
 from app.core.config import get_settings
 from app.db.sqlite import initialize_database
 from app.api.admin import public as admin_public, router as admin_router
+from app.api.sync import router as sync_router, admin as sync_admin
 from starlette.responses import JSONResponse
 
 
@@ -30,6 +31,8 @@ app = FastAPI(
 app.include_router(router)
 app.include_router(admin_public)
 app.include_router(admin_router)
+app.include_router(sync_router)
+app.include_router(sync_admin)
 
 
 @app.middleware("http")
@@ -37,6 +40,14 @@ async def browser_boundaries(request, call_next):
     origin = request.headers.get("origin")
     if origin and origin != str(request.base_url).rstrip("/"):
         return JSONResponse({"detail": "Cross-origin browser requests are not allowed."}, status_code=403)
+    if request.url.path.startswith('/sync/') and request.method == 'POST':
+        chunks, size = [], 0
+        async for chunk in request.stream():
+            size += len(chunk)
+            if size > 9 * 1024 * 1024:
+                return JSONResponse({"detail": "同期データが上限を超えています。元データは保持しています。"}, status_code=413)
+            chunks.append(chunk)
+        request._body = b''.join(chunks)
     path = request.url.path.removeprefix('/admin/api/run')
     operation = next((name for route, name in {
         '/chat': 'chat', '/tts': 'tts', '/stt': 'stt', '/vision': 'vision',
@@ -64,4 +75,6 @@ async def browser_boundaries(request, call_next):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; media-src 'self' blob:; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+    if request.url.path.startswith('/sync/'):
+        response.headers['Cache-Control'] = 'no-store'
     return response

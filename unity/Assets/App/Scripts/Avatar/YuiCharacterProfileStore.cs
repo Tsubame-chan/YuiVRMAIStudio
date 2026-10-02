@@ -25,6 +25,7 @@ namespace YuiPhysicalAI.Avatar
             var hash = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(id))).Replace("-", "").ToLowerInvariant();
             return Path.Combine(directory, hash + ".json");
         }
+        public string SyncFilePath(string id) => FileFor(id);
         public YuiCharacterProfile Read(string id)
         {
             var file = FileFor(id);

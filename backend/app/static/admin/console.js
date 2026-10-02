@@ -1,6 +1,7 @@
 import {startLive, stopLive} from './realtime.js';
 import {createVoiceEditor} from './voices.js';
 import {bindDiagnostics} from './diagnostics.js';
+import {mountDeviceSync} from './device-sync.js';
 
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -8,6 +9,7 @@ const NAV = [['home','ホーム'],['providers','AIと音声'],['playground','試
 const labels = {ok:'接続確認済み',configured:'設定済み・動作未確認',missing_key:'キー未設定',offline:'接続できません',not_configured:'未設定',unknown:'未確認'};
 let state, draft = {}, identities = [], probes = {}, view = 'home', section = '', page = 0, generation = 0, dataGeneration = 0, noticeTimer, activeRequest, audioUrl, diagnostics, voiceEditor;
 let scope = {user_id:'local_user',character_id:'',session_id:''};
+let unmountSync;
 const current = k => Object.hasOwn(draft,k) ? draft[k] : state.settings.values[k];
 const provider = id => state.providers.find(p => p.id === id);
 const button = (action,label,cls='',attrs='') => `<button type="button" class="${cls}" data-action="${action}" ${attrs}>${label}</button>`;
@@ -106,15 +108,17 @@ function activity() {
     `<form id="scope-form">${scopeForm(true)}<button class="primary">表示</button></form><div id="usage-result"></div><section class="card" id="data-result"><div class="empty-state">表示する範囲を選んでください。</div></section><div class="section-head actions">${button('previous','前の20件','quiet','disabled')}${button('next','次の20件','quiet','disabled')}</div><details><summary>この範囲のデータを削除</summary><p>選択したセッションの会話と応答キャッシュを削除します。記憶を含める場合は、そのキャラクターの全セッション共通の記憶を削除します。端末のデータと利用回数は残ります。</p><label class="check"><input id="delete-memories" type="checkbox">このキャラクターのBackend記憶も含める</label>${input('confirmation','確認のため利用者IDを入力')}${button('clear-scope','選択した範囲を削除','danger')}</details>`;
 }
 function settings() {
-    const selected=['connection','search','limits','cache','general','weather','extensions'].includes(section)?section:'connection';
-    const menu=[['connection','接続'],['search','Web検索'],['limits','利用目安'],['cache','保存'],['general','共通設定'],['weather','天気'],['extensions','拡張']];
+    const selected=['connection','devices','search','limits','cache','general','weather','extensions'].includes(section)?section:'connection';
+    const menu=[['connection','接続'],['devices','端末と同期'],['search','Web検索'],['limits','利用目安'],['cache','保存'],['general','共通設定'],['weather','天気'],['extensions','拡張']];
     let content;
     if(selected==='connection') content=`<div class="workspace"><section class="card"><h2>Yuiアプリとの接続</h2><div class="connection-box"><div class="caption">同じPCから</div><code>${esc(state.url)}</code>${button('copy-url','コピー','link')}</div><h3 class="section-head">別のPC・iPhoneから</h3><ol><li>Backendとアプリの端末を同じ信頼できるVPNへ接続。</li><li>BackendをVPNから到達できるアドレスで起動。</li><li>アプリに <code>http://VPNのIP:ポート</code> を設定し、接続確認。</li></ol><div class="info warning">localhostは別端末から使えません。管理画面はこのPCだけで開けます。アプリ用APIは認証を備えていないため、インターネットへ直接公開しないでください。</div></section><aside class="stack"><section class="card"><h3>Backendの状態</h3><div class="rows"><div class="row">API / DB${pill(state.backend==='ok'?'ok':'offline')}</div><div class="row">管理画面<span>このPCのみ</span></div><div class="row">他の端末からの接続<span class="pill">アプリで接続確認</span></div></div><details><summary>起動方法</summary><p>macOSは <code>scripts/run_backend_macos.sh</code>、Windowsは <code>scripts/run_backend.ps1</code> で起動します。</p><p>CLI: <code>BACKEND_HOST</code> と <code>BACKEND_PORT</code> を設定して再起動。管理UIはlocalhost限定を維持します。</p></details></section><div class="info">画面が開けることと、アプリから到達できることは別です。VPN接続はアプリ側でも確認してください。</div></aside></div>`;
+    else if(selected==='devices') content='<div id="device-sync"></div>';
     else if(selected==='extensions') content=`<section class="card"><h2>拡張できること・これからの機能</h2>${state.extensions.map(x=>`<div class="row"><div><h3>${esc(x.name)}</h3><p>${esc(x.detail)}</p></div><span class="pill">${esc(x.state)}</span></div>`).join('')}<hr><p>追加の音声エンジンや対応APIへの接続は「AIと音声 → 読み上げ」で設定できます。</p>${button('go','外部TTSを設定','primary','data-target="providers/tts"')}</section>`;
     else content=`<section class="card"><h2>${esc(menu.find(x=>x[0]===selected)[1])}</h2>${selected==='limits'?'<div class="info">ここは日次利用の目安です。現在のBackendでは、この値で通信や課金を自動停止しません。正確な料金と上限は各API提供元で確認してください。</div>':''}${selected==='search'?'<p>OpenAIの会話で使うWeb検索です。ローカルLLMやすべての提供元で使える機能ではありません。</p>':''}${selected==='cache'?'<p>生成音声キャッシュの保持設定です。キャラクターの記憶・会話履歴とは別です。</p>':''}${settingsFields(state.settings.fields.filter(f=>f.group===selected&&!f.name.endsWith('_provider')))}</section>`;
-    return heading('接続と設定','アプリとの接続、検索、利用目安、保存を設定します。変更後は「保存して反映」を押してください。')+tabs(menu,selected,'settings')+content;
+    return heading('接続と設定',selected==='devices'?'アプリの端末登録と同期の接続権限を管理します。同期する内容はアプリで確認します。':'アプリとの接続、検索、利用目安、保存を設定します。変更後は「保存して反映」を押してください。')+tabs(menu,selected,'settings')+content;
 }
 async function render() {
+    unmountSync?.();unmountSync=null;
     const route=location.hash.slice(1).split('/');view=NAV.some(x=>x[0]===route[0])?route[0]:'home';section=route[1]||'';page=0;const ticket=++generation;
     $('#nav').innerHTML=NAV.map(([id,label],i)=>`<a href="#${id}" ${id===view?'aria-current="page"':''}><span class="navnum">0${i+1}</span>${label}</a>`).join('');
     $('#breadcrumb').textContent=`ワークスペース / ${NAV.find(x=>x[0]===view)[1]}`;
@@ -123,6 +127,7 @@ async function render() {
     $('#content').innerHTML=({home,providers,playground,memory,activity,settings})[view]();changed();
     $('#content').querySelectorAll('[data-setting]').forEach(el=>el.addEventListener(el.matches('select,[type=checkbox]')?'change':'input',()=>{const f=state.settings.fields.find(f=>f.name===el.dataset.setting);let v=f.type==='boolean'?el.checked:f.type==='number'?Number(el.value):el.value;if(f.secret&&!v){delete draft[f.name];changed();return;}draft[f.name]=v;if(!f.secret&&v===state.settings.values[f.name])delete draft[f.name];changed();if(el.dataset.rerender)render();}));
     if($('#voice-workbench')){voiceEditor ||= createVoiceEditor(api,notice,state.settings.fields,confirmAction);voiceEditor.mount($('#voice-workbench')).catch(e=>notice(e.message));}
+    if($('#device-sync'))unmountSync=mountDeviceSync($('#device-sync'),api,notice,confirmAction);
     $('#trial-form')?.addEventListener('submit',runTrial);
     $('#scope-form')?.addEventListener('submit',e=>{e.preventDefault();readScope();page=0;loadData().catch(e=>notice(e.message));});
 }

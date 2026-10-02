@@ -217,7 +217,7 @@ namespace YuiPhysicalAI.UI
             while (!cancellationToken.IsCancellationRequested)
             {
                 await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
-                if (!ShouldMonitorBackend())
+                if (!ShouldMonitorBackend() && !HasRegisteredDeviceSync())
                 {
                     continue;
                 }
@@ -243,7 +243,7 @@ namespace YuiPhysicalAI.UI
         private void EnsureBackendMonitorIfNeeded()
         {
             if (ShouldMonitorBackend()) GetComponent<YuiPhysicalAI.Backend.YuiDesktopBackendSupervisor>()?.RequestEnsureBackend();
-            if (backendMonitorStarted || cancellationTokenSource == null || !ShouldMonitorBackend())
+            if (backendMonitorStarted || cancellationTokenSource == null || (!ShouldMonitorBackend() && !HasRegisteredDeviceSync()))
             {
                 return;
             }
@@ -272,6 +272,7 @@ namespace YuiPhysicalAI.UI
                 }
 
                 await RefreshBackendConfigAsync(cancellationToken);
+                CheckDeviceSyncOnConnection();
 
             }
             catch (Exception ex)
@@ -285,6 +286,7 @@ namespace YuiPhysicalAI.UI
                 }
                 else if (!isSending && Time.realtimeSinceStartup - lastBackendSuccessAt > 20f)
                 {
+                    syncConnectionChecked = null;
                     SetStatus("Backend offline");
                 }
 

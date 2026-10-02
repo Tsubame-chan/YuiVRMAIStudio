@@ -19,6 +19,7 @@ def test_backend_starts_before_delayed_voice_and_survives_closed_parent_pipes(tm
     scripts = tmp_path / "scripts"
     scripts.mkdir()
     shutil.copy(root / "scripts/start_local_services_detached_macos.sh", scripts)
+    shutil.copy(root / "scripts/service_ownership.py", scripts)
     (scripts / "aivis_model_sync_macos.sh").write_text("prepare_aivis_addon_runtime() { :; }\n")
     class Ready(BaseHTTPRequestHandler):
         def do_GET(self):
@@ -48,7 +49,7 @@ class Handler(BaseHTTPRequestHandler):
 Path({str(ready_marker)!r}).write_text(str(time.monotonic()))
 HTTPServer(("127.0.0.1",port), Handler).serve_forever()
 ''')
-    fake_python.write_text(f'#!/bin/bash\nexec "{sys.executable}" "{stub}" "$@"\n')
+    fake_python.write_text(f'#!/bin/bash\nif [[ \"$1\" == *.py ]]; then exec \"{sys.executable}\" \"$@\"; fi\nexec "{sys.executable}" "{stub}" "$@"\n')
     fake_python.chmod(0o755)
     # This command records whether text chat was already online before waiting.
     voice_command = tmp_path / "voice.sh"

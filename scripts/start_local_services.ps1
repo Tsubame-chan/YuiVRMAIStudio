@@ -39,6 +39,10 @@ function Import-DotEnv {
         }
 
         $key, $value = $line.Split("=", 2)
+        $value = $value.TrimEnd("`r")
+        if ($value.Length -ge 2 -and (($value.StartsWith('"') -and $value.EndsWith('"')) -or ($value.StartsWith("'") -and $value.EndsWith("'")))) {
+            $value = $value.Substring(1, $value.Length - 2)
+        }
         if ($key -notmatch "^[A-Za-z_][A-Za-z0-9_]*$") {
             continue
         }
@@ -60,6 +64,14 @@ function Record-OwnedPid {
         [int]$ProcessId
     )
 
+    $servicePort = switch ($Name) {
+        "backend" { $BackendPort }
+        "voicevox" { $VoicevoxPort }
+        "irodori" { Get-UrlPort -Url $script:IrodoriBaseUrl }
+    }
+    & $backendPython (Join-Path $PSScriptRoot "service_ownership.py") record --directory (Join-Path $runtimeDir "owned-services") --name "$Name-$servicePort" --pid $ProcessId
+    if ($LASTEXITCODE -ne 0) { Write-Warning "Could not record $Name ownership. Other processes will not be stopped." }
+
     if ([string]::IsNullOrWhiteSpace($env:YUI_BACKEND_OWNERSHIP_FILE)) {
         return
     }
@@ -69,7 +81,8 @@ function Record-OwnedPid {
         New-Item -ItemType Directory -Force -Path $ownerDir | Out-Null
     }
 
-    Add-Content -LiteralPath $env:YUI_BACKEND_OWNERSHIP_FILE -Value "$Name $ProcessId"
+    $birth = & $backendPython (Join-Path $PSScriptRoot "service_ownership.py") birth --pid $ProcessId
+    if ($birth) { Add-Content -LiteralPath $env:YUI_BACKEND_OWNERSHIP_FILE -Value "$Name $ProcessId $birth" }
 }
 
 function Test-HttpOk {
@@ -252,15 +265,29 @@ function Start-IrodoriIfConfigured {
         -RedirectStandardError $irodoriErr `
         -PassThru
 
+    Record-OwnedPid -Name "irodori" -ProcessId $irodoriProcess.Id
     Write-Step "Irodori launcher pid: $($irodoriProcess.Id)"
     Wait-HttpOk -Name "Irodori TTS" -Url $healthUrl -TimeoutSeconds 180 | Out-Null
 }
 
 Import-DotEnv -Path (Join-Path $repoRoot ".env")
+Ensure-BackendPython
+$effective = & $backendPython (Join-Path $PSScriptRoot "effective_service_settings.py")
+if ($LASTEXITCODE -ne 0) { throw "Could not read saved Backend settings. No services were started." }
+$effectiveSettings = $effective | ConvertFrom-Json
+foreach ($property in $effectiveSettings.PSObject.Properties) {
+    [Environment]::SetEnvironmentVariable($property.Name, [string]$property.Value, "Process")
+}
+if (-not $PSBoundParameters.ContainsKey("BackendHost") -and $env:BACKEND_HOST) { $BackendHost = $env:BACKEND_HOST }
+if (-not $PSBoundParameters.ContainsKey("BackendPort") -and $env:BACKEND_PORT) { $BackendPort = [int]$env:BACKEND_PORT }
+if (-not $PSBoundParameters.ContainsKey("VoicevoxHost")) { $VoicevoxHost = if ($env:VOICEVOX_HOST) { $env:VOICEVOX_HOST } else { $env:VOICEVOX_URL_HOST } }
+if (-not $PSBoundParameters.ContainsKey("VoicevoxPort")) { $VoicevoxPort = if ($env:VOICEVOX_PORT) { [int]$env:VOICEVOX_PORT } else { [int]$env:VOICEVOX_URL_PORT } }
+
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 New-Item -ItemType Directory -Force -Path $voicevoxLocalAppData | Out-Null
 
-$voicevoxBaseUrl = "http://$VoicevoxHost`:$VoicevoxPort"
+$voicevoxBaseUrl = $env:VOICEVOX_BASE_URL
+if ($PSBoundParameters.ContainsKey("VoicevoxHost") -or $PSBoundParameters.ContainsKey("VoicevoxPort")) { $voicevoxBaseUrl = "http://$VoicevoxHost`:$VoicevoxPort" }
 $backendBaseUrl = "http://$BackendHost`:$BackendPort"
 
 Write-Step "Repository: $repoRoot"
@@ -268,6 +295,9 @@ Write-Step "Logs: $logDir"
 
 if ($SkipVoicevox) {
     Write-Step "Skipping VOICEVOX startup."
+}
+elseif ($env:VOICEVOX_START_LOCAL -eq "0") {
+    Write-Step "VOICEVOX uses an external connection; start that engine separately: $voicevoxBaseUrl"
 }
 elseif (Test-HttpOk -Url "$voicevoxBaseUrl/version") {
     Write-Step "VOICEVOX Engine is already running: $voicevoxBaseUrl"

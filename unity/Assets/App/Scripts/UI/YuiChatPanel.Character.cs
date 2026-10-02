@@ -28,6 +28,8 @@ namespace YuiPhysicalAI.UI
         }
         private void SelectCharacterProfile(bool initial = false)
         {
+            try { YuiSyncFileTransaction.Recover(Application.persistentDataPath); }
+            catch(Exception) { characterProfileWritable=false;SetStatus("中断した同期を復元できません。元ファイルと退避コピーを保持しています。");return; }
             if (runtimeVrmImporter == null) runtimeVrmImporter = GetComponent<YuiRuntimeVrmImporter>() ?? YuiSceneObjectFinder.FindFirst<YuiRuntimeVrmImporter>();
             var id = ChatCharacterId();
             if (id == activeCharacterProfileId) return;
@@ -77,6 +79,7 @@ namespace YuiPhysicalAI.UI
         }
         private bool CanChangeCharacter()
         {
+            if(deviceSyncBusy){SetStatus("同期の確認を終えてから操作してください。");return false;}
             if (runtimeVrmImporter != null && runtimeVrmImporter.IsImporting)
             { SetStatus("アバターの読み込みが終わるまでお待ちください。"); return false; }
             if (isSending || isRecording || realtimeStreamActive || realtimeWaitingForResponse || realtimeSocket != null)

@@ -35,10 +35,26 @@ load_env_file() {
 
 load_env_file
 
+if [[ -d "$PYTHONHOME_CANDIDATE/lib/python3.12/encodings" ]]; then export PYTHONHOME="$PYTHONHOME_CANDIDATE"; fi
+
+# Saved Console settings determine which local engine the launcher uses.
+if [[ -f "$BACKEND_DIR/app/core/config.py" ]]; then
+  settings_export="$(mktemp "${TMPDIR:-/tmp}/yui-service-settings.XXXXXX")"
+  if ! "$BACKEND_DIR/.venv/bin/python" "$SCRIPT_DIR/effective_service_settings.py" --format nul > "$settings_export"; then
+    rm -f "$settings_export"
+    echo "Could not read saved Backend settings. No services were started." >&2
+    exit 1
+  fi
+  while IFS= read -r -d '' service_key && IFS= read -r -d '' service_value; do
+    export "$service_key=$service_value"
+  done < "$settings_export"
+  rm -f "$settings_export"
+fi
+
 BACKEND_HOST="${BACKEND_HOST:-127.0.0.1}"
 BACKEND_PORT="${BACKEND_PORT:-8000}"
-VOICEVOX_HOST="${VOICEVOX_HOST:-127.0.0.1}"
-VOICEVOX_PORT="${VOICEVOX_PORT:-50021}"
+VOICEVOX_HOST="${VOICEVOX_HOST:-${VOICEVOX_URL_HOST:-127.0.0.1}}"
+VOICEVOX_PORT="${VOICEVOX_PORT:-${VOICEVOX_URL_PORT:-50021}}"
 AIVIS_HOST="${AIVIS_HOST:-127.0.0.1}"
 AIVIS_PORT="${AIVIS_PORT:-10101}"
 AIVIS_ENABLE="${AIVIS_ENABLE:-auto}"
@@ -56,6 +72,14 @@ mkdir -p "$LOG_DIR" "$RUNTIME_DIR"
 if [[ -d "$PYTHONHOME_CANDIDATE/lib/python3.12/encodings" ]]; then
   export PYTHONHOME="$PYTHONHOME_CANDIDATE"
 fi
+
+record_owned_pid() {
+  local name="$1" pid="$2" port="$3"
+  "$BACKEND_DIR/.venv/bin/python" "$SCRIPT_DIR/service_ownership.py" record --directory "$RUNTIME_DIR/owned-services" --name "$name-$port" --pid "$pid"
+  local birth
+  birth="$("$BACKEND_DIR/.venv/bin/python" "$SCRIPT_DIR/service_ownership.py" birth --pid "$pid")"
+  [[ -n "$birth" ]] && printf '%s %s %s\n' "$name" "$pid" "$birth" >> "$RUNTIME_DIR/services-$RUN_ID.owner"
+}
 
 http_ok() {
   /usr/bin/curl -fsS --max-time 2 "$1" >/dev/null 2>&1
@@ -113,37 +137,13 @@ url_port() {
 }
 
 stop_port_listener() {
-  local name="$1"
-  local port="$2"
-  local pids
-  pids="$(/usr/sbin/lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true)"
-  if [[ -z "$pids" ]]; then
-    return 0
+  local name="$1" port="$2"
+  if ! /usr/sbin/lsof -tiTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then return 0; fi
+  "$BACKEND_DIR/.venv/bin/python" "$SCRIPT_DIR/service_ownership.py" stop --directory "$RUNTIME_DIR/owned-services" --name "backend-$port"
+  if /usr/sbin/lsof -tiTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "[Yui services] Port $port is in use by a process this installation does not own. Stop it in its own app or choose another port." >&2
+    return 1
   fi
-
-  echo "[Yui services] Stopping existing $name on port $port: $pids"
-  # shellcheck disable=SC2086
-  kill $pids >/dev/null 2>&1 || true
-
-  local deadline=$((SECONDS + 10))
-  while (( SECONDS < deadline )); do
-    pids="$(/usr/sbin/lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true)"
-    [[ -z "$pids" ]] && return 0
-    sleep 1
-  done
-
-  echo "[Yui services] $name did not stop after SIGTERM; forcing stop: $pids" >&2
-  # shellcheck disable=SC2086
-  kill -KILL $pids >/dev/null 2>&1 || true
-
-  deadline=$((SECONDS + 5))
-  while (( SECONDS < deadline )); do
-    pids="$(/usr/sbin/lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true)"
-    [[ -z "$pids" ]] && return 0
-    sleep 1
-  done
-
-  echo "[Yui services] WARNING: $name is still listening on port $port: $pids" >&2
 }
 
 is_irodori_configured() {
@@ -192,6 +192,7 @@ start_irodori_if_configured() {
   local out_log="$LOG_DIR/irodori-service-$RUN_ID.out.log"
   local err_log="$LOG_DIR/irodori-service-$RUN_ID.err.log"
   local host port
+  case "$(url_host "$base_url")" in localhost|127.0.0.1) ;; *) echo "[Yui services] Irodori uses an external connection; start it separately: $base_url"; return 0 ;; esac
   host="${IRODORI_HOST:-$(url_host "$base_url")}"
   port="${IRODORI_PORT:-$(url_port "$base_url")}"
 
@@ -199,6 +200,7 @@ start_irodori_if_configured() {
     echo "[Yui services] Starting Irodori TTS with IRODORI_START_COMMAND"
     /usr/bin/env -u PYTHONHOME -u PYTHONPATH /bin/bash -lc "$IRODORI_START_COMMAND" >"$out_log" 2>"$err_log" &
     IRODORI_PID=$!
+  record_owned_pid "irodori" "$IRODORI_PID" "$port"
     wait_http_ok "Irodori TTS" "$health_url" 180 || true
     return 0
   fi
@@ -212,6 +214,7 @@ start_irodori_if_configured() {
       /usr/bin/env -u PYTHONHOME -u PYTHONPATH "$python_bin" -m mlx_audio.server --host "$host" --port "$port"
     ) >"$out_log" 2>"$err_log" &
     IRODORI_PID=$!
+  record_owned_pid "irodori" "$IRODORI_PID" "$port"
     wait_http_ok "Irodori TTS" "$health_url" 180 || true
   else
     echo "[Yui services] Irodori TTS is configured but no local runtime was found." >&2
@@ -265,21 +268,20 @@ resolve_aivis_engine() {
 }
 
 cleanup() {
-  [[ -n "${BACKEND_PID:-}" ]] && kill "$BACKEND_PID" >/dev/null 2>&1 || true
-  [[ -n "${VOICEVOX_PID:-}" ]] && kill "$VOICEVOX_PID" >/dev/null 2>&1 || true
-  [[ -n "${AIVIS_PID:-}" ]] && kill "$AIVIS_PID" >/dev/null 2>&1 || true
-  [[ -n "${IRODORI_PID:-}" ]] && kill "$IRODORI_PID" >/dev/null 2>&1 || true
+  "$BACKEND_DIR/.venv/bin/python" "$SCRIPT_DIR/service_ownership.py" stop-ledger --file "$RUNTIME_DIR/services-$RUN_ID.owner" --directory "$RUNTIME_DIR/owned-services" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
-VOICEVOX_BASE_URL="http://$VOICEVOX_HOST:$VOICEVOX_PORT"
+VOICEVOX_BASE_URL="${VOICEVOX_BASE_URL:-http://$VOICEVOX_HOST:$VOICEVOX_PORT}"
 AIVIS_BASE_URL="${AIVIS_BASE_URL:-http://$AIVIS_HOST:$AIVIS_PORT}"
 BACKEND_BASE_URL="http://$BACKEND_HOST:$BACKEND_PORT"
 
 echo "[Yui services] Repository: $REPO_ROOT"
 echo "[Yui services] Logs: $LOG_DIR"
 
-if http_ok "$VOICEVOX_BASE_URL/version"; then
+if [[ "${VOICEVOX_START_LOCAL:-1}" == "0" ]]; then
+  echo "[Yui services] VOICEVOX uses an external connection; start that engine separately: $VOICEVOX_BASE_URL"
+elif http_ok "$VOICEVOX_BASE_URL/version"; then
   echo "[Yui services] VOICEVOX Engine is already running: $VOICEVOX_BASE_URL"
 elif VOICEVOX_ENGINE_PATH="$(resolve_voicevox_engine)"; then
   VOICEVOX_OUT="$LOG_DIR/voicevox-service-$RUN_ID.out.log"
@@ -299,6 +301,7 @@ elif VOICEVOX_ENGINE_PATH="$(resolve_voicevox_engine)"; then
   fi
   "$VOICEVOX_ENGINE_PATH" "${voicevox_args[@]}" >"$VOICEVOX_OUT" 2>"$VOICEVOX_ERR" &
   VOICEVOX_PID=$!
+  record_owned_pid "voicevox" "$VOICEVOX_PID" "$VOICEVOX_PORT"
   wait_http_ok "VOICEVOX Engine" "$VOICEVOX_BASE_URL/version" 90 || true
 else
   echo "[Yui services] VOICEVOX Engine was not found. Text chat can still work, but speech playback needs VOICEVOX." >&2
@@ -315,6 +318,7 @@ if is_aivis_configured; then
     prepare_aivis_addon_runtime
     "$AIVIS_ENGINE_PATH" --host "$AIVIS_HOST" --port "$AIVIS_PORT" --output_log_utf8 --disable_sentry >"$AIVIS_OUT" 2>"$AIVIS_ERR" &
     AIVIS_PID=$!
+  record_owned_pid "aivis" "$AIVIS_PID" "$(url_port "$AIVIS_BASE_URL")"
     wait_http_ok "AivisSpeech Engine" "$AIVIS_BASE_URL/version" 90 || true
   else
     echo "[Yui services] AivisSpeech Engine is enabled but no runtime was found." >&2
@@ -343,6 +347,7 @@ else
     "$PYTHON_BIN" -m uvicorn main:app --host "$BACKEND_HOST" --port "$BACKEND_PORT" --no-use-colors --no-proxy-headers
   ) >"$BACKEND_OUT" 2>"$BACKEND_ERR" &
   BACKEND_PID=$!
+  record_owned_pid "backend" "$BACKEND_PID" "$BACKEND_PORT"
   wait_http_ok "Backend" "$BACKEND_BASE_URL/health" 90 || true
 fi
 

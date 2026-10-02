@@ -25,6 +25,7 @@ namespace YuiPhysicalAI.UI
         private readonly string path;
         public YuiTextArchive(string path) { this.path = path; }
         public long Length => File.Exists(path) ? new FileInfo(path).Length : 0;
+        public string SyncFilePath => path;
 
         public void Clear()
         {
