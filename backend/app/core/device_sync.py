@@ -6,6 +6,7 @@ import json
 import secrets
 import sqlite3
 import time
+import re
 from uuid import uuid4
 
 from fastapi import HTTPException
@@ -33,10 +34,21 @@ class Item(BaseModel):
                   "memory": {"content": (str, 4000), "pinned": (bool, 0), "recorded_utc": (str, 64)},
                   "history": {"text": (str, 100000), "speaker": (str, 256), "mode": (str, 32),
                               "recorded_utc": (str, 64), "conversation_id": (str, 128), "turn_id": (str, 128)}}[self.kind]
-        if set(self.value) != set(fields): raise ValueError("Invalid sync fields.")
+        optional = {"source_ids", "source_versions", "basis"} if self.kind == "memory" else set()
+        if set(self.value) - optional != set(fields): raise ValueError("Invalid sync fields.")
         for key, (type_, limit) in fields.items():
             v = self.value[key]
             if type(v) is not type_ or (limit and len(v) > limit): raise ValueError("Invalid sync value.")
+        if set(self.value) & optional:
+            if not optional.issubset(self.value) or self.value["basis"] != "user_confirmed_connection":
+                raise ValueError("Invalid memory provenance.")
+            ids, versions = self.value["source_ids"], self.value["source_versions"]
+            if not isinstance(ids, list) or not 2 <= len(ids) <= 8:
+                raise ValueError("Invalid memory sources.")
+            if any(not isinstance(id, str) or not re.fullmatch(r"[a-zA-Z0-9:_-]{1,128}", id) for id in ids) or len(set(ids)) != len(ids):
+                raise ValueError("Invalid memory source ID.")
+            if not isinstance(versions, list) or len(versions) != len(ids) or any(type(v) is not int or v < 1 for v in versions):
+                raise ValueError("Invalid memory source versions.")
         if self.kind == "profile" and self.id not in {"name", "instruction"}: raise ValueError("Invalid profile field.")
         if self.kind == "profile" and self.id == "name" and not 1 <= len(self.value["text"]) <= 256:
             raise ValueError("Character name must be 1–256 characters.")
@@ -75,6 +87,8 @@ class SyncStore:
                 CREATE TABLE IF NOT EXISTS sync_plans (id TEXT PRIMARY KEY, device_id TEXT NOT NULL, character_id TEXT NOT NULL,
                     revision INTEGER NOT NULL, expires REAL NOT NULL, payload TEXT NOT NULL, result TEXT);
                 CREATE TABLE IF NOT EXISTS sync_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS sync_backend_responses (character_id TEXT, request_id TEXT, signature TEXT NOT NULL,
+                    response TEXT NOT NULL, PRIMARY KEY(character_id,request_id));
             """)
             db.execute("INSERT OR IGNORE INTO sync_metadata VALUES('server_id',?)", (uuid4().hex,))
             self.server_id = db.execute("SELECT value FROM sync_metadata WHERE key='server_id'").fetchone()[0]
@@ -155,6 +169,19 @@ class SyncStore:
             for item in request.items:
                 key = (item.kind, item.id); seen.add(key)
                 previous = remote.get(key)
+                if item.kind == "memory" and item.id.startswith("connection:") and not item.deleted and not item.value.get("source_ids"):
+                    # beta.2 clients know the original three fields. Preserve the
+                    # provenance on an unchanged round trip; never turn an edited
+                    # interpretation into an ungrounded original statement.
+                    if previous and previous["deleted"] and item.base_version < previous["version"]:
+                        # Older clients drop provenance locally. A stale cached
+                        # interpretation must pull the tombstone, never resurrect.
+                        continue
+                    old_value = previous["value"] if previous and not previous["deleted"] else {}
+                    if old_value.get("source_ids") and all(item.value.get(k) == old_value.get(k) for k in ("content", "pinned", "recorded_utc")):
+                        item = item.model_copy(update={"value": old_value})
+                    else:
+                        raise HTTPException(422, "関連づけた記憶の編集には新しいアプリが必要です。元の記録は保持しています。")
                 version = previous["version"] if previous else 0
                 if item.base_version > version: raise HTTPException(409, "共有版が古い状態です。同期用DBの復元状況を確認してください。")
                 same = previous and item.deleted == previous["deleted"] and encoded(item.value) == encoded(previous["value"])
@@ -207,6 +234,13 @@ class SyncStore:
                            (character, item["kind"], item["id"], revision, int(item["deleted"]), encoded(item["value"]), device))
                 if item["kind"] == "profile" and item["id"] == "name" and not item["deleted"]:
                     db.execute("UPDATE sync_characters SET name=? WHERE id=?", (item["value"]["text"], character))
+                if item["kind"] == "history" and item["deleted"]:
+                    db.execute("DELETE FROM sync_backend_responses WHERE character_id=?", (character,))
+            from app.core.shared_conversation import check_connection_sources, invalidate_connections
+            for item in changes:
+                if item["kind"] == "memory" and not item["deleted"]:
+                    check_connection_sources(db, self, character, item["value"])
+            revision = invalidate_connections(db, self, character, revision)
             db.execute("UPDATE sync_characters SET revision=? WHERE id=?", (revision, character))
             snapshot = {"server_id": self.server_id, "character_id": character, "revision": revision, "items": self.items(db, character)}
             if len(snapshot["items"]) > 18000 or len(encoded(snapshot).encode()) > 8 * 1024 * 1024:

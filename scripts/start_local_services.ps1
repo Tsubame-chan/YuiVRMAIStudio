@@ -359,7 +359,7 @@ else {
     Write-Step "Backend logs: $backendOut / $backendErr"
 
     $backendProcess = Start-Process -FilePath $backendPython `
-        -ArgumentList @("-m", "uvicorn", "main:app", "--host", $BackendHost, "--port", "$BackendPort", "--no-use-colors", "--no-proxy-headers") `
+        -ArgumentList @('"'+(Join-Path $PSScriptRoot "run_backend.py")+'"', "--host", $BackendHost, "--port", "$BackendPort") `
         -WorkingDirectory $backendDir `
         -WindowStyle Hidden `
         -RedirectStandardOutput $backendOut `

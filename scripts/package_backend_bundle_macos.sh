@@ -36,6 +36,8 @@ for script in \
   start_local_services_macos.sh \
   start_local_services_detached_macos.sh \
   stop_local_services_macos.sh \
+  run_backend.py \
+  start_mobile_backend_macos.sh \
   run_backend_macos.sh \
   start_aivis_tts_macos.sh \
   run_litert_cli_macos.sh \

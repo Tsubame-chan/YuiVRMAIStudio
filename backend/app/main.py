@@ -17,6 +17,10 @@ from starlette.responses import JSONResponse
 async def lifespan(app: FastAPI):
     settings = get_settings()
     initialize_database(settings.database_url)
+    # A process interruption cannot be presented as work still being executed.
+    from app.core.csv_work import WorkStore
+    with WorkStore(settings.database_url).db.connect() as db:
+        db.execute("UPDATE csv_work SET state='failed', detail='Backendの再起動で作業が中断しました。CSVを選んで再実行してください。' WHERE state='running'")
     yield
 
 
@@ -33,6 +37,8 @@ app.include_router(admin_public)
 app.include_router(admin_router)
 app.include_router(sync_router)
 app.include_router(sync_admin)
+from app.api.work import router as work_router
+app.include_router(work_router)
 
 
 @app.middleware("http")
@@ -74,7 +80,7 @@ async def browser_boundaries(request, call_next):
         response.headers["Cache-Control"] = "no-store"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "no-referrer"
-        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; media-src 'self' blob:; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+        response.headers.setdefault("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; media-src 'self' blob:; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'")
     if request.url.path.startswith('/sync/'):
         response.headers['Cache-Control'] = 'no-store'
     return response
