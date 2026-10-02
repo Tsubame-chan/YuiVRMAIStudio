@@ -41,6 +41,8 @@ namespace YuiPhysicalAI.Avatar
             return entries;
         }
         public List<Entry> Read(string character) => Load(character).Select(e => new Entry { Id=e.Id, Content=e.Content, CreatedUtc=e.CreatedUtc, Pinned=e.Pinned }).ToList();
+        public string SyncFilePath(string character) => PathFor(character);
+        public void Invalidate() { cached=null;cachedCharacter=null; }
         private void Commit(string character, List<Entry> entries)
         {
             Directory.CreateDirectory(directory);

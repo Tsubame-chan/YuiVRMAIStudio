@@ -39,7 +39,7 @@ namespace YuiPhysicalAI.UI
 
         private async System.Threading.Tasks.Task SendMessageAsync(string message)
         {
-            if (isSending) return;
+            if (isSending || deviceSyncBusy) return;
             if (runtimeVrmImporter != null && runtimeVrmImporter.IsImporting)
             { SetStatus("アバターの読み込みが終わってから送信してください。"); return; }
             using var operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token);
@@ -51,12 +51,13 @@ namespace YuiPhysicalAI.UI
             var retainDialogue = !secretMode;
             var sessionId = ChatSessionId(characterId);
             var taskId = chatInteractionMode == "work" ? Guid.NewGuid().ToString("N") : null;
+            var chatRequestId = Guid.NewGuid().ToString("N");
             // Diagnostics must not create an undeletable second copy of a conversation.
             Debug.Log($"Yui chat request: mode={conversationMode}, input_chars={message?.Length ?? 0}");
             var totalTimer = System.Diagnostics.Stopwatch.StartNew();
             isSending = true;
             SetInteractable(false);
-            AppendLog("You", message);
+            AppendLog("You", message, Newtonsoft.Json.JsonConvert.SerializeObject(new { request_id=chatRequestId, session_id=sessionId, character_id=characterId, role="user" }));
             SetStatus("Thinking...");
             SetPendingLine(CharacterName, "考え中...");
             YuiMemoryDiagnostics.LogSnapshot("chat_before_request", $"user_chars={message?.Length ?? 0}");
@@ -76,7 +77,6 @@ namespace YuiPhysicalAI.UI
                         "attachment", "general", mime, operation.Token);
                     operation.Token.ThrowIfCancellationRequested();
                 }
-                var chatRequestId = Guid.NewGuid().ToString("N");
                 var chatTimer = System.Diagnostics.Stopwatch.StartNew();
                 var chat = await SendChatViaRuntimeAsync(
                     new ChatRequest

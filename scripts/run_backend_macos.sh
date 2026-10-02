@@ -22,4 +22,5 @@ BACKEND_HOST="${BACKEND_HOST:-127.0.0.1}"
 BACKEND_PORT="${BACKEND_PORT:-8000}"
 echo "Starting Yui backend at http://$BACKEND_HOST:$BACKEND_PORT"
 echo "Backend Console: http://127.0.0.1:$BACKEND_PORT/admin/"
+"$PYTHON_BIN" "$SCRIPT_DIR/service_ownership.py" record --directory "$REPO_ROOT/runtime/owned-services" --name "backend-$BACKEND_PORT" --pid "$$"
 exec "$PYTHON_BIN" -m uvicorn main:app --host "$BACKEND_HOST" --port "$BACKEND_PORT" --no-use-colors --no-proxy-headers

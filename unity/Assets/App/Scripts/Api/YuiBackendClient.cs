@@ -11,7 +11,7 @@ using UnityEngine.Networking;
 
 namespace YuiPhysicalAI.Api
 {
-    public sealed class YuiBackendClient
+    public sealed partial class YuiBackendClient
     {
         private static readonly HttpClient FallbackHttpClient = new HttpClient();
 

@@ -187,30 +187,19 @@ namespace YuiPhysicalAI.Backend
                 return;
             }
 
-            foreach (var pid in ReadOwnedPids(ownershipFile))
-            {
-                try
-                {
-                    var process = Process.GetProcessById(pid);
-                    process.Kill();
-                }
-                catch (Exception ex)
-                {
-                    UnityEngine.Debug.Log($"Yui backend owned process already stopped or could not be stopped: pid={pid}, {ex.Message}");
-                }
-            }
-        }
-
-        private static IEnumerable<int> ReadOwnedPids(string path)
-        {
-            foreach (var line in File.ReadAllLines(path))
-            {
-                var parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length >= 2 && int.TryParse(parts[1], out var pid))
-                {
-                    yield return pid;
-                }
-            }
+            try {
+                var python=Path.Combine(backendRoot,"backend",".venv",
+                    Application.platform==RuntimePlatform.WindowsPlayer?"Scripts/python.exe":"bin/python");
+                var helper=Path.Combine(backendRoot,"scripts","service_ownership.py");
+                if(!File.Exists(python)||!File.Exists(helper))return;
+                var info=new ProcessStartInfo{FileName=python,UseShellExecute=false,CreateNoWindow=true,
+                    Arguments=Quote(helper)+" stop-ledger --file "+Quote(ownershipFile)+" --directory "+Quote(Path.Combine(backendRoot,"runtime","owned-services"))};
+                var packagedHome=Path.Combine(backendRoot,"backend",".venv");
+                if(Directory.Exists(Path.Combine(packagedHome,"lib","python3.12","encodings")))info.Environment["PYTHONHOME"]=packagedHome;
+                // The controller verifies birth identities and stops owned descendants.
+                // It may finish after the player exits; closing this handle does not kill it.
+                using var process=Process.Start(info);
+            }catch(Exception ex){UnityEngine.Debug.LogWarning("Owned Backend stop: "+ex.GetType().Name);}
         }
 
         private static string CombineUrl(string baseUrl, string path)

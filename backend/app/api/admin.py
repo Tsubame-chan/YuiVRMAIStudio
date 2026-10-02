@@ -65,7 +65,7 @@ def admin_page(): return FileResponse(STATIC / "index.html")
 
 @public.get("/admin/assets/{name}", include_in_schema=False)
 def admin_asset(name: str):
-    if name not in {"console.css", "console.js", "realtime.js", "diagnostics.js", "voices.js", "tts-guides.js", "NotoSansJP-Regular.otf", "font-license.txt", "icon.png"}:
+    if name not in {"console.css", "console.js", "realtime.js", "diagnostics.js", "voices.js", "tts-guides.js", "device-sync.js", "NotoSansJP-Regular.otf", "font-license.txt", "icon.png"}:
         raise HTTPException(404)
     return FileResponse(STATIC / name)
 
@@ -85,7 +85,7 @@ def overview(request: Request, settings: Settings = Depends(get_settings)):
             "management_access": "localhost", "capabilities": CAPABILITIES, "providers": provider_catalog(),
             "settings": public_settings(settings), "extensions": [
                 {"name": "資料を取り込むRAG・embedding索引", "state": "未実装", "detail": "現在の記憶検索はキーワード検索です。資料取込やembedding基盤は別途実装します。"},
-                {"name": "端末とBackendの記憶同期", "state": "未実装", "detail": "保存先は別です。ここで端末内の記憶を変更することはありません。"},
+                {"name": "キャラクターと会話の端末同期", "state": "端末登録後に利用", "detail": "対応アプリで共有先と差分を確認します。接続と設定 → 端末と同期で登録してください。"},
                 {"name": "前面アプリの自動認識", "state": "試作・無効", "detail": "通常のBackend会話へ自動で取り込む機能は提供していません。"},
             ]}
 

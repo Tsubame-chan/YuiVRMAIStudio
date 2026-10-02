@@ -2818,6 +2818,11 @@
     {
       "en": "No memories yet. Preferences and promises from normal conversations are saved. Use Add to register something important.\n\nLocal AI and API share these memories. Other characters do not. Secret conversations are not saved.",
       "ja": "記憶はまだありません。通常の会話で伝えた好みや約束を記録します。追加ボタンから、必ず覚えてほしい内容を登録できます。\n\nローカルAIとAPIで共有します。他のキャラクターには共有しません。シークレット会話は記録しません。"
+    },
+    {
+      "en": "Sync character & conversations",
+      "ja": "キャラクターと会話を同期",
+      "aliases": []
     }
   ]
 }

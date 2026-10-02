@@ -235,6 +235,8 @@ namespace YuiPhysicalAI.UI
                         Full(content, "OptionalTtsDownloadButton", "Download additional voices", ref row);
                     }
                     Heading(content, "Conversation data", ref row);
+                    ModernButton(content, "DeviceSyncButton", "Sync character & conversations", () => chatPanel?.OpenDeviceSync());
+                    Full(content, "DeviceSyncButton", "Sync character & conversations", ref row);
                     ModernButton(content, "BackendMemoryButton", "Manage character memories", () => chatPanel?.OpenCharacterMemories());
                     Full(content, "BackendMemoryButton", "Manage character memories", ref row);
                     Full(content, "ClearHistoryButton", "Clear backend conversations & memories", ref row);
