@@ -1,6 +1,6 @@
 # Local AI and TTS assets
 
-Current desktop data: [v0.2.4-beta.1](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.1), asset version **2026.10.03**. Large weights, dictionaries and generated apps are Release assets, not Git source. Older beta.5/snapshot data remains unchanged and should not be mixed with this release.
+Current desktop data: [v0.2.4-beta.2](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.2), common AI/voice asset version **2026.10.03**, Backend runtime version **2026.10.03.sync1**. Large weights, dictionaries and generated apps are Release assets, not Git source. Older beta.5/snapshot data remains unchanged and should not be mixed with this release.
 
 ## Normal installation
 
@@ -25,9 +25,9 @@ macOS/iOS offer optional E4B in Settings. macOS uses the model catalog's HTTPS s
 Download both common `.part-*` files and the matching `.sha256`, join them in filename order, then verify. On macOS/Linux:
 
 ```bash
-cat YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.4-beta.1.zip.part-* > YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.4-beta.1.zip
-shasum -a 256 -c YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.4-beta.1.zip.sha256
-unzip YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.4-beta.1.zip -d restored-data
+cat YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.4-beta.2.zip.part-* > YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.4-beta.2.zip
+shasum -a 256 -c YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.4-beta.2.zip.sha256
+unzip YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_v0.2.4-beta.2.zip -d restored-data
 ```
 
 Copy the extracted `Models`, `Voicevox` and matching catalog into `unity/Assets/StreamingAssets/YuiLocalAI/`. Inspect the ZIP's directory layout first; do not blindly overwrite other project files. Prepare OS-specific SDK/native libraries/runtime separately. Compiling without required mobile data is not a usable mobile build.

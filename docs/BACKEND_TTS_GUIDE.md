@@ -2,15 +2,15 @@
 
 VOICEVOX、AivisSpeech、Irodoriを使うには、音声エンジンと必要なモデルを導入して起動します。その後、Backend Consoleで接続先を設定し、声の選択・調整・試聴を行います。
 
-Backend ConsoleはGitHubの最新ソースで利用できます。v0.2.4-beta.1のBackend Bundleには管理画面は含まれません。
+Backend Consoleはv0.2.4-beta.2のBackend Bundle、またはGitHubの最新ソースで利用できます。
 
 ## 最初から含まれるもの
 
 | 入手方法 | 含まれるもの | 音声を使うために追加するもの |
 | --- | --- | --- |
 | GitHubのソース（clone / Download ZIP） | Backendの接続機能と起動ファイル | Python依存関係、音声エンジン、音声モデル |
-| v0.2.4-beta.1 Backend Bundle / Mac | BackendとPython実行環境 | 音声エンジン、音声モデル |
-| v0.2.4-beta.1 Backend Bundle / Windows | Backend、Python実行環境、端末内音声用の実行ファイル | Backendで使う音声エンジン、音声モデル |
+| v0.2.4-beta.2 Backend Bundle / Mac | BackendとPython実行環境 | 音声エンジン、音声モデル |
+| v0.2.4-beta.2 Backend Bundle / Windows | Backend、Python実行環境、端末内音声用の実行ファイル | Backendで使う音声エンジン、音声モデル |
 | アプリ用Desktop Minimum追加データ | 標準VOICEVOX 5声と辞書 | Aivis/Irodoriを使う場合は、それぞれのエンジンとモデル |
 
 アプリの「端末内の声」と、Backendに接続して使う音声は別です。アプリが標準音声で話せても、Backendで使う音声エンジンは別途起動する必要があります。

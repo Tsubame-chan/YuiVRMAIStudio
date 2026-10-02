@@ -33,11 +33,11 @@ The images show the real app with the included Unity-chan. Captions are Japanese
 
 | Your device | Download |
 | --- | --- |
-| Mac | [macOS app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.1/YuiVRMAIStudio_MacOSPublicBeta_v0.2.4-beta.1_macos.zip) (Apple Silicon runtime) |
-| Windows | [Windows app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.1/YuiVRMAIStudio_WindowsPublicBeta_v0.2.4-beta.1_windows.zip) |
+| Mac | [macOS app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.2/YuiVRMAIStudio_MacOSPublicBeta_v0.2.4-beta.2_macos.zip) (Apple Silicon runtime) |
+| Windows | [Windows app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.2/YuiVRMAIStudio_WindowsPublicBeta_v0.2.4-beta.2_windows.zip) |
 | iPhone / iPad | iOS 26+. [Planned App Store page](https://apps.apple.com/jp/app/id6815341780): free Japan release under review, available after publication |
 
-The desktop version is **v0.2.4-beta.1**. Extract the ZIP, open the app and follow the first-run data notice. Allow approximately 2.5GB of downloads plus room for extraction; Wi-Fi is recommended. Mac signing/notarization is not yet provided. Setup: [Mac](docs/MAC_PUBLIC_BETA.en.md) / [Windows](docs/SETUP_GUIDE.md).
+The desktop version is **v0.2.4-beta.2**. It includes the Backend Console, saved voices and paired character sync. See [Backend setup](docs/BACKEND_CONSOLE.md). Extract the ZIP, open the app and follow the first-run data notice. Allow approximately 2.5GB of downloads plus room for extraction; Wi-Fi is recommended. Mac signing/notarization is not yet provided. Setup: [Mac](docs/MAC_PUBLIC_BETA.en.md) / [Windows](docs/SETUP_GUIDE.md).
 
 **GitHub's “Code → Download ZIP” is source code.** To use the app, choose a download above.
 

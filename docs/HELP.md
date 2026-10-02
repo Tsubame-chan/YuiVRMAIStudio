@@ -1,6 +1,6 @@
 # はじめに・よくある質問 / Help & FAQ
 
-[README 日本語](../README.md) · [README English](../README.en.md) · [ダウンロード / Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.1) · [不具合報告 / Issues](https://github.com/Tsubame-chan/YuiVRMAIStudio/issues)
+[README 日本語](../README.md) · [README English](../README.en.md) · [ダウンロード / Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.2) · [不具合報告 / Issues](https://github.com/Tsubame-chan/YuiVRMAIStudio/issues)
 
 ## 日本語
 
@@ -46,7 +46,7 @@ iOS 26以降。日本向け無料版を審査へ提出しました。[App Store�
 
 ## English
 
-- Download the **MacOSPublicBeta** or **WindowsPublicBeta** app ZIP from [Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.1). The Code ZIP is source only. See the [Mac guide](MAC_PUBLIC_BETA.en.md).
+- Download the **MacOSPublicBeta** or **WindowsPublicBeta** app ZIP from [Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.2). The Code ZIP is source only. See the [Mac guide](MAC_PUBLIC_BETA.en.md).
 - The free Japan iOS release requires iOS 26 and is under review. The [planned App Store page](https://apps.apple.com/jp/app/id6815341780) becomes available after approval/publication.
 - Desktop first-run setup downloads approximately 2.5GB of AI/voice data plus its OS runtime after confirmation. Leave extra room for extraction. iOS includes standard E2B and speech data; E4B is optional. macOS also offers optional E4B.
 - E2B favors lighter offline use; E4B improves quality at the cost of latency, memory and storage. OpenAI API is recommended for higher-quality chat and requires an API key and API charges, separately from a ChatGPT subscription.

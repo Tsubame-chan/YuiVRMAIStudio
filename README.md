@@ -33,11 +33,11 @@
 
 | お使いの端末 | 入手先 |
 | --- | --- |
-| Mac | [macOS版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.1/YuiVRMAIStudio_MacOSPublicBeta_v0.2.4-beta.1_macos.zip)（Apple Silicon向け） |
-| Windows | [Windows版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.1/YuiVRMAIStudio_WindowsPublicBeta_v0.2.4-beta.1_windows.zip) |
+| Mac | [macOS版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.2/YuiVRMAIStudio_MacOSPublicBeta_v0.2.4-beta.2_macos.zip)（Apple Silicon向け） |
+| Windows | [Windows版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.2/YuiVRMAIStudio_WindowsPublicBeta_v0.2.4-beta.2_windows.zip) |
 | iPhone / iPad | iOS 26以降。[App Store予定ページ](https://apps.apple.com/jp/app/id6815341780)（日本向け無料版を審査中。公開後に利用できます） |
 
-デスクトップ版は **v0.2.4-beta.1** です。ZIPを展開して起動し、初回の案内に沿って必要データを取得してください。約2.5GBの通信と展開用の空き容量が必要です。Wi-Fiをおすすめします。Mac版の署名・公証は未整備です。詳しい起動手順は [Mac](docs/MAC_PUBLIC_BETA.md) / [Windows](docs/SETUP_GUIDE.md)へ。
+デスクトップ版は **v0.2.4-beta.2** です。Backendの管理画面・保存した声・端末同期が使えます。[Backendの使い方](docs/BACKEND_CONSOLE.md)。ZIPを展開して起動し、初回の案内に沿って必要データを取得してください。約2.5GBの通信と展開用の空き容量が必要です。Wi-Fiをおすすめします。Mac版の署名・公証は未整備です。詳しい起動手順は [Mac](docs/MAC_PUBLIC_BETA.md) / [Windows](docs/SETUP_GUIDE.md)へ。
 
 **GitHubの「Code → Download ZIP」はソースコードです。** アプリを使う方は上のリンクからダウンロードしてください。
 

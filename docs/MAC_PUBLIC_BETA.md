@@ -4,7 +4,7 @@
 
 ## アプリを使う
 
-1. [v0.2.4-beta.1](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.1)の `YuiVRMAIStudio_MacOSPublicBeta_v0.2.4-beta.1_macos.zip` をダウンロードします。
+1. [v0.2.4-beta.2](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.2)の `YuiVRMAIStudio_MacOSPublicBeta_v0.2.4-beta.2_macos.zip` をダウンロードします。
 2. 展開した `Yui VRM AI Studio.app` を開きます。配布版のローカルruntimeはApple Silicon向けです。
 3. 初回の案内を読んでダウンロードを開始します。標準E2B、日本語5声、辞書、Mac runtimeを取得します。合計約2.5GB、展開には追加の空き容量が必要です。
 4. メッセージを送り、設定から性格・声・VRMを変更します。ヘルプからチュートリアルを再表示できます。
@@ -27,7 +27,7 @@ AIと音声の選択は独立しています。標準は日本語VOICEVOXの5声
 
 ## Backendを使う場合
 
-初回取得した `YuiBackend` 内の `Start_Yui_Backend.command` / `Stop_Yui_Backend.command` で起動・停止できます。OpenAIや追加TTS/STTはBackend側の設定も必要です。遠隔PCへ接続する際は、双方から到達できるVPNアドレスとBackendのlisten設定を使います。Macの起動スクリプトは既定で `BACKEND_HOST=127.0.0.1`、`BACKEND_PORT=8000` です。VPN側へlistenさせる場合はそのPCのVPN IPを `BACKEND_HOST` に指定し、アプリには `http://<VPN IP>:8000` を設定します。VPNだけで、localhostに限定したサーバーへ他端末から接続できるわけではありません。
+初回取得した `YuiBackend` 内の `Start_Yui_Backend.command` / `Stop_Yui_Backend.command` で起動・停止できます。Startで開く管理画面から提供元・保存した声・端末同期を設定できます。[Backend Console](BACKEND_CONSOLE.md) / [追加TTS導入](BACKEND_TTS_GUIDE.md)。OpenAIや追加TTS/STTはBackend側の設定も必要です。遠隔PCへ接続する際は、双方から到達できるVPNアドレスとBackendのlisten設定を使います。Macの起動スクリプトは既定で `BACKEND_HOST=127.0.0.1`、`BACKEND_PORT=8000` です。VPN側へlistenさせる場合はそのPCのVPN IPを `BACKEND_HOST` に指定し、アプリには `http://<VPN IP>:8000` を設定します。VPNだけで、localhostに限定したサーバーへ他端末から接続できるわけではありません。
 
 ソースから準備する場合:
 

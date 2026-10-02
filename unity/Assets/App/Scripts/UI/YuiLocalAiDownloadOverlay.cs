@@ -13,7 +13,7 @@ namespace YuiPhysicalAI.UI
 {
     public sealed class YuiLocalAiDownloadOverlay : MonoBehaviour
     {
-        public const string DefaultManifestUrl = "https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.1/YuiVRMAIStudio_AssetManifest.json";
+        public const string DefaultManifestUrl = "https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.2/YuiVRMAIStudio_AssetManifest.json";
         public const string ManifestUrlEnvironmentVariable = "YUI_ASSET_MANIFEST_URL";
         private const string OptionalTtsAddonKind = "optional_tts_addon";
 

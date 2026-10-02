@@ -1,6 +1,6 @@
 # 品質と検証方針
 
-2026-10-03。desktop v0.2.4-beta.1は検証用prerelease、iOS 0.2.4 (14)は本人の最終実機確認後にApp Store審査へ提出済みです。審査承認・公開とは区別します。Backendの全機能受入は未完了です。[現在地](SOURCE_STATUS.md) / [OS別対応](RUNTIME_SUPPORT.md)。
+2026-10-03。desktop v0.2.4-beta.2は検証用prerelease、iOS 0.2.4 (14)は本人の最終実機確認後にApp Store審査へ提出済みです。審査承認・公開とは区別します。Backendの全機能受入は未完了です。[現在地](SOURCE_STATUS.md) / [OS別対応](RUNTIME_SUPPORT.md)。
 
 ## Betaで重視していること
 
