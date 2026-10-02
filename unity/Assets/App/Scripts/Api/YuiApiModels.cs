@@ -330,6 +330,9 @@ namespace YuiPhysicalAI.Api
     }
 
     [Serializable]
+    public sealed class BackendVoiceProfile { [JsonProperty("id")] public string Id; [JsonProperty("name")] public string Name; [JsonProperty("provider")] public string Provider; }
+    public sealed class BackendVoiceProfiles { [JsonProperty("items")] public BackendVoiceProfile[] Items; }
+
     public sealed class TtsRequest
     {
         [JsonProperty("request_id")]
@@ -337,6 +340,11 @@ namespace YuiPhysicalAI.Api
 
         [JsonProperty("provider")]
         public string Provider { get; set; }
+
+        [JsonProperty("voice_profile_id")]
+        public string VoiceProfileId { get; set; }
+        // A selected Backend profile supplies its own speaker ID. Legacy requests retain it.
+        public bool ShouldSerializeSpeakerId() => string.IsNullOrEmpty(VoiceProfileId);
 
         [JsonProperty("text")]
         public string Text { get; set; }

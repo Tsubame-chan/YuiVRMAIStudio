@@ -20,6 +20,10 @@ rsync -a --delete \
   --exclude 'data/*.db' \
   --exclude 'data/*.db-*' \
   --exclude 'data/audio/' \
+  --exclude 'data/voice-library.json' \
+  --exclude 'data/.voice-library*' \
+  --exclude 'data/admin-settings.json' \
+  --exclude 'data/.admin-settings*' \
   "$ROOT_DIR/backend/" "$BUNDLE_DIR/backend/"
 
 mkdir -p "$BUNDLE_DIR/scripts"

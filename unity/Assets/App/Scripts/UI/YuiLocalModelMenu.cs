@@ -24,7 +24,7 @@ namespace YuiPhysicalAI.UI
             if (string.IsNullOrEmpty(id) || downloading) return;
             var pack=YuiLocalModelSelection.Find(id);
             if(pack==null){PlayerPrefs.DeleteKey(PendingKey);PlayerPrefs.Save();return;}
-            if(YuiLocalModelSelection.Installed(pack)) { PlayerPrefs.DeleteKey(PendingKey); PlayerPrefs.Save(); return; }
+            if(YuiLocalModelSelection.Installed(pack) && !WindowsRuntimeMissing) { PlayerPrefs.DeleteKey(PendingKey); PlayerPrefs.Save(); return; }
             Download(pack,panel);
         }
         public static void Show(YuiChatPanel panel)
@@ -36,6 +36,7 @@ namespace YuiPhysicalAI.UI
                 "2B: fast conversations.\n4B: higher quality; slower, with more storage and memory.\n\nChoose Use after downloading."));
             foreach(var pack in YuiLocalModelSelection.Available)
                 AddModel(pack,YuiLocalModelSelection.Name(pack),panel);
+            if(WindowsRuntimeMissing)dialog.Body.text += L("\n\nモデルとは別にWindowsの実行データが必要です。取得操作で両方を準備します。", "\n\nWindows runtime files are required in addition to the model. Download prepares both.");
             dialog.AddButton(L("選択中のモデル · 詳細設定","Selected model · Advanced"),()=>ShowAdvanced(panel));
             dialog.AddButton(L("閉じる","Close"),()=>dialog.Close());
             dialog.Compact();
@@ -62,6 +63,9 @@ namespace YuiPhysicalAI.UI
             dialog.AddButton(L("変更せず戻る","Back without saving"),()=>Show(panel));
             dialog.Compact(640);
         }
+        private static bool WindowsRuntimeMissing =>
+            (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
+            && !YuiDesktopInferenceProcess.IsAvailable;
         private static void AddModel(YuiLocalAiModelPack pack,string name,YuiChatPanel panel)
         {
             if(pack==null)return;
@@ -71,15 +75,15 @@ namespace YuiPhysicalAI.UI
                 dialog.Body.text += L("\n\n標準データが見つかりません。アプリを再インストールしてください。", "\n\nStandard data is missing. Reinstall the app to restore it.");
                 return;
             }
-            var button=dialog.AddButton(name+L(installed?"を使う":downloading?"を取得中":"をダウンロード",installed?" — Use":downloading?" — Downloading":" — Download"),()=>{
-                if(installed){
+            var button=dialog.AddButton(name+L(installed&&WindowsRuntimeMissing?" · 実行データを準備":installed?"を使う":downloading?"を取得中":"をダウンロード",installed&&WindowsRuntimeMissing?" — Prepare runtime":installed?" — Use":downloading?" — Downloading":" — Download"),()=>{
+                if(installed && !WindowsRuntimeMissing){
                     if(panel != null && !panel.CanSwitchLocalModel) { dialog.Body.text=L("会話や読み上げが終わってから切り替えてください。停止ボタンでも中止できます。", "Finish or stop the current conversation before switching models."); return; }
                     YuiLocalModelSelection.Select(pack.Id);panel?.RefreshLocalAiRuntimeAfterAssetInstall();Show(panel);
                 }
                 else Confirm(pack,name,panel);
             });
             button.interactable=installed || !downloading;
-            if(installed && pack.Id==YuiLocalModelSelection.SelectedId)
+            if(installed && !WindowsRuntimeMissing && pack.Id==YuiLocalModelSelection.SelectedId)
             {
                 button.GetComponent<UnityEngine.UI.Image>().color=YuiUiTheme.Selected;
                 button.GetComponentInChildren<UnityEngine.UI.Text>().text=name+L(" · 選択中"," · Selected");
@@ -91,6 +95,7 @@ namespace YuiPhysicalAI.UI
             if(downloading)return;
             dialog.Close();
             dialog=YuiSimpleDialog.Create(name,L($"最大約{pack.DiskBudgetMb/1000f:0.0} GBのデータを取得します。展開にも空き容量が必要です。\n\nWi-Fiでの通信を推奨します。準備が終わればオフラインで話せます。",$"Download up to about {pack.DiskBudgetMb/1000f:0.0} GB. Extraction also needs free storage.\n\nWi-Fi is recommended. Once ready, you can chat offline."));
+            if(WindowsRuntimeMissing)dialog.Body.text += L("\n\n選択モデルに加え、配布manifestの必須実行データ・標準音声も取得します。その分の通信・空き容量が必要です。", "\n\nAlso downloads required runtime and standard voices. Additional bandwidth and free storage are required.");
             dialog.AddButton(L("ダウンロードを開始","Start download"),()=>Download(pack,panel));
             dialog.AddButton(L("あとで","Later"),()=>Show(panel));
             dialog.Compact(400);
@@ -122,8 +127,14 @@ namespace YuiPhysicalAI.UI
                         }
                     }
                 }
-                else await DownloadDesktop(pack,token);
+                else {
+                    if(Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
+                        await PrepareWindowsRuntime(panel,token);
+                    if(!YuiLocalModelSelection.Installed(pack)) await DownloadDesktop(pack,token);
+                }
                 if(!YuiLocalModelSelection.Installed(pack))throw new IOException("Model not found after download.");
+                if(WindowsRuntimeMissing)throw new IOException("Windows inference runtime is incomplete.");
+                panel?.RefreshLocalAiRuntimeAfterAssetInstall();
                 banner.Set(downloadName+L(" · 準備完了 · 設定から選べます"," · Ready · Select in Settings"),1);
             }
             catch(OperationCanceledException){banner.Set(L("取得を中止しました · 設定から再試行","Cancelled · Retry in Settings"));}
@@ -135,6 +146,24 @@ namespace YuiPhysicalAI.UI
                 banner.SetAction(L("閉じる","Close"),()=>banner.Close());
             }
         }
+        private static async Task PrepareWindowsRuntime(YuiChatPanel panel,CancellationToken token)
+        {
+            banner.Set(L("Windowsの実行データを確認しています…", "Checking Windows runtime…"));
+            var downloader = new YuiLocalAiAssetDownloader(new YuiUnityAssetHttpClient(), Application.persistentDataPath,
+                Path.Combine(Application.temporaryCachePath, "YuiLocalAI"));
+            var source = panel!=null ? panel.GetComponent<YuiLocalAiDownloadOverlay>() : null;
+            var manifest = await downloader.FetchManifestAsync(source!=null ? source.CurrentManifestUrl : YuiLocalAiDownloadOverlay.ResolveManifestUrl(), token);
+            var plan = YuiLocalAiAssetStore.PlanRequiredDownloads(manifest,
+                YuiLocalAiInstalledAssetLedger.Load(downloader.LedgerPath), Application.persistentDataPath, "windows");
+            if(plan.State == YuiLocalAiAssetPlanState.NoRequiredAssets)
+                throw new IOException("Windows required runtime is missing from the release manifest.");
+            var progress = new Progress<YuiLocalAiAssetDownloadProgress>(p => {
+                if(banner!=null)banner.Set(L("Windows実行データ · ", "Windows runtime · ")+p.Stage, p.Percent);
+            });
+            var result = await downloader.InstallAssetsAsync(manifest, plan.AssetsToDownload, progress, token);
+            if(!result.Success)throw new IOException(result.ErrorMessage);
+        }
+
         private static async Task DownloadDesktop(YuiLocalAiModelPack pack,CancellationToken token)
         {
             // Reviewed artifacts are verified before becoming visible to the runtime.

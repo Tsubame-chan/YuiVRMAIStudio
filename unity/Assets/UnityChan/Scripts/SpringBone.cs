@@ -1,4 +1,4 @@
-﻿//
+//
 //SpringBone.cs for unity-chan!
 //
 //Original Script is here:
@@ -40,6 +40,7 @@ namespace UnityChan
 		private Transform trs;
 		private Vector3 currTipPos;
 		private Vector3 prevTipPos;
+        private float previousDeltaTime = 1f / 60f;
 		//Kobayashi
 		private Transform org;
 		//Kobayashi:Reference for "SpringManager" component with unitychan 
@@ -75,54 +76,50 @@ namespace UnityChan
 			prevTipPos = child.position;
 		}
 
-		public void UpdateSpring ()
-		{
-			//Kobayashi
-			org = trs;
-			//回転をリセット
-			trs.localRotation = Quaternion.identity * localRotation;
-
-			float sqrDt = Time.deltaTime * Time.deltaTime;
-
-			//stiffness
-			Vector3 force = trs.rotation * (boneAxis * stiffnessForce) / sqrDt;
-
-			//drag
-			force += (prevTipPos - currTipPos) * dragForce / sqrDt;
-
-			force += springForce / sqrDt;
-
-			//前フレームと値が同じにならないように
-			Vector3 temp = currTipPos;
-
-			//verlet
-			currTipPos = (currTipPos - prevTipPos) + currTipPos + (force * sqrDt);
-
-			//長さを元に戻す
-			currTipPos = ((currTipPos - trs.position).normalized * springLength) + trs.position;
-
-			//衝突判定
-			for (int i = 0; i < colliders.Length; i++) {
-				if (Vector3.Distance (currTipPos, colliders [i].transform.position) <= (radius + colliders [i].radius)) {
-					Vector3 normal = (currTipPos - colliders [i].transform.position).normalized;
-					currTipPos = colliders [i].transform.position + (normal * (radius + colliders [i].radius));
-					currTipPos = ((currTipPos - trs.position).normalized * springLength) + trs.position;
-				}
-
-
-			}
-
-			prevTipPos = temp;
-
-			//回転を適用；
-			Vector3 aimVector = trs.TransformDirection (boneAxis);
-			Quaternion aimRotation = Quaternion.FromToRotation (aimVector, currTipPos - trs.position);
-			//original
-			//trs.rotation = aimRotation * trs.rotation;
-			//Kobayahsi:Lerp with mixWeight
-			Quaternion secondaryRotation = aimRotation * trs.rotation;
-			trs.rotation = Quaternion.Lerp (org.rotation, secondaryRotation, managerRef.dynamicRatio);
-		}
+        public void ResetSpring()
+        {
+            if(trs==null)trs=transform;
+            if(child==null)return;
+            springLength=Vector3.Distance(trs.position,child.position);
+            currTipPos=prevTipPos=child.position;
+            previousDeltaTime=1f/60f;
+        }
+        public void UpdateSpring() { UpdateSpring(Time.deltaTime); }
+        public void UpdateSpring(float deltaTime)
+        {
+            if(child==null || deltaTime<=0 || float.IsNaN(deltaTime) || float.IsInfinity(deltaTime))return;
+            if(trs==null)trs=transform;
+            if(springLength<=0)ResetSpring();
+            if(deltaTime>.2f){trs.localRotation=localRotation;ResetSpring();return;}
+            trs.localRotation=localRotation;
+            // The authored values are per 60 Hz step. The old dt divisions cancelled
+            // multiplication by dt², so higher frame rates made every strand stiffer.
+            var step = deltaTime * 60f;
+            var velocity=(currTipPos-prevTipPos)*(deltaTime/previousDeltaTime)
+                * Mathf.Pow(Mathf.Clamp01(1f-dragForce),step);
+            var acceleration=trs.rotation*(boneAxis*stiffnessForce)+springForce;
+            var next=currTipPos+velocity+acceleration*(step*step);
+            var direction=next-trs.position;
+            if(direction.sqrMagnitude<.00000001f)direction=trs.TransformDirection(boneAxis);
+            next=direction.normalized*springLength+trs.position;
+            foreach(var collider in colliders ?? new SpringCollider[0])
+            {
+                if(collider==null)continue;
+                var radiusSum=radius+collider.radius;
+                if(Vector3.Distance(next,collider.transform.position)<=radiusSum)
+                {
+                    var normal=next-collider.transform.position;
+                    if(normal.sqrMagnitude<.00000001f)normal=trs.TransformDirection(boneAxis);
+                    next=collider.transform.position+normal.normalized*radiusSum;
+                    next=(next-trs.position).normalized*springLength+trs.position;
+                }
+            }
+            prevTipPos=currTipPos;currTipPos=next;previousDeltaTime=deltaTime;
+            var aimVector=trs.TransformDirection(boneAxis);
+            var aimRotation=Quaternion.FromToRotation(aimVector,currTipPos-trs.position);
+            var secondaryRotation=aimRotation*trs.rotation;
+            trs.rotation=Quaternion.Lerp(trs.rotation,secondaryRotation,managerRef!=null?managerRef.dynamicRatio:1f);
+        }
 
 		private void OnDrawGizmos ()
 		{

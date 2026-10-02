@@ -49,7 +49,7 @@ The desktop version is **v0.2.4-beta.1**. Extract the ZIP, open the app and foll
 
 Choose **offline, on-device AI** or **OpenAI API**. The lightweight E2B model is standard; Mac and iOS offer optional E4B for better responses at the cost of longer waits and higher device load. OpenAI API is recommended for higher-quality conversation. **An API key and API charges are required**, separately from a ChatGPT subscription.
 
-Standard speech uses five Japanese VOICEVOX voices. Menus support Japanese and English, but an English speech model is not included. Optional PC Backend features are covered in [Help](docs/HELP.md).
+Standard speech uses five Japanese VOICEVOX voices. Menus support Japanese and English, but an English speech model is not included. Optional PC Backend features are covered in [Help](docs/HELP.md). See [Backend Console](docs/BACKEND_CONSOLE.md) and the [TTS installation guide (Japanese)](docs/BACKEND_TTS_GUIDE.md) for optional Aivis/Irodori engines.
 
 ## Memory and privacy
 

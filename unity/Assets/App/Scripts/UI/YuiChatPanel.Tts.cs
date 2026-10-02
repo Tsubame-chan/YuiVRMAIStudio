@@ -327,6 +327,15 @@ namespace YuiPhysicalAI.UI
             string requestId,
             CancellationToken cancellationToken)
         {
+            if(IsTtsMode("backend-profile"))
+            {
+                if(string.IsNullOrEmpty(backendVoiceProfileId))throw new InvalidOperationException("Backendの声を選択してください。");
+                if(!string.Equals(backendVoiceServer.TrimEnd('/'),backendUrl.TrimEnd('/'),StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("接続先が変更されています。このBackendの声を選び直してください。");
+                await EnsureExternalDataPermissionAsync(backendUrl,false,cancellationToken);
+                return await client.SynthesizeSpeechClipAsync(new TtsRequest {RequestId=requestId,Text=text,VoiceProfileId=backendVoiceProfileId}, cancellationToken);
+            }
+
             if (IsTtsMode("aivis-native"))
             {
                 return await SynthesizeAivisNativeSpeechClipAsync(text, requestId, cancellationToken);

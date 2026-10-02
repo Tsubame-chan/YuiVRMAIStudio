@@ -126,13 +126,20 @@ namespace YuiPhysicalAI.UI
                 {
                     Heading(content, "A voice for your character", ref row);
                     var mode = ConversationModeValue();
+                    if (!YuiConversationModes.IsRealtime(mode))
+                    {
+                        var label=YuiSimpleDialog.L("Backendの保存した声を選ぶ", "Choose a saved Backend voice");
+                        ModernButton(content,"BackendSavedVoice",label,()=>chatPanel?.ChooseBackendVoiceProfile());
+                        Full(content,"BackendSavedVoice",label,ref row);
+                        if(TtsModeValue()=="backend-profile")Note(content,"Voice parameters are managed in Backend Console. App volume still applies.",ref row);
+                    }
                     if (YuiConversationModes.IsRealtime(mode))
                         Note(content, "This Realtime mode uses its own voice engine. Change the mode in Advanced.", ref row);
                     else Row(content, "TtsModeLabel", "Voice engine", "TtsModeDropdown", ref row);
                     if (Application.isMobilePlatform && TtsModeValue() == "aivis-native")
                         Note(content, "Experimental on-device voice. Speech can take several seconds to start. VOICEVOX is recommended for faster conversation.", ref row);
                     if (YuiConversationModes.IsRealtime(mode) || TtsModeValue() != "silent") SliderRow(content, "Volume", "Volume", ref row);
-                    if ((!YuiConversationModes.IsRealtime(mode) || YuiConversationModes.IsRealtimeTextTts(mode)) && TtsModeValue() != "silent")
+                    if ((!YuiConversationModes.IsRealtime(mode) || YuiConversationModes.IsRealtimeTextTts(mode)) && TtsModeValue() != "silent" && TtsModeValue() != "backend-profile")
                     {
                         if (YuiTtsRuntimeRouting.IsVoicevoxIntent(TtsModeValue()) || IsAivisTtsSelected())
                             Row(content, "SpeakerLabel", "Voice", "SpeakerDropdown", ref row);

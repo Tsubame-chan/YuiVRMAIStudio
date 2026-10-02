@@ -32,6 +32,8 @@ namespace YuiPhysicalAI.Api
             return GetJsonAsync<HealthResponse>("/health", cancellationToken);
         }
 
+        public Task<BackendVoiceProfiles> GetVoiceProfilesAsync(CancellationToken cancellationToken = default) => GetJsonAsync<BackendVoiceProfiles>("/tts/profiles", cancellationToken);
+
         public Task<ConfigResponse> GetConfigAsync(CancellationToken cancellationToken = default)
         {
             return GetJsonAsync<ConfigResponse>("/config", cancellationToken);

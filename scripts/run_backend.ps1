@@ -10,4 +10,5 @@ if (-not (Test-Path -LiteralPath $python)) {
 
 Set-Location $backendDir
 Write-Host "Starting Yui backend at http://127.0.0.1:8000"
-& $python -m uvicorn main:app --host 127.0.0.1 --port 8000 --no-use-colors
+Write-Host "Backend Console: http://127.0.0.1:8000/admin/"
+& $python -m uvicorn main:app --host 127.0.0.1 --port 8000 --no-use-colors --no-proxy-headers

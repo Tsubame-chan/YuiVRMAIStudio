@@ -18,7 +18,8 @@ namespace YuiPhysicalAI.UI
             Name = characterName, Instruction = customInstruction, TtsMode = ttsMode, SpeakerId = speakerId,
             Speed = speedScale, Pitch = pitchScale, Intonation = intonationScale, SynthesisVolume = synthesisVolumeScale,
             PrePhoneme = prePhonemeLength, PostPhoneme = postPhonemeLength,
-            VoiceGender = irodoriVoiceGender, VoiceInstruction = irodoriVoiceInstruct };
+            VoiceGender = irodoriVoiceGender, VoiceInstruction = irodoriVoiceInstruct,
+            BackendVoiceProfileId=backendVoiceProfileId, BackendVoiceProfileName=backendVoiceProfileName, BackendVoiceServer=backendVoiceServer };
         private void SaveCharacterProfile()
         {
             if (activeCharacterProfileId == null || !characterProfileWritable) return;
@@ -41,7 +42,7 @@ namespace YuiPhysicalAI.UI
                     profile = CaptureCharacterProfile();
                     if (!initial)
                     {
-                        profile.Name = "Yui"; profile.Instruction = "";
+                        profile.Name = "Yui"; profile.Instruction = "";profile.BackendVoiceProfileId="";profile.BackendVoiceProfileName="";profile.BackendVoiceServer="";
                         foreach (var entry in YuiAvatarLibrary.Read()) if (entry.id == id) { profile.Name = entry.name; break; }
                     }
                     ProfileStore.Save(id, profile);
@@ -49,6 +50,7 @@ namespace YuiPhysicalAI.UI
                 characterName = string.IsNullOrWhiteSpace(profile.Name) ? "Yui" : profile.Name;
                 customInstruction = profile.Instruction ?? "";
                 ttsMode = NormalizeTtsMode(profile.TtsMode);
+                backendVoiceProfileId=profile.BackendVoiceProfileId??"";backendVoiceProfileName=profile.BackendVoiceProfileName??"";backendVoiceServer=profile.BackendVoiceServer??"";
                 var tuning = YuiTtsTuningPrefs.Sanitize(ttsMode, new YuiSavedTtsTuning(profile.SpeakerId, profile.Speed, profile.Pitch,
                     profile.Intonation, profile.SynthesisVolume, profile.PrePhoneme, profile.PostPhoneme));
                 speakerId = tuning.SpeakerId; speedScale = tuning.SpeedScale; pitchScale = tuning.PitchScale;

@@ -152,6 +152,16 @@ class Settings(BaseSettings):
         return text if text in {"auto", "none", "soundstretch"} else "auto"
 
 
-@lru_cache
+@lru_cache(maxsize=8)
+def _settings_for_revision(path: str, revision: str, values: tuple) -> Settings:
+    from app.core.admin_settings import validated
+    return Settings(**validated(dict(values)))
+
+
 def get_settings() -> Settings:
-    return Settings()
+    from app.core.admin_settings import read_overrides, settings_path
+    values, revision = read_overrides()
+    return _settings_for_revision(str(settings_path()), revision, tuple(sorted(values.items())))
+
+
+get_settings.cache_clear = _settings_for_revision.cache_clear

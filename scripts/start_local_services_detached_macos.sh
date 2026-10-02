@@ -319,7 +319,7 @@ else
   echo "[Yui services] Starting backend on $BACKEND_BASE_URL"
   (
     cd "$BACKEND_DIR"
-    nohup "$PYTHON_BIN" -m uvicorn main:app --host "$BACKEND_HOST" --port "$BACKEND_PORT" --no-use-colors \
+    nohup "$PYTHON_BIN" -m uvicorn main:app --host "$BACKEND_HOST" --port "$BACKEND_PORT" --no-use-colors --no-proxy-headers \
       >"$BACKEND_OUT" 2>"$BACKEND_ERR" < /dev/null &
     backend_pid=$!
     echo "$backend_pid" > "$RUNTIME_DIR/backend.pid"
@@ -394,3 +394,13 @@ echo "  Backend : $BACKEND_BASE_URL/health"
 echo
 echo "[Yui services] Services are running in the background."
 echo "[Yui services] Stop them with: ./scripts/stop_local_services_macos.sh"
+
+CONSOLE_URL="http://127.0.0.1:$BACKEND_PORT/admin/"
+echo "[Yui services] Backend Console: $CONSOLE_URL"
+if [[ "${YUI_OPEN_BACKEND_CONSOLE:-0}" == "1" ]]; then
+  if http_ok "$CONSOLE_URL"; then
+    /usr/bin/open "$CONSOLE_URL"
+  else
+    echo "[Yui services] Console is not ready. Open the URL after startup." >&2
+  fi
+fi

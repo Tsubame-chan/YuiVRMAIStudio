@@ -46,6 +46,12 @@ OpenAI chat can use hosted web search for current information when enabled by ba
 ## Phase 3 Endpoints
 
 - `POST /tts`: Generates speech audio through the configured TTS provider. The default provider is VOICEVOX Engine.
+- `GET /tts/profiles`: Lists saved voice profiles (`id`, `name`, `provider`), without endpoint URLs or secrets.
+
+`POST /tts` accepts optional `voice_profile_id`. An existing profile resolves its own endpoint, voice and parameters; only explicitly supplied request values override the profile. A conflicting provider or invalid/missing profile returns 422. Old explicit-parameter requests keep their behavior. A configured alternate profile is tried once using its own voice parameters; no silent arbitrary voice substitution. The Console preview tests only the selected voice without fallback.
+
+The local Console exposes revisioned `GET/PUT /admin/api/voice-library`, endpoint probes at `POST /admin/api/voice-endpoints/{id}/probe`, and `POST /admin/api/voice-preview`. These require the local admin session and mutation header, and are not remote app APIs. Configuration files containing keys must not be shared. See [Console](BACKEND_CONSOLE.md) and [TTS setup](BACKEND_TTS_GUIDE.md).
+
 - `GET /audio/{filename}`: Serves generated TTS audio files to Unity. The allow-list currently supports `wav`, `mp3`, and `ogg`.
 
 Generated audio files are runtime cache files under `backend/data/audio`. The VOICEVOX cache is bounded by `TTS_AUDIO_CACHE_MAX_FILES`, `TTS_AUDIO_CACHE_MAX_MB`, and `TTS_AUDIO_CACHE_MAX_AGE_HOURS`; see `docs/PROJECT_AUDIT_20260617.md`.
