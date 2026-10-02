@@ -35,13 +35,8 @@ An engine started separately stays running; stop it in its own application.
 ## API Keys
 
 The backend bundle includes `.env.example` only. It must never include a real
-`.env` or API key. Users can set API keys in the app settings, or advanced users
-can create a local `.env` next to this file.
-
-## Restricted Voice Assets
-
-`female_voice_3` / `七日週_T2モデル` is intentionally excluded because its custom
-license blocks unmodified redistribution.
+`.env` or API key. Set Backend API keys in its Console. The app’s Direct API key is separate.
+Advanced users can also create a local `.env` next to this file.
 
 ## Manage AI, voices and device sync
 

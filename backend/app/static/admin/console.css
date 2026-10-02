@@ -16,3 +16,5 @@
 .voice-help{margin:16px 0}.voice-help p{margin-bottom:12px}.voice-connection{font-size:12px}.voice-main textarea{width:100%;min-height:100px}.voice-preview .actions{display:grid;gap:8px}
 
 #content:has(#voice-workbench) .tabs{margin:12px 0;padding:4px;min-height:44px}#content:has(#voice-workbench) .lead{margin-bottom:12px}#content:has(#voice-workbench) h1{margin-bottom:6px}.voice-main{padding:20px}.voice-preview{padding:20px}
+
+.memory-content { white-space: pre-wrap; overflow-wrap: anywhere; }

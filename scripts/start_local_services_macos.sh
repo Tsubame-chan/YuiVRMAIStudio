@@ -344,7 +344,7 @@ else
   echo "[Yui services] Starting backend on $BACKEND_BASE_URL"
   (
     cd "$BACKEND_DIR"
-    "$PYTHON_BIN" -m uvicorn main:app --host "$BACKEND_HOST" --port "$BACKEND_PORT" --no-use-colors --no-proxy-headers
+    "$PYTHON_BIN" "$SCRIPT_DIR/run_backend.py" --host "$BACKEND_HOST" --port "$BACKEND_PORT"
   ) >"$BACKEND_OUT" 2>"$BACKEND_ERR" &
   BACKEND_PID=$!
   record_owned_pid "backend" "$BACKEND_PID" "$BACKEND_PORT"

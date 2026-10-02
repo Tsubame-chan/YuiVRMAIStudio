@@ -1,8 +1,12 @@
+import {mountSharedCharacter} from './shared-character.js';
+
 export function mountDeviceSync(root, api, notice, confirmAction) {
     const esc = v => String(v ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    let closed = false, expiryTimer;
+    let closed = false, expiryTimer, unmountShared;
     root.innerHTML = `<div class="workspace"><section class="card"><h2>アプリの端末を登録</h2><p>アプリの接続設定で「キャラクターと会話を同期」を開き、このPCで発行したコードを入力します。</p><p>同期するキャラクターと件数はアプリ側で確認してから反映します。異なる端末の履歴は両方を残し、同じ項目の変更が重なった場合は内容を選びます。</p><button id="sync-code-create" class="primary">登録コードを表示</button><div id="sync-code" aria-live="polite"></div><p class="subtle">コードは10分間・1回だけ有効です。APIキー、アバター、音声モデル、音声の接続設定は同期しません。旧アプリには同期の操作がありません。</p></section><section class="card"><h2>登録済みの端末</h2><div id="sync-devices" aria-live="polite">確認中…</div><p class="subtle">登録解除すると、このPCへの同期ができなくなります。端末に保存済みのデータは残ります。</p></section></div>`;
     const create = root.querySelector('#sync-code-create');
+    root.insertAdjacentHTML('beforeend','<div id="shared-character"></div>');
+    mountSharedCharacter(root.querySelector('#shared-character'),api,notice,confirmAction).then(unmount=>{if(closed)unmount?.();else unmountShared=unmount;}).catch(e=>notice(e.message));
     create.onclick = async()=> {
         create.disabled = true;
         try {
@@ -27,5 +31,5 @@ export function mountDeviceSync(root, api, notice, confirmAction) {
         });
     }
     refresh().catch(e=>notice(e.message));
-    return ()=>{closed=true;clearTimeout(expiryTimer);};
+    return ()=>{closed=true;clearTimeout(expiryTimer);unmountShared?.();};
 }

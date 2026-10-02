@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import secrets
+import json
+import os
 import sqlite3
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -65,7 +67,7 @@ def admin_page(): return FileResponse(STATIC / "index.html")
 
 @public.get("/admin/assets/{name}", include_in_schema=False)
 def admin_asset(name: str):
-    if name not in {"console.css", "console.js", "realtime.js", "diagnostics.js", "voices.js", "tts-guides.js", "device-sync.js", "NotoSansJP-Regular.otf", "font-license.txt", "icon.png"}:
+    if name not in {"console.css", "console.js", "realtime.js", "diagnostics.js", "voices.js", "tts-guides.js", "device-sync.js", "shared-character.js", "work.js", "NotoSansJP-Regular.otf", "font-license.txt", "icon.png"}:
         raise HTTPException(404)
     return FileResponse(STATIC / name)
 
@@ -80,9 +82,19 @@ def session(request: Request, response: Response):
 
 @router.get("/overview")
 def overview(request: Request, settings: Settings = Depends(get_settings)):
+    try:
+        hosts = json.loads(os.environ.get("YUI_BACKEND_LISTEN_HOSTS", "null"))
+    except (ValueError, TypeError):
+        hosts = None
+    if not isinstance(hosts, list):
+        hosts = [request.scope.get("server", ("127.0.0.1", 8000))[0]]
+    remote_hosts = [host for host in hosts if host not in LOOPBACK]
+    port = request.url.port or 8000
+    remote_urls = [f"http://{'['+host+']' if ':' in host else host}:{port}" for host in remote_hosts if host not in {"0.0.0.0", "::"}]
     return {"backend": "ok" if check_database(settings.database_url) else "degraded", "version": settings.app_version,
             "schema": "2026-05-10", "console_version": "1", "url": str(request.base_url).rstrip("/"),
-            "management_access": "localhost", "capabilities": CAPABILITIES, "providers": provider_catalog(),
+            "management_access": "localhost", "network": {"remote_enabled": bool(remote_hosts), "remote_urls": remote_urls},
+            "capabilities": CAPABILITIES, "providers": provider_catalog(),
             "settings": public_settings(settings), "extensions": [
                 {"name": "資料を取り込むRAG・embedding索引", "state": "未実装", "detail": "現在の記憶検索はキーワード検索です。資料取込やembedding基盤は別途実装します。"},
                 {"name": "キャラクターと会話の端末同期", "state": "端末登録後に利用", "detail": "対応アプリで共有先と差分を確認します。接続と設定 → 端末と同期で登録してください。"},

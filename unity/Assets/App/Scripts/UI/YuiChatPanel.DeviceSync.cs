@@ -84,7 +84,11 @@ namespace YuiPhysicalAI.UI
             var result=new JObject();
             result["profile:name"]=new JObject{{"text",characterName??"Yui"}};
             result["profile:instruction"]=new JObject{{"text",customInstruction??""}};
-            foreach(var m in new YuiCharacterMemoryStore(Path.Combine(Application.persistentDataPath,"CharacterMemory")).Read(ChatCharacterId()))result["memory:"+m.Id]=new JObject{{"content",m.Content},{"pinned",m.Pinned},{"recorded_utc",m.CreatedUtc??""}};
+            foreach(var m in new YuiCharacterMemoryStore(Path.Combine(Application.persistentDataPath,"CharacterMemory")).Read(ChatCharacterId())) {
+                var value=new JObject{{"content",m.Content},{"pinned",m.Pinned},{"recorded_utc",m.CreatedUtc??""}};
+                if(m.SourceIds!=null && m.SourceIds.Length>0) {value["source_ids"]=JArray.FromObject(m.SourceIds);value["source_versions"]=JArray.FromObject(m.SourceVersions??Array.Empty<long>());value["basis"]="user_confirmed_connection";}
+                result["memory:"+m.Id]=value;
+            }
             var page=ConversationArchive(ChatCharacterId()).ReadPage(0,18000);
             if(page.HasOlder)throw new InvalidDataException("履歴が同期の上限を超えています。元ファイルは保持しています。");
             if(page.DamagedLines>0)throw new InvalidDataException("履歴に読み込めない行があります。元ファイルは保持しています。");
@@ -204,7 +208,8 @@ namespace YuiPhysicalAI.UI
                 var value=item["value"];var id=(string)item["id"];
                 switch((string)item["kind"]) {
                     case "profile":if(id=="name")profile.Name=(string)value["text"];else if(id=="instruction")profile.Instruction=(string)value["text"];break;
-                    case "memory":memories.Add(new YuiCharacterMemoryStore.Entry{Id=id,Content=(string)value["content"],Pinned=(bool)value["pinned"],CreatedUtc=(string)value["recorded_utc"]});break;
+                    case "memory":memories.Add(new YuiCharacterMemoryStore.Entry{Id=id,Content=(string)value["content"],Pinned=(bool)value["pinned"],CreatedUtc=(string)value["recorded_utc"],
+                        SourceIds=value["source_ids"]?.ToObject<string[]>(),SourceVersions=value["source_versions"]?.ToObject<long[]>()});break;
                     case "history":
                         existing.TryGetValue(id,out var old);
                         history.Add(new YuiTextArchive.Entry{Id=id,Speaker=(string)value["speaker"],Text=(string)value["text"],Mode=(string)value["mode"],CreatedUtc=(string)value["recorded_utc"],

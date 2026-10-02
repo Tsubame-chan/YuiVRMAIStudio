@@ -91,5 +91,24 @@ namespace YuiPhysicalAI.Tests
             var store=new YuiCharacterMemoryStore(directory,new Alternative());store.Save("a","hello");Assert.AreEqual("alternative",store.Context("a","question"));
         }
         private sealed class Alternative:IYuiCharacterMemoryRetriever {public string Retrieve(IReadOnlyList<YuiCharacterMemoryStore.Entry> entries,string query,int maxChars)=>"alternative";}
+        [Test] public void PersonalEmotionalEventsFromBothDevicesRemainRetrievable()
+        {
+            var a=new YuiCharacterMemoryStore(directory);a.Remember("shared","悲しいことがあって落ち込んでいます。",false);
+            a.Remember("shared","最近絶好調。こういう時に限って悲しいことが起こるんだよなあ。",false);
+            var merged=new YuiCharacterMemoryStore(directory).Context("shared","最近の気分の変化を振り返ろう");
+            StringAssert.Contains("悲しいこと",merged);StringAssert.Contains("最近絶好調",merged);
+            StringAssert.Contains("記録日時",YuiCharacterMemoryStore.ReferenceLabel);
+            Assert.AreEqual(2,a.Read("shared").Count);
+        }
+        [Test] public void ASourceEditInvalidatesItsInterpretationAndKeepsOtherEvidence()
+        {
+            var store=new YuiCharacterMemoryStore(directory);store.Save("a","私は最近好調です");store.Save("a","悲しいことがありました");
+            var originals=store.Read("a");var linked=new YuiCharacterMemoryStore.Entry {Id="connection:test",Content="好調のあと悲しい出来事を話した",SourceIds=new[]{originals[0].Id,originals[1].Id},SourceVersions=new long[]{1,2},CreatedUtc=DateTime.UtcNow.ToString("o")};
+            originals.Add(linked);
+            File.WriteAllText(store.SyncFilePath("a"),Newtonsoft.Json.JsonConvert.SerializeObject(originals));
+            store.Invalidate();StringAssert.Contains("User-confirmed interpretation",store.Context("a","悲しい気分"));
+            store.Save("a","前の話は架空の例でした",originals[1].Id);
+            Assert.AreEqual(2,store.Read("a").Count);StringAssert.DoesNotContain("connection:test",store.Context("a","悲しい気分"));
+        }
     }
 }

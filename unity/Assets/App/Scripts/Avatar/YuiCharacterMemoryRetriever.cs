@@ -14,6 +14,8 @@ namespace YuiPhysicalAI.Avatar
     }
     public sealed class YuiCharacterMemoryRetriever : IYuiCharacterMemoryRetriever
     {
+        private static DateTimeOffset RecordedTime(string value) => DateTimeOffset.TryParse(value,
+            System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.AssumeUniversal,out var parsed) ? parsed.ToUniversalTime() : DateTimeOffset.MinValue;
         private static HashSet<string> Terms(string value)
         {
             var text=Regex.Replace((value??"").Normalize(NormalizationForm.FormKC).ToLowerInvariant(), @"\s+", "");
@@ -25,6 +27,7 @@ namespace YuiPhysicalAI.Avatar
             if(Regex.IsMatch(text,@"名前|呼ん|呼べ|name|call"))terms.Add("category:identity");
             if(Regex.IsMatch(text,@"約束|予定|promise|plan"))terms.Add("category:promise");
             if(Regex.IsMatch(text,@"恋人|彼女|彼氏|相棒|友達|relationship|girlfriend|boyfriend|companion"))terms.Add("category:relationship");
+            if(Regex.IsMatch(text,@"悲し|絶好調|調子|落ち込|気分|つら|辛|不安|嬉し|うれし|sad|happy|mood"))terms.Add("category:mood");
             return terms;
         }
         private static string Excerpt(string text,HashSet<string> query)
@@ -39,18 +42,20 @@ namespace YuiPhysicalAI.Avatar
         {
             maxChars=Math.Max(0,Math.Min(2400,maxChars));
             var terms=Terms(query);
-            var ranked=entries.Select((entry,index)=>new { Entry=entry,Index=index,
+            var present=new HashSet<string>(entries.Select(e=>e.Id));
+            var ranked=entries.Where(e=>e.SourceIds==null || e.SourceIds.Length==0 || e.SourceIds.All(present.Contains)).Select((entry,index)=>new { Entry=entry,Index=index,
                 Score=Terms(entry.Content).Count(terms.Contains)*3+(entry.Pinned?12:0) }).ToList();
             var candidates=ranked.Where(e=>e.Score>0).ToList();
-            if(candidates.Count==0)candidates=ranked.Where(e=>Terms(e.Entry.Content).Any(t=>t.StartsWith("category:",StringComparison.Ordinal))).OrderByDescending(e=>e.Entry.CreatedUtc).Take(2).ToList();
-            var selected=candidates.OrderByDescending(e=>e.Score).ThenByDescending(e=>e.Entry.CreatedUtc).ThenByDescending(e=>e.Index).Take(5).ToList();
+            if(candidates.Count==0)candidates=ranked.Where(e=>Terms(e.Entry.Content).Any(t=>t.StartsWith("category:",StringComparison.Ordinal))).OrderByDescending(e=>RecordedTime(e.Entry.CreatedUtc)).Take(2).ToList();
+            var selected=candidates.OrderByDescending(e=>e.Score).ThenByDescending(e=>RecordedTime(e.Entry.CreatedUtc)).ThenByDescending(e=>e.Index).Take(5).ToList();
             var accepted=new List<Tuple<string,string>>();var used=0;
             foreach(var item in selected) {
-                var line="- "+item.Entry.CreatedUtc+" User said: "+Excerpt(item.Entry.Content,terms)+"\n";
+                var label=item.Entry.SourceIds!=null && item.Entry.SourceIds.Length>0?"User-confirmed interpretation (sources: "+string.Join(",",item.Entry.SourceIds)+"): ":"User said: ";
+                var line="- "+item.Entry.CreatedUtc+" "+label+Excerpt(item.Entry.Content,terms)+"\n";
                 if(used+line.Length>maxChars)continue;
                 accepted.Add(Tuple.Create(item.Entry.CreatedUtc,line));used+=line.Length;
             }
-            return string.Concat(accepted.OrderBy(e=>e.Item1).Select(e=>e.Item2));
+            return string.Concat(accepted.OrderBy(e=>RecordedTime(e.Item1)).Select(e=>e.Item2));
         }
     }
 }
