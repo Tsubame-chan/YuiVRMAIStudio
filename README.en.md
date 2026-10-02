@@ -44,7 +44,7 @@ The desktop version is **v0.2.4-beta.1**. Extract the ZIP, open the app and foll
 ## Get started
 
 1. Send a message to begin. Use Talk for short conversations, or Work for longer advice and tasks.
-2. Change personality, voice and avatar in Settings. Your own avatar needs a **VRM file**. See [avatar preparation and import](docs/AVATAR_IMPORT.md).
+2. Change personality, voice and avatar in Settings. Your own avatar needs a **VRM file**. See [avatar preparation and import](docs/AVATAR_IMPORT.en.md).
 3. Replay the tutorial from Help whenever you need it.
 
 Choose **offline, on-device AI** or **OpenAI API**. The lightweight E2B model is standard; Mac and iOS offer optional E4B for better responses at the cost of longer waits and higher device load. OpenAI API is recommended for higher-quality conversation. **An API key and API charges are required**, separately from a ChatGPT subscription.

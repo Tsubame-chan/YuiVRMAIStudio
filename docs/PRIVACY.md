@@ -1,6 +1,6 @@
 # Privacy and data handling
 
-This describes the current application source. The public release may be older; consult its version and release notes. This application does not create a Yui cloud account or send analytics to a Yui-operated collection service.
+This application does not create a Yui cloud account or send analytics to a Yui-operated collection service.
 
 ## What stays on your device
 
@@ -10,7 +10,7 @@ Character memories are stored on your device separately for each character. The 
 
 On-device AI processes messages locally. Model downloads contact their hosting service, which can see ordinary download metadata such as your IP address. Platform speech services follow the OS permission and processing rules; not every OS recognizer guarantees offline processing.
 
-On iOS/macOS, the app saves your direct OpenAI key in the system Keychain. Existing app-settings keys are migrated after successful secure storage. The current Windows/Android implementation still uses application settings; secure storage on those platforms remains a release acceptance item. Clear the API key in Settings and save to remove it. Keychain items can survive uninstalling the app.
+On iOS/macOS, the app saves your direct OpenAI key in the system Keychain. Existing app-settings keys are migrated after successful secure storage. Windows/Android save the key in application settings rather than the Apple Keychain. Clear the API key in Settings and save to remove it. Keychain items can survive uninstalling the app.
 
 ## What is sent when using connected services
 

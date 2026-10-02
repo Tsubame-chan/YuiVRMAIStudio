@@ -1,65 +1,63 @@
-# 自分のアバターをYuiへ
+# 自分のアバターを使う
 
-VRMを持っていれば、そのまま読み込めます。VRChat用のUnityプロジェクトから持ち込む場合は、既存の変換ツールでVRMを書き出します。Yui専用の変換ツールは必須ではありません。
+[English](AVATAR_IMPORT.en.md) · [ヘルプ](HELP.md) · [README](../README.md)
 
-この案内は最新の公開用候補の操作画面を対象にしています。配布済みの古いバージョンとは画面が異なる場合があります。VRM変換後の表示や動作は、使うアバターと端末で確認してください。
+Yuiに読み込むファイルは **VRM（.vrm）** です。VRMをお持ちの方は、そのまま読み込めます。UnityやVRChat用のアバターは、先にUnityからVRMへ書き出します。
 
-## VRMを持っている場合
+## VRMを読み込む
 
-「設定 → キャラクター → アバターを読み込む」で `.vrm` を選びます。VRM 0.x / 1.0に対応します。成功後はアプリ内へコピーするため、元ファイルを移動する必要はありません。
+1. 「設定 → キャラクター → アバターを読み込む」を開きます。
+2. `.vrm` ファイルを選び、読み込みが終わるまで待ちます。VRM 0.x / 1.0を使えます。
+3. アバターが切り替わったら、名前・性格・声を設定します。
 
-購入ZIPは先に解凍し、中の `.vrm` を選んでください。購入ZIP・`.unitypackage`・FBXをそのままYuiに読み込むことはできません。
+ファイルはアプリ内へコピーされます。購入ZIPにVRMが入っている場合は、先にZIPを解凍してください。購入ZIP・FBX・`.unitypackage` は直接読み込めません。
 
-新しく読み込むと別のキャラクターになります。同じキャラクターの衣装替えには「マイキャラクター → 着替え」を使います。名前・性格・声・記憶を引き継げます。
+**衣装だけを変える場合**は「マイキャラクター → 着替え」から別のVRMを選びます。名前・性格・声・記憶を保ったまま外見を変えられます。新しいキャラクターとして読み込むと、人格と記憶も別になります。
 
-## VRChat用アバターの場合
+## Unity・VRChat用アバターをVRMにする
 
-### まず、普段使う姿をUnityで用意する
+### 1. 使いたい姿をUnityで用意する
 
-- **すでに改変している方:** いつものUnityプロジェクトの、衣装・アクセサリー・体型を調整したアバターを使います。
-- **購入したばかりの方:** 作者の説明に従ってSDK・指定シェーダー・アバターを導入します。YuiのためにVRChatへアップロードする必要はありません。
+改変済みなら、普段使っているUnityプロジェクトを開きます。購入したばかりなら、アバター作者の手順に沿ってSDK・シェーダー・モデルを導入します。衣装、色、アクセサリー、体型をUnity上で調整してください。
 
-追加ツールを入れる前にプロジェクトをバックアップしてください。既存のシェーダーやツールを無条件で入れ替える必要はありません。
+VRChatへのアップロードは不要です。追加ツールを入れる前に、プロジェクトをバックアップしておきます。
 
-### 既存ツールで書き出す
+### 2. VRMを書き出す
 
-lilToonとModular Avatarを使うプロジェクトでは、[NDMF VRM Exporter](https://github.com/hkrn/ndmf-vrm-exporter)を評価中です。2026-10-02に、Unity上の私用アバターを以下の手順に対応する公式Export処理で新たにVRM化し、最新Mac版で標準ファイル選択から導入・描画・まばたき・母音・揺れ物を確認しました。全アバターの見た目や、Windows/iPhoneでの一周を保証するものではありません。独自シェーダーをそのまま持ち込む方式ではありません。下の「見た目と動作の違い」も確認してください。
+lilToonやModular Avatarを使うアバターには [NDMF VRM Exporter](https://github.com/hkrn/ndmf-vrm-exporter)を使えます。
 
-**初回の導入・設定**
+1. [作者の導入手順](https://github.com/hkrn/ndmf-vrm-exporter/blob/main/docs~/usage.md)に沿って、VCC / ALCOMへリポジトリを登録し、対象プロジェクトにExporterを追加します。
+2. Hierarchyでアバターの最上位オブジェクトを選び、`Add Component`から `VRM Export Description` を追加します。
+3. `Authors`に作者名を設定し、モデルの利用条件に沿ってメタデータを入力します。
+4. コンポーネントのチェックを外し、表示されるボタンからNDMF Consoleを開きます。
+5. `Avatar platform`で `VRM 1.0 (NDMF VRM Exporter)` を選び、`Export`から保存先を指定します。
 
-1. [公式の導入手順](https://github.com/hkrn/ndmf-vrm-exporter/blob/main/docs~/usage.md)に従い、VCC / ALCOMに作者のリポジトリ `https://hkrn.github.io/vpm.json` を登録し、対象プロジェクトへNDMF VRM Exporterを追加します。
-2. UnityのHierarchyでアバター本体（VRC Avatar Descriptorがあるオブジェクト）を選び、`Add Component`から`VRM Export Description`を追加します。
-3. `Authors`に作者名を設定し、元モデルの利用条件に合わせてメタデータを確認します。VRChat APIからの取得やアバターのアップロードは不要です。
-4. このコンポーネントのチェックを外し、表示される`Open NDMF Console to export VRM file`を押します。`Avatar platform`で`VRM 1.0 (NDMF VRM Exporter)`を選びます。
+次回からは衣装や色を調整し、`Tools → NDM Framework → Show NDMF Console`から同じプラットフォームで書き出せます。VRChat内で一時的に変えた衣装メニューではなく、Unityプロジェクト側の姿を使います。
 
-**2回目以降の書き出し**
+ツールの対応バージョンやシェーダー構成は[公式の互換性説明](https://github.com/hkrn/ndmf-vrm-exporter/blob/main/docs~/compatibility.md)をご覧ください。独自シェーダーをそのままVRMへ持ち込む方式ではありません。別のツールですでにVRM 0.x / 1.0を書き出せている場合は、そのファイルを使えます。
 
-1. 使いたい衣装・色・体型に調整します。VRChat内だけで変えたメニューの状態ではなく、元Unityプロジェクト側で設定します。
-2. `Tools → NDM Framework → Show NDMF Console`を開き、対象アバターと上記のVRMプラットフォームを確認し、`Export`で `.vrm` を保存します。
-3. Yuiの「設定 → キャラクター → アバターを読み込む」で選びます。スマホの場合は先にファイルを転送します。
+### 3. Yuiへ読み込む
 
-Macでの確認構成はUnity 2022.3.62f3、VRChat SDK 3.9.0、NDMF VRM Exporter 1.4.0、lilToon 2.3.4です。lilToonの自動変換には、Exporterが認識する対応版・パッケージ構成が必要です。古いAssets形式のlilToonを置くだけで同じ変換になるとは限りません。必要な更新は作者の手順で行ってください。
+Mac・Windowsでは、書き出したVRMを設定から選びます。スマートフォンでは先に「ファイル」等へコピーし、Yuiから選んでください。
 
-既存の[VRM Converter for VRChat](https://github.com/esperecyan/VRMConverterForVRChat)で作ったVRM 0.xもYuiで読み込めます。すでに使い慣れた変換手順がある場合、Yui用に作り直す必要はありません。同ツールの今回の書き出し検証の対象外です。
+- **Mac → iPhone:** AirDropで送り、「ファイル」に保存します。
+- **Windows → iPhone:** iCloud Driveに保存し、iPhoneの「ファイル」から選びます。USBなら [Appleデバイスのファイル共有](https://support.apple.com/guide/devices-windows/mchl4bd77d3a/windows)でYuiへコピーできます。
 
-## 見た目と動作の違い
+クラウド上のファイルはダウンロードが終わってから選んでください。PCのBackendへ接続する必要はありません。
 
-VRM化はVRChatのすべての機能を移す処理ではありません。
+## 見た目や動きが違うとき
 
-- **確認するもの:** 衣装・アクセサリー・体型、髪や目の色、透明な部分、口パク、まばたき、髪や衣服の揺れ。
-- **変わり得るもの:** 陰影・光沢・輪郭、物理演算の強さや衝突。NDMF VRM ExporterはlilToonの対応項目をMToonへ変換し、一部の色調整や重ね合わせをテクスチャに焼き込みます。完全に同じ見た目にはなりません。
-- **対象外:** VRChatの衣装メニューや接触・掴む操作、任意のAnimator/FXの再実行、独自スクリプト。特殊なラメ・屈折・ファー等も同じ描画にはなりません。変換ツールの[互換性説明](https://github.com/hkrn/ndmf-vrm-exporter/blob/main/docs~/compatibility.md)を参照してください。
+VRMへの変換で、陰影・光沢・輪郭、髪や服の揺れ方が変わることがあります。VRChatの衣装メニュー、掴む操作、独自スクリプト等は引き継ぎません。
 
-書き出したVRMをYuiで確認してから使い始めてください。色や衣装が欠けた場合は「変換できた」とせず、元のシェーダー・変換設定を見直します。テクスチャの焼き込みでファイル容量が増えることもあります。今回のMacでの成功は、そのまま全アバター・全スマホの性能保証にはなりません。
+- **衣装や色が欠ける:** 元のUnityプロジェクトの表示状態と、Exporterのシェーダー・変換設定を確認します。
+- **まばたきや口が動かない:** 書き出し元の表情・BlendShape設定を確認します。
+- **重い／読み込みが遅い:** テクスチャの焼き込みでVRMが大きくなる場合があります。元モデルのメッシュやテクスチャを軽くして書き出します。
 
-## スマホへコピーする
+利用権のあるアバターを使ってください。不具合報告にはアプリ版・変換ツール・エラー・再現手順を記載し、購入モデルそのものは公開添付しないでください。
 
-- **Windows → iPhone:** iCloud Driveへ保存し、iPhoneの「ファイル」から選択。USBを使う場合は[Appleデバイスのファイル共有](https://support.apple.com/en-au/guide/devices-windows/mchl4bd77d3a/windows)でYuiへコピーします。
-- **Mac → iPhone:** AirDropで送り、「ファイル」に保存してYuiから選択します。
-- **Android:** USBのファイル転送でDownloadへコピーし、Yuiから選択します。
+<details>
+<summary>以前のYui Avatar Bridge ZIPを使う場合</summary>
 
-iPhoneのUSB共有には共有設定を有効にした新しいYuiビルドが必要です。Windows → iPhoneの実機一周は未確認です。Yuiを含むPC Backendをスマホから常時使う必要はありません。
+旧ZIPの互換読み込みもあります。その端末向けのpayloadが必要です。新たに持ち込む場合は、上記のVRM手順を使ってください。[旧ZIPの手順](YUI_AVATAR_BRIDGE_USER_TEST_GUIDE.md) / [開発者向け仕様](YUI_AVATAR_BRIDGE_ARCHITECTURE.md)
 
-## 以前のYui Avatar Bridge ZIPを持っている場合
-
-互換読み込みを残しています。そのZIPに使用端末用のデータが必要です。旧ZIPもカスタムシェーダーを完全保存する形式ではありません。新たに持ち込むために旧ZIPを用意する必要はありません。[旧方式の仕様](YUI_AVATAR_BRIDGE_ARCHITECTURE.md)を参照してください。
+</details>

@@ -43,6 +43,6 @@ Follow the scripts' prerequisites for Python and other dependencies. Backend `.e
 
 ## Build from source
 
-Use Unity **2022.3.62f3** and UniVRM **0.131.2**, restore [model/voice data](LOCAL_AI_ASSETS.md) and install the appropriate SDK/runtime. Unity 6 migration has not been performed. Public builds require [asset validation](PUBLIC_PLAYER_ASSET_VALIDATION.md).
+Use Unity **2022.3.62f3** and UniVRM **0.131.2**, restore [model/voice data](LOCAL_AI_ASSETS.md) and install the appropriate SDK/runtime. Public builds require [asset validation](PUBLIC_PLAYER_ASSET_VALIDATION.md).
 
 [Runtime support](RUNTIME_SUPPORT.md) · [Source status](SOURCE_STATUS.md) · [API](api.md)

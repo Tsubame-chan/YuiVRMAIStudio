@@ -43,6 +43,6 @@ Python 3.12などの前提はセットアップスクリプトの案内を参照
 
 ## ソースをビルドする場合
 
-Unity **2022.3.62f3** / UniVRM **0.131.2**。[データ復元](LOCAL_AI_ASSETS.md)とOS別SDK/runtimeを準備してください。Unity 6へはまだ移行していません。公開ビルドでは[アセット監査](PUBLIC_PLAYER_ASSET_VALIDATION.md)が必要です。
+Unity **2022.3.62f3** / UniVRM **0.131.2**。[データ復元](LOCAL_AI_ASSETS.md)とOS別SDK/runtimeを準備してください。公開ビルドでは[アセット監査](PUBLIC_PLAYER_ASSET_VALIDATION.md)が必要です。
 
 [OS別対応](RUNTIME_SUPPORT.md) · [ソースの現在地](SOURCE_STATUS.md) · [API仕様](api.md)
