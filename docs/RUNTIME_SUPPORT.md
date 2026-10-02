@@ -1,28 +1,26 @@
-# 実行経路と受入範囲 / Runtime support
+# 端末ごとの対応 / Device compatibility
 
-2026-10-03。desktop v0.2.4-beta.2 / iOS 0.2.4 (14)候補。旧beta.5の制限と混同しないでください。
-
-| OS | 端末内文章生成 | 音声入力・出力 | 検証の限界 |
+| 端末 | 端末内AI | 標準の読み上げ | 利用条件 |
 | --- | --- | --- | --- |
-| macOS | LiteRT-LM Python worker。標準E2B、任意E4B | workerでローカルSTT / native VOICEVOX Core。Direct API / Backendも選択可 | Apple Silicon向けruntime。Intel・別端末・長時間の保証なし |
-| Windows | 同じworker経路を実装、E2BデータとWindows Python/runtimeを配布 | ローカルSTT / VOICEVOXのworker経路、Direct API / Backend | Windows 64-bit runtime。GPU/driver・端末性能によって動作が異なります |
-| iOS 26+ | Swift LiteRT-LM。E2B同梱、E4BはApple配信の任意取得 | OS Speech / VOICEVOX Core / OS音声。Direct APIも選択可 | iPhone 16 Proで本人確認。通常モデル・低メモリ端末全般の保証なし。App Store審査中 |
-| Android arm64 | Kotlin LiteRT-LMのソース経路 | OS Speech / VOICEVOX Coreのソース経路 | 公開アプリ・実機受入なし。OS Speechの完全オフライン保証なし |
+| Mac | E2B、任意でE4B | 日本語VOICEVOX・5声 | Apple Silicon向け。初回に必要データを取得 |
+| Windows | E2B | 日本語VOICEVOX・5声 | 64-bit版。初回に必要データを取得 |
+| iPhone / iPad | E2B、任意でE4B | 日本語VOICEVOX・OS音声 | iOS 26以降。標準データ同梱。日本向けApp Store版は審査中 |
+| Android | 公開アプリなし | — | ダウンロードできるアプリは提供していません |
 
-Windowsの新しいruntime起動・髪の揺れ・同期認証情報の保持と、両OSの新しいPlayerのアバター読込は実機確認待ちです。
+OpenAI APIを選ぶ場合はインターネット接続とAPIキーが必要で、API利用料金がかかります。AIと読み上げの選択は独立しています。英語メニューはありますが、英語専用の音声モデルは付属しません。
 
-Desktop workerとHTTP Backendサーバーは別です。初回に取得する `YuiBackend` bundleには両方のコードが入りますが、端末内会話のためにサーバーを起動する必要はありません。APIキーはDirect接続とBackendで別々に設定します。
+E4BはE2Bより多くの空き容量とメモリを使い、回答にも時間がかかります。機種、メモリ、他のアプリの使用状況によって動作は変わります。動作が重い場合はE2Bへ戻してください。
 
-通常チャットでは人格・履歴・検索された記憶をローカル/APIに共通で渡します。秘密モードは既存記憶を参照し、新しい会話を保存しません。キャラクター・秘密モードが変わった後に古い要求の結果を保存しない保護があります。Realtimeなどの実験的経路を通常チャットと同じ受入水準とは扱いません。desktop beta.2では、登録済みの端末間で人格・記憶・履歴を確認付きで同期できます。iOS 0.2.4 (14)は同期非対応です。[操作方法](BACKEND_CONSOLE.md#キャラクターと会話を端末間で同期する)。
+## Backendと同期
 
-画像は添付として保持し、送信時に選択した経路で処理します。API/Backendでは外部送信となります。fallbackを有効にした場合、表示する処理先も確認してください。
+デスクトップ版v0.2.4-beta.2では、PCのBackendを起動してAI・追加音声を設定し、端末登録後にキャラクターの人格・記憶・履歴を共有できます。端末内AIを使うだけならBackendを起動する必要はありません。
 
-停止は要求を取消し、後続の表示・再生を抑止します。Desktop workerは親プロセスが終了させますが、すべてのネイティブ同期推論が即座に中断できる保証はありません。端末ごとの中断・復帰受入は別途必要です。
+iOS 0.2.4 (14)はBackendへの会話接続に対応しますが、端末同期には対応しません。アプリのDirect APIキーとBackend側のキーは別々に設定します。[Backendの使い方](BACKEND_CONSOLE.md)。
 
-データ取得はSHA-256確認、別領域への展開、必須ファイル検査後に入れ替えます。取消し・展開失敗では既存データを保護します。展開用の空き容量が必要で、OS強制終了中の入替えを完全なトランザクションとは扱いません。
+Aivis・Irodori等の追加音声には別途導入が必要です。Realtimeなどの追加機能は実験的です。すべての端末や組み合わせでの動作を保証するものではありません。
 
-Avatar Bridgeは利用者のUnity/VCCプロジェクトからOS別ZIPを作る別経路です。VRChatサーバーからアバターを取得しません。VRM/ZIP読込成功は衣装メニュー・独自シェーダー・PhysBoneの完全互換を意味しません。
+## アバター
 
-Aivis、Irodori/Kokoro、Realtime、遠隔運用は実験的です。今回の標準データに追加TTSパックは含みません。ローカルBackendを認証なしでインターネット公開する構成は提供しません。
+VRM 0.x / 1.0を読み込めます。VRChatの衣装メニュー・独自シェーダー・PhysBoneなどが、そのまま再現されるわけではありません。[VRMの準備](AVATAR_IMPORT.md)。
 
-English summary: macOS uses the Apple Silicon Python worker; Windows uses the same worker route with its own bundled runtime. iOS requires iOS 26 and has owner acceptance on iPhone 16 Pro, with store review pending. Android and experimental Backend integrations are not equivalently accepted. See [HELP](HELP.md).
+English: the Mac app targets Apple Silicon; the Windows app targets 64-bit Windows. Both download required AI/voice data during setup. iOS requires iOS 26 and includes standard data; the Japan App Store release is under review. E4B is optional on Mac/iOS. Desktop beta.2 supports paired character sync; iOS 0.2.4 (14) does not. No public Android app is available. API keys and charges apply when using OpenAI API. See [Help](HELP.md).

@@ -1,29 +1,25 @@
-# キャラクター・会話・記憶 / Character identity and memory
+# 記憶と会話履歴 / Memory and conversation history
 
-通常チャットの端末内AIとDirect APIで共通の記憶を使います。
+## キャラクターごとに覚える
 
-## キャラクターを分ける
+人格・記憶・履歴はキャラクターごとに分かれます。表示名を変えたり、同じキャラクターを「着替え」させたりしても、その記憶は保たれます。別のキャラクターを作ると、別の人格・記憶になります。端末内AIとDirect APIを切り替えても、キャラクターの記憶は使えます。
 
-キャラクターのIDで人格、音声、最近の対話、会話履歴、長期記憶を分離します。表示名を変えても同じキャラクターです。「着替え」は外見だけを変え、人格と記憶を維持します。同じ外見で別のキャラクターを作る場合は、別の人格・記憶として扱えます。アバターファイルのIDだけで人格を決める設計ではありません。
+会話履歴は過去のやり取りです。記憶は、好み・約束・覚えておきたい話など、今後の会話で参照する情報です。毎回すべての記録をAIへ渡すわけではありません。関連する記憶を選ぶため、思い出せないことや読み違いもあります。
 
-選択中のキャラクターの性格指示、共通の回答方針、モデル別の追加指示が回答に反映されます。ローカル/API切替で人格や記憶を初期化しません。APIでは必要な指示・会話・検索された記憶をそのサービスへ送信します。
+## 確認・編集・削除
 
-## 保存と検索
+設定の記憶管理から、記憶を確認・追加・編集・固定・削除できます。履歴の削除と記憶の削除は別です。忘れてほしい内容がある場合は、記憶と履歴の両方を確認してください。人格設定に同じ内容を書いている場合は、その設定も修正します。
 
-最近の対話と長期記憶は別です。通常のユーザー発言をキャラクター別の端末内記憶として保持し、質問に関連するものを上限付きで検索して渡します。固定した記憶や新しい訂正を考慮します。記憶は「ユーザーが話した参考情報」として扱い、システム指示やAI自身の体験に昇格させません。
+## 端末で共有する
 
-設定の記憶管理で確認・追加・編集・削除・一括削除ができます。会話履歴の削除と長期記憶の削除は別の操作です。記憶を消しても、残っている最近の会話に同じ情報があれば回答に現れる場合があります。完全に忘れさせたい場合は、該当キャラクターの記憶と会話履歴の両方を確認してください。
+デスクトップ版v0.2.4-beta.2では、同じBackendへ端末を登録し、変更を確認して人格・記憶・履歴を共有できます。別々に話した履歴は両方を残し、同じ記憶を両側で編集した場合は内容を比較して選びます。同じ表示名だけで別のキャラクターを自動的に結びつけることはありません。
 
-記憶の容量と検索には上限があります。全発言を毎回プロンプトへ入れず、関連情報を選ぶ構成です。検索漏れ・モデルの読み違いがあり、必ず思い出す保証はありません。再起動で保存は維持されますが、端末間同期・クラウドバックアップは実装していません。
+Backendの通常の会話機能が保存した記録と、端末同期の共有記録は別です。既存のBackend記録を自動で取り込む機能は配布版beta.2にはありません。iOS 0.2.4 (14)も同期に対応しません。[同期の手順と制限](BACKEND_CONSOLE.md#キャラクターと会話を端末間で同期する)。
 
 ## シークレットモード
 
-選択中のキャラクターの既存記憶を参照しつつ、新しい会話を履歴・記憶へ保存しません。解除後に内緒話を引き継がず、別キャラクターとも共有しません。モードやキャラクターの切替をまたいだ処理結果の保存も抑止します。外部APIを使う場合の通信を止める機能ではありません。利用者が明示的に保存・コピーしたファイルは別です。
+既存の記憶を参照しますが、新しい会話を履歴・記憶へ保存しません。シークレット中は端末同期もできません。自分で回答を保存・コピーした場合は、そのファイルが残ります。
 
-## Backendと保存結果
+外部APIを選ぶと、会話や必要な人格・記憶はそのサービスへ送信されます。シークレットモードは通信を止めたり、相手のサービスの保存方針を変えたりする機能ではありません。[プライバシー](PRIVACY.md)。
 
-Backendはuser_id / character_id / session_idで会話を分離し、memoriesにもcharacter_idを持ちます。旧共有データは推測でキャラクターへ割り当てません。ID指定は認証の代わりではありません。Backend管理と端末内記憶は異なる保存領域で、相互同期はありません。
-
-保存した回答のMarkdownと隣接JSONには、生成時のcharacter/session/task/request ID、時刻、modeを記録します。生成後にキャラクターを変えて保存しても元のIDを保持します。旧Markdownも一覧表示できますが、過去のIDを推測して付けません。
-
-English: normal local/API chat shares persistent, character-scoped retrieval. Appearance changes retain identity; separate characters do not share memory. Secret mode reads existing memories without recording new exchanges. History and memory deletion are separate. Retrieval is bounded and imperfect, and Backend storage/device storage are not synchronized.
+English: character memory persists across appearance changes and local/Direct API switching. History and memory are separate and have separate deletion controls. Retrieval is selective and imperfect. Desktop beta.2 supports confirmed sharing through a paired Backend; iOS 0.2.4 (14) does not. Legacy Backend conversation storage is separate from paired shared records in the distributed beta.2. Secret mode reads existing memories without saving new conversations, but does not prevent API transmission.

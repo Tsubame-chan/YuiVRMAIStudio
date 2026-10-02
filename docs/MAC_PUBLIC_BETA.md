@@ -19,7 +19,7 @@
 - OpenAI API: 設定にAPIキーを入力します。通信とAPI利用料金が必要です。高品質な会話に推奨します。
 - Backend: 任意の拡張経路。アプリのDirect APIキーとBackend `.env` のキーは別です。
 
-AIと音声の選択は独立しています。標準は日本語VOICEVOXの5声。端末内AI/音声のworkerは初回取得した `YuiBackend` のruntimeを使いますが、HTTP Backendサーバーの起動は必要ありません。追加TTSの実験的adapterが存在しても、今回のmanifestにそのパックが入っているとは限りません。
+AIと音声の選択は独立しています。標準は日本語VOICEVOXの5声です。端末内AIを使うだけならBackendの起動は不要です。追加音声には別途導入が必要です。
 
 ## 自分のVRMを使う
 
@@ -41,8 +41,5 @@ open -e .env
 
 Python 3.12などの前提はセットアップスクリプトの案内を参照してください。Backend `.env` にAPIキーを保存してもアプリのDirect APIキーを設定したことにはなりません。Backend VOICEVOX等を選ぶ場合は対象エンジンも必要です。
 
-## ソースをビルドする場合
 
-Unity **2022.3.62f3** / UniVRM **0.131.2**。[データ復元](LOCAL_AI_ASSETS.md)とOS別SDK/runtimeを準備してください。公開ビルドでは[アセット監査](PUBLIC_PLAYER_ASSET_VALIDATION.md)が必要です。
-
-[OS別対応](RUNTIME_SUPPORT.md) · [ソースの現在地](SOURCE_STATUS.md) · [API仕様](api.md)
+[端末ごとの対応 / Compatibility](RUNTIME_SUPPORT.md)

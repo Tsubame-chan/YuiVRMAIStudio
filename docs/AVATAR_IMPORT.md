@@ -58,6 +58,6 @@ VRMへの変換で、陰影・光沢・輪郭、髪や服の揺れ方が変わ�
 <details>
 <summary>以前のYui Avatar Bridge ZIPを使う場合</summary>
 
-旧ZIPの互換読み込みもあります。その端末向けのpayloadが必要です。新たに持ち込む場合は、上記のVRM手順を使ってください。[旧ZIPの手順](YUI_AVATAR_BRIDGE_USER_TEST_GUIDE.md) / [開発者向け仕様](YUI_AVATAR_BRIDGE_ARCHITECTURE.md)
+旧ZIPの互換読み込みもあります。その端末向けのpayloadが必要です。新たに持ち込む場合は、上記のVRM手順を使ってください。[旧ZIPの手順](YUI_AVATAR_BRIDGE_USER_TEST_GUIDE.md)
 
 </details>

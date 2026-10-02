@@ -7,6 +7,6 @@
 3. アプリのアバター読み込みからZIPを選びます。対応payloadのサイズ・SHA-256を検査してから表示します。
 4. エラーが出る場合は、アプリとBridgeの版、対象OS、エラー全文を控えてIssueへ報告します。購入アバターのZIPは公開添付しないでください。
 
-旧ZIPを新しく作る必要はありません。カスタムシェーダーやVRChatのすべての挙動を保持する形式でもありません。実装詳細は[開発者向け仕様](YUI_AVATAR_BRIDGE_ARCHITECTURE.md)を参照してください。
+旧ZIPを新しく作る必要はありません。カスタムシェーダーやVRChatのすべての挙動を保持する形式でもありません。
 
 English: this page covers existing legacy Avatar Bridge ZIPs. Keep the ZIP intact, ensure it includes the payload for your OS, finish transferring/downloading it, and select it from the app's avatar loader. For new avatars, use the [VRM import guide](AVATAR_IMPORT.en.md). Do not publicly attach purchased model data when reporting errors.
