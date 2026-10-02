@@ -1,6 +1,6 @@
 # キャラクター・会話・記憶 / Character identity and memory
 
-2026-10-03。通常チャットの端末内AIとDirect APIで共通の記憶を使います。
+通常チャットの端末内AIとDirect APIで共通の記憶を使います。
 
 ## キャラクターを分ける
 
