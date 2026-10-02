@@ -14,7 +14,7 @@
 
 ソース履歴に大型weightを入れず、アプリ・モデル・runtimeの組合せを版ごとに固定できます。GitHubの公式仕様ではReleaseの**各ファイルは2GiB未満**で、Release全体の容量・帯域に上限はありません。ただしダウンロード速度の保証ではありません。[公式仕様](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases)。
 
-desktop v0.2.4-beta.1は約2.46GBの共通データZIPを2分割します。OS runtimeは約76MB（Mac）/67MB（Windows）です。利用者は通常アプリ内の案内だけで導入でき、手動結合は不要です。配布アプリは同じ版のmanifestを参照します。prereleaseが `/latest` の別版manifestを取得することを避けます。古いReleaseは更新せず保持します。
+desktop v0.2.4-beta.2は約2.46GBの共通データZIPを2分割します。OS runtimeは約76MB（Mac）/67MB（Windows）です。利用者は通常アプリ内の案内だけで導入でき、手動結合は不要です。配布アプリは同じ版のmanifestを参照します。prereleaseが `/latest` の別版manifestを取得することを避けます。古いReleaseは更新せず保持します。
 
 速度は実測で判断します。Wi-Fiの契約速度だけでなく、配信経路、端末ストレージ、checksum検査・展開も待ち時間に影響します。新しい有料サービスを追加しただけで速くなるとは限りません。
 

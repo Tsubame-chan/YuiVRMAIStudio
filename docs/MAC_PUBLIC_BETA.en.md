@@ -4,7 +4,7 @@
 
 ## Run the app
 
-1. Download `YuiVRMAIStudio_MacOSPublicBeta_v0.2.4-beta.1_macos.zip` from [v0.2.4-beta.1](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.1).
+1. Download `YuiVRMAIStudio_MacOSPublicBeta_v0.2.4-beta.2_macos.zip` from [v0.2.4-beta.2](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.2).
 2. Extract and open `Yui VRM AI Studio.app`. The bundled local runtime targets Apple Silicon.
 3. Read the first-run notice and start the data download. It installs standard E2B, five Japanese voices, a dictionary and the Mac runtime: approximately 2.5GB, plus space needed for extraction.
 4. Send a message, then use Settings to customize personality, voice and your VRM. Replay the illustrated tutorial from Help.

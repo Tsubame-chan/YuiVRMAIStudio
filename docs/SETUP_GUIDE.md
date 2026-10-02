@@ -2,11 +2,11 @@
 
 [FAQ](HELP.md) · [macOS](MAC_PUBLIC_BETA.md)
 
-現在のWindows配布版は **v0.2.4-beta.1** です。
+現在のWindows配布版は **v0.2.4-beta.2**（検証用prerelease）です。AI起動・髪の揺れ・端末同期の修正を含みます。新しい版の実機確認は進行中です。
 
 ## アプリを使う
 
-1. [Release](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.1)から `YuiVRMAIStudio_WindowsPublicBeta_v0.2.4-beta.1_windows.zip` を取得します。
+1. [Release](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.2)から `YuiVRMAIStudio_WindowsPublicBeta_v0.2.4-beta.2_windows.zip` を取得します。
 2. フォルダ全体を展開して `Yui VRM AI Studio.exe` を起動します。`YuiFilePickerHelper.exe` とDataフォルダ等を移動・削除しないでください。
 3. 初回案内を確認して、AI/音声とWindows runtimeを取得します。約2.5GBに加え展開用空き容量が必要です。通常Pythonを別に導入する必要はありません。
 4. 端末内AI、または設定したOpenAI APIで会話します。高品質なAPI会話にはAPIキー・通信・API利用料金が必要です。
@@ -21,7 +21,7 @@ SmartScreenが出る場合は配布元を確認し、OSの案内で許可しま�
 
 ## Backendを使う場合
 
-初回取得した `YuiBackend` の `Start_Yui_Backend.bat` / `Stop_Yui_Backend.bat` を使います。端末内workerはこのHTTPサーバーを必要としません。拡張機能を使う場合はBackend `.env` のキーと対象STT/TTSエンジンを設定します。アプリのDirect APIキーとは別です。
+初回取得した `YuiBackend` の `Start_Yui_Backend.bat` / `Stop_Yui_Backend.bat` を使います。端末内workerはこのHTTPサーバーを必要としません。Startで開く管理画面から、提供元・保存した声・端末同期を設定できます。[Backend Console](BACKEND_CONSOLE.md) / [追加TTS導入](BACKEND_TTS_GUIDE.md)。対象STT/TTSエンジンは別途導入・起動します。アプリのDirect APIキーとは別です。
 
 ソースからのセットアップではPowerShellで:
 
