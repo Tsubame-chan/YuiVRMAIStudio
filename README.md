@@ -1,86 +1,69 @@
 # Yui VRM AI Studio
 
-[English](README.en.md) · [ヘルプ・FAQ](docs/HELP.md) · [不具合報告](https://github.com/Tsubame-chan/YuiVRMAIStudio/issues)
+[English](README.en.md) · [ヘルプ](docs/HELP.md) · [不具合報告](https://github.com/Tsubame-chan/YuiVRMAIStudio/issues)
 
-**自分のVRMアバターとAIチャット。**
+**お気に入りのVRMアバターを会話相手に。**
 
-お気に入りのアバターを会話相手にして、雑談や相談、ちょっとした作業を一緒に。性格や話し方は文章で自由に設定できます。会話の合間には、好きな角度からアバターを鑑賞できます。
+自分のアバターを読み込んで、AIと雑談や相談、ちょっとした作業ができます。性格や話し方を文章で設定すれば、あなた好みの相手に。アバターがない方も、付属のUnityちゃんですぐに始められます。
 
 <p>
-  <img src="docs/images/avatar-chat.jpg" width="300" alt="自分のアバターとAIチャット：実際に発話するUnityちゃん">
-  <img src="docs/images/avatar-viewer.jpg" width="300" alt="360度回転・拡大でアバターを鑑賞">
+  <img src="docs/images/avatar-chat.jpg" width="300" alt="アバターが声と口の動きで応えるAIチャット">
+  <img src="docs/images/avatar-viewer.jpg" width="300" alt="好きな角度からアバターを眺める鑑賞モード">
 </p>
 
-画像は付属Unityちゃんを使った実アプリのMac描画です。端末・ウィンドウサイズによって画面配置が変わります。
+## できること
+
+- **外見を持ち込む。** VRMアバターを読み込めます。衣装を変えるときも、同じキャラクターの性格と記憶を保てます。
+- **性格や話し方を決める。** 「もっとフレンドリーに」「結論から答えて」などを自由に指定。ローカルAIの細かい設定も調整できます。
+- **会話を続ける。** キャラクターごとの記憶を端末に保存し、再起動やAIの切替後も会話に使います。記憶は確認・編集・削除できます。
+- **好きな角度から眺める。** 会話の合間には、回転・拡大できる鑑賞モードへ。デジタルフィギュアとしても楽しめます。
+
+<details>
+<summary>性格設定・AI選択の画面を見る</summary>
+
+<p>
+  <img src="docs/images/customization.jpg" width="300" alt="キャラクターの性格と回答の設定">
+  <img src="docs/images/offline-chat.jpg" width="300" alt="軽量モデルと高品質モデルの選択">
+</p>
+
+画像は付属Unityちゃんを使った実アプリの画面です。端末やウィンドウサイズによって配置が変わります。
+</details>
 
 ## ダウンロード
 
-| 対象 | 入手先・状態 |
+| お使いの端末 | 入手先 |
 | --- | --- |
-| macOS / Windows | [v0.2.4-beta.1](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.1) |
-| iPhone / iPad | 0.2.4 (14)をApp Store審査へ提出済み。承認後、日本で無料公開予定。[App Store予定ページ](https://apps.apple.com/jp/app/id6815341780)（公開後に利用可） |
-| Android | 開発用ソースあり。配布・実機受入は未完了 |
+| Mac | [macOS版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.1/YuiVRMAIStudio_MacOSPublicBeta_v0.2.4-beta.1_macos.zip)（Apple Silicon向け） |
+| Windows | [Windows版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.1/YuiVRMAIStudio_WindowsPublicBeta_v0.2.4-beta.1_windows.zip) |
+| iPhone / iPad | iOS 26以降。[App Store予定ページ](https://apps.apple.com/jp/app/id6815341780)（日本向け無料版を審査中。公開後に利用できます） |
 
-デスクトップ版はReleaseからOSに合うアプリZIPを展開して起動します。初回は確認画面からAI・音声・実行環境データを取得します。Wi-Fiと十分な空き容量をご用意ください。取得後の端末内AIとの会話にインターネット接続は不要です。
+デスクトップ版は **v0.2.4-beta.1** です。ZIPを展開して起動し、初回の案内に沿って必要データを取得してください。約2.5GBの通信と展開用の空き容量が必要です。Wi-Fiをおすすめします。Mac版の署名・公証は未整備です。詳しい起動手順は [Mac](docs/MAC_PUBLIC_BETA.md) / [Windows](docs/SETUP_GUIDE.md)へ。
 
-**`Code → Download ZIP`は開発者向けのソースです。実行アプリや大型モデルは含みません。**
+**GitHubの「Code → Download ZIP」はソースコードです。** アプリを使う方は上のリンクからダウンロードしてください。
 
-導入手順: [macOS](docs/MAC_PUBLIC_BETA.md) / [Windows](docs/SETUP_GUIDE.md)。macOS配布物はApple Silicon向けの実行環境を使用し、署名・公証は未整備です。Windows版もベータとして提供します。
+## 始め方
 
-## あなたの会話相手を作る
+1. メッセージを送ると会話が始まります。短い会話はTalk、詳しい相談や作業はWorkを選びます。
+2. 設定から性格・声・アバターを変えられます。自分のアバターには **VRMファイル** が必要です。[VRMの用意と読み込み](docs/AVATAR_IMPORT.md)。
+3. 操作に迷ったら、ヘルプからチュートリアルを開けます。
 
-- **好きな外見へ。** VRM 0.x / 1.0を読み込み、キャラクターや衣装を切り替えられます。まばたき・口パク・対応する揺れを表示します。
-- **性格と応答を調整。** キャラクターごとの性格・口調、AI共通の回答方針、ローカルモデル別の追加指示を組み合わせます。ローカルAIではコンテキスト、生成・推論上限、温度などもTalk/Work別に設定できます。
-- **会話を重ねる。** 記憶はキャラクターごとに端末へ保存。再起動や端末内AI／APIの切替後も参照し、確認・編集・削除できます。別キャラクターとは共有しません。
-- **用途に合わせる。** Talkは短い会話、Workは詳しい説明や作業支援。テキスト・マイク・画像入力、回答の保存・読み上げに対応します。
-- **デジタルフィギュアとして。** 鑑賞モードで360°回転・拡大。日英UIと、ヘルプから再表示できる4ページのチュートリアルがあります。
+AIは、**オフラインで使える端末内AI** と **OpenAI API** を選べます。端末内AIは軽量なE2Bが標準。Mac・iOSでは、より高品質なE4Bを設定から追加できますが、待ち時間や端末の負荷が増えます。高品質な会話にはOpenAI APIをおすすめします。**APIキーとAPI利用料金が必要**で、ChatGPTの契約とは別です。
 
-<details>
-<summary>性格・モデル設定とオフライン会話の画面を見る</summary>
-
-<p>
-  <img src="docs/images/customization.jpg" width="300" alt="キャラクターの性格とAIの応答設定">
-  <img src="docs/images/offline-chat.jpg" width="300" alt="標準2Bと任意4Bモデルの選択">
-</p>
-
-</details>
-
-## AIと音声を選ぶ
-
-| 会話の方法 | 特徴・必要なもの |
-| --- | --- |
-| 端末内AI | 標準Gemma 4 E2B。macOS / iOSではE4Bを設定から任意取得でき、回答品質と引き換えに容量・負荷・応答時間が増えます |
-| OpenAI API | より高品質な会話に推奨。APIキー、通信、API利用料金が必要です。ChatGPTの有料プランとは別です |
-| PC Backend | 任意の拡張経路。設定済みのTTS/STT、検索などを利用できます。CLIでの管理と実験的機能を含みます |
-
-AIと音声エンジンは独立して選べます。端末内音声は日本語VOICEVOXの標準5声。英語UIはありますが、英語専用TTSはまだ同梱していません。Backendで設定した追加の音声エンジンも利用できます。
-
-アプリのOpenAIキーは直接接続用で、Backendの`.env`とは別です。アプリのキーをBackendへ転送しません。デスクトップの初回取得にはローカル推論workerを含む実行環境も入りますが、端末内AIはBackendサーバーの起動を必要としません。
-
-## アバターを持ち込む
-
-「設定 → キャラクター → アバターを読み込む」からVRMを選びます。「マイキャラクター → 着替え」は、人格を保ったまま外見だけ変える機能です。
-
-Unity／VRChat向けアバターは、設定済みのUnityプロジェクトからVRMへ書き出してください。購入ZIP、`.unitypackage`、FBXは直接読み込めません。独自シェーダー・衣装メニュー・PhysBone等の完全再現は保証しません。利用権のあるモデルをご使用ください。[アバター導入ガイド](docs/AVATAR_IMPORT.md)へ。
+標準の声は日本語VOICEVOXの5声です。メニューは日英対応ですが、英語専用の音声は同梱していません。PCのバックエンドに接続する拡張機能については[ヘルプ](docs/HELP.md)をご覧ください。
 
 ## 記憶とプライバシー
 
-シークレットモードでは選択中のキャラクターの既存記憶を参照できますが、新しい会話は履歴・記憶へ保存しません。解除後に内緒話を引き継ぐこともありません。記憶は端末間では同期しません。
+記憶はキャラクターごとに分かれ、端末間では同期しません。シークレットモードでは既存の記憶を参照し、新しい会話は保存しません。外部APIを選ぶと、会話や関連する性格設定・記憶をそのサービスへ送信します。
 
-外部AIを選んだ場合は、会話や関連する性格設定・記憶などを送信します。シークレットモードも外部送信を止める機能ではありません。Apple版のAPIキーはKeychainに保存します。詳しくは[プライバシー](docs/PRIVACY.md)。
+AIの回答や記憶の参照には誤りがあります。重要な内容は確認してください。[記憶の仕組み](docs/CONVERSATION_IDENTITY.md) · [プライバシー](docs/PRIVACY.md)
 
-**AIの回答と記憶の参照には誤りがあります。** ローカルモデルは主語の混同や知識・計算の誤答が残ります。大きいモデルや設定の変更も正確さを保証しません。重要な内容は確認してください。
+<details>
+<summary>開発者向けの資料</summary>
 
-## 開発・詳しい仕様
+Unity **2022.3.62f3** / UniVRM **0.131.2**。モデル・音声データ、OS別SDK/runtimeはソースとは別に用意します。Androidの公開アプリはありません。
 
-Unity **2022.3.62f3** / UniVRM **0.131.2**。Unity 6への移行はまだ行っていません。公開版の標準アバターはUnityちゃんで、私用アバター・キー・会話データを配布しません。モデル、生成ビルド、端末別SDK・署名設定はソースとは別に必要です。
+- [ソースの現在地](docs/SOURCE_STATUS.md) / [OS別の対応](docs/RUNTIME_SUPPORT.md)
+- [モデル・音声データ](docs/LOCAL_AI_ASSETS.md) / [配信方針](docs/DISTRIBUTION.md)
+- [品質とアセット監査](docs/QUALITY_AND_VALIDATION.md) / [API仕様](docs/api.md)
 
-- [ソースと検証の現在地](docs/SOURCE_STATUS.md)
-- [OS別の対応と制限](docs/RUNTIME_SUPPORT.md)
-- [モデル・音声データ](docs/LOCAL_AI_ASSETS.md)
-- [会話・キャラクター・記憶](docs/CONVERSATION_IDENTITY.md)
-- [品質と公開アセット監査](docs/QUALITY_AND_VALIDATION.md)
-- [情報・データの配信方針](docs/DISTRIBUTION.md)
-- [API仕様](docs/api.md)
-
-すべてのOS・端末で同じ受入が完了しているわけではありません。配布物とソースの検証範囲は上記の資料で区別しています。
+</details>
