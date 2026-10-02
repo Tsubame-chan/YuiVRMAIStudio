@@ -169,6 +169,7 @@ namespace YuiPhysicalAI.UI
                 }
             }
             chatLogView.Configure(logText, scrollRect);
+            chatLogView.EditRequested = EditMessageForResend;
 
             if (logText == null)
             {

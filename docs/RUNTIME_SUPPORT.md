@@ -1,24 +1,26 @@
-# 実行経路と受入範囲
+# 実行経路と受入範囲 / Runtime support
 
-2026-09-21の開発ソース。公開バイナリbeta.5とは区別してください。
+2026-10-03。desktop v0.2.4-beta.1 / iOS 0.2.4 (14)候補。旧beta.5の制限と混同しないでください。
 
-| OS | 端末内文章生成 | 音声入力 | 音声出力 | 検証の限界 |
-|---|---|---|---|---|
-| macOS | E2B / LiteRT-LM CLI 0.17.0。CLI経路はChatのみ | Backend STT | VOICEVOX CoreまたはBackend Engine | 長時間・新規端末の受入は別途必要 |
-| Windows | 埋込Gemma未対応。API / 設定済みBackendを使用 | Backend STT | Backend VOICEVOX Engine | Windows上の起動・導入・発話受入が必要 |
-| iOS | Swift LiteRT-LM 0.13.1指定 | OS Speech | VOICEVOX Core / OS音声 | 依存解決・実機のメモリ、権限、中断復帰を要確認 |
-| Android arm64 | Kotlin LiteRT-LM 0.13.1指定 | OS Speech（常時オフライン保証なし） | VOICEVOX Core呼出しを追加、検証候補。VOICEVOX選択時に既存の経路選択へ接続 | Native ABIコンパイルと端末発話は別。ローカルBackend優先、なければnativeを試行。実機受入は未完了 |
+| OS | 端末内文章生成 | 音声入力・出力 | 検証の限界 |
+| --- | --- | --- | --- |
+| macOS | LiteRT-LM Python worker。標準E2B、任意E4B | workerでローカルSTT / native VOICEVOX Core。Direct API / Backendも選択可 | Apple Silicon向けruntime。Intel・別端末・長時間の保証なし |
+| Windows | 同じworker経路を実装、E2BデータとWindows Python/runtimeを配布 | ローカルSTT / VOICEVOXのworker経路、Direct API / Backend | Windows 64-bit runtime。GPU/driver・端末性能によって動作が異なります |
+| iOS 26+ | Swift LiteRT-LM。E2B同梱、E4BはApple配信の任意取得 | OS Speech / VOICEVOX Core / OS音声。Direct APIも選択可 | iPhone 16 Proで本人確認。通常モデル・低メモリ端末全般の保証なし。App Store審査中 |
+| Android arm64 | Kotlin LiteRT-LMのソース経路 | OS Speech / VOICEVOX Coreのソース経路 | 公開アプリ・実機受入なし。OS Speechの完全オフライン保証なし |
 
-Mac直接CLIとBackend用LiteRT-LMサーバーは別経路です。サーバーの標準モデル別名は `gemma4-e2b,gpu`。既存E4B利用者は環境変数で明示指定できます。
+Desktop workerとHTTP Backendサーバーは別です。初回に取得する `YuiBackend` bundleには両方のコードが入りますが、端末内会話のためにサーバーを起動する必要はありません。APIキーはDirect接続とBackendで別々に設定します。
 
-画像は選択・撮影時に添付として保持し、送信時に解析します。添付欄に画像と処理先を示します。API/Backend経由は設定したサービスへの送信を伴います。自動fallbackが有効なら処理先が代替される場合があります。
+通常チャットでは人格・履歴・検索された記憶をローカル/APIに共通で渡します。秘密モードは既存記憶を参照し、新しい会話を保存しません。キャラクター・秘密モードが変わった後に古い要求の結果を保存しない保護があります。Realtimeなどの実験的経路を通常チャットと同じ受入水準とは扱いません。端末間同期はありません。
 
-停止は通常チャットの要求を取消し、返答の表示・後続再生を抑止します。ネイティブ同期推論の途中計算を即座に終了する保証はありません。停止ボタンはRealtimeの接続・合成待ち・録音・再生とアバター読込の中止へ接続しています。端末ごとの中断復帰の受入は別途必要です。
+画像は添付として保持し、送信時に選択した経路で処理します。API/Backendでは外部送信となります。fallbackを有効にした場合、表示する処理先も確認してください。
 
-ダウンロードはSHA-256確認、別領域への展開、必須ファイル確認後に入れ替えます。展開失敗・取消し時は既存ファイルを保持/復元します。十分な空き容量が必要で、OSによる強制終了や停電中のファイル入替えを完全なトランザクションとは扱いません。
+停止は要求を取消し、後続の表示・再生を抑止します。Desktop workerは親プロセスが終了させますが、すべてのネイティブ同期推論が即座に中断できる保証はありません。端末ごとの中断・復帰受入は別途必要です。
 
-Avatar Bridge 0.1.1は利用者のUnity/VCCプロジェクトからOS別ZIPを作るツールです。VRChatサーバーから取得しません。VRM/ZIP読込成功と衣装・表情・PhysBone互換は別で、OSごとの受入が必要です。
+データ取得はSHA-256確認、別領域への展開、必須ファイル検査後に入れ替えます。取消し・展開失敗では既存データを保護します。展開用の空き容量が必要で、OS強制終了中の入替えを完全なトランザクションとは扱いません。
 
-Aivis Native、Irodori/Kokoro、遠隔Docker運用は実験対象です。遠隔認証・ペアリング・同期は未完成であり、ローカルBackendをそのままインターネット公開する構成は提供しません。ストア受入は未完了です。
+Avatar Bridgeは利用者のUnity/VCCプロジェクトからOS別ZIPを作る別経路です。VRChatサーバーからアバターを取得しません。VRM/ZIP読込成功は衣装メニュー・独自シェーダー・PhysBoneの完全互換を意味しません。
 
-キャラクター別の人格・音声設定と、通常会話の最近4往復（各発言最大600文字）の端末保存を開発版に追加。秘密モードではこの最近の会話を読み書きしません。Realtimeの会話継続、長期記憶の全経路共通化、端末間同期は含みません。ベータの体験基準と未達項目は [簡素なベータ体験](design/BETA_SIMPLE_EXPERIENCE.md) を参照。
+Aivis、Irodori/Kokoro、Realtime、遠隔運用は実験的です。今回の標準データに追加TTSパックは含みません。ローカルBackendを認証なしでインターネット公開する構成は提供しません。
+
+English summary: macOS uses the Apple Silicon Python worker; Windows uses the same worker route with its own bundled runtime. iOS requires iOS 26 and has owner acceptance on iPhone 16 Pro, with store review pending. Android and experimental Backend integrations are not equivalently accepted. See [HELP](HELP.md).

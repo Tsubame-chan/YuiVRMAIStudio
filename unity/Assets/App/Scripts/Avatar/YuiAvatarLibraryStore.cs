@@ -22,6 +22,21 @@ namespace YuiPhysicalAI.Avatar
             if (entry == null || !SafeName(entry.file)) throw new ArgumentException("Invalid avatar library entry");
             return Path.Combine(directory, entry.file);
         }
+        public string ResolveSavedPath(string storedPath, string characterId)
+        {
+            if (string.IsNullOrWhiteSpace(storedPath) || File.Exists(storedPath)) return storedPath;
+            // iOS can relocate the whole data container during an app update.
+            // Rebind only an indexed appearance, never an arbitrary same-named file.
+            var filename = Path.GetFileName(storedPath);
+            foreach (var entry in Read())
+            {
+                if (!string.IsNullOrEmpty(characterId) && entry.id != characterId) continue;
+                if (entry.file != filename && !entry.appearances.Exists(a => a.file == filename)) continue;
+                var candidate = Path.Combine(directory, filename);
+                if (File.Exists(candidate)) return candidate;
+            }
+            return storedPath;
+        }
         public List<YuiAvatarLibrary.Entry> Read()
         {
             lock (Gate)

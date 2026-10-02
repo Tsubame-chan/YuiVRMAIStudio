@@ -31,7 +31,7 @@ namespace YuiPhysicalAI.UI
         }
         private string ChatSessionId(string characterId)
         {
-            var key = "Yui.ChatSession." + characterId + "." + chatInteractionMode;
+            var key = "Yui.ChatSession." + characterId + "." + chatInteractionMode + PlayerPrefs.GetString("Yui.ChatSession.Generation", "");
             var id = PlayerPrefs.GetString(key, string.Empty);
             if (string.IsNullOrEmpty(id)) { id = Guid.NewGuid().ToString("N"); PlayerPrefs.SetString(key, id); PlayerPrefs.Save(); }
             return id;
@@ -87,10 +87,11 @@ namespace YuiPhysicalAI.UI
                         TaskId = taskId,
                         UserId = userId,
                         Message = message,
-                        Context = CreateChatContext(),
+                        Context = CreateChatContext(message),
                         Mode = chatInteractionMode,
                         Secret = secretMode,
                         CustomInstruction = customInstruction,
+                        ResponseInstruction = PlayerPrefs.GetString(YuiPrefsKeys.ResponseInstruction,""),
                         CharacterName = characterName
                     },
                     operation.Token);
@@ -98,7 +99,7 @@ namespace YuiPhysicalAI.UI
                 responseReceived = true;
                 if (retainDialogue)
                 {
-                    try { DialogueStore.Append(characterId, dialogueMode, message, chat.Text); }
+                    try { DialogueStore.Append(characterId, dialogueMode, message, chat.Text); CharacterMemoryStore.Remember(characterId, message, !retainDialogue); }
                     catch (Exception ex) { Debug.LogWarning("Recent character dialogue was not saved: " + ex.Message); }
                 }
                 retryChatMessage = null;

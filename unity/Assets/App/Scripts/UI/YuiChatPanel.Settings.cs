@@ -539,6 +539,7 @@ namespace YuiPhysicalAI.UI
 
             try
             {
+                await EnsureExternalDataPermissionAsync(backendUrl, false, cancellationTokenSource.Token);
                 SetStatus("Clearing...");
                 var result = await client.ClearConversationsAsync(userId, cancellationTokenSource.Token);
                 await RestoreConversationViewAsync();
@@ -546,6 +547,7 @@ namespace YuiPhysicalAI.UI
                 Debug.Log(
                     $"Yui session cleared: conversations={result?.Conversations ?? 0}, cache={result?.ChatResponses ?? 0}, memories={result?.Memories ?? 0}");
             }
+            catch (OperationCanceledException) { SetStatus("Canceled"); }
             catch (Exception ex)
             {
                 SetStatus("Clear failed");
@@ -620,7 +622,11 @@ namespace YuiPhysicalAI.UI
 
         private string RealtimeInstructionsForMode(string mode)
         {
-            return YuiConversationModes.InstructionsForMode(mode, characterName, customInstruction);
+            var instructions=YuiConversationModes.InstructionsForMode(mode, characterName, customInstruction)+
+                "\nユーザーが設定した回答の方針:\n"+PlayerPrefs.GetString(YuiPrefsKeys.ResponseInstruction,"");
+            if(!YuiConversationModes.IsRealtimeTranslate(mode))
+                instructions+="\n"+YuiCharacterMemoryStore.ReferenceLabel+CharacterMemoryStore.Context(ChatCharacterId(),"");
+            return instructions;
         }
 
         private bool IsTtsMode(string mode)
@@ -634,6 +640,11 @@ namespace YuiPhysicalAI.UI
                 return "local-ai";
             if (string.Equals(mode, "aivis-native", StringComparison.OrdinalIgnoreCase))
             {
+#if UNITY_IOS && !UNITY_EDITOR
+                // A retained setting must not select a voice omitted from this release.
+                if (YuiPhysicalAI.Core.YuiBuildProfile.Current == YuiPhysicalAI.Core.YuiBuildProfile.Public)
+                    return "voicevox-native";
+#endif
                 return "aivis-native";
             }
 
@@ -752,14 +763,14 @@ namespace YuiPhysicalAI.UI
             RenderStatus();
         }
 
-        private RequestContext CreateChatContext()
+        private RequestContext CreateChatContext(string message = "")
         {
             var context = new RequestContext();
-            if (!secretMode)
-            {
-                try { context.Extra[YuiCharacterDialogueStore.ContextKey] = DialogueStore.Context(ChatCharacterId(), chatInteractionMode); }
-                catch (Exception ex) { Debug.LogWarning("Recent character dialogue: " + ex.Message); }
-            }
+            // Secret requests may read the last saved normal conversation; they never append to it.
+            try { context.Extra[YuiCharacterDialogueStore.ContextKey] = DialogueStore.Context(ChatCharacterId(), chatInteractionMode); }
+            catch (Exception ex) { Debug.LogWarning("Recent character dialogue: " + ex.Message); }
+            try { context.Extra[YuiCharacterMemoryStore.ContextKey] = CharacterMemoryStore.Context(ChatCharacterId(),message); }
+            catch (Exception ex) { Debug.LogWarning("Character memory: " + ex.Message); }
             if (latestVision != null)
             {
                 context.VisionResultId = latestVision.VisionResultId;

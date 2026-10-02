@@ -10,7 +10,7 @@ namespace YuiPhysicalAI.Tests.Editor
 {
     public class YuiExternalDataConsentTests
     {
-        private const string Ledger = "Yui.Privacy.ExternalDataConsent.v1";
+        private const string Ledger = "Yui.Privacy.ExternalDataConsent.v2";
         private string previous;
         private bool existed;
         [SetUp] public void SetUp() { existed = PlayerPrefs.HasKey(Ledger); previous = PlayerPrefs.GetString(Ledger); YuiExternalDataConsent.RevokeAll(); }

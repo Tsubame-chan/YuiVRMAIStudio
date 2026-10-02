@@ -49,6 +49,9 @@ namespace YuiPhysicalAI.UI
                 targetCamera = GetComponent<Camera>();
             }
 
+            // This component owns the live viewport. Discard stale capture-time overrides.
+            targetCamera.ResetAspect();
+
             lastWidth = Mathf.Max(1, Screen.width);
             lastHeight = Mathf.Max(1, Screen.height);
 

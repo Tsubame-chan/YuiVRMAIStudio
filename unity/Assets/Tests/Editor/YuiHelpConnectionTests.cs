@@ -12,6 +12,33 @@ namespace YuiPhysicalAI.Tests.Editor
     public sealed class YuiHelpConnectionTests
     {
         [Test]
+        public void GuideLanguageSwitchReusesRowsAndUpdatesTheirText()
+        {
+            var locale=YuiUiLocalization.Language;
+            var host=new GameObject("Guide host");
+            var root=new GameObject("Help",typeof(RectTransform),typeof(Image));
+            var panel=new GameObject("Panel",typeof(RectTransform),typeof(Image));panel.transform.SetParent(root.transform,false);
+            var flags=BindingFlags.Instance|BindingFlags.NonPublic;
+            try
+            {
+                var help=host.AddComponent<YuiHelpOverlay>();help.Configure(root,null,null);root.SetActive(true);
+                typeof(YuiHelpOverlay).GetField("guideVisible",flags).SetValue(help,true);
+                void Render()=>typeof(YuiHelpOverlay).GetMethod("RenderModernHelp",flags).Invoke(help,null);
+                YuiUiLocalization.SetLanguage("en");Render();
+                var content=panel.transform.Find("HelpScroll/Viewport/Content");
+                var originalCount=content.childCount;
+                for(var i=0;i<4;i++)
+                {
+                    YuiUiLocalization.SetLanguage(i%2==0?"ja":"en");Render();
+                    Assert.That(content.childCount,Is.EqualTo(originalCount),"Switching language must not accumulate duplicate guide rows.");
+                    Assert.That(content.Find("HeadingPersonalityGuide").GetComponent<Text>().text,
+                        Is.EqualTo(i%2==0?"性格と回答の方針":"Personality and response style"));
+                }
+            }
+            finally {Object.DestroyImmediate(root);Object.DestroyImmediate(host);YuiUiLocalization.SetLanguage(locale);}
+        }
+
+        [Test]
         public void UnusedDefaultEndpointsAndMissingKeysDoNotFillTheSummary()
         {
             Assert.IsFalse(Visible("lmstudio",new ProviderStatusItem {Status="configured",BaseUrl="http://localhost:1234"}));

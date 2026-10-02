@@ -22,12 +22,32 @@ namespace YuiPhysicalAI.Avatar {
   public static void Rename(Entry entry, string name) => new YuiAvatarLibraryStore(DirectoryPath).Rename(entry.id,name);
   public static void RemoveFromList(Entry entry) => new YuiAvatarLibraryStore(DirectoryPath).Remove(entry.id);
   public static void CaptureThumbnail(Entry entry) {
-   var camera=Camera.main;if(camera==null)return;
-   var rt=new RenderTexture(192,192,24);var target=camera.targetTexture;var active=RenderTexture.active;var aspect=camera.aspect;
+   var source=Camera.main;if(source==null)return;
+   // A thumbnail must not change the main camera's automatic aspect/projection state.
+   var captureObject=new GameObject("Yui Thumbnail Camera") { hideFlags=HideFlags.HideAndDontSave };
+   var camera=captureObject.AddComponent<Camera>();camera.enabled=false;
+   var rt=new RenderTexture(192,192,24);var active=RenderTexture.active;
    Texture2D texture=null;
-   try{camera.targetTexture=rt;camera.aspect=1;camera.Render();RenderTexture.active=rt;texture=new Texture2D(192,192,TextureFormat.RGB24,false);texture.ReadPixels(new Rect(0,0,192,192),0,0);texture.Apply();File.WriteAllBytes(Path.Combine(DirectoryPath,entry.id+".png"),texture.EncodeToPNG());}
+   try {
+    camera.CopyFrom(source);camera.enabled=false;
+    camera.transform.SetPositionAndRotation(source.transform.position,source.transform.rotation);
+    var skybox=source.GetComponent<Skybox>();
+    if(skybox!=null){var captureSkybox=captureObject.AddComponent<Skybox>();captureSkybox.material=skybox.material;captureSkybox.enabled=skybox.enabled;}
+    camera.targetTexture=rt;camera.rect=new Rect(0,0,1,1);camera.aspect=1;
+    camera.Render();RenderTexture.active=rt;
+    texture=new Texture2D(192,192,TextureFormat.RGB24,false);
+    texture.ReadPixels(new Rect(0,0,192,192),0,0);texture.Apply();
+    File.WriteAllBytes(Path.Combine(DirectoryPath,entry.id+".png"),texture.EncodeToPNG());
+   }
    catch(Exception ex){Debug.LogWarning("Avatar thumbnail: "+ex.Message);}
-   finally{camera.targetTexture=target;camera.aspect=aspect;RenderTexture.active=active;rt.Release();UnityEngine.Object.Destroy(rt);if(texture!=null)UnityEngine.Object.Destroy(texture);}
+   finally {
+    RenderTexture.active=active;camera.targetTexture=null;rt.Release();
+    ReleaseCapture(rt);ReleaseCapture(captureObject);ReleaseCapture(texture);
+   }
+  }
+  private static void ReleaseCapture(UnityEngine.Object value) {
+   if(value==null)return;
+   if(Application.isPlaying)UnityEngine.Object.Destroy(value);else UnityEngine.Object.DestroyImmediate(value);
   }
  }
 }

@@ -90,7 +90,12 @@ namespace Yui.AvatarBridge.Editor
 
                 using (var arrays = new NativeArrayManager())
                 {
-                    var converter = new ModelExporter(); var model = converter.Export(arrays, clone);
+                    var converter = new ModelExporter();
+#if YUI_UNIVRM_0131_OR_NEWER
+                    var model = converter.Export(new GltfExportSettings { UseSparseAccessorForMorphTarget = true, ExportOnlyBlendShapePosition = true }, arrays, clone);
+#else
+                    var model = converter.Export(arrays, clone);
+#endif
                     model.ConvertCoordinate(VrmLib.Coordinates.Vrm1, ignoreVrm: false);
                     using var exporter = new Vrm10Exporter(new GltfExportSettings { UseSparseAccessorForMorphTarget = true, ExportOnlyBlendShapePosition = true });
                     exporter.Export(clone, model, converter, new VrmLib.ExportArgs { sparse = true }, vrmObject.Meta);

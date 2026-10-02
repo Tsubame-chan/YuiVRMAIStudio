@@ -74,7 +74,12 @@ namespace YuiPhysicalAI.Avatar
                             YuiVrmSpringReset.ResetParticlePositions(vrm);
                     }
                     foreach (var spring in GetComponentsInChildren<YuiAvatarSpringMotion>(true)) spring.ResetMotion();
+                    foreach (var spring in GetComponentsInChildren<YuiNativeSpringRig>(true)) spring.Rebuild();
                     var joints = new HashSet<Transform>();
+                    foreach (var rig in GetComponentsInChildren<YuiNativeSpringRig>(true))
+                    foreach (var spring in rig.Springs)
+                    foreach (var joint in spring.Joints)
+                        if(joint!=null)joints.Add(joint.transform);
                     foreach (var vrm in GetComponentsInChildren<Vrm10Instance>(true))
                     foreach (var spring in vrm.SpringBone.Springs)
                     foreach (var joint in spring.Joints)

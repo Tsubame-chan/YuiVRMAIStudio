@@ -1,152 +1,48 @@
-# macOS Desktop Public Beta セットアップ
+# macOSセットアップ
 
-このページはmacOS版を試す人向けの入口です。まずはGitHub ReleasesのmacOS Beta配布物を使ってください。GitHubの `Code > Download ZIP` はソースコード用で、実行済みアプリや大型AI/TTSデータは含まれません。
+[English](MAC_PUBLIC_BETA.en.md) · [FAQ](HELP.md)
 
-現在のmacOS実行用ZIPは `v0.2.0-beta.5` です。この版では、初回起動時に不足しているLocal AI/TTSデータとmacOS Backend bundleをアプリが自動で取得します。
+## アプリを使う
 
-- English guide: [`MAC_PUBLIC_BETA.en.md`](MAC_PUBLIC_BETA.en.md)
+1. [v0.2.4-beta.1](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.1)の `YuiVRMAIStudio_MacOSPublicBeta_v0.2.4-beta.1_macos.zip` をダウンロードします。
+2. 展開した `Yui VRM AI Studio.app` を開きます。配布版のローカルruntimeはApple Silicon向けです。
+3. 初回の案内を読んでダウンロードを開始します。標準E2B、日本語5声、辞書、Mac runtimeを取得します。合計約2.5GB、展開には追加の空き容量が必要です。
+4. メッセージを送り、設定から性格・声・VRMを変更します。ヘルプからチュートリアルを再表示できます。
 
-## まず動かす
+署名・notarizationは未整備です。macOSが起動を止める場合は、配布元を確認してからOSの「プライバシーとセキュリティ」の案内で許可してください。セキュリティ機能を全体で無効にする必要はありません。`.sha256` はZIPの破損確認用です。
 
-1. GitHub Releasesの `v0.2.0-beta.5` で、名前に `MacOSPublicBeta` が入っているアプリ本体ZIPをダウンロードします。
-   - `YuiVRMAIStudio_MacOSPublicBeta_v0.2.0-beta.5_macos.zip`
-2. ZIPを展開し、`Yui VRM AI Studio.app` を起動します。
-3. 初回ダウンロード画面で開始すると、基本動作に必要なLocal AI/TTSデータとmacOS Backend bundleが自動で入ります。
+通常はアプリZIPだけを取得すればよく、データの `.part-*` やBackend bundleを手動で展開する必要はありません。Code ZIPには実行アプリやweightが入っていません。
 
-このBetaはまだ署名・notarizationの整備前です。macOSで警告が出た場合は、信頼できる配布物であることを確認してからシステム設定または右クリックメニューから許可してください。
+## 会話の方法
 
-`.sha256` はダウンロード破損を確認したい場合だけ使います。通常はアプリ本体ZIPだけで始められます。AivisSpeech HDなどの追加音声は、Settingsの `Additional Voices` から必要な人だけ取得します。
+- 端末内AI: 初回取得後はオフライン利用可。E2Bが標準、設定からE4Bを任意取得できます。E4Bは容量・負荷・待ち時間が増えます。
+- OpenAI API: 設定にAPIキーを入力します。通信とAPI利用料金が必要です。高品質な会話に推奨します。
+- Backend: 任意の拡張経路。アプリのDirect APIキーとBackend `.env` のキーは別です。
 
-`WindowsPublicBeta` はWindows用、`YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` は通常アプリ内の初回ダウンローダーが取得します。macOSアプリを試すだけなら手動ダウンロード不要です。
-
-## ダウンロードの違い
-
-| 入手方法 | 用途 |
-| --- | --- |
-| ReleaseのmacOSアプリZIP | すぐ使う人向け。通常はこれだけ落として展開します。 |
-| `.sha256` | ダウンロード破損を確認したい人向けです。 |
-| `Code > Download ZIP` | ソースを読む/改造する人向け。`.app` や大型モデルは含みません。 |
-| `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` / `LocalAIAssets_Minimum` | 初回起動時にアプリが取得する最小ローカルAI/TTSデータです。手動取得は通常不要です。 |
-| `YuiVRMAIStudio_BackendBundle_*_macos` | 初回起動時にアプリが取得するmacOS Backend bundleです。手動取得は通常不要です。 |
-| macOS AivisSpeech HD add-on | Settingsの `Additional Voices` からランタイムとモデル一式を任意取得します。手動導入は不要です。 |
-| Irodori / その他の外部runtime | 現在のReleaseには未収録の開発者向け検証経路です。標準音声には不要です。 |
-
-## できることの目安
-
-- バックエンドなし: Local Gemma SLM、Local VOICEVOX、VRM表示、基本チャット。
-- OpenAI APIキーあり: Direct OpenAI API、より高品質な会話/画像理解/STT。
-- バックエンドあり: リアルタイム会話、リアルタイム翻訳、会話DB、Backend TTS。AivisSpeech HDは追加取得後、Irodoriは手動構成した場合に利用できます。
-
-初回は `Auto Select` のままで大丈夫です。バックエンドが動いていればBackendを優先し、なければLocal/Directへ戻ります。
-
-## バックエンドを使う場合
-
-フル機能を使いたい場合、通常は初回ダウンローダーが取得したYui Backend bundleをアプリが自動起動します。手動で起動・停止したい場合は、ユーザーデータ領域に展開された `YuiBackend` 内のコマンドを使います。
-
-必要なもの:
-
-- Apple Silicon Mac
-- 初回ダウンロード済みの `YuiBackend`
-- OpenAI APIキー
-- 追加音声を使う場合のみ、そのランタイム。macOS AivisSpeech HDはアプリ内取得でき、標準のLocal VOICEVOXには外部ランタイム不要
-
-macOS Backend bundleには実行用 `.venv` が同梱されています。ソースから起動する場合やBackend bundleにvenvがない場合だけ、HomebrewとPythonを用意します。
-
-```bash
-brew install python@3.12 git git-lfs
-git lfs install
-```
-
-ソース版ではローカルサービスを初期化します。
-
-```bash
-PYTHON_BIN=/opt/homebrew/bin/python3.12 ./scripts/setup_backend_byok_macos.sh
-```
-
-`.env` を開き、OpenAI APIキーを入れます。
-
-```bash
-open -e .env
-```
-
-```env
-OPENAI_API_KEY=sk-...
-```
-
-## バックエンドの起動と停止
-
-初回ダウンロード済みBackend bundleを手動起動する場合:
-
-```text
-YuiBackend/Start_Yui_Backend.command
-```
-
-停止:
-
-```text
-YuiBackend/Stop_Yui_Backend.command
-```
-
-ソース版の起動:
-
-```bash
-./scripts/start_local_services_macos.sh
-```
-
-Finderから起動する場合:
-
-```text
-Start_Yui_Local_Services.command
-```
-
-ソース版の停止:
-
-```bash
-./scripts/stop_local_services_macos.sh
-```
-
-または:
-
-```text
-Stop_Yui_Local_Services.command
-```
-
-## VOICEVOX
-
-Release ZIP内のLocal VOICEVOXだけでも最低限の日本語音声は使えます。Backend VOICEVOXで細かく調整したい場合や、自分のVOICEVOX環境を使いたい場合はVOICEVOX Engineを追加します。
-
-macOSの起動スクリプトは主に以下を探します。
-
-```text
-/Applications/VOICEVOX.app/Contents/Resources/vv-engine/run
-~/Applications/VOICEVOX.app/Contents/Resources/vv-engine/run
-```
-
-別の場所にある場合は `VOICEVOX_ENGINE_EXE` を指定してください。
-
-```bash
-export VOICEVOX_ENGINE_EXE="/path/to/VOICEVOX.app/Contents/Resources/vv-engine/run"
-```
+AIと音声の選択は独立しています。標準は日本語VOICEVOXの5声。端末内AI/音声のworkerは初回取得した `YuiBackend` のruntimeを使いますが、HTTP Backendサーバーの起動は必要ありません。追加TTSの実験的adapterが存在しても、今回のmanifestにそのパックが入っているとは限りません。
 
 ## 自分のVRMを使う
 
-読み込めるのは `.vrm` ファイルです。VRChat SDKアバター、Unity prefab、Unityシーン、`.unitypackage`、VRChatにアップロード済みのアバターそのものは直接読み込めません。
+設定のキャラクター項目から `.vrm` を選び、読み込み完了まで待ちます。マイキャラクターの「着替え」は人格・音声・記憶を保って外見を変えます。VRChat/Unityアバターは先にVRMへ書き出します。[アバター導入ガイド](AVATAR_IMPORT.md)。
 
-アプリ内でSettingsを開き、Custom VRMから `.vrm` を選びます。読み込みに成功すると、その場でアバターが切り替わります。
+## Backendを使う場合
 
-## ソースからビルドする場合
+初回取得した `YuiBackend` 内の `Start_Yui_Backend.command` / `Stop_Yui_Backend.command` で起動・停止できます。OpenAIや追加TTS/STTはBackend側の設定も必要です。遠隔PCへ接続する際は、双方から到達できるVPNアドレスとBackendのlisten設定を使います。Macの起動スクリプトは既定で `BACKEND_HOST=127.0.0.1`、`BACKEND_PORT=8000` です。VPN側へlistenさせる場合はそのPCのVPN IPを `BACKEND_HOST` に指定し、アプリには `http://<VPN IP>:8000` を設定します。VPNだけで、localhostに限定したサーバーへ他端末から接続できるわけではありません。
 
-Releaseの `YuiVRMAIStudio_LocalAIAssets_DesktopMinimum` または旧 `LocalAIAssets_Minimum` をリポジトリ直下へ展開してからUnityで開きます。詳しくは [`LOCAL_AI_ASSETS.md`](LOCAL_AI_ASSETS.md) を参照してください。
+ソースから準備する場合:
 
-開発・ビルド検証ではUnity `2022.3.62f3` を使っています。
+```bash
+PYTHON_BIN=/opt/homebrew/bin/python3.12 ./scripts/setup_backend_byok_macos.sh
+open -e .env
+./scripts/start_local_services_macos.sh
+# 終了時
+./scripts/stop_local_services_macos.sh
+```
 
-## 関連ドキュメント
+Python 3.12などの前提はセットアップスクリプトの案内を参照してください。Backend `.env` にAPIキーを保存してもアプリのDirect APIキーを設定したことにはなりません。Backend VOICEVOX等を選ぶ場合は対象エンジンも必要です。
 
-- Main README: [`../README.md`](../README.md)
-- English README: [`../README.en.md`](../README.en.md)
-- API: [`api.md`](api.md)
-- 外部情報 / web search方針: [`LLM_EXTERNAL_INFO.md`](LLM_EXTERNAL_INFO.md)
+## ソースをビルドする場合
 
-## ソース更新と配布版の違い
+Unity **2022.3.62f3** / UniVRM **0.131.2**。[データ復元](LOCAL_AI_ASSETS.md)とOS別SDK/runtimeを準備してください。Unity 6へはまだ移行していません。公開ビルドでは[アセット監査](PUBLIC_PLAYER_ASSET_VALIDATION.md)が必要です。
 
-Release beta.5は2026-09-09のバイナリです。それ以降のソース改修（送信前画像確認、停止・再試行、保存ID、取得失敗時の保護）は、次の検証候補に含まれます。既存のbeta.5 ZIPへ反映されたとは扱わないでください。OS別経路と制限は [対応状況](RUNTIME_SUPPORT.md) を参照してください。
+[OS別対応](RUNTIME_SUPPORT.md) · [ソースの現在地](SOURCE_STATUS.md) · [API仕様](api.md)

@@ -22,7 +22,10 @@ namespace YuiPhysicalAI.UI
         private static Sprite pillSprite;
         private bool linksExpanded;
         private Button saveButton;
+        private Button editButton;
         private string resultMetadata;
+        private string messageMode;
+        private string messageSpeaker;
         private string copyText = string.Empty;
         private IReadOnlyList<YuiChatLink> currentLinks = System.Array.Empty<YuiChatLink>();
 
@@ -49,10 +52,11 @@ namespace YuiPhysicalAI.UI
             Sprite bubbleSprite,
             string originalText = null,
             IReadOnlyList<YuiChatLink> links = null,
-            string resultMetadata = null, bool localizeBody = false)
+            string resultMetadata = null, bool localizeBody = false, System.Action<string> editMessage = null, string mode = null)
         {
             EnsureStructure(font, bubbleSprite);
             this.resultMetadata = resultMetadata;
+            messageMode = mode; messageSpeaker = speaker;
             copyText = originalText ?? text ?? string.Empty;
             currentLinks = links ?? System.Array.Empty<YuiChatLink>();
             linksExpanded = false;
@@ -92,6 +96,14 @@ namespace YuiPhysicalAI.UI
             }
 
             BindActionButtons(font);
+            if (editMessage != null && alignRight && !localizeBody)
+            {
+                if (editButton == null) editButton = CreateActionButton("EditButton", actionsRect, "編集", font, 100f, new Color(1,1,1,.08f), Color.white);
+                editButton.gameObject.SetActive(true);
+                editButton.onClick.RemoveAllListeners();
+                editButton.onClick.AddListener(() => editMessage(copyText));
+            }
+            else if (editButton != null) editButton.gameObject.SetActive(false);
         }
 
         private void EnsureStructure(Font font, Sprite bubbleSprite)
@@ -352,10 +364,11 @@ namespace YuiPhysicalAI.UI
             var store = new YuiSavedResultStore(System.IO.Path.Combine(Application.persistentDataPath,"SavedResults"));
             var text = copyText ?? string.Empty;
             var metadata = resultMetadata;
+            var mode = messageMode; var speaker = messageSpeaker;
             saveButton.interactable = false;
             try
             {
-                await System.Threading.Tasks.Task.Run(() => store.Save(text, metadata));
+                await System.Threading.Tasks.Task.Run(() => store.Save(text, metadata, speaker, mode));
                 if (this != null && saveButton != null) YuiUiLocalization.Set(saveButton.GetComponentInChildren<Text>(),"Saved");
             }
             catch (System.Exception ex)

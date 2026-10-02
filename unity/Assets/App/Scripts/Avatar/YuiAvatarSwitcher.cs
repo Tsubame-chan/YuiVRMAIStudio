@@ -207,12 +207,14 @@ namespace YuiPhysicalAI.Avatar
                 return;
             }
 
-            // Legacy built-in avatars disabled the Chatdoll runtime to avoid
-            // competing face/animation controllers, which also removed blinking.
-            var legacyBlink = activeAvatar.GetComponentInChildren<ChatdollKit.Model.Blink>(true);
-            if (legacyBlink != null && !legacyBlink.enabled
-                && activeAvatar.GetComponent<YuiAvatarExpressionDriver>() == null)
-                activeAvatar.AddComponent<YuiAvatarExpressionDriver>();
+            // Bind every selected avatar through the same capability path.
+            // Existing active blink controllers keep ownership of their shapes.
+            YuiAvatarExpressionDriver.BindTo(activeAvatar);
+            activeAvatar.GetComponent<YuiSecondaryMotionRig>()?.Initialize();
+            if (activeAvatar.GetComponent<YuiAvatarAmbientMotion>() == null)
+                activeAvatar.AddComponent<YuiAvatarAmbientMotion>();
+            var visibility=activeAvatar.GetComponent<YuiVisibleSecondaryMotion>()??activeAvatar.AddComponent<YuiVisibleSecondaryMotion>();
+            visibility.Refresh();
             var animator = activeAvatar.GetComponentInChildren<Animator>(true);
             var faceRenderer = FindBestFaceRenderer(activeAvatar);
             var presence = YuiAvatarSlots.IsCustomVrm(ActiveSlot)

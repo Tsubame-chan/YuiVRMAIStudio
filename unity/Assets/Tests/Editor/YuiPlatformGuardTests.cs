@@ -35,10 +35,9 @@ namespace YuiPhysicalAI.Tests.Editor
             Assert.IsFalse(string.IsNullOrWhiteSpace(projectRoot));
             var projectSettingsPath = Path.Combine(projectRoot, "ProjectSettings", "ProjectSettings.asset");
 
-            var projectSettings = File.ReadAllText(projectSettingsPath);
-
-            var hasPersonal = projectSettings.Contains("Standalone: YUI_PROFILE_" + "PERSONAL");
-            var hasPublic = projectSettings.Contains("Standalone: YUI_PROFILE_PUBLIC");
+            var defines = UnityEditor.PlayerSettings.GetScriptingDefineSymbolsForGroup(UnityEditor.BuildTargetGroup.Standalone).Split(';');
+            var hasPersonal = System.Array.Exists(defines, value => value == "YUI_PROFILE_" + "PERSONAL");
+            var hasPublic = System.Array.Exists(defines, value => value == "YUI_PROFILE_PUBLIC");
 
             Assert.AreNotEqual(hasPersonal, hasPublic, "Standalone must define exactly one Yui distribution profile.");
         }
@@ -139,12 +138,12 @@ namespace YuiPhysicalAI.Tests.Editor
 
             var source = File.ReadAllText(pluginPath);
 
-            StringAssert.Contains("\\(trimmedSystemInstruction)", source);
+            StringAssert.Contains("systemMessage: systemInstruction.isEmpty ? nil : Message(systemInstruction, role: .system)", source);
             StringAssert.DoesNotContain("yuiCompactSystemInstruction", source);
             var instruction = YuiPhysicalAI.LocalAI.YuiLocalAiPromptBuilder.BuildCompactSystemInstruction(
                 new YuiPhysicalAI.LocalAI.YuiLocalAiChatRequest { CharacterName = "星" });
-            StringAssert.Contains("通常は短く", instruction);
-            StringAssert.Contains("2〜4文", instruction);
+            StringAssert.Contains("星", instruction);
+            StringAssert.Contains("1–3 sentences", instruction);
         }
 
         [Test]
@@ -157,8 +156,9 @@ namespace YuiPhysicalAI.Tests.Editor
             var source = File.ReadAllText(pluginPath);
 
             StringAssert.Contains("yuiSamplerTemperature", source);
-            StringAssert.Contains("capability == \"Chat\" ? 0.70 : 0.45", source);
-            StringAssert.Contains("temperature: yuiSamplerTemperature(for: capability)", source);
+            StringAssert.Contains("capability == \"Chat\" ? 0.65 : 0.45", source);
+            StringAssert.Contains("request[\"temperature\"]", source);
+            StringAssert.Contains("workMode ? 0.45 : yuiSamplerTemperature(for: capability)", source);
         }
 
         [Test]
@@ -354,7 +354,7 @@ namespace YuiPhysicalAI.Tests.Editor
             StringAssert.Contains("On-device AI works offline", source);
             StringAssert.Contains("a backend uses its own key", source);
             StringAssert.Contains("Secret mode", source);
-            StringAssert.Contains("does not save conversation history", source);
+            StringAssert.Contains("does not save its conversations or create new memories", source);
             StringAssert.Contains("AvatarImportInstructions()", source);
             StringAssert.Contains("VRM 0.x", YuiChatPanel.AvatarImportInstructions());
             StringAssert.Contains("NDMF VRM Exporter", YuiChatPanel.AvatarImportInstructions());

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace YuiPhysicalAI.LocalAI
@@ -8,6 +9,9 @@ namespace YuiPhysicalAI.LocalAI
     public static class YuiLocalAiRuntimeCachePruner
     {
         private const string RuntimeCacheRootDirectoryName = "RuntimeCache";
+        private static readonly Regex ModelRevision = new Regex(
+            @"(?<=\.litertlm)_\d+_\d+(?=(?:\.mtp_drafter)?_mldrift_(?:program|weight)_cache\.bin$)",
+            RegexOptions.CultureInvariant);
 
         public static void PruneForActivePack(YuiLocalAiModelPack activePack, string activeCacheDirectory)
         {
@@ -38,18 +42,8 @@ namespace YuiPhysicalAI.LocalAI
                     return;
                 }
 
-                var activeFullPath = Path.GetFullPath(activeCacheDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                foreach (var directory in Directory.GetDirectories(root))
-                {
-                    var fullPath = Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                    if (string.Equals(fullPath, activeFullPath, StringComparison.Ordinal))
-                    {
-                        continue;
-                    }
-
-                    SafeDeleteDirectory(directory);
-                }
-
+                // Registered models may coexist and be selected again. Do not
+                // evict another model's compiled weights merely by switching.
                 if (!Directory.Exists(activeCacheDirectory))
                 {
                     return;
@@ -93,18 +87,10 @@ namespace YuiPhysicalAI.LocalAI
 
         private static string CacheKind(FileInfo file)
         {
-            var name = file.Name;
-            if (name.Contains("program_cache", StringComparison.OrdinalIgnoreCase))
-            {
-                return "program";
-            }
-
-            if (name.Contains("xnnpack_cache", StringComparison.OrdinalIgnoreCase))
-            {
-                return "xnnpack";
-            }
-
-            return "weight";
+            // The main model and MTP draft each need their own program AND weight cache.
+            // Only coalesce known revisioned filenames. Unknown/audio/vision files are
+            // not interchangeable and must not be deleted as generic "weight" entries.
+            return ModelRevision.Replace(file.Name, string.Empty);
         }
 
         private static void SafeDeleteDirectory(string path)

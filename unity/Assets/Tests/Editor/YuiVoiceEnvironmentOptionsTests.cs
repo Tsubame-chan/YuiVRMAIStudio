@@ -18,6 +18,13 @@ namespace YuiPhysicalAI.Tests
         };
 
         [Test]
+        public void PhoneWithExplicitNativeVoicevox_DoesNotDuplicateTheSameEngine()
+        {
+            var options = YuiVoiceEnvironmentOptions.Build(null, false, false, true, false, true, "voicevox-native");
+            CollectionAssert.AreEqual(new[] {"voicevox-native", "local-ai", "silent"}, options.Select(p => p.Key));
+        }
+
+        [Test]
         public void PhoneWithoutBackend_OnlyShowsAvailableDeviceVoices()
         {
             var options = YuiVoiceEnvironmentOptions.Build(null, false, false, true, false, true, "server");

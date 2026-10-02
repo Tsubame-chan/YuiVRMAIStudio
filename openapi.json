@@ -216,6 +216,48 @@
               "default": 20,
               "title": "Limit"
             }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "character_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Character Id"
+            }
+          },
+          {
+            "name": "session_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Session Id"
+            }
           }
         ],
         "responses": {
@@ -557,6 +599,108 @@
         }
       }
     },
+    "/memory/{memory_id}/update": {
+      "post": {
+        "summary": "Memory Update",
+        "operationId": "memory_update_memory__memory_id__update_post",
+        "parameters": [
+          {
+            "name": "memory_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Memory Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemorySaveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/memory/{memory_id}/delete": {
+      "post": {
+        "summary": "Memory Delete",
+        "operationId": "memory_delete_memory__memory_id__delete_post",
+        "parameters": [
+          {
+            "name": "memory_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Memory Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemoryScope"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response Memory Delete Memory  Memory Id  Delete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/memory/search": {
       "post": {
         "summary": "Memory Search",
@@ -748,6 +892,11 @@
           "custom_instruction": {
             "type": "string",
             "title": "Custom Instruction",
+            "default": ""
+          },
+          "response_instruction": {
+            "type": "string",
+            "title": "Response Instruction",
             "default": ""
           },
           "character_name": {
@@ -1096,8 +1245,23 @@
             "title": "User Id",
             "default": "local_user"
           },
+          "character_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Character Id"
+          },
           "content": {
             "type": "string",
+            "maxLength": 20000,
+            "minLength": 1,
             "title": "Content"
           },
           "importance": {
@@ -1121,12 +1285,49 @@
         ],
         "title": "MemorySaveRequest"
       },
+      "MemoryScope": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "default": "local_user"
+          },
+          "character_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Character Id"
+          }
+        },
+        "type": "object",
+        "title": "MemoryScope"
+      },
       "MemorySearchRequest": {
         "properties": {
           "user_id": {
             "type": "string",
             "title": "User Id",
             "default": "local_user"
+          },
+          "character_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Character Id"
           },
           "query": {
             "type": "string",
@@ -1138,6 +1339,13 @@
             "minimum": 1.0,
             "title": "Limit",
             "default": 5
+          },
+          "offset": {
+            "type": "integer",
+            "maximum": 1000000.0,
+            "minimum": 0.0,
+            "title": "Offset",
+            "default": 0
           }
         },
         "type": "object",
@@ -1164,6 +1372,11 @@
           "status": {
             "type": "string",
             "title": "Status"
+          },
+          "selectable": {
+            "type": "boolean",
+            "title": "Selectable",
+            "default": false
           },
           "detail": {
             "type": "string",
@@ -1245,6 +1458,11 @@
       },
       "ProviderStatusResponse": {
         "properties": {
+          "chat_provider": {
+            "type": "string",
+            "title": "Chat Provider",
+            "default": "openai"
+          },
           "status": {
             "type": "string",
             "title": "Status"

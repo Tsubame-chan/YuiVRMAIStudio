@@ -2,11 +2,13 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.Callbacks;
 using UnityEditor.SceneManagement;
 using UnityEditor.iOS.Xcode;
+using UnityEditor.iOS.Xcode.Extensions;
 using UnityEngine;
 namespace YuiPhysicalAI.Editor
 {
@@ -15,7 +17,7 @@ namespace YuiPhysicalAI.Editor
         public static void BuildIOSBeta()
         {
             var output = Environment.GetEnvironmentVariable("YUI_IOS_BUILD_DIRECTORY");
-            if (string.IsNullOrWhiteSpace(output)) throw new InvalidOperationException("Set YUI_IOS_BUILD_DIRECTORY to a fresh candidate directory.");
+            if (string.IsNullOrWhiteSpace(output) || !Path.IsPathRooted(output)) throw new InvalidOperationException("Set YUI_IOS_BUILD_DIRECTORY to a fresh absolute candidate directory.");
             var rebuilding = Environment.GetEnvironmentVariable("YUI_IOS_REBUILD") == "1"
                 && Directory.Exists(Path.Combine(output, "Unity-iPhone.xcodeproj"));
             if (!rebuilding && Directory.Exists(output) && Directory.EnumerateFileSystemEntries(output).Any())
@@ -24,12 +26,13 @@ namespace YuiPhysicalAI.Editor
                 .Where(d => !d.StartsWith("YUI_PROFILE_")).Concat(new[] { "YUI_PROFILE_PUBLIC" });
             PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, string.Join(";", defines));
             PlayerSettings.companyName = "Yui VRM AI Studio";
-            PlayerSettings.productName = "Yui VRM AI Studio Beta";
-            PlayerSettings.bundleVersion = "0.2.0";
-            PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.iOS, "jp.tsubamechan.yuivrm.beta");
+            PlayerSettings.productName = "Yui VRM AI Studio";
+            PlayerSettings.bundleVersion = Environment.GetEnvironmentVariable("YUI_IOS_VERSION") ?? "0.2.4";
+            PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.iOS,
+                Environment.GetEnvironmentVariable("YUI_IOS_BUNDLE_ID") ?? "jp.tsubamechan.yuivrm.beta");
             PlayerSettings.SetScriptingBackend(BuildTargetGroup.iOS, ScriptingImplementation.IL2CPP);
-            PlayerSettings.iOS.buildNumber = "20260921";
-            PlayerSettings.iOS.targetOSVersionString = "16.2";
+            PlayerSettings.iOS.buildNumber = Environment.GetEnvironmentVariable("YUI_IOS_BUILD_NUMBER") ?? "20260924";
+            PlayerSettings.iOS.targetOSVersionString = "26.0";
             PlayerSettings.iOS.cameraUsageDescription = "カメラで選んだ景色をキャラクターに見せます。";
             PlayerSettings.iOS.microphoneUsageDescription = "キャラクターと話すためにマイクを使います。";
             PlayerSettings.iOS.appleEnableAutomaticSigning = true;
@@ -41,7 +44,7 @@ namespace YuiPhysicalAI.Editor
             const string scene = "Assets/Scenes/YuiChatSceneUGUI.unity";
             EditorSceneManager.OpenScene(scene);
             var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions { scenes = new[] { scene }, locationPathName = output,
-                target = BuildTarget.iOS, options = BuildOptions.Development | BuildOptions.DetailedBuildReport | BuildOptions.CleanBuildCache });
+                target = BuildTarget.iOS, options = BuildOptions.DetailedBuildReport | BuildOptions.CleanBuildCache });
             if (report.summary.result != BuildResult.Succeeded) throw new InvalidOperationException("iOS export failed: " + report.summary.result);
         }
         [PostProcessBuild(100)]
@@ -62,6 +65,8 @@ namespace YuiPhysicalAI.Editor
             var plist = new PlistDocument();
             plist.ReadFromFile(plistPath);
             var root = plist.root;
+            // Keep the Home Screen label readable for every distribution profile.
+            root.SetString("CFBundleDisplayName", "Yui VRM AI");
             root.SetBoolean("UIStatusBarHidden", false);
             root.SetString("UIStatusBarStyle", "UIStatusBarStyleLightContent");
 
@@ -87,7 +92,128 @@ namespace YuiPhysicalAI.Editor
 
             plist.WriteToFile(plistPath);
             AddIOSLiteRTSwiftPackage(pathToBuiltProject);
+            AddModelVirtualAddressSpace(pathToBuiltProject);
+            AddAppleHostedAssets(pathToBuiltProject);
             Debug.Log("Yui build: applied iOS local backend networking plist settings.");
+        }
+
+        private static void AddBrandedLaunchScreen(string directory)
+        {
+            var projectPath = PBXProject.GetPBXProjectPath(directory);
+            var project = new PBXProject(); project.ReadFromFile(projectPath);
+            var main = project.GetUnityMainTargetGuid();
+            foreach (var name in new[] { "YuiLaunchScreen.storyboard", "YuiLaunchCards.png" })
+            {
+                var source = name.EndsWith(".png") ? "Assets/App/Resources/YuiBrand/Cards.png" : "Assets/App/Branding/" + name;
+                if (!File.Exists(source)) throw new InvalidOperationException("Missing public startup artwork: " + source);
+                File.Copy(source, Path.Combine(directory, name), true);
+                project.AddFileToBuild(main, project.AddFile(name, name, PBXSourceTree.Source));
+            }
+            project.WriteToFile(projectPath);
+            var plistPath = Path.Combine(directory, "Info.plist");
+            var plist = new PlistDocument(); plist.ReadFromFile(plistPath);
+            plist.root.SetString("UILaunchStoryboardName", "YuiLaunchScreen");
+            plist.root.SetString("UILaunchStoryboardName~ipad", "YuiLaunchScreen");
+            plist.WriteToFile(plistPath);
+        }
+        private static void AddModelVirtualAddressSpace(string directory)
+        {
+            var projectPath = PBXProject.GetPBXProjectPath(directory);
+            var project = new PBXProject(); project.ReadFromFile(projectPath);
+            var target = project.GetUnityMainTargetGuid();
+            var relative = project.GetBuildPropertyForAnyConfig(target, "CODE_SIGN_ENTITLEMENTS");
+            if (string.IsNullOrWhiteSpace(relative)) relative = "YuiModel.entitlements";
+            var entitlements = new PlistDocument();
+            var path = Path.Combine(directory, relative);
+            if (File.Exists(path)) entitlements.ReadFromFile(path);
+            // Large read-only model and compiled-weight mappings need address
+            // space, independently of their resident physical memory footprint.
+            entitlements.root.SetBoolean("com.apple.developer.kernel.extended-virtual-addressing", true);
+            entitlements.WriteToFile(path);
+            project.SetBuildProperty(target, "CODE_SIGN_ENTITLEMENTS", relative);
+            project.WriteToFile(projectPath);
+        }
+
+        private static void AddAppleHostedAssets(string directory)
+        {
+            // Opt in only for a sanitized candidate with separately packaged assets.
+            if (Environment.GetEnvironmentVariable("YUI_APPLE_HOSTED_ASSETS") != "1") return;
+            var projectPath = PBXProject.GetPBXProjectPath(directory);
+            var project = new PBXProject(); project.ReadFromFile(projectPath);
+            var main = project.GetUnityMainTargetGuid();
+            var framework = project.GetUnityFrameworkTargetGuid();
+            var bundle = PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.iOS);
+            var group = "group." + bundle + ".assets";
+            var plist = new PlistDocument(); plist.ReadFromFile(Path.Combine(directory, "Info.plist"));
+            plist.root.SetString("BAAppGroupID", group);
+            plist.root.SetBoolean("BAHasManagedAssetPacks", true);
+            plist.root.SetBoolean("BAUsesAppleHosting", true);
+            plist.WriteToFile(Path.Combine(directory, "Info.plist"));
+            const string folder = "YuiAssetDownloader";
+            Directory.CreateDirectory(Path.Combine(directory, folder));
+            var extensionPlist = new PlistDocument();
+            extensionPlist.root.SetString("CFBundleIdentifier", "$(PRODUCT_BUNDLE_IDENTIFIER)");
+            extensionPlist.root.SetString("CFBundleExecutable", "$(EXECUTABLE_NAME)");
+            extensionPlist.root.SetString("CFBundleName", "$(PRODUCT_NAME)");
+            extensionPlist.root.SetString("CFBundleDisplayName", "Yui Model Download");
+            extensionPlist.root.SetString("CFBundlePackageType", "XPC!");
+            extensionPlist.root.SetString("CFBundleShortVersionString", PlayerSettings.bundleVersion);
+            extensionPlist.root.SetString("CFBundleVersion", PlayerSettings.iOS.buildNumber);
+            extensionPlist.root.CreateDict("EXAppExtensionAttributes").SetString("EXExtensionPointIdentifier", "com.apple.background-asset-downloader-extension");
+            extensionPlist.WriteToFile(Path.Combine(directory, folder, "Info.plist"));
+            var extension = project.TargetGuidByName(folder);
+            if (string.IsNullOrEmpty(extension))
+                extension = project.AddAppExtension(main, folder, bundle + ".assetdownloader", folder + "/Info.plist");
+            File.WriteAllText(Path.Combine(directory, folder, "Downloader.swift"),
+                "import BackgroundAssets\nimport ExtensionFoundation\nimport StoreKit\n@main struct YuiAssetDownloaderExtension: StoreDownloaderExtension {}\n");
+            project.AddFileToBuild(extension, project.AddFile(folder + "/Downloader.swift", folder + "/Downloader.swift"));
+            foreach (var target in new[] { main, extension })
+            {
+                var relative = target == main ? "YuiAssets.entitlements" : folder + "/YuiAssets.entitlements";
+                var entitlements = new PlistDocument();
+                // Preserve existing app entitlements rather than dropping capabilities.
+                var existing = project.GetBuildPropertyForAnyConfig(target, "CODE_SIGN_ENTITLEMENTS");
+                if (!string.IsNullOrWhiteSpace(existing) && File.Exists(Path.Combine(directory, existing)))
+                    entitlements.ReadFromFile(Path.Combine(directory, existing));
+                var groups = entitlements.root.values.TryGetValue("com.apple.security.application-groups", out var existingGroups)
+                    ? existingGroups.AsArray() : entitlements.root.CreateArray("com.apple.security.application-groups");
+                if (!groups.values.Any(value => value.AsString() == group)) groups.AddString(group);
+                entitlements.WriteToFile(Path.Combine(directory, relative));
+                project.SetBuildProperty(target, "CODE_SIGN_ENTITLEMENTS", relative);
+                project.SetBuildProperty(target, "IPHONEOS_DEPLOYMENT_TARGET", "26.0");
+                project.SetBuildProperty(target, "CODE_SIGN_STYLE", "Automatic");
+            }
+            project.SetBuildProperty(extension, "SWIFT_VERSION", "5.0");
+            project.SetBuildProperty(extension, "APPLICATION_EXTENSION_API_ONLY", "YES");
+            project.SetBuildProperty(extension, "SKIP_INSTALL", "YES");
+            project.AddFrameworkToProject(extension, "BackgroundAssets.framework", false);
+            project.AddFrameworkToProject(extension, "StoreKit.framework", false);
+            project.AddFrameworkToProject(extension, "ExtensionFoundation.framework", false);
+            project.AddFrameworkToProject(framework, "BackgroundAssets.framework", true);
+            // Unity 2022's AddAppExtension creates an NSExtension. Apple's managed
+            // downloader is an ExtensionKit product and must be embedded in Extensions.
+            var phase = project.GetCopyFilesBuildPhaseByTarget(main, "Embed App Extensions", "", "13");
+            var serialized = project.WriteToString();
+            serialized = RewriteExtensionObject(serialized, extension,
+                "productType = \"com.apple.product-type.app-extension\";",
+                "productType = \"com.apple.product-type.extensionkit-extension\";");
+            serialized = RewriteExtensionObject(serialized, project.GetTargetProductFileRef(extension),
+                "\"wrapper.app-extension\"", "\"wrapper.extensionkit-extension\"");
+            serialized = RewriteExtensionObject(serialized, phase,
+                "dstPath = \"\";", "dstPath = \"$(EXTENSIONS_FOLDER_PATH)\";");
+            serialized = RewriteExtensionObject(serialized, phase,
+                "dstSubfolderSpec = 13;", "dstSubfolderSpec = 16;");
+            File.WriteAllText(projectPath, serialized);
+        }
+
+        private static string RewriteExtensionObject(string text, string guid, string before, string after)
+        {
+            if (string.IsNullOrEmpty(guid)) throw new InvalidOperationException("Missing downloader project object.");
+            var pattern = @"(?m)^\t\t" + Regex.Escape(guid) + @" /\*[^\r\n]*?\*/ = \{[\s\S]*?\};";
+            var matches = Regex.Matches(text, pattern);
+            if (matches.Count != 1 || !matches[0].Value.Contains(before))
+                throw new InvalidOperationException("Unexpected downloader project layout: " + guid);
+            return Regex.Replace(text, pattern, match => match.Value.Replace(before, after));
         }
 
         private static void AddPermissionLocalizations(PBXProject project, string target, string directory)

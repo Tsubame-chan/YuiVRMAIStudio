@@ -18,6 +18,8 @@ namespace YuiPhysicalAI.UI
 {
     public sealed partial class YuiChatPanel
     {
+        private bool realtimeSessionSecret;
+        private string realtimeSessionCharacter;
         private async Task SendRealtimeRecordingAsync(byte[] wavBytes)
         {
             SetStatus("Realtime...");
@@ -25,13 +27,16 @@ namespace YuiPhysicalAI.UI
             AppendLog("You", "(voice)");
             var timer = System.Diagnostics.Stopwatch.StartNew();
             var mode = RealtimeBackendMode();
+            var recordingSecret=secretMode;var recordingCharacter=ChatCharacterId();
             await EnsureExternalDataPermissionAsync(backendUrl, false, cancellationTokenSource.Token);
             var response = await client.SendRealtimeAudioAsync(
                 wavBytes,
                 mode,
                 RealtimeInstructionsForMode(mode),
                 "realtime_recording.wav",
-                cancellationTokenSource.Token);
+                cancellationTokenSource.Token, userId, recordingCharacter, recordingSecret);
+            if (recordingSecret!=secretMode || recordingCharacter!=ChatCharacterId()) return;
+            if (!secretMode && !string.IsNullOrWhiteSpace(response.InputText)) CharacterMemoryStore.Remember(recordingCharacter,response.InputText, recordingSecret);
             Debug.Log(
                 $"Yui realtime audio latency: {timer.ElapsedMilliseconds} ms, events={YuiRealtimeLog.FormatEvents(response.Events, YuiRealtimeLog.VerboseEnabled)}");
 
@@ -69,6 +74,7 @@ namespace YuiPhysicalAI.UI
         {
             using var operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token);
             realtimeTranslateCancellation = operation;
+            var phraseSecret=secretMode;var phraseCharacter=ChatCharacterId();
             try
             {
                 if (pcm16 == null || pcm16.Length < 2)
@@ -88,8 +94,9 @@ namespace YuiPhysicalAI.UI
                     YuiConversationModes.BackendTranslate,
                     RealtimeInstructionsForMode(YuiConversationModes.BackendTranslate),
                     "realtime_translate_phrase.wav",
-                    operation.Token);
+                    operation.Token, userId, phraseCharacter, phraseSecret);
                 operation.Token.ThrowIfCancellationRequested();
+                if(phraseSecret!=secretMode || phraseCharacter!=ChatCharacterId())return;
                 Debug.Log(
                     $"Yui realtime translate phrase latency: {timer.ElapsedMilliseconds} ms, chunks={chunks}, pcm_bytes={pcm16.Length}, input_chars={response.InputText?.Length ?? 0}, events={YuiRealtimeLog.FormatEvents(response.Events, YuiRealtimeLog.VerboseEnabled)}");
 
@@ -250,12 +257,15 @@ namespace YuiPhysicalAI.UI
                 connectingToken.ThrowIfCancellationRequested();
                 var mode = RealtimeBackendMode();
                 realtimeActiveBackendMode = mode;
+                realtimeSessionSecret=secretMode;realtimeSessionCharacter=ChatCharacterId();
                 await SendRealtimeJsonAsync(new
                 {
                     type = "start",
                     mode,
                     user_id = userId,
                     character_name = characterName,
+                    character_id = ChatCharacterId(),
+                    secret = secretMode,
                     instructions = RealtimeInstructionsForMode(mode)
                 });
                 connectingToken.ThrowIfCancellationRequested();
@@ -567,6 +577,7 @@ namespace YuiPhysicalAI.UI
 
         private void HandleRealtimeMessage(JObject message)
         {
+            if(realtimeSessionSecret!=secretMode || realtimeSessionCharacter!=ChatCharacterId())return;
             var type = message.Value<string>("type");
             if (type == "ready")
             {
@@ -589,6 +600,7 @@ namespace YuiPhysicalAI.UI
                     if (!IsRealtimeTranslateMode())
                     {
                         AppendLog("You", trimmedTranscript);
+                        if (!secretMode) { try { CharacterMemoryStore.Remember(realtimeSessionCharacter,trimmedTranscript, realtimeSessionSecret); } catch(Exception ex) { Debug.LogWarning("Character memory: "+ex.Message); } }
                     }
                 }
                 if (eventName == "response.created")

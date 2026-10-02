@@ -1,6 +1,8 @@
 using NUnit.Framework;
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.SceneManagement;
+using System.Linq;
 using YuiPhysicalAI.Avatar;
 using YuiPhysicalAI.Core;
 using YuiPhysicalAI.UI;
@@ -9,6 +11,29 @@ namespace YuiPhysicalAI.Tests.Editor
 {
     public class YuiAvatarSelectionRegressionTests
     {
+        [Test]
+        public void ActualApplicationSceneUsesAnimatedRestInsteadOfPoseShowcase()
+        {
+            var scene = UnityEngine.SceneManagement.SceneManager.GetSceneByPath("Assets/Scenes/YuiChatSceneUGUI.unity");
+            var alreadyLoaded = scene.IsValid() && scene.isLoaded;
+            if (!alreadyLoaded) scene = EditorSceneManager.OpenScene("Assets/Scenes/YuiChatSceneUGUI.unity", OpenSceneMode.Additive);
+            GameObject instance = null;
+            try
+            {
+                var source = scene.GetRootGameObjects().Single(g => g.name == "Yui UnityChan Avatar");
+                instance = Object.Instantiate(source); instance.SetActive(true);
+                var animator = instance.GetComponent<Animator>();
+                Assert.AreEqual("UnityChanActionCheck", animator.runtimeAnimatorController.name);
+                animator.Rebind();
+                YuiAvatarSwitcher.StartBundledAvatarAtRest(instance);
+                animator.Update(.1f);
+                Assert.IsTrue(animator.GetCurrentAnimatorStateInfo(0).IsName("WAIT00"));
+                var chest = animator.GetBoneTransform(HumanBodyBones.Chest);
+                foreach (var hand in new[] {HumanBodyBones.LeftHand, HumanBodyBones.RightHand})
+                    Assert.Less(animator.GetBoneTransform(hand).position.y, chest.position.y - animator.humanScale * .1f);
+            }
+            finally { if (instance != null) Object.DestroyImmediate(instance); if (!alreadyLoaded) EditorSceneManager.CloseScene(scene, true); }
+        }
         [Test]
         public void PublicLegacyDemoSelectionResolvesToBundledAvatar()
         {

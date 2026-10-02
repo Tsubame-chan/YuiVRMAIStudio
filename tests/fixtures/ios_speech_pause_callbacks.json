@@ -1,0 +1,693 @@
+{
+  "source": "iPhone 16 Pro / iOS 26.6.2 / synthesized Kyoko test speech; selected callbacks in arrival order",
+  "snapshots": [
+    {
+      "callbackIndex": 0,
+      "text": "シ",
+      "final": false,
+      "hasMetadata": false,
+      "segments": [
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 0
+        }
+      ]
+    },
+    {
+      "callbackIndex": 8,
+      "text": "シンガポール観光について質問",
+      "final": false,
+      "hasMetadata": false,
+      "segments": [
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 0
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 6
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 8
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 12
+        }
+      ]
+    },
+    {
+      "callbackIndex": 9,
+      "text": "シンガポール観光について質問",
+      "final": false,
+      "hasMetadata": true,
+      "segments": [
+        {
+          "start": 0,
+          "duration": 0.78,
+          "location": 0
+        },
+        {
+          "start": 0.78,
+          "duration": 0.51,
+          "location": 6
+        },
+        {
+          "start": 1.29,
+          "duration": 0.51,
+          "location": 8
+        },
+        {
+          "start": 1.8,
+          "duration": 0.6599999999999999,
+          "location": 12
+        }
+      ]
+    },
+    {
+      "callbackIndex": 10,
+      "text": "シン",
+      "final": false,
+      "hasMetadata": false,
+      "segments": [
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 0
+        }
+      ]
+    },
+    {
+      "callbackIndex": 80,
+      "text": "シンガポールと言う国は、空港の周りに見るべきところがたくさんあり、日本国内のようにあちこちに見るべきところが散らばっているわけでもなく、1泊2日もあれば充分だと言うふうによく聞きます",
+      "final": false,
+      "hasMetadata": false,
+      "segments": [
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 0
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 6
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 7
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 9
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 10
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 11
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 12
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 14
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 15
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 17
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 18
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 20
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 22
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 26
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 30
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 32
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 33
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 37
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 41
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 45
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 46
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 48
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 50
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 54
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 59
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 61
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 63
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 65
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 67
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 68
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 69
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 70
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 72
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 73
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 76
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 78
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 80
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 82
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 85
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 87
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 89
+        }
+      ]
+    },
+    {
+      "callbackIndex": 81,
+      "text": "シンガポールと言う国は、空港の周りに見るべきところがたくさんあり、日本国内のようにあちこちに見るべきところが散らばっているわけでもなく、1泊2日もあれば充分だと言うふうによく聞きます",
+      "final": false,
+      "hasMetadata": true,
+      "segments": [
+        {
+          "start": 4.5600000000000005,
+          "duration": 0.42,
+          "location": 0
+        },
+        {
+          "start": 4.98,
+          "duration": 0.15000000000000008,
+          "location": 6
+        },
+        {
+          "start": 5.130000000000001,
+          "duration": 0.20999999999999996,
+          "location": 7
+        },
+        {
+          "start": 5.340000000000001,
+          "duration": 0.27,
+          "location": 9
+        },
+        {
+          "start": 5.61,
+          "duration": 0.20999999999999996,
+          "location": 10
+        },
+        {
+          "start": 5.82,
+          "duration": 0.5700000000000001,
+          "location": 12
+        },
+        {
+          "start": 6.390000000000001,
+          "duration": 0.1499999999999999,
+          "location": 14
+        },
+        {
+          "start": 6.540000000000001,
+          "duration": 0.3599999999999999,
+          "location": 15
+        },
+        {
+          "start": 6.9,
+          "duration": 0.1200000000000001,
+          "location": 17
+        },
+        {
+          "start": 7.0200000000000005,
+          "duration": 0.20999999999999996,
+          "location": 18
+        },
+        {
+          "start": 7.23,
+          "duration": 0.27,
+          "location": 20
+        },
+        {
+          "start": 7.5,
+          "duration": 0.5100000000000002,
+          "location": 22
+        },
+        {
+          "start": 8.010000000000002,
+          "duration": 0.54,
+          "location": 26
+        },
+        {
+          "start": 8.55,
+          "duration": 0.33000000000000007,
+          "location": 30
+        },
+        {
+          "start": 8.88,
+          "duration": 0.9299999999999997,
+          "location": 33
+        },
+        {
+          "start": 9.81,
+          "duration": 0.5099999999999998,
+          "location": 37
+        },
+        {
+          "start": 10.32,
+          "duration": 0.5100000000000007,
+          "location": 41
+        },
+        {
+          "start": 10.830000000000002,
+          "duration": 0.1200000000000001,
+          "location": 45
+        },
+        {
+          "start": 10.950000000000001,
+          "duration": 0.23999999999999932,
+          "location": 46
+        },
+        {
+          "start": 11.190000000000001,
+          "duration": 0.2400000000000002,
+          "location": 48
+        },
+        {
+          "start": 11.43,
+          "duration": 0.5099999999999998,
+          "location": 50
+        },
+        {
+          "start": 11.940000000000001,
+          "duration": 0.660000000000001,
+          "location": 54
+        },
+        {
+          "start": 12.600000000000001,
+          "duration": 0.20999999999999908,
+          "location": 59
+        },
+        {
+          "start": 12.81,
+          "duration": 0.2699999999999996,
+          "location": 61
+        },
+        {
+          "start": 13.08,
+          "duration": 0.27000000000000135,
+          "location": 63
+        },
+        {
+          "start": 13.350000000000001,
+          "duration": 0.4499999999999993,
+          "location": 65
+        },
+        {
+          "start": 13.8,
+          "duration": 0.17999999999999972,
+          "location": 68
+        },
+        {
+          "start": 13.98,
+          "duration": 0.33000000000000007,
+          "location": 69
+        },
+        {
+          "start": 14.31,
+          "duration": 0.41999999999999993,
+          "location": 70
+        },
+        {
+          "start": 14.73,
+          "duration": 0.15000000000000036,
+          "location": 72
+        },
+        {
+          "start": 14.88,
+          "duration": 0.41999999999999993,
+          "location": 73
+        },
+        {
+          "start": 15.3,
+          "duration": 0.5099999999999998,
+          "location": 76
+        },
+        {
+          "start": 15.81,
+          "duration": 0.3000000000000007,
+          "location": 78
+        },
+        {
+          "start": 16.11,
+          "duration": 0.20999999999999908,
+          "location": 80
+        },
+        {
+          "start": 16.32,
+          "duration": 0.45000000000000107,
+          "location": 82
+        },
+        {
+          "start": 16.770000000000003,
+          "duration": 0.2699999999999996,
+          "location": 85
+        },
+        {
+          "start": 17.04,
+          "duration": 0.629999999999999,
+          "location": 87
+        }
+      ]
+    },
+    {
+      "callbackIndex": 82,
+      "text": "そ",
+      "final": false,
+      "hasMetadata": false,
+      "segments": [
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 0
+        }
+      ]
+    },
+    {
+      "callbackIndex": 119,
+      "text": "そして、何より観光目的で行く国ではあんまりないと言うふうに聞きました。本当です。",
+      "final": false,
+      "hasMetadata": false,
+      "segments": [
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 0
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 3
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 4
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 7
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 9
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 11
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 12
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 14
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 15
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 17
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 21
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 23
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 24
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 26
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 29
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 34
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 35
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 37
+        },
+        {
+          "start": 0,
+          "duration": 0,
+          "location": 39
+        }
+      ]
+    },
+    {
+      "callbackIndex": 120,
+      "text": "そして、何より観光目的で行く国ではあんまりないと言うふうに聞きました。本当ですか？",
+      "final": true,
+      "hasMetadata": true,
+      "segments": [
+        {
+          "start": 19.68,
+          "duration": 0.18,
+          "location": 0
+        },
+        {
+          "start": 19.86,
+          "duration": 0.45,
+          "location": 4
+        },
+        {
+          "start": 20.31,
+          "duration": 0.5399999999999999,
+          "location": 7
+        },
+        {
+          "start": 20.85,
+          "duration": 0.54,
+          "location": 9
+        },
+        {
+          "start": 21.39,
+          "duration": 0.1200000000000001,
+          "location": 11
+        },
+        {
+          "start": 21.509999999999998,
+          "duration": 0.2999999999999998,
+          "location": 12
+        },
+        {
+          "start": 21.81,
+          "duration": 0.2400000000000002,
+          "location": 14
+        },
+        {
+          "start": 22.05,
+          "duration": 0.44999999999999973,
+          "location": 15
+        },
+        {
+          "start": 22.5,
+          "duration": 0.3900000000000001,
+          "location": 17
+        },
+        {
+          "start": 22.89,
+          "duration": 0.3900000000000001,
+          "location": 21
+        },
+        {
+          "start": 23.28,
+          "duration": 0.20999999999999996,
+          "location": 24
+        },
+        {
+          "start": 23.49,
+          "duration": 0.3599999999999999,
+          "location": 26
+        },
+        {
+          "start": 23.85,
+          "duration": 0.75,
+          "location": 29
+        },
+        {
+          "start": 24.6,
+          "duration": 0.6000000000000005,
+          "location": 35
+        },
+        {
+          "start": 25.2,
+          "duration": 0.6599999999999993,
+          "location": 37
+        }
+      ]
+    }
+  ],
+  "expectedText": "シンガポール観光について質問シンガポールと言う国は、空港の周りに見るべきところがたくさんあり、日本国内のようにあちこちに見るべきところが散らばっているわけでもなく、1泊2日もあれば充分だと言うふうによく聞きますそして、何より観光目的で行く国ではあんまりないと言うふうに聞きました。本当ですか？"
+}

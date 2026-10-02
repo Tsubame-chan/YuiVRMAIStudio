@@ -54,17 +54,7 @@ namespace YuiPhysicalAI.LocalAI
             if (requiresLocal && localService != null)
             {
                 var local = await localService.ChatAsync(
-                    new YuiLocalAiChatRequest
-                    {
-                        RequestId = request?.RequestId,
-                        UserId = request?.UserId,
-                        Message = request?.Message,
-                        Mode = request?.Mode ?? "talk",
-                        CharacterName = request?.CharacterName,
-                        CustomInstruction = request?.CustomInstruction,
-                        ScreenContext = request?.Context?.ScreenContext,
-                        Extra = request?.Context?.Extra
-                    },
+                    ToLocalChatRequest(request),
                     cancellationToken);
                 if (local.Success)
                 {
@@ -87,17 +77,7 @@ namespace YuiPhysicalAI.LocalAI
             {
                 Debug.LogWarning($"Backend chat failed; falling back to Local AI for this request: {ex.Message}");
                 var local = await localService.ChatAsync(
-                    new YuiLocalAiChatRequest
-                    {
-                        RequestId = request?.RequestId,
-                        UserId = request?.UserId,
-                        Message = request?.Message,
-                        Mode = request?.Mode ?? "talk",
-                        CharacterName = request?.CharacterName,
-                        CustomInstruction = request?.CustomInstruction,
-                        ScreenContext = request?.Context?.ScreenContext,
-                        Extra = request?.Context?.Extra
-                    },
+                    ToLocalChatRequest(request),
                     cancellationToken);
                 if (local.Success)
                 {
@@ -107,6 +87,19 @@ namespace YuiPhysicalAI.LocalAI
                 throw new InvalidOperationException(LocalError(local), ex);
             }
         }
+
+        private static YuiLocalAiChatRequest ToLocalChatRequest(ChatRequest request) => new YuiLocalAiChatRequest
+        {
+            RequestId = request?.RequestId,
+            UserId = request?.UserId,
+            Message = request?.Message,
+            Mode = request?.Mode ?? "talk",
+            CharacterName = request?.CharacterName,
+            CustomInstruction = request?.CustomInstruction,
+            ResponseInstruction = request?.ResponseInstruction,
+            ScreenContext = request?.Context?.ScreenContext,
+            Extra = request?.Context?.Extra
+        };
 
         public async Task<SttResponse> TranscribeAsync(
             byte[] wavBytes,

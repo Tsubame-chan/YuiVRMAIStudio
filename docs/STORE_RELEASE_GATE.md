@@ -1,6 +1,8 @@
 # Store release acceptance
 
-Updated: 2026-09-22. **Not approved for public store distribution yet.**
+Updated: 2026-10-02. **Latest candidate is not approved for public store distribution yet.**
+
+A newly exported private VRM was imported through the latest Mac Player document picker; this does not establish latest iOS acceptance. Backend GUI and Unity 6 are follow-up work, not prerequisites for the initial mobile release.
 
 Published GitHub downloads remain `v0.2.0-beta.5`; development builds and unpublished source changes are not that release. A successful Unity/Xcode build does not establish device acceptance.
 
@@ -20,7 +22,7 @@ The initial product must support its bundled avatar, VRM import, text/voice conv
 | Performance | Measure memory/termination, thermal behaviour, long conversations and background/resume on the supported iPhone range. Inspect a Release archive's actual install size; do not use Xcode project size as a proxy. Exclude machine-generated inference caches. |
 | Distribution coherence | Source, app ZIP, Backend bundle, model manifest, checksums and README refer to the same candidate. Rebuild from a fresh sanitized tree and verify real downloaded assets. Docker context matches its Dockerfile. |
 
-The current mobile path bundles its AI data; the desktop first-run download manifest does not provide mobile assets. The minimum-data packaging script uses E2B and the default VOICEVOX voice only. A future mobile download flow needs its own tested manifest and lifecycle, not a desktop manifest relabelled as mobile.
+The current mobile design bundles E2B and the default voice/dictionary, with E4B as an optional Apple-hosted download initiated from settings on iOS 26+. Mobile and desktop delivery manifests/lifecycles are separate. Verify the actual candidate packaging and download route rather than inferring readiness from this design.
 
 macOS validation does not establish Windows/Android/iOS acceptance. Publish an explicit platform matrix rather than marking untested targets ready.
 

@@ -51,6 +51,7 @@ namespace YuiPhysicalAI.Editor
             ConfigureStandalonePlayer();
             ConfigurePublicProfile(BuildPipeline.GetBuildTargetGroup(target));
             EditorSceneManager.OpenScene(ScenePath);
+            PinReleaseAssetManifest();
             EditorSceneManager.SaveOpenScenes();
             RemoveLocalAiGeneratedCaches();
             AssetDatabase.SaveAssets();
@@ -187,6 +188,29 @@ namespace YuiPhysicalAI.Editor
             else
             {
                 Debug.LogWarning($"Yui build: application icon asset was not found: {IconPath}");
+            }
+        }
+
+        private static void PinReleaseAssetManifest()
+        {
+            // A prerelease must install its own matching data rather than the
+            // unrelated stable release selected by GitHub's /latest endpoint.
+            var url = "https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/"
+                + PublicBuildVersionTag() + "/YuiVRMAIStudio_AssetManifest.json";
+            // The chat panel normally creates this component at runtime. Serialize it
+            // before building so the versioned URL survives into the actual Player.
+            foreach (var panel in UnityEngine.Object.FindObjectsOfType<YuiChatPanel>(true))
+            {
+                if (panel.GetComponent<YuiLocalAiDownloadOverlay>() == null)
+                    panel.gameObject.AddComponent<YuiLocalAiDownloadOverlay>();
+            }
+            foreach (var overlay in UnityEngine.Object.FindObjectsOfType<YuiLocalAiDownloadOverlay>(true))
+            {
+                var serialized = new SerializedObject(overlay);
+                serialized.FindProperty("manifestUrl").stringValue = url;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                EditorSceneManager.MarkSceneDirty(overlay.gameObject.scene);
+                Debug.Log("Yui build: pinned first-run manifest: " + url);
             }
         }
 

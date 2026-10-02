@@ -45,6 +45,11 @@ namespace YuiPhysicalAI.Avatar
             } finally { if (File.Exists(temp)) File.Delete(temp); }
         }
         public void Clear(string character, string mode) { var file = PathFor(character, mode); if (File.Exists(file)) File.Delete(file); }
+        public void ClearAll()
+        {
+            if (!Directory.Exists(directory)) return;
+            foreach (var file in Directory.GetFiles(directory, "*.json")) File.Delete(file);
+        }
         public static string FromExtra(IDictionary<string, object> extra)
         {
             if (extra == null || !extra.TryGetValue(ContextKey, out var value)) return "";

@@ -48,6 +48,7 @@ namespace YuiPhysicalAI.UI
             var field = Instantiate(inputField, root);
             field.onEndEdit.RemoveAllListeners(); field.onValueChanged.RemoveAllListeners(); field.onSubmit.RemoveAllListeners();
             field.lineType = InputField.LineType.MultiLineNewline;
+            field.shouldHideMobileInput = true;
             field.characterLimit = readOnly ? 0 : 20000;
             field.readOnly = readOnly; field.interactable = true;
             field.textComponent.supportRichText = false;
@@ -60,24 +61,25 @@ namespace YuiPhysicalAI.UI
         private void ShowSavedResults()
         { savedHistory=true;backendHistory=false;historyPage=0;ShowHistory(); }
 
-        private async Task ShowMemoriesAsync()
+        private async Task ShowBackendMemoriesAsync()
         {
             try { await EnsureExternalDataPermissionAsync(backendUrl, false, cancellationTokenSource.Token); }
             catch (OperationCanceledException) { return; }
             var root = CreateSavedDataPanel(sharedMemories ? "以前の共通記憶 · Backend" : "このキャラクターの記憶 · Backend");
             var scope = sharedMemories ? null : ChatCharacterId();
             var owner = userId;
-            ComposerButton(root, "Scope", sharedMemories ? "キャラクターの記憶へ" : "以前の共通記憶を見る", () => { sharedMemories = !sharedMemories; memoriesPage = 0; _ = ShowMemoriesAsync(); }, .03f, .03f, .65f, .13f);
+            ComposerButton(root, "LocalMemory", "端末内の記憶へ", () => { _ = ShowMemoriesAsync(); }, .03f, .77f, .65f, .84f);
+            ComposerButton(root, "Scope", sharedMemories ? "キャラクターの記憶へ" : "以前の共通記憶を見る", () => { sharedMemories = !sharedMemories; memoriesPage = 0; _ = ShowBackendMemoriesAsync(); }, .03f, .03f, .65f, .13f);
             ComposerButton(root, "Add", "追加", () => EditMemory(null, owner, scope), .68f, .03f, .97f, .13f);
             try
             {
                 var response = await client.SearchMemoryAsync(new MemorySearchRequest { UserId = owner, CharacterId = scope, Query = "", Limit = 20, Offset = memoriesPage * 20 }, cancellationTokenSource.Token);
                 if (root == null || savedDataPanel != root.gameObject) return;
-                ComposerButton(root, "Prev", "前へ", () => { memoriesPage--; _ = ShowMemoriesAsync(); }, .03f, .15f, .45f, .24f).interactable = memoriesPage > 0;
-                ComposerButton(root, "Next", "次へ", () => { memoriesPage++; _ = ShowMemoriesAsync(); }, .55f, .15f, .97f, .24f).interactable = response.Items.Count == 20;
+                ComposerButton(root, "Prev", "前へ", () => { memoriesPage--; _ = ShowBackendMemoriesAsync(); }, .03f, .15f, .45f, .24f).interactable = memoriesPage > 0;
+                ComposerButton(root, "Next", "次へ", () => { memoriesPage++; _ = ShowBackendMemoriesAsync(); }, .55f, .15f, .97f, .24f).interactable = response.Items.Count == 20;
                 // Scrollable list: all returned entries are reachable on mobile.
                 var viewport = new GameObject("Memories", typeof(RectTransform), typeof(Image), typeof(Mask), typeof(ScrollRect));
-                viewport.transform.SetParent(root, false); Place(viewport.GetComponent<RectTransform>(), .03f, .26f, .97f, .84f);
+                viewport.transform.SetParent(root, false); Place(viewport.GetComponent<RectTransform>(), .03f, .26f, .97f, .75f);
                 YuiUiTheme.SurfaceOn(viewport.GetComponent<Image>(),YuiControlAffordance.InputSurface);
                 viewport.GetComponent<Mask>().showMaskGraphic = true;
                 var content = new GameObject("Content", typeof(RectTransform)); content.transform.SetParent(viewport.transform, false);
@@ -103,12 +105,12 @@ namespace YuiPhysicalAI.UI
             ComposerButton(root, "Save", "保存", async () => {
                 if (busy || string.IsNullOrWhiteSpace(field.text)) return;
                 busy = true;
+                var request = new MemorySaveRequest { UserId = owner, CharacterId = scope, Content = field.text.Trim(), Importance = item?.Importance ?? 3, Tags = item?.Tags ?? new System.Collections.Generic.List<string>() };
                 try {
                     await EnsureExternalDataPermissionAsync(backendUrl, false, cancellationTokenSource.Token);
-                    var request = new MemorySaveRequest { UserId = owner, CharacterId = scope, Content = field.text.Trim(), Importance = item?.Importance ?? 3, Tags = item?.Tags ?? new System.Collections.Generic.List<string>() };
                     if (item == null) await client.SaveMemoryAsync(request, cancellationTokenSource.Token);
                     else await client.UpdateMemoryAsync(item.Id, request, cancellationTokenSource.Token);
-                    if (root != null && savedDataPanel == root.gameObject) await ShowMemoriesAsync();
+                    if (root != null && savedDataPanel == root.gameObject) await ShowBackendMemoriesAsync();
                 } catch (Exception ex) { SetStatus("記憶を保存できません: " + ex.Message); } finally { busy = false; }
             }, .03f, .07f, .45f, .19f);
             if (item != null) {
@@ -118,11 +120,11 @@ namespace YuiPhysicalAI.UI
                     if (busy) return;
                     if (!confirm) { confirm = true; YuiUiLocalization.Set(delete.GetComponentInChildren<Text>(),"本当に削除"); return; }
                     busy = true;
-                    try { await client.DeleteMemoryAsync(item.Id, new MemorySaveRequest { UserId = owner, CharacterId = scope }, cancellationTokenSource.Token); if (root != null && savedDataPanel == root.gameObject) await ShowMemoriesAsync(); }
+                    try { await EnsureExternalDataPermissionAsync(backendUrl, false, cancellationTokenSource.Token); await client.DeleteMemoryAsync(item.Id, new MemorySaveRequest { UserId = owner, CharacterId = scope }, cancellationTokenSource.Token); if (root != null && savedDataPanel == root.gameObject) await ShowBackendMemoriesAsync(); }
                     catch (Exception ex) { SetStatus("記憶を削除できません: " + ex.Message); } finally { busy = false; }
                 }, .48f, .07f, .72f, .19f);
             }
-            ComposerButton(root, "Back", "戻る", () => { _ = ShowMemoriesAsync(); }, .75f, .07f, .97f, .19f);
+            ComposerButton(root, "Back", "戻る", () => { _ = ShowBackendMemoriesAsync(); }, .75f, .07f, .97f, .19f);
         }
     }
 }

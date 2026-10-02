@@ -76,9 +76,16 @@ namespace YuiPhysicalAI.UI
         private readonly Dictionary<GameObject, bool> auxiliaryActiveStates = new Dictionary<GameObject, bool>();
         private bool backdropWasActive;
         private CanvasGroup consoleCanvasGroup;
+        private Quaternion viewerBaseRotation;
+        private bool hasViewerRotation;
+        private float viewerYaw;
+        private bool rotateAvatarInViewer;
+        private Vector3 viewerBasePosition;
+        public bool ViewerRotatesAvatar => rotateAvatarInViewer;
 
         private void Awake()
         {
+            rotateAvatarInViewer = PlayerPrefs.GetInt("Yui.Viewer.RotateAvatar", YuiBuildProfile.Current == YuiBuildProfile.Public ? 1 : 0) == 1;
             if (targetCamera == null)
             {
                 targetCamera = Camera.main;
@@ -106,6 +113,8 @@ namespace YuiPhysicalAI.UI
 
         private void OnDestroy()
         {
+
+            RestoreAvatarRotation();
             if (hideButton != null)
             {
                 hideButton.onClick.RemoveListener(HideConsole);
@@ -116,18 +125,20 @@ namespace YuiPhysicalAI.UI
         {
             if (consoleVisible)
             {
+                UpdateAvatarRotation(Time.unscaledDeltaTime);
                 RestoreDefaultCamera();
                 return;
             }
 
             HandleHiddenInput();
+            UpdateAvatarRotation(Time.unscaledDeltaTime);
 
             if (!pointerDown && !cameraEditMode)
             {
                 UpdateIdleViewerState(returnToDefault: false);
             }
 
-            UpdateOrbitCamera();
+            UpdateOrbitCamera(Time.unscaledDeltaTime);
         }
 
         public void Configure(
@@ -143,6 +154,7 @@ namespace YuiPhysicalAI.UI
 
             consoleRoot = console;
             hideButton = button;
+            RestoreAvatarRotation();
             avatarRoot = avatar;
             targetCamera = camera;
             currentHiddenFieldOfView = hiddenFieldOfView;
@@ -161,6 +173,7 @@ namespace YuiPhysicalAI.UI
 
         public void SetAvatarRoot(Transform avatar, bool frameDefaultCamera)
         {
+            RestoreAvatarRotation();
             avatarRoot = avatar;
             InvalidatePivotCache();
             if (frameDefaultCamera)
@@ -222,6 +235,8 @@ namespace YuiPhysicalAI.UI
             targetCamera.fieldOfView = shownFieldOfView > 0f ? shownFieldOfView : 25f;
             targetCamera.transform.rotation = YuiAvatarFraming.CameraRotation;
             targetCamera.transform.position = YuiAvatarFraming.CameraPosition(face, height, targetCamera.fieldOfView);
+            var safeTop = Screen.height > 0 ? Screen.safeArea.yMax / Screen.height : 1f;
+            YuiAvatarFraming.FitVisibleHeadroom(targetCamera, avatarRoot, Mathf.Clamp(safeTop - .025f, .6f, .975f));
             CaptureCameraDefaults();
             ResetOrbitToDefault();
         }
@@ -320,6 +335,7 @@ namespace YuiPhysicalAI.UI
 
         public void BeginCameraEditMode()
         {
+            RestoreAvatarRotation();
             cameraEditMode = true;
             SetConsoleVisible(false);
         }
@@ -367,6 +383,7 @@ namespace YuiPhysicalAI.UI
 
             SetAuxiliaryUiVisible(visible);
             SetBackdropVisibleForConsole(visible);
+            InvalidatePivotCache();
 
             if (!visible)
             {
@@ -477,6 +494,8 @@ namespace YuiPhysicalAI.UI
             {
                 return;
             }
+            var pointer = Input.touchCount > 0 ? Input.GetTouch(0).position : (Vector2)Input.mousePosition;
+
 
             if (Input.mouseScrollDelta.y != 0f)
             {
@@ -713,6 +732,15 @@ namespace YuiPhysicalAI.UI
                 minOrbitDistance,
                 GetMaxOrbitDistance());
 
+            if (avatarRoot != null && targetCamera != null)
+            {
+                var safeTop = Screen.height > 0 ? Screen.safeArea.yMax / Screen.height : 1f;
+                var safeBottom = Screen.height > 0 ? Screen.safeArea.yMin / Screen.height : 0f;
+                defaultOrbitDistance = Mathf.Max(defaultOrbitDistance, YuiAvatarFraming.RequiredOrbitDistance(
+                    avatarRoot, pivot, lookRotation, hiddenFieldOfView, targetCamera.aspect,
+                    safeBottom + .025f, safeTop - .025f));
+            }
+
             currentYaw = defaultYaw;
             currentPitch = defaultPitch;
             currentOrbitDistance = defaultOrbitDistance;
@@ -740,7 +768,7 @@ namespace YuiPhysicalAI.UI
                 Time.deltaTime * 5f);
         }
 
-        private void UpdateOrbitCamera()
+        private void UpdateOrbitCamera(float deltaTime)
         {
             if (targetCamera == null)
             {
@@ -748,20 +776,61 @@ namespace YuiPhysicalAI.UI
             }
 
             var pivot = GetOrbitPivot() + currentPanOffset;
-            var orbitRotation = Quaternion.Euler(currentPitch, currentYaw, 0f);
+            // Viewer yaw rotates the model so its secondary bones can respond.
+            // Camera editing keeps the original orbit path and saved presets.
+            var orbitRotation = Quaternion.Euler(currentPitch, cameraEditMode || !rotateAvatarInViewer ? currentYaw : defaultYaw, 0f);
             var targetPosition = pivot - orbitRotation * Vector3.forward * currentOrbitDistance;
-            targetCamera.transform.position = Vector3.Lerp(
-                targetCamera.transform.position,
-                targetPosition,
-                Time.deltaTime * 16f);
-            targetCamera.transform.rotation = Quaternion.Slerp(
-                targetCamera.transform.rotation,
-                orbitRotation,
-                Time.deltaTime * 16f);
+            targetCamera.transform.position = pivot + Vector3.Slerp(
+                targetCamera.transform.position - pivot,
+                targetPosition - pivot,
+                1f - Mathf.Exp(-deltaTime * 16f));
+            // Position interpolation follows a chord, not the orbit arc. Looking
+            // at the pivot on every frame prevents sideways drift during a drag.
+            targetCamera.transform.rotation = Quaternion.LookRotation(pivot - targetCamera.transform.position, orbitRotation * Vector3.up);
             targetCamera.fieldOfView = Mathf.Lerp(
                 targetCamera.fieldOfView,
                 currentHiddenFieldOfView,
                 Time.deltaTime * 5f);
+        }
+
+        private void UpdateAvatarRotation(float deltaTime)
+        {
+            if (avatarRoot == null || cameraEditMode || !rotateAvatarInViewer) return;
+            if (!hasViewerRotation)
+            {
+                if (consoleVisible) return;
+                viewerBaseRotation = avatarRoot.rotation;
+                viewerBasePosition = avatarRoot.position;
+                viewerYaw = 0;
+                hasViewerRotation = true;
+            }
+            var targetYaw = consoleVisible ? 0 : Mathf.DeltaAngle(currentYaw, defaultYaw);
+            // Match the camera's responsiveness; secondary bones enforce their
+            // own motion bounds instead of making the user's drag wait behind a speed cap.
+            viewerYaw = Mathf.LerpAngle(viewerYaw, targetYaw, 1f - Mathf.Exp(-16f * Mathf.Max(0, deltaTime)));
+            var turn = Quaternion.AngleAxis(viewerYaw, Vector3.up);
+            var pivot = GetOrbitPivot();
+            avatarRoot.rotation = turn * viewerBaseRotation;
+            avatarRoot.position = pivot + turn * (viewerBasePosition - pivot);
+            if (consoleVisible && Mathf.Abs(Mathf.DeltaAngle(viewerYaw, 0)) < .001f)
+                RestoreAvatarRotation();
+        }
+
+        private void RestoreAvatarRotation()
+        {
+            if (hasViewerRotation && avatarRoot != null) { avatarRoot.rotation = viewerBaseRotation; avatarRoot.position = viewerBasePosition; }
+            viewerYaw = 0;
+            hasViewerRotation = false;
+        }
+
+        private void OnDisable() { RestoreAvatarRotation(); }
+
+        public void SetViewerRotatesAvatar(bool enabled)
+        {
+            RestoreAvatarRotation();
+            rotateAvatarInViewer = enabled;
+            currentYaw = defaultYaw;
+            PlayerPrefs.SetInt("Yui.Viewer.RotateAvatar", enabled ? 1 : 0); PlayerPrefs.Save();
         }
 
         private Vector3 GetOrbitPivot()
@@ -776,25 +845,22 @@ namespace YuiPhysicalAI.UI
             // the result and refresh on a short interval; orbit feels identical because
             // the avatar barely moves during viewer mode.
             var now = Time.unscaledTime;
-            if (hasCachedPivot && now < cachedPivotRefreshAt)
+            if (hasCachedPivot && (!consoleVisible || now < cachedPivotRefreshAt))
             {
                 return cachedPivot;
             }
 
-            avatarRoot.GetComponentsInChildren(true, RendererBuffer);
-            if (RendererBuffer.Count == 0)
-            {
-                cachedPivot = avatarRoot.position + Vector3.up * orbitPivotHeightOffset;
-            }
-            else
-            {
-                var bounds = RendererBuffer[0].bounds;
-                for (var i = 1; i < RendererBuffer.Count; i++)
-                {
-                    bounds.Encapsulate(RendererBuffer[i].bounds);
-                }
-                cachedPivot = bounds.center + Vector3.up * orbitPivotHeightOffset;
-            }
+            // The orbit axis belongs to the skeleton, never to loose renderer bounds.
+            // Hidden outfits and long hair may have enormous/off-centre skinning bounds.
+            var animator = avatarRoot.GetComponentInChildren<Animator>(true);
+            var hips = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.Hips) : null;
+            var head = animator != null && animator.isHuman ? animator.GetBoneTransform(HumanBodyBones.Head) : null;
+            if (hips != null) {
+                cachedPivot = hips.position;
+                if (head != null) cachedPivot.y = Mathf.Lerp(hips.position.y,head.position.y,.2f);
+            } else if (TryGetAvatarBounds(out var bounds)) {
+                cachedPivot = bounds.center;
+            } else cachedPivot = avatarRoot.position + Vector3.up * orbitPivotHeightOffset;
 
             RendererBuffer.Clear();
             hasCachedPivot = true;
@@ -866,7 +932,7 @@ namespace YuiPhysicalAI.UI
 
         private float GetMaxOrbitDistance()
         {
-            return Mathf.Max(maxOrbitDistance, 8.0f);
+            return Mathf.Max(maxOrbitDistance, defaultOrbitDistance, 8.0f);
         }
 
         private static float NormalizeAngle(float angle)

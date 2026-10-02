@@ -98,7 +98,7 @@ namespace YuiPhysicalAI.Tests.Editor
             Assert.IsTrue(YuiLocalAiModelRegistry.SupportsPlatform(
                 registry.Packs.First(pack => pack.Id == "core_text_e2b"),
                 "macos"));
-            Assert.AreEqual("vision_gemma4_e2b", registry.BestFor(YuiLocalAiCapability.Vision, "ios").Id);
+            Assert.AreEqual("vision_gemma4_e4b", registry.BestFor(YuiLocalAiCapability.Vision, "ios").Id);
             Assert.AreEqual(
                 "gemma-4-E2B-it.litertlm",
                 registry.Packs.First(pack => pack.Id == "vision_gemma4_e2b").RuntimeModelRef);
@@ -149,7 +149,7 @@ namespace YuiPhysicalAI.Tests.Editor
 
             Assert.AreEqual("core_text_e2b", googleText.Id);
             Assert.AreEqual("core_text_e2b", googleMobileText.Id);
-            Assert.AreEqual("vision_gemma4_e2b", googleVision.Id);
+            Assert.AreEqual("vision_gemma4_e4b", googleVision.Id);
         }
 
         [Test]
@@ -1382,12 +1382,11 @@ namespace YuiPhysicalAI.Tests.Editor
             var instruction = YuiLocalAiPromptBuilder.BuildCompactSystemInstruction(
                 new YuiLocalAiChatRequest { CharacterName = "Yui" });
 
-            StringAssert.Contains("通常は短く", instruction);
-            StringAssert.Contains("40〜80字", instruction);
-            StringAssert.Contains("100字前後", instruction);
-            StringAssert.Contains("回答として必要な情報", instruction);
-            StringAssert.Contains("2〜4文", instruction);
-            StringAssert.DoesNotContain("1〜2文で", instruction);
+            StringAssert.Contains("final answer concise", instruction);
+            StringAssert.Contains("Reason carefully", instruction);
+            StringAssert.Contains("necessary explanation", instruction);
+            StringAssert.Contains("Use more detail", instruction);
+            StringAssert.DoesNotContain("会話速度を優先", instruction);
         }
 
         [Test]

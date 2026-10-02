@@ -4,7 +4,10 @@
     "VRM10",
     "FastSpringBone10",
     "SpringBoneJobs",
-    "Unity.Collections"
+    "Unity.Collections",
+    "UniGLTF",
+    "UniGLTF.Utils",
+    "Unity.Mathematics"
   ],
   "autoReferenced": true
 }

@@ -1,37 +1,25 @@
-# Source snapshot: 2026-09-23
+# Current source and releases / 現在のソースと配布版
 
-This page describes the current source, not the beta.5 application binaries. The source snapshot is not an App Store release or a claim of complete device acceptance.
+Updated: 2026-10-03. This source accompanies desktop **v0.2.4-beta.1** and the iOS **0.2.4 (14)** review submission. Desktop beta.5 and dev-snapshot-20260923 remain historical releases; their binaries are not updated in place.
 
-## Implemented changes
+## What changed
 
-Conversation routing and independent AI/TTS selection; Apple Keychain; external-send consent; Japanese/English UI; character/outfit management; VRM presentation; persistent conversation history; image/file picker integration; mobile recording Cancel/Send separation; baseline-preserving blink; additional standard VOICEVOX voices.
+- Character-specific personality, common response instructions and per-model instructions are combined for normal chat. Local and Direct API chat retain the same character settings.
+- Persistent character memories, retrieval and editing/deletion; restart and AI-route switching preserve the character. Different characters do not share memories. Secret mode reads existing memories but does not save the new exchange.
+- E2B is the standard local model. E4B is an optional in-app download on macOS/iOS. Talk/Work have separate local inference settings and share model-capability routing.
+- Desktop local chat/STT run through an isolated Python worker; VOICEVOX uses the Mac native bridge or Windows worker; the HTTP Backend server is not required for that path. Desktop runtime data is downloaded separately.
+- Japanese/English UI, four illustrated tutorial pages, help replay, model help and download status, avatar loading feedback and character/outfit separation.
+- VRM import, blink/lip sync/springs, file-picker recovery, and resize/camera aspect corrections.
+- Public screenshots and beginner documentation reflect the current screens; only Unityちゃん appears in the tutorial/marketing captures.
 
-## Verification and open limits
+## Acceptance boundaries
 
-- Unity tests: 411 passed, 0 failed, 6 skipped in the latest full run.
-- Speech transcript regression: pause suffix retention, overlapping revisions, zero-duration partials, empty updates and full final replacement pass in Swift.
-- Five standard voices produced non-silent WAVs through the macOS native Core implementation, including switching back to the first voice.
-- macOS Unity build and signed iOS development build succeeded.
-- A device report confirmed Direct API voice, photo input and saved avatar/voice restoration on iPhone 16 Pro. Local speech input lost the beginning after a pause; a timestamp-based transcript fix is implemented but still needs spoken device re-verification.
-- Updated iPhone blink/voice-picker behavior, clean public install/download, lower-end device performance, Windows/Android acceptance and store submission remain incomplete.
-- Avatar pose correction is not a guarantee of natural results for every body or outfit. Gallery rotation currently moves the camera, so it does not itself stimulate hair physics.
+The pre-submission regression run passed **130 Python tests**, **485 Unity tests**, with **7 skipped**. Mac live E2B, E4B and Direct API tests covered character memory, Secret mode, restart, corrections and user/agent roles. These counts describe that run, not a fresh count for every build.
 
-No personal/test avatars or personal conversation data are included in this repository or the voice archive.
+The owner accepted the iOS candidate on iPhone 16 Pro, including model switching and a fresh install. **App Store review is pending**, not approved. Japan/free distribution is configured. Backend acceptance was explicitly deferred.
 
-## 音声データ
+The new desktop apps are published as a prerelease. macOS packaging/runtime checks are separate from the iPhone results. Windows uses the shared local inference worker with an OS-specific runtime bundle. Android has source integrations but no accepted public app. Intel Mac local inference is not covered by the Apple Silicon runtime bundle.
 
-[dev-snapshot-20260923](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/dev-snapshot-20260923) provides `Yui_StandardVoices_20260923.zip` and its SHA-256 checksum for current source builds. Verify the checksum, then extract at the repository root. It places files under `unity/Assets/StreamingAssets/YuiLocalAI/Voicevox/`.
+Local-model factual, arithmetic and subject-attribution mistakes remain. Memory retrieval is bounded and may miss relevant information; it is not perfect recall or cross-device sync. English UI does not mean an English TTS model is included. Third-party avatar shader/menu/physics compatibility is not universal.
 
-| Voice / standard style | ID | Model |
-| --- | --- | --- |
-| 冥鳴ひまり / Meimei Himari | 14 | meimei_himari_1.vvm |
-| 四国めたん / Shikoku Metan | 2 | metan_zundamon_0.vvm |
-| ずんだもん / Zundamon | 3 | metan_zundamon_0.vvm |
-| 九州そら / Kyushu Sora | 16 | kyushu_sora_2.vvm |
-| 小夜/SAYO | 46 | sayo_15.vvm |
-
-The app exposes standard styles only. VVM files share data across styles; this archive does not claim to contain only standard-style weights. Terms are included in `Voicevox/Licenses`; credit output voices as required by the individual voice terms. The archive has no character artwork, AI model, dictionary or native runtime. Obtain the other required assets using [LOCAL_AI_ASSETS.md](LOCAL_AI_ASSETS.md) and the OS build tooling. Beta.5's downloader does not automatically install this archive.
-
-## Distribution boundary
-
-The beta.5 apps and download manifest remain unchanged. The new snapshot publishes source and voice data only. Do not replace beta.5's manifest with untested generated output. App binaries, Backend bundles and model data must be verified as a matching set before a new application release.
+See [runtime support](RUNTIME_SUPPORT.md), [quality checks](QUALITY_AND_VALIDATION.md), [help](HELP.md) and [data distribution](DISTRIBUTION.md).

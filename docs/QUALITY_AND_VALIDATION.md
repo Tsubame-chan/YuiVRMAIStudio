@@ -1,18 +1,18 @@
 # 品質と検証方針
 
-2026-09-22: 公開版はbeta.5のままです。現在の改修版はMac検証とiOS候補の検証段階で、App Store公開の合格判定は出していません。[ストア公開の受入基準](STORE_RELEASE_GATE.md)を満たしてから配布します。
-
-Yui VRM AI StudioはDesktop Public Betaです。まず「Release ZIPを落とした人が、余計な準備なしで起動して試せること」を最優先にしています。その上で、バックエンド、OpenAI API、追加TTS runtimeを入れるほど機能が増える設計です。
+2026-10-03。desktop v0.2.4-beta.1は検証用prerelease、iOS 0.2.4 (14)は本人の最終実機確認後にApp Store審査へ提出済みです。審査承認・公開とは区別します。Backendの全機能受入は未完了です。[現在地](SOURCE_STATUS.md) / [OS別対応](RUNTIME_SUPPORT.md)。
 
 ## Betaで重視していること
 
-- ReleaseアプリZIPを起動すると、初回ダウンローダーが最小構成のLocal Gemma SLM、Local VOICEVOX、OS別Backend bundleを取得・検証・展開できること。
+- ReleaseアプリZIPを起動すると、初回ダウンローダーが標準E2B、5声のLocal VOICEVOX、OS別worker/Backend runtimeを取得・検証・展開できること。
 - GitHubの `Code > Download ZIP` が完成アプリではなくソースコードだと明確に案内すること。
 - SettingsとHelpの接続状態を同じCapability判定で表示すること。
 - `.env`、会話DB、音声キャッシュ、ローカルアセット、巨大モデルをGit履歴へ混ぜないこと。
 - Windows/macOSで同じAI/TTS選択思想を保つこと。
 
 ## Release時点で確認する項目
+
+公開PlayerはYuiPublicBuildPrivacyGuardのpacked-asset証跡に加えてserialized assetsも独立検査します。私用アバター、キー、テスト会話を含めません。初回取得はアプリと同じ版のmanifestを参照し、データ・runtimeのSHA-256と必須ファイルを検査します。
 
 - Publication Guard: 公開してはいけないローカル情報や秘密情報が混ざっていないこと。
 - Distribution Audit: 公開コピーに必要なREADME、セットアップガイド、backend source、Unity baseline assetsが揃っていること。

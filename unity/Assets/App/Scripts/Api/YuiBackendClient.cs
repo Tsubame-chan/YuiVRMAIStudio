@@ -180,7 +180,8 @@ namespace YuiPhysicalAI.Api
             string mode = "voice",
             string instructions = "",
             string filename = "realtime_recording.wav",
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            string userId = "", string characterId = "", bool secret = false)
         {
             if (wavBytes == null || wavBytes.Length == 0)
             {
@@ -191,6 +192,7 @@ namespace YuiPhysicalAI.Api
             form.AddBinaryData("audio", wavBytes, filename, "audio/wav");
             form.AddField("mode", mode ?? "voice");
             form.AddField("instructions", instructions ?? string.Empty);
+            form.AddField("user_id", userId ?? ""); form.AddField("character_id", characterId ?? ""); form.AddField("secret", secret ? "true" : "false");
 
             using var request = UnityWebRequest.Post(ToAbsoluteUrl("/realtime/audio"), form);
             request.timeout = 90;
@@ -209,6 +211,7 @@ namespace YuiPhysicalAI.Api
                 content.Add(audioContent, "audio", filename);
                 content.Add(new StringContent(mode ?? "voice"), "mode");
                 content.Add(new StringContent(instructions ?? string.Empty), "instructions");
+                content.Add(new StringContent(userId ?? ""), "user_id"); content.Add(new StringContent(characterId ?? ""), "character_id"); content.Add(new StringContent(secret ? "true" : "false"), "secret");
 
                 var json = await SendHttpClientAsync(
                     HttpMethod.Post,

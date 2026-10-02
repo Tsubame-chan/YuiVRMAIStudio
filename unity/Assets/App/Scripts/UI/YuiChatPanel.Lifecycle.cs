@@ -161,8 +161,10 @@ namespace YuiPhysicalAI.UI
         {
             FocusDesktopComposer();
             MigrateRecentDialogue();
+            YuiPhysicalAI.LocalAI.YuiLocalModelSelection.MigrateInstalledChoice();
             await RestoreConversationViewAsync();
-            _ = CheckLocalAiAssetsOnFirstLaunchAsync();
+            YuiTutorial.ShowIfNeeded();
+            YuiLocalModelMenu.ResumeConsentedDownload(this);
             if (ShouldMonitorBackend())
             {
                 EnsureBackendMonitorIfNeeded();
@@ -182,6 +184,12 @@ namespace YuiPhysicalAI.UI
         {
             try
             {
+                if (YuiPhysicalAI.LocalAI.YuiAppleHostedAssets.Enabled)
+                {
+                    EnsureLocalAiDownloadOverlay();
+                    await localAiDownloadOverlay.CheckAndPromptIfNeededAsync(cancellationTokenSource.Token);
+                    return;
+                }
                 // Startup is an onboarding check, not a forced update. An installed
                 // runtime or app-only API setup must remain usable offline.
                 var mode = YuiPhysicalAI.Core.YuiConversationModes.Normalize(conversationMode);

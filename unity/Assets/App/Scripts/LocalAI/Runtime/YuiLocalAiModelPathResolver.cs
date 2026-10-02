@@ -34,12 +34,18 @@ namespace YuiPhysicalAI.LocalAI
 
         public static string StreamingAssetsModelPath(YuiLocalAiModelPack pack)
         {
+            var hosted = YuiAppleHostedAssets.ResolvePath(ModelDirectoryName + "/" + ModelFileName(pack));
+            if (!string.IsNullOrEmpty(hosted)) return hosted;
             return Path.Combine(Application.streamingAssetsPath, ModelDirectoryName, ModelFileName(pack));
         }
 
         public static string RuntimeCacheDirectory(YuiLocalAiModelPack pack)
         {
-            var packId = string.IsNullOrWhiteSpace(pack?.Id) ? "default" : SanitizePathPart(pack.Id);
+            // Chat and image understanding can share one model. Keying by their
+            // capability IDs caused mobile pruning to delete the other's caches.
+            var model = ModelFileName(pack);
+            var key = string.IsNullOrWhiteSpace(model) ? pack?.Id : model;
+            var packId = string.IsNullOrWhiteSpace(key) ? "default" : SanitizePathPart(key);
             return Path.Combine(Application.persistentDataPath, RuntimeCacheDirectoryName, packId);
         }
 

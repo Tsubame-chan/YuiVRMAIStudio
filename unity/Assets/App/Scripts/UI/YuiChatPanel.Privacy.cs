@@ -29,8 +29,8 @@ namespace YuiPhysicalAI.UI
             var root = CreateSavedDataPanel("Allow data sharing?");
             root.gameObject.AddComponent<YuiConsentDialogLifetime>().Completion = completion;
             var body = directOpenAi
-                ? "Messages and recent conversation context, character instructions, recorded audio, and images you choose are sent to OpenAI to generate replies, transcribe speech, and analyze images. Web search may send a search query to search providers. Your API key is sent only to OpenAI."
-                : "Messages and recent conversation context, character instructions, recorded audio, selected images, and text to read aloud are sent to this Backend. Its administrator chooses AI and voice providers, which may include OpenAI or other external services. Use a Backend you trust.";
+                ? "Messages, recent conversation context and relevant saved character memories, character instructions, recorded audio, and images you choose are sent to OpenAI to generate replies, transcribe speech, and analyze images. Web search may send a search query to search providers. Your API key is sent only to OpenAI."
+                : "Messages, recent conversation context and relevant saved character memories, character instructions, recorded audio, selected images, and text to read aloud are sent to this Backend. Its administrator chooses AI and voice providers, which may include OpenAI or other external services. Use a Backend you trust.";
             SavedDataText(root, destination + "\n\n" + YuiUiLocalization.Text(body) + "\n\n" +
                 YuiUiLocalization.Text("Secret mode does not prevent this transfer or control the provider's retention. You can withdraw permission in Help → Quick guide → Privacy."));
             ComposerButton(root, "Deny", "Not now", () => completion.TrySetCanceled(), .03f, .04f, .34f, .16f);
@@ -52,12 +52,14 @@ namespace YuiPhysicalAI.UI
         public void ShowPrivacyInformation()
         {
             var root = CreateSavedDataPanel("Privacy");
-            SavedDataText(root, YuiUiLocalization.Text("Conversation text, saved answers, and imported avatars are stored on this device until you delete them. Secret mode skips conversation history, but still sends requests through your selected AI and voice connections. OpenAI mode sends data directly to OpenAI; Backend mode uses the server and providers configured by its administrator. On-device AI does not send your messages to an AI server. Model downloads contact the hosting service. The iOS/macOS app stores your API key in Keychain. Windows/Android currently use app settings. Removing an API key in Settings deletes the saved key.") + "\n\n" +
+            SavedDataText(root, YuiUiLocalization.Text("Conversation text, character memories, saved answers, and imported avatars are stored on this device until you delete them. Secret mode reads existing character memories without saving new conversations or memories, but still sends requests through your selected AI and voice connections. OpenAI mode sends data directly to OpenAI; Backend mode uses the server and providers configured by its administrator. On-device AI does not send your messages to an AI server. Model downloads contact the hosting service. The iOS/macOS app stores your API key in Keychain. Windows/Android currently use app settings. Removing an API key in Settings deletes the saved key.") + "\n\n" +
                 YuiUiLocalization.Text("Withdrawing permission affects future requests; it does not delete data already received by a server. For server retention or deletion, contact its administrator or provider."));
             ComposerButton(root, "Withdraw", "Withdraw sharing permission", () => {
                 YuiExternalDataConsent.RevokeAll();
                 Destroy(root.gameObject); RefreshCharacterSettings();
-            }, .03f, .05f, .97f, .17f);
+            }, .03f, .05f, .59f, .17f);
+            ComposerButton(root, "Policy", YuiSimpleDialog.L("プライバシーポリシー", "Privacy policy"), () =>
+                Application.OpenURL("https://github.com/Tsubame-chan/YuiVRMAIStudio/blob/main/docs/PRIVACY.md"), .61f, .05f, .97f, .17f);
         }
 
         private void ShowKeyStorageError()

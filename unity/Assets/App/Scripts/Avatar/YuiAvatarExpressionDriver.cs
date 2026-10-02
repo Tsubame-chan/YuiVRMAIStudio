@@ -9,6 +9,15 @@ namespace YuiPhysicalAI.Avatar
     // by UniVRM and can interfere with authored expression bindings.
     public sealed class YuiAvatarExpressionDriver : MonoBehaviour
     {
+        public static void BindTo(GameObject root)
+        {
+            if(root.GetComponent<YuiAvatarExpressionDriver>()!=null)return;
+            foreach(var blink in root.GetComponentsInChildren<UnityChan.AutoBlink>(true))if(blink.enabled && blink.isActive)return;
+            foreach(var blink in root.GetComponentsInChildren<ChatdollKit.Model.Blink>(true))if(blink.enabled)return;
+            root.AddComponent<YuiAvatarExpressionDriver>();
+        }
+        public static bool HasBindings(VRM10Expression expression) => expression!=null &&
+            ((expression.MorphTargetBindings?.Length??0)>0 || (expression.MaterialColorBindings?.Length??0)>0 || (expression.MaterialUVBindings?.Length??0)>0);
         private Vrm10Instance vrm;
         private readonly List<(SkinnedMeshRenderer Renderer, int Index, float Baseline)> blinkShapes = new List<(SkinnedMeshRenderer, int, float)>();
         private float nextBlink, blinkStarted = -1;
@@ -59,7 +68,7 @@ namespace YuiPhysicalAI.Avatar
             EnsureInitialized();
             if (vrm != null && vrm.Runtime != null)
             {
-                var combined = vrm.Vrm != null && vrm.Vrm.Expression.Blink != null;
+                var combined = vrm.Vrm != null && HasBindings(vrm.Vrm.Expression.Blink);
                 vrm.Runtime.Expression.SetWeight(new ExpressionKey(ExpressionPreset.blink), combined ? Mathf.Clamp01(weight) : 0);
                 vrm.Runtime.Expression.SetWeight(new ExpressionKey(ExpressionPreset.blinkLeft), combined ? 0 : Mathf.Clamp01(weight));
                 vrm.Runtime.Expression.SetWeight(new ExpressionKey(ExpressionPreset.blinkRight), combined ? 0 : Mathf.Clamp01(weight));

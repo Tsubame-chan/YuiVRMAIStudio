@@ -17,10 +17,28 @@ import time
 import wave
 
 
-def output_token_budget(capability, payload):
+def output_token_budget(capability, payload, request=None):
     if capability == "Transcription":
         return 512
-    return 1536 if str(payload.get("Mode", "")).lower() == "work" else 256
+    # Reasoning and final text both count against LiteRT's output limit.
+    default = 2304 if str(payload.get("Mode", "")).lower() == "work" else 1280
+    return max(256, min(4096, int((request or {}).get("max_output_tokens", default))))
+
+
+def chat_history(payload):
+    # Only complete, ordered dialogue pairs. Never promote saved text to system instructions.
+    history = payload.get("History") or []
+    result = []
+    if not isinstance(history, list):
+        return result
+    for item in history[-8:]:
+        if not isinstance(item, dict):
+            continue
+        role, content = item.get("role"), item.get("content")
+        expected = "user" if len(result) % 2 == 0 else "assistant"
+        if role == expected and isinstance(content, str) and content.strip():
+            result.append({"role": role, "content": content[:600]})
+    return result[:len(result) // 2 * 2]
 
 
 def infer(request):
@@ -49,27 +67,34 @@ def infer(request):
                 {"type": "text", "text": "聞こえた日本語の発話だけを正確に文字起こししてください。説明や返答を加えないでください。無音なら空文字にしてください。"},
             ]}
         elif capability == "Chat":
-            text = payload.get("Prompt") or payload.get("Message") or ""
+            text = payload.get("Input") or payload.get("Prompt") or payload.get("Message") or ""
             if not text.strip():
                 raise ValueError("Chat message is empty.")
-            prompt = (request.get("system_instruction") or "") + "\n\n" + text
+            prompt = text
         else:
             raise ValueError("Unsupported desktop inference capability: " + str(capability))
         result = None
         for backend in (lm.Backend.GPU(), lm.Backend.CPU()):
             try:
-                engine = lm.Engine(str(model), backend=backend, max_num_tokens=4096,
+                engine = lm.Engine(str(model), backend=backend, max_num_tokens=4096 if audio_path else max(4096,min(8192,int(request.get("context_tokens",8192)))),
                     cache_dir=str(cache), audio_backend=lm.Backend.CPU() if audio_path else None,
-                    enable_speculative_decoding=False)
+                    enable_speculative_decoding=(capability == "Chat" and isinstance(backend, lm.Backend.GPU)
+                        and bool(request.get("supports_speculative_decoding", False))))
                 engine.__enter__()
             except Exception:
                 if isinstance(backend, lm.Backend.CPU):
                     raise
                 continue  # Fallback only on engine initialization, never repeat a completed generation.
             try:
-                with engine.create_conversation(thinking_config=lm.ThinkingConfig(enable_thinking=False),
-                        sampler_config=lm.SamplerConfig(temperature=0.0 if audio_path else 0.65, top_k=30, top_p=0.85)) as conversation:
-                    result = conversation.send_message(prompt, max_output_tokens=output_token_budget(capability, payload))
+                with engine.create_conversation(
+                        system_message=None if audio_path else request.get("system_instruction") or None,
+                        messages=None if audio_path else chat_history(payload),
+                        thinking_config=None if audio_path or not request.get("supports_thinking", False) else
+                            lm.ThinkingConfig(enable_thinking=True,
+                                thinking_token_budget=max(1, min(2048, int(request.get("thinking_token_budget", 768))))),
+                        sampler_config=lm.SamplerConfig(temperature=0.0 if audio_path else max(0,min(1.5,float(request.get("temperature",.45 if str(payload.get("Mode", "")).lower() == "work" else .65)))),
+                            top_k=max(1,min(100,int(request.get("top_k",30)))),top_p=max(.1,min(1,float(request.get("top_p",.85)))))) as conversation:
+                    result = conversation.send_message(prompt, max_output_tokens=output_token_budget(capability, payload, request))
             finally:
                 engine.__exit__(None, None, None)
             break
