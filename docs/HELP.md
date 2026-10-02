@@ -44,6 +44,10 @@ iOS 26以降。日本向け無料版を審査へ提出しました。[App Store�
 
 アプリのヘルプから「チュートリアルをもう一度見る」を開けます。高度なモデル設定はヘルプから確認できます。
 
+**VPNにつながっているのにBackendが未接続。**
+
+アプリにはPCのVPNアドレスとBackendのポートを指定します。PCで開く `127.0.0.1` は他端末から使えません。BackendがVPN側のアドレスで待ち受けていること、VPNの通信ルールとPCのファイアウォールも確認してください。管理画面の提供元が「接続済み」でも、iPhoneからPCへ到達できることを示すわけではありません。[Backend案内](BACKEND_CONSOLE.md)。
+
 ## English
 
 - Download the **MacOSPublicBeta** or **WindowsPublicBeta** app ZIP from [Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.2). The Code ZIP is source only. See the [Mac guide](MAC_PUBLIC_BETA.en.md).

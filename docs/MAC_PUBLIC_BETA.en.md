@@ -19,7 +19,7 @@ Normally you only need the app ZIP; its installer handles the split data and run
 - OpenAI API: enter an API key in Settings. Recommended for higher-quality chat; connectivity and API charges apply separately from a ChatGPT subscription.
 - Backend: optional extension route. Configure its own `.env`; the app's Direct API key is not forwarded to it.
 
-AI and speech engines are independent. Standard speech uses five Japanese VOICEVOX voices. Local chat/STT inference uses the downloaded `YuiBackend` runtime worker without requiring its HTTP server. Experimental voice adapters do not mean their data packs are included in this release.
+AI and speech engines are independent. Standard speech uses five Japanese VOICEVOX voices. Local chat/STT inference uses the downloaded `YuiBackend` runtime worker without requiring its HTTP server. Optional speech engines require separate installation.
 
 ## Import your avatar
 
@@ -41,8 +41,4 @@ open -e .env
 
 Follow the scripts' prerequisites for Python and other dependencies. Backend `.env` credentials do not configure the app's Direct API key. Backend VOICEVOX or other speech engines also need their runtime.
 
-## Build from source
-
-Use Unity **2022.3.62f3** and UniVRM **0.131.2**, restore [model/voice data](LOCAL_AI_ASSETS.md) and install the appropriate SDK/runtime. Public builds require [asset validation](PUBLIC_PLAYER_ASSET_VALIDATION.md).
-
-[Runtime support](RUNTIME_SUPPORT.md) · [Source status](SOURCE_STATUS.md) · [API](api.md)
+[端末ごとの対応 / Compatibility](RUNTIME_SUPPORT.md)

@@ -53,17 +53,9 @@ AIは、**オフラインで使える端末内AI** と **OpenAI API** を選べ�
 
 ## 記憶とプライバシー
 
-記憶はキャラクターごとに分かれ、端末間では同期しません。シークレットモードでは既存の記憶を参照し、新しい会話は保存しません。外部APIを選ぶと、会話や関連する性格設定・記憶をそのサービスへ送信します。
+記憶はキャラクターごとに分かれます。対応するデスクトップ版では、端末をBackendへ登録し、変更を確認してから人格・記憶・履歴を共有できます。iOS 0.2.4 (14)は同期に対応していません。シークレットモードでは既存の記憶を参照し、新しい会話は保存しません。外部APIを選ぶと、会話や関連する性格設定・記憶をそのサービスへ送信します。
 
 AIの回答や記憶の参照には誤りがあります。重要な内容は確認してください。[記憶の仕組み](docs/CONVERSATION_IDENTITY.md) · [プライバシー](docs/PRIVACY.md)
 
-<details>
-<summary>開発者向けの資料</summary>
 
-Unity **2022.3.62f3** / UniVRM **0.131.2**。モデル・音声データ、OS別SDK/runtimeはソースとは別に用意します。Androidの公開アプリはありません。
-
-- [ソースの現在地](docs/SOURCE_STATUS.md) / [OS別の対応](docs/RUNTIME_SUPPORT.md)
-- [モデル・音声データ](docs/LOCAL_AI_ASSETS.md) / [配信方針](docs/DISTRIBUTION.md)
-- [品質とアセット監査](docs/QUALITY_AND_VALIDATION.md) / [API仕様](docs/api.md)
-
-</details>
+[端末ごとの対応](docs/RUNTIME_SUPPORT.md) · [AI・音声データの取得](docs/LOCAL_AI_ASSETS.md)

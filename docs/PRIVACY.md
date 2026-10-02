@@ -28,6 +28,10 @@ Secret Mode does **not** disable network requests or override the receiving prov
 
 Microphone and camera access are used when you request voice input or camera input. Selected images and avatar documents are accessed through the platform picker; importing an avatar copies it into app-owned storage. Removing that imported copy does not remove the original file. Local history and saved answers can be deleted from History. Character and appearance data can be managed from Settings → Character.
 
-For a public App Store listing, the distributor must supply a working support/contact address, this policy's hosted URL and accurate App Privacy answers for the actual release. The source document alone does not establish store acceptance or replace the individual providers' policies.
-
 On macOS, a locked Keychain or a changed development signature can prevent automatic key access. The app remains usable; Settings offers an explicit unlock action. An unread key is not erased by saving an empty field. OS authentication must be completed by the device owner.
+
+## Optional character sync
+
+Supported desktop apps can send personality, character memories and conversation history to your paired Backend after you review the changes. Sync does not send API keys, avatars or voice settings. Other registered devices sharing that character can receive these records. iOS 0.2.4 (14) does not support sync. Secret Mode disables sync.
+
+Revoking a device prevents future access; it does not erase copies already saved on that device. Sync backup copies in the app's `DeviceSync/Backups` folder are not automatically erased when individual histories or memories are deleted. Review Backend records, other devices and backups separately when removing sensitive information.

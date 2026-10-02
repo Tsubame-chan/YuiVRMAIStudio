@@ -2,7 +2,7 @@
 
 [FAQ](HELP.md) · [macOS](MAC_PUBLIC_BETA.md)
 
-現在のWindows配布版は **v0.2.4-beta.2**（検証用prerelease）です。AI起動・髪の揺れ・端末同期の修正を含みます。新しい版の実機確認は進行中です。
+現在のWindows配布版は **v0.2.4-beta.2**（ベータ版）です。
 
 ## アプリを使う
 
@@ -13,7 +13,7 @@
 
 SmartScreenが出る場合は配布元を確認し、OSの案内で許可します。`.sha256` はZIPの破損確認用。Code ZIPはソースで実行アプリではありません。
 
-現在のソースにはE2BのLiteRT-LM workerとローカルVOICEVOX workerがあります。古いbeta.5の「WindowsローカルGemma未対応」とは異なりますが、今回のruntimeがすべてのWindows GPU/CPUで動作するという保証ではありません。標準音声は日本語5声です。
+標準の端末内AIはE2B、標準音声は日本語5声です。機種やGPU、空きメモリによって動作は変わります。
 
 ## アバター・設定
 

@@ -53,17 +53,9 @@ Standard speech uses five Japanese VOICEVOX voices. Menus support Japanese and E
 
 ## Memory and privacy
 
-Memories are separate for each character and are not synchronized between devices. Secret mode reads existing memories without saving the new conversation. When you choose an external API, conversation and relevant personality settings/memories are sent to that service.
+Memories are separate for each character. Supported desktop apps can share personality, memories and history through a Backend after pairing and confirming the changes. iOS 0.2.4 (14) does not support sync. Secret mode reads existing memories without saving the new conversation. When you choose an external API, conversation and relevant personality settings/memories are sent to that service.
 
 AI replies and memory retrieval can be wrong. Check important information. [How memory works](docs/CONVERSATION_IDENTITY.md) · [Privacy](docs/PRIVACY.md)
 
-<details>
-<summary>Developer documentation</summary>
 
-Unity **2022.3.62f3** / UniVRM **0.131.2**. Model/voice data and platform SDKs/runtimes are separate from source. No public Android app is provided.
-
-- [Source status](docs/SOURCE_STATUS.md) / [Runtime support](docs/RUNTIME_SUPPORT.md)
-- [Model and voice data](docs/LOCAL_AI_ASSETS.md) / [Distribution](docs/DISTRIBUTION.md)
-- [Quality and asset checks](docs/QUALITY_AND_VALIDATION.md) / [API](docs/api.md)
-
-</details>
+[Device compatibility](docs/RUNTIME_SUPPORT.md) · [AI and voice downloads](docs/LOCAL_AI_ASSETS.md)
