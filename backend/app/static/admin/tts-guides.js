@@ -6,7 +6,7 @@ const guides={
  aivis:entry('AivisSpeech Engine','AivisSpeechを導入して起動し、使いたい音声モデルをAivis側で追加します。この画面でAivisを選び、話者を選んで試聴・保存します。通常は http://127.0.0.1:10101 です。','aivis'),
  'irodori-mlx':entry('Irodori / Apple Silicon Mac','mlx-audioとIrodoriモデルを導入し、HTTPサーバーを起動します。「提供元と接続」でIrodori / Mac MLXを追加し、モデル・声の説明を選んで試聴します。','irodori-mac'),
  'irodori-server':entry('Irodori / Windows・CUDA等','Irodori-TTS-Serverと対応モデルを導入して起動します。「提供元と接続」でIrodori-TTS-Serverを追加し、声の説明または登録済みの声を選んで試聴します。','irodori-windows'),
- http:entry('その他のHTTP TTS','対応するAPI形式で接続先を追加します。一覧が取れないAPIは、提供元のモデル名・voice名を入力して試聴してください。独自形式にはadapterの追加が必要です。','other-tts'),
+ http:entry('その他のHTTP TTS','対応するAPI形式で接続先を追加します。一覧が取れないAPIは、提供元のモデル名・voice名を入力して試聴してください。提供元のAPIが選んだ接続形式に対応しているか確認してください。','other-tts'),
 };
 export function engineGuide(endpoint){const s=endpoint.settings||{},dialect=endpoint.capabilities?.dialect||(s.http_tts_payload_format==='irodori_openai_speech'?'irodori-server':/irodori/i.test((s.http_tts_provider_id||'')+' '+(s.http_tts_model||''))?'irodori-mlx':'');return guides[dialect]||guides[endpoint.provider_type]||guides.http;}
 export const endpointTemplates={

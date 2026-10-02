@@ -7,7 +7,7 @@ const btn=(a,l,cls='quiet')=>`<button type="button" class="${cls}" data-voice-ac
 export function createVoiceEditor(api,notice,settingsFields,confirmAction) {
  let library,mode='profiles',profile,endpoint,dirty=false,root,voices=[],url,operation=0,original,search='',type='http',previewText='こんにちは。音声の設定を確認します。';
  const discovery=new Map(),loading=new Set();
- const help=e=>{const g=engineGuide(e);return `<details class="voice-help"><summary>導入方法・対応範囲</summary><p>GitHubのBackendソースには、音声エンジンと追加モデルを同梱していません。</p><h3>${esc(g.title)}</h3><p>${esc(g.steps)}</p>${g.links.map(([l,u])=>`<a href="${u}" target="_blank" rel="noopener">${esc(l)}</a>`).join(' · ')}<p>声モデルの利用条件は、導入したモデルごとに確認してください。</p></details>`;};
+ const help=e=>{const g=engineGuide(e);return `<details class="voice-help"><summary>導入方法・対応範囲</summary><p>音声エンジンと必要なモデルを導入し、起動してから接続してください。</p><h3>${esc(g.title)}</h3><p>${esc(g.steps)}</p>${g.links.map(([l,u])=>`<a href="${u}" target="_blank" rel="noopener">${esc(l)}</a>`).join(' · ')}<p>声モデルの利用条件は、導入したモデルごとに確認してください。</p></details>`;};
  const endpointFor=id=>library.endpoints.find(e=>e.id===id);
  const profileDefaults=e=>({id:crypto.randomUUID(),name:'新しい声',endpoint_id:e.id,parameters:e.capabilities.voices==='speakers'?{speaker_id:e.provider_type==='aivis'?1431611904:14}:{},voice:'',model:'',fallback_profile_id:null});
  function sync(){if(!root?.isConnected)return;const form=root.querySelector('#voice-editor-form');if(!form)return;const f=new FormData(form);
