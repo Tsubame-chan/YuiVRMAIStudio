@@ -7,6 +7,26 @@ namespace YuiPhysicalAI.Tests.Editor
 {
     public sealed class YuiDirectOpenAiClientTests
     {
+        [Test]
+        public void ParseChatResponse_IgnoresReasoningAndJoinsAnswerParts()
+        {
+            var raw = JObject.Parse(@"{'output':[
+                {'type':'reasoning','content':[{'type':'reasoning_text','text':'Internal reasoning'}]},
+                {'type':'tool_call','content':[{'type':'output_text','text':'Tool data'}]},
+                {'type':'message','content':[
+                    {'type':'reasoning_text','text':'Not an answer'},
+                    {'type':'output_text','text':'{""text"":""こんにちは'},
+                    {'type':'output_text','text':'。""}'}]}]}");
+            Assert.AreEqual("こんにちは。", YuiDirectOpenAiClient.ParseChatResponse(raw.ToString()).Text);
+        }
+
+        [Test]
+        public void ExtractOutputText_DoesNotReturnReasoningOnlyResponse()
+        {
+            var raw = JObject.Parse(@"{'output':[{'type':'reasoning','content':[{'type':'reasoning_text','text':'Internal reasoning'}]}]}");
+            Assert.AreEqual(string.Empty, YuiDirectOpenAiClient.ExtractOutputText(raw));
+        }
+
         [TestCase("talk")]
         [TestCase("work")]
         public void ApiKeepsCharacterAndResponseInstructionsWithoutChangingSampling(string mode)

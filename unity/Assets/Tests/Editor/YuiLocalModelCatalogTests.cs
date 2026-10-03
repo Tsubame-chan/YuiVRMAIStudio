@@ -15,6 +15,38 @@ namespace YuiPhysicalAI.Tests.Editor
             TalkOutputTokenBudget=384,WorkOutputTokenBudget=1792
         };
         [Test]
+        public void PartialOrDamagedSettingsUseTheSelectedModelsModeDefaults()
+        {
+            var pack=Future();pack.Id="settings-test-"+System.Guid.NewGuid().ToString("N");
+            var key="yui.local-model.options."+pack.Id+".work";
+            try {
+                UnityEngine.PlayerPrefs.SetString(key,"{\"TopK\":12}");
+                var restored=YuiLocalModelOptions.Load(pack,true);
+                Assert.AreEqual(1792,restored.OutputTokens);
+                Assert.AreEqual(640,restored.ThinkingTokens);
+                Assert.AreEqual(.45f,restored.Temperature);
+                Assert.AreEqual(12,restored.TopK);
+                UnityEngine.PlayerPrefs.SetString(key,"{\"OutputTokens\":256,\"TopK\":\"broken\"}");
+                Assert.AreEqual(1792,YuiLocalModelOptions.Load(pack,true).OutputTokens);
+            } finally { YuiLocalModelOptions.Reset(pack,true); }
+        }
+
+        [Test]
+        public void ResetRestoresAllParametersAndPromptForOnlyTheChosenModelAndMode()
+        {
+            var pack=Future();pack.Id="reset-test-"+System.Guid.NewGuid().ToString("N");
+            try {
+                var talk=YuiLocalModelOptions.Defaults(pack,false);talk.OutputTokens=1024;talk.CustomPrompt="custom talk";talk.Save(pack,false);
+                var work=YuiLocalModelOptions.Defaults(pack,true);work.CustomPrompt="custom work";work.Save(pack,true);
+                YuiLocalModelOptions.Reset(pack,false);
+                var restored=YuiLocalModelOptions.Load(pack,false);
+                Assert.AreEqual(384,restored.OutputTokens);
+                Assert.AreEqual(96,restored.ThinkingTokens);
+                Assert.IsEmpty(restored.CustomPrompt);
+                Assert.AreEqual("custom work",YuiLocalModelOptions.Load(pack,true).CustomPrompt);
+            } finally { YuiLocalModelOptions.Reset(pack,false);YuiLocalModelOptions.Reset(pack,true); }
+        }
+        [Test]
         public void RegistrationRejectsTraversalCollisionAndMissingChecksum()
         {
             var pack=Future();

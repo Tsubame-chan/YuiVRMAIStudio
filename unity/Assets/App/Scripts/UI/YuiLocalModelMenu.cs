@@ -50,6 +50,10 @@ namespace YuiPhysicalAI.UI
             dialog=YuiSimpleDialog.Create(YuiLocalModelSelection.Name(pack)+L(" · 詳細設定"," · Advanced"),
                 L("トークとワークで別々に保存します。値を増やすと応答時間やメモリ使用量が増えます。温度が低いほど安定、高いほど表現が多様になります。設定だけで正確さは保証されません。\n\nここでの追加指示は、このモデルとモードに適用します。性格・口調はキャラクター設定、共通の回答方針はAI設定で編集できます。", "Saved separately for Talk and Work. Larger limits increase latency and memory use. Lower temperature is more consistent; higher values vary expression. Settings do not guarantee accuracy.\n\nInstructions here apply to this model and mode. Edit personality in Character settings and shared response style in AI settings."));
             dialog.AddButton(work?"Work · "+L("Talkに切り替え", "Switch to Talk"):"Talk · "+L("Workに切り替え", "Switch to Work"),()=>ShowAdvanced(panel,!work));
+            dialog.AddButton(work?L("Workの設定を初期値に戻す","Reset Work settings"):L("Talkの設定を初期値に戻す","Reset Talk settings"),()=>{
+                YuiLocalModelOptions.Reset(pack,work);ShowAdvanced(panel,work);
+                dialog.Body.text=L("このモデルの"+(work?"Work":"Talk")+"設定を初期値に戻しました。次の会話から適用します。\n\n", "Restored this model's "+(work?"Work":"Talk")+" defaults. Applies to the next request.\n\n")+dialog.Body.text;
+            });
             dialog.AddSetting(L("コンテキスト上限","Context limit"),options.ContextTokens,4096,8192,512,v=>options.ContextTokens=(int)v);
             dialog.AddSetting(L("生成上限（推論＋回答）","Output limit (thinking + reply)"),options.OutputTokens,256,4096,128,v=>options.OutputTokens=(int)v);
             if(pack.SupportsThinking)dialog.AddSetting(L("推論上限","Thinking limit"),options.ThinkingTokens,1,2048,64,v=>options.ThinkingTokens=(int)v);
@@ -59,7 +63,6 @@ namespace YuiPhysicalAI.UI
             dialog.AddSetting(L("待ち時間上限（秒）","Timeout (seconds)"),options.TimeoutSeconds,30,600,30,v=>options.TimeoutSeconds=(int)v);
             dialog.AddInput(L("LLMへの追加指示（口調・人格とは別）","LLM instructions (separate from personality)"),options.CustomPrompt,v=>options.CustomPrompt=v);
             dialog.AddButton(L("保存","Save"),()=>{options.Save(pack,work);ShowAdvanced(panel,work);dialog.Body.text=L("保存しました。メモリと回答用の余地を確保するため、生成上限はコンテキストの半分まで、推論上限は生成上限より小さく調整します。次の会話から適用します。", "Saved. Output is limited to half the context, and thinking leaves room for a final reply. Applies to your next request.");});
-            dialog.AddButton(L("このモードを既定値に戻す","Reset this mode"),()=>{YuiLocalModelOptions.Reset(pack,work);ShowAdvanced(panel,work);});
             dialog.AddButton(L("変更せず戻る","Back without saving"),()=>Show(panel));
             dialog.Compact(640);
         }
