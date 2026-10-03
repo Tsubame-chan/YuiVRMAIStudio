@@ -1,4 +1,9 @@
-﻿using UnityEngine;
+using UnityEngine;
+#if UNITY_6000_0_OR_NEWER
+using UV0 = UnityEngine.Vector4;
+#else
+using UV0 = UnityEngine.Vector2;
+#endif
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
 using System.Collections;
@@ -491,8 +496,8 @@ namespace TMPro.Examples
 
             // Restore UV0S
             // UVS0
-            Vector2[] src_uv0s = m_cachedMeshInfoVertexData[materialIndex].uvs0;
-            Vector2[] dst_uv0s = m_TextMeshPro.textInfo.meshInfo[materialIndex].uvs0;
+            UV0[] src_uv0s = m_cachedMeshInfoVertexData[materialIndex].uvs0;
+            UV0[] dst_uv0s = m_TextMeshPro.textInfo.meshInfo[materialIndex].uvs0;
             dst_uv0s[vertexIndex + 0] = src_uv0s[vertexIndex + 0];
             dst_uv0s[vertexIndex + 1] = src_uv0s[vertexIndex + 1];
             dst_uv0s[vertexIndex + 2] = src_uv0s[vertexIndex + 2];
