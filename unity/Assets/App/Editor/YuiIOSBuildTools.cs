@@ -16,6 +16,7 @@ namespace YuiPhysicalAI.Editor
     {
         public static void BuildIOSBeta()
         {
+            RequireSceneLifecycleEditor(Application.unityVersion);
             var output = Environment.GetEnvironmentVariable("YUI_IOS_BUILD_DIRECTORY");
             if (string.IsNullOrWhiteSpace(output) || !Path.IsPathRooted(output)) throw new InvalidOperationException("Set YUI_IOS_BUILD_DIRECTORY to a fresh absolute candidate directory.");
             var rebuilding = Environment.GetEnvironmentVariable("YUI_IOS_REBUILD") == "1"
@@ -48,6 +49,21 @@ namespace YuiPhysicalAI.Editor
                 target = BuildTarget.iOS, options = BuildOptions.DetailedBuildReport | BuildOptions.CleanBuildCache });
             if (report.summary.result != BuildResult.Succeeded) throw new InvalidOperationException("iOS export failed: " + report.summary.result);
         }
+        public static void RequireSceneLifecycleEditor(string version)
+        {
+            var match = Regex.Match(version ?? "", @"^(\d+)\.(\d+)\.(\d+)f\d+");
+            if (match.Success)
+            {
+                var major = int.Parse(match.Groups[1].Value);
+                var minor = int.Parse(match.Groups[2].Value);
+                var patch = int.Parse(match.Groups[3].Value);
+                if ((major == 2022 && minor == 3 && patch >= 72)
+                    || (major == 6000 && ((minor == 0 && patch >= 68)
+                        || (minor == 3 && patch >= 8) || minor >= 4)) || major > 6000)
+                    return;
+            }
+            throw new UnityEditor.Build.BuildFailedException("iOS 27 requires UIScene lifecycle support. Use Unity 2022.3.72f1+, 6000.0.68f1+, 6000.3.8f1+, or a newer supported stable Editor. Current: " + version);
+        }
         [PostProcessBuild(100)]
         public static void PostProcessIOS(BuildTarget target, string pathToBuiltProject)
         {
@@ -55,6 +71,8 @@ namespace YuiPhysicalAI.Editor
             {
                 return;
             }
+
+            RequireSceneLifecycleEditor(Application.unityVersion);
 
             var plistPath = Path.Combine(pathToBuiltProject, "Info.plist");
             if (!File.Exists(plistPath))

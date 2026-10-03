@@ -2,6 +2,7 @@
 #import <Foundation/Foundation.h>
 
 #include <algorithm>
+#include <limits.h>
 #include <math.h>
 #include <mutex>
 #include <stdlib.h>
@@ -214,7 +215,7 @@ extern "C" const char* iOSNativeMicrophonePlugin_GetDeviceName(int index)
 
 static int StartRecording(int lengthSec, int frequency, bool enableVoiceProcessing)
 {
-    if (lengthSec <= 0 || frequency <= 0)
+    if (lengthSec <= 0 || frequency <= 0 || lengthSec > INT_MAX / frequency)
     {
         return 0;
     }
@@ -251,6 +252,21 @@ static int StartRecording(int lengthSec, int frequency, bool enableVoiceProcessi
     AVAudioInputNode* inputNode = [gEngine inputNode];
     AVAudioFormat* inputFormat = [inputNode outputFormatForBus:0];
     double inputSampleRate = inputFormat.sampleRate;
+
+    // A disconnected/interrupted input route can expose an empty format.
+    // AVAudioEngine asserts instead of returning NSError when installing such a tap.
+    if (inputNode == nil || inputFormat == nil || !isfinite(inputSampleRate)
+        || inputSampleRate <= 0 || inputFormat.channelCount == 0)
+    {
+        NSLog(@"[iOSNativeMicrophonePlugin] No usable microphone input route");
+        [gEngine stop];
+        gEngine = nil;
+        [[AVAudioSession sharedInstance] setActive:NO error:nil];
+        std::lock_guard<std::mutex> lock(gAudioMutex);
+        FreeBuffers();
+        ResetStateWithoutLock();
+        return 0;
+    }
 
     [inputNode installTapOnBus:0
                     bufferSize:1024
