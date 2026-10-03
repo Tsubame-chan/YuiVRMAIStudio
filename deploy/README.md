@@ -1,30 +1,24 @@
-# Deployment Notes
+# BackendをDockerで起動する
 
-This folder contains the first server-side deployment sketch for Yui.
+Dockerに慣れている方向けの起動方法です。通常のPC利用では、[同梱Backendの起動手順](../docs/BACKEND_CONSOLE.md)を使ってください。
 
-## Local Docker Smoke
+1. リポジトリ直下で `.env.example` を `.env` へコピーし、必要なBackend設定を入力します。APIキーを含む `.env` を共有しないでください。
+2. Dockerを起動し、次のコマンドを実行します。
 
-From the repository root:
-
-```powershell
+```sh
 docker compose -f deploy/docker-compose.server.yml up --build
 ```
 
-Then check:
+PCの `http://127.0.0.1:8000/health` でBackendの起動状態を確認できます。VOICEVOXは `http://127.0.0.1:50021/version` です。
 
-```powershell
-Invoke-RestMethod http://127.0.0.1:8000/health
-Invoke-RestMethod http://127.0.0.1:50021/version
+このComposeは8000番と50021番をホストへ公開します。起動前にファイアウォール・待受アドレスを確認し、信頼できる端末以外から到達できないようにしてください。アプリ用の会話APIは認証必須ではないため、HTTPS化だけでインターネットへ公開してよい構成にはなりません。
+
+Consoleは接続元をlocalhostに限定します。Dockerのネットワーク構成によってはPCからのアクセスも拒否されます。Consoleで設定・同期・CSV作業を使う場合は、[PC上で起動するBackend](../docs/BACKEND_CONSOLE.md)を使ってください。
+
+会話DBはDocker volume `yui-backend-data` に保存されます。停止するには次を実行します。記録を残したい場合はvolumeを削除しないでください。
+
+```sh
+docker compose -f deploy/docker-compose.server.yml down
 ```
 
-## Server Use
-
-For a real server:
-
-1. Copy `.env.example` to `.env` on the server.
-2. Fill only server-side secrets in `.env`.
-3. Run Docker Compose.
-4. Put the backend behind HTTPS.
-5. Keep VOICEVOX private to the Docker network or firewall.
-
-Do not put OpenAI keys in the Unity app.
+アプリでDirect APIを使う場合は、アプリ側にも別途キーを設定します。Backendのキーをアプリへ転送することはありません。

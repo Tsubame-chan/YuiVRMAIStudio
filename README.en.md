@@ -53,7 +53,7 @@ Standard speech uses five Japanese VOICEVOX voices. Menus support Japanese and E
 
 ## Memory and privacy
 
-Memories are separate for each character. Supported desktop apps can share personality, memories and history through a Backend after pairing and confirming the changes. iOS 0.2.4 (14) does not support sync. Secret mode reads existing memories without saving the new conversation. When you choose an external API, conversation and relevant personality settings/memories are sent to that service.
+Memories are separate for each character. Sync-capable apps can share personality, memories and history through a Backend after pairing and confirming the changes. See [device compatibility](docs/RUNTIME_SUPPORT.md) for supported versions and setup. Secret mode reads existing memories without saving the new conversation. When you choose an external API, conversation and relevant personality settings/memories are sent to that service.
 
 AI replies and memory retrieval can be wrong. Check important information. [How memory works](docs/CONVERSATION_IDENTITY.md) · [Privacy](docs/PRIVACY.md)
 

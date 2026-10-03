@@ -27,7 +27,9 @@ AIと音声の選択は独立しています。標準は日本語VOICEVOXの5声
 
 ## Backendを使う場合
 
-初回取得した `YuiBackend` 内の `Start_Yui_Backend.command` / `Stop_Yui_Backend.command` で起動・停止できます。Startで開く管理画面から提供元・保存した声・端末同期を設定できます。[Backend Console](BACKEND_CONSOLE.md) / [追加TTS導入](BACKEND_TTS_GUIDE.md)。OpenAIや追加TTS/STTはBackend側の設定も必要です。遠隔PCへ接続する際は、双方から到達できるVPNアドレスとBackendのlisten設定を使います。Macの起動スクリプトは既定で `BACKEND_HOST=127.0.0.1`、`BACKEND_PORT=8000` です。VPN側へlistenさせる場合はそのPCのVPN IPを `BACKEND_HOST` に指定し、アプリには `http://<VPN IP>:8000` を設定します。VPNだけで、localhostに限定したサーバーへ他端末から接続できるわけではありません。
+初回取得した `YuiBackend` 内の `Start_Yui_Backend.command` / `Stop_Yui_Backend.command` で起動・停止できます。Startで開く管理画面から提供元・保存した声・端末同期を設定できます。[Backend Console](BACKEND_CONSOLE.md) / [追加TTS導入](BACKEND_TTS_GUIDE.md)。OpenAIや追加TTS/STTはBackend側の設定も必要です。別端末から使う場合は、両方の端末をTailscale等へ接続し、アプリにPCのVPNアドレスとポートを指定します。例: `http://100.x.x.x:8000`。新しいBackendでは `scripts/start_mobile_backend_macos.sh` で起動すると、Tailscaleのアドレスを取得し、PC内とVPNからの接続を受け付けます。PCをスリープさせないでください。
+
+配布済みbeta.2のBackendにはこの起動ファイルがありません。その版では `BACKEND_HOST` にPCのVPN IPを指定して待ち受けますが、localhostの管理画面も使うには新しいBackendが必要です。VPNに接続しただけでは、PC内だけで待ち受けるBackendへ別端末から到達できません。
 
 ソースから準備する場合:
 

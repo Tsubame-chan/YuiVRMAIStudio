@@ -36,4 +36,4 @@ VRM conversion can change shading, gloss, outlines and secondary motion. VRChat 
 
 Use avatars you have permission to use. Report app/tool versions, errors and reproduction steps through Issues; do not publicly attach purchased model files.
 
-Older Yui Avatar Bridge ZIPs use a separate compatibility path and need a payload for your OS. For new imports, use VRM. See the [legacy ZIP guide](YUI_AVATAR_BRIDGE_USER_TEST_GUIDE.md).
+Older Yui Avatar Bridge ZIPs need avatar data compatible with both your OS and the app’s Unity version. If a ZIP no longer loads after updating the app, export the original avatar to VRM. For new imports, use VRM. See the [legacy ZIP guide](YUI_AVATAR_BRIDGE_USER_TEST_GUIDE.md).
