@@ -32,6 +32,8 @@ On macOS, a locked Keychain or a changed development signature can prevent autom
 
 ## Optional character sync
 
-Supported desktop apps can send personality, character memories and conversation history to your paired Backend after you review the changes. Sync does not send API keys, avatars or voice settings. Other registered devices sharing that character can receive these records. iOS 0.2.4 (14) does not support sync. Secret Mode disables sync.
+Sync-capable apps can send personality, character memories and conversation history to your paired Backend after you review the changes. Sync does not send API keys, avatars or voice settings. Other registered devices sharing that character can receive these records. See [device compatibility](RUNTIME_SUPPORT.md) for supported versions. Secret Mode disables sync.
+
+The Backend Console can save conversations with a shared character, copy selected older Backend records into that character, and let you confirm relationships between original memories. These records can reach other registered devices on the next sync. Deleting or editing a source memory invalidates a relationship based on its old contents. The original Backend records remain after copying and must be deleted separately. CSV work in the Console processes the selected file on that PC without sending it to an external AI; the job and generated results remain on the Backend.
 
 Revoking a device prevents future access; it does not erase copies already saved on that device. Sync backup copies in the app's `DeviceSync/Backups` folder are not automatically erased when individual histories or memories are deleted. Review Backend records, other devices and backups separately when removing sensitive information.

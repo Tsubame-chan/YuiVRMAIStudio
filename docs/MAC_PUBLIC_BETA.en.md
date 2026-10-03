@@ -19,7 +19,7 @@ Normally you only need the app ZIP; its installer handles the split data and run
 - OpenAI API: enter an API key in Settings. Recommended for higher-quality chat; connectivity and API charges apply separately from a ChatGPT subscription.
 - Backend: optional extension route. Configure its own `.env`; the app's Direct API key is not forwarded to it.
 
-AI and speech engines are independent. Standard speech uses five Japanese VOICEVOX voices. Local chat/STT inference uses the downloaded `YuiBackend` runtime worker without requiring its HTTP server. Optional speech engines require separate installation.
+AI and speech engines are independent. Standard speech uses five Japanese VOICEVOX voices. On-device AI does not require starting the Backend server. Optional speech engines require separate installation.
 
 ## Import your avatar
 
@@ -27,7 +27,9 @@ Select a `.vrm` from character Settings and wait for loading. Change appearance 
 
 ## Optional Backend
 
-Use `Start_Yui_Backend.command` / `Stop_Yui_Backend.command` inside the downloaded `YuiBackend`. Configure its provider keys and selected STT/TTS runtime separately. For a remote PC, use a reachable VPN address and server listen configuration (`BACKEND_HOST` defaults to `127.0.0.1`, `BACKEND_PORT` to `8000`; bind to the PC VPN IP and use `http://<VPN IP>:8000` in the app); a localhost-only server is not reachable from another device merely because both use a VPN.
+Use `Start_Yui_Backend.command` / `Stop_Yui_Backend.command` inside the downloaded `YuiBackend`. Configure its provider keys and selected STT/TTS runtime separately. For another device, connect both devices to Tailscale or another trusted VPN and enter the PC’s VPN URL in the app, for example `http://100.x.x.x:8000`. The newer Backend provides `scripts/start_mobile_backend_macos.sh`, which obtains the Tailscale address and accepts both local PC and VPN connections. Keep the PC awake.
+
+The distributed beta.2 Backend does not include that launcher. It can listen on a VPN IP using `BACKEND_HOST`, but a newer Backend is needed to retain localhost Console access at the same time. Connecting a VPN does not make a localhost-only server reachable from other devices.
 
 For source setup:
 

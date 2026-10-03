@@ -34,8 +34,8 @@ An engine started separately stays running; stop it in its own application.
 
 ## API Keys
 
-The backend bundle includes `.env.example` only. It must never include a real
-`.env` or API key. Set Backend API keys in its Console. The app’s Direct API key is separate.
+Set Backend API keys in its Console. The app’s Direct API key is separate.
+Keep files containing keys private when backing up or sharing this folder.
 Advanced users can also create a local `.env` next to this file.
 
 ## Manage AI, voices and device sync
