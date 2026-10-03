@@ -162,8 +162,10 @@ namespace YuiPhysicalAI.Api
                 return string.Empty;
             }
 
+            var answer = new StringBuilder();
             foreach (var item in output)
             {
+                if (item?["type"]?.Value<string>() != "message") continue;
                 var content = item?["content"] as JArray;
                 if (content == null)
                 {
@@ -172,15 +174,13 @@ namespace YuiPhysicalAI.Api
 
                 foreach (var part in content)
                 {
+                    if (part?["type"]?.Value<string>() != "output_text") continue;
                     var text = part?["text"]?.Value<string>();
-                    if (!string.IsNullOrWhiteSpace(text))
-                    {
-                        return text;
-                    }
+                    if (text != null) answer.Append(text);
                 }
             }
 
-            return string.Empty;
+            return answer.ToString();
         }
 
         public static string NormalizeModel(string value)

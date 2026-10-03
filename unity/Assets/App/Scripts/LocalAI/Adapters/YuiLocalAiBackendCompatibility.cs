@@ -9,6 +9,8 @@ namespace YuiPhysicalAI.LocalAI
         {
             var workMode = string.Equals(mode, "work", StringComparison.OrdinalIgnoreCase);
             response = YuiLocalAiResponseNormalizer.NormalizeChat(response, workMode);
+            if (string.IsNullOrWhiteSpace(response.Text))
+                throw new InvalidOperationException("端末内AIが回答を完成できませんでした。質問を短くするか、モデルの詳細設定を初期値に戻して再試行してください。");
             return new ChatResponse
             {
                 Text = response.Text ?? string.Empty,
