@@ -36,7 +36,8 @@ namespace YuiPhysicalAI.Editor
             PlayerSettings.iOS.cameraUsageDescription = "カメラで選んだ景色をキャラクターに見せます。";
             PlayerSettings.iOS.microphoneUsageDescription = "キャラクターと話すためにマイクを使います。";
             PlayerSettings.iOS.appleEnableAutomaticSigning = true;
-            PlayerSettings.insecureHttpOption = InsecureHttpOption.DevelopmentOnly;
+            // Private VPN backends use HTTP in release players too; ATS limits IP ranges below.
+            PlayerSettings.insecureHttpOption = InsecureHttpOption.AlwaysAllowed;
             PlayerSettings.allowedAutorotateToLandscapeLeft = false;
             PlayerSettings.allowedAutorotateToLandscapeRight = false;
             PlayerSettings.allowedAutorotateToPortrait = true;
@@ -70,11 +71,7 @@ namespace YuiPhysicalAI.Editor
             root.SetBoolean("UIStatusBarHidden", false);
             root.SetString("UIStatusBarStyle", "UIStatusBarStyleLightContent");
 
-            var ats = root.values.TryGetValue("NSAppTransportSecurity", out var existingAts)
-                ? existingAts.AsDict()
-                : root.CreateDict("NSAppTransportSecurity");
-            ats.values.Remove("NSAllowsArbitraryLoads");
-            ats.SetBoolean("NSAllowsLocalNetworking", true);
+            ConfigureBackendNetworking(root);
 
             root.SetString(
                 "NSLocalNetworkUsageDescription",
@@ -95,6 +92,26 @@ namespace YuiPhysicalAI.Editor
             AddModelVirtualAddressSpace(pathToBuiltProject);
             AddAppleHostedAssets(pathToBuiltProject);
             Debug.Log("Yui build: applied iOS local backend networking plist settings.");
+        }
+
+        public static void ConfigureBackendNetworking(PlistElementDict root)
+        {
+            var ats = root.values.TryGetValue("NSAppTransportSecurity", out var existingAts)
+                ? existingAts.AsDict()
+                : root.CreateDict("NSAppTransportSecurity");
+            ats.values.Remove("NSAllowsArbitraryLoads");
+            ats.SetBoolean("NSAllowsLocalNetworking", true);
+            // iOS 17+ applies ATS to IP addresses, including Tailscale's CGNAT range.
+            // Permit HTTP only for private companion backends; public hosts retain ATS.
+            var exceptions = ats.values.TryGetValue("NSExceptionDomains", out var existingExceptions)
+                ? existingExceptions.AsDict() : ats.CreateDict("NSExceptionDomains");
+            foreach (var range in new[] { "100.64.0.0/10", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16" })
+            {
+                var entry = exceptions.values.TryGetValue(range, out var existingEntry)
+                    ? existingEntry.AsDict() : exceptions.CreateDict(range);
+                entry.SetBoolean("NSExceptionAllowsInsecureHTTPLoads", true);
+                entry.SetBoolean("NSIncludesSubdomains", false);
+            }
         }
 
         private static void AddBrandedLaunchScreen(string directory)

@@ -223,7 +223,7 @@ namespace YuiPhysicalAI.UI
             YuiMemoryDiagnostics.RegisterLowMemoryHandler();
             YuiMemoryDiagnostics.LogSnapshot("awake");
             LoadSavedRuntimeSettings();
-            client = new YuiBackendClient(backendUrl);
+            client = new YuiBackendClient(backendUrl, allowUnconfigured: true);
             ConfigureAiRuntimeRouter();
             microphoneDeviceSelector = new YuiMicrophoneDeviceSelector(preferredRecordingFrequency);
             unityMicrophoneRecorder = new YuiUnityMicrophoneRecorder();

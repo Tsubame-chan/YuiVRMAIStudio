@@ -69,7 +69,7 @@ namespace YuiPhysicalAI.UI
             {
                 Note(rect, "Backend is an optional service running on a PC or server. It lets you use more natural-sounding speech and AI services beyond those included on your device.", ref row);
                 Note(rect, "It can use API keys set up on that PC or server, separately from the app's key. Available features depend on the connected service.", ref row);
-                Note(rect, "Originally used by the desktop app, Backend is optional on mobile. On-device AI, VOICEVOX and direct OpenAI access work without it. Only enter a Backend URL if you have a service ready.", ref row);
+                Note(rect, YuiSimpleDialog.L("モバイル版・デスクトップ版ともに任意です。端末内AI・VOICEVOX・OpenAIへの直接接続には不要です。Backendを使う場合だけ、接続先を設定してください。", "Backend is optional on both mobile and desktop. On-device AI, VOICEVOX and direct OpenAI access work without it. Configure a connection only if you use Backend."), ref row);
             }
             else if (apiKey)
                 Note(rect, "Use a key to access OpenAI's more capable AI models. Create one and set up billing on OpenAI Platform, then paste it here. You pay OpenAI for usage, separately from a ChatGPT subscription.", ref row);

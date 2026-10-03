@@ -17,6 +17,8 @@ namespace YuiPhysicalAI.UI
                 if (backendUrlInput != null)
                 {
                     backendUrlInput.text = chatPanel.BackendUrl;
+                    if (Application.isMobilePlatform && backendUrlInput.placeholder is Text hint)
+                        hint.text = YuiSimpleDialog.L("PCのVPNアドレス（http://…:8000）", "PC VPN address (http://…:8000)");
                 }
                 if (openAiApiKeyInput != null)
                 {
