@@ -72,9 +72,9 @@ namespace YuiPhysicalAI.UI
                     ? YuiSimpleDialog.L("PCでBackendを起動し、PCとこの端末を同じTailscaleアカウントに接続します。", "Start Backend on your PC and connect both devices to the same Tailscale account.")
                     : YuiSimpleDialog.L("このPCでBackendを起動する場合は http://127.0.0.1:8000 を使います。別のPCなら、両方をTailscaleに接続します。", "For Backend on this PC, use http://127.0.0.1:8000. For another PC, connect both PCs to Tailscale."), ref row);
                 Note(rect, Application.isMobilePlatform
-                    ? YuiSimpleDialog.L("Backendを起動したPCのTailscale IPを入力します。例：http://100.64.0.9:8000", "Enter the Tailscale IP of the PC running Backend. Example: http://100.64.0.9:8000")
+                    ? YuiSimpleDialog.L("Tailscaleの端末一覧でPCのIPを確認し、http://IP:8000 の形で入力します。例：http://100.64.0.9:8000", "Find your PC’s IP in the Tailscale device list. Enter http://IP:8000, for example http://100.64.0.9:8000")
                     : YuiSimpleDialog.L("別のPCのBackendに接続する場合は、そのPCのTailscale IPを入力します。例：http://100.64.0.9:8000", "For Backend on another PC, enter that PC's Tailscale IP. Example: http://100.64.0.9:8000"), ref row);
-                Note(rect, YuiSimpleDialog.L("/healthは付けず、入力後に「設定を保存」を押します。", "Do not append /health. Then Save settings."), ref row);
+                Note(rect, YuiSimpleDialog.L("/healthは付けません。「Backendで会話」を選び、「設定を保存」を押します。", "Do not append /health. Choose Backend conversation, then Save settings."), ref row);
                 Note(rect, YuiSimpleDialog.L("端末内AI・VOICEVOX・OpenAIへの直接接続にはBackendは不要です。", "On-device AI, VOICEVOX and direct OpenAI access do not need Backend."), ref row);
             }
             else if (backend)
