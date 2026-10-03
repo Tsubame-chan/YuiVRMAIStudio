@@ -287,7 +287,7 @@ namespace YuiPhysicalAI.UI
                 else if (!isSending && Time.realtimeSinceStartup - lastBackendSuccessAt > 20f)
                 {
                     syncConnectionChecked = null;
-                    SetStatus("Backend offline");
+                    SetStatus(string.IsNullOrWhiteSpace(backendUrl) ? "Backend接続先が未設定です。設定でPCのVPNアドレスを入力してください。" : "Backend offline");
                 }
 
                 Debug.LogWarning($"Backend health check failed: {ex.Message}");

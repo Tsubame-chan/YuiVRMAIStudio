@@ -44,12 +44,20 @@ namespace YuiPhysicalAI.UI
             StatusRow("App OpenAI key",chatPanel!=null && !string.IsNullOrWhiteSpace(chatPanel.OpenAiApiKey)?"configured":"missing_key",ref top);
             var mode=chatPanel!=null?chatPanel.ConversationMode:PlayerPrefs.GetString(YuiPrefsKeys.ConversationMode,YuiConversationModes.LocalAi);
             var voice=chatPanel!=null?chatPanel.TtsMode:PlayerPrefs.GetString(YuiPrefsKeys.TtsMode,"silent");
-            var state=backendOnline?BackendGroupStatus(latestStatus,mode,voice):statusChecked?"offline":"unknown";
+            var connectionUrl = YuiBackendAddressPolicy.Resolve(
+                chatPanel != null ? chatPanel.BackendUrl : PlayerPrefs.HasKey(YuiPrefsKeys.BackendUrl) ? PlayerPrefs.GetString(YuiPrefsKeys.BackendUrl) : null,
+                backendUrl, Application.isMobilePlatform);
+            var needsAddress = Application.isMobilePlatform && string.IsNullOrWhiteSpace(connectionUrl);
+            var state=needsAddress ? "not_configured" : backendOnline?BackendGroupStatus(latestStatus,mode,voice):statusChecked?"offline":"unknown";
             backendGroup=ConnectionGroup("BackendGroup","Backend (optional)",HumanStatus(state),backendExpanded,
                 ()=>{backendExpanded=!backendExpanded;RenderModernHelp();},ref top);
             var badge=backendGroup.transform.Find("Status").GetComponent<Text>();
             badge.color=state=="degraded"?new Color32(240,195,135,255):backendOnline?YuiUiTheme.Accent:YuiUiTheme.Muted;
             ConnectionNote("BackendPurpose", "Backend connects to AI and voice services set up on a PC or server, including more natural-sounding speech. On-device AI, VOICEVOX and direct OpenAI access do not need it.", ref top);
+            if (Application.isMobilePlatform)
+                ConnectionNote("MobileBackendAddress", YuiSimpleDialog.L(
+                    "Backendを使う場合は、設定のBackend URLへPCのVPNアドレス（http://PCのアドレス:8000）を入力してください。127.0.0.1はこの端末自身を指すため、PCには接続できません。PCとこの端末で同じVPNに接続してください。",
+                    "To use a backend, enter your PC VPN address (http://PC-address:8000) in Settings → Backend URL. 127.0.0.1 refers to this device, so it cannot reach your PC. Connect both devices to the same VPN."), ref top);
             if(backendExpanded)
             {
                 if(backendOnline)

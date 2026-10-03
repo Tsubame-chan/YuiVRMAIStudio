@@ -36,7 +36,7 @@ namespace YuiPhysicalAI.UI
             string nextMicrophoneDevice = null,
             string nextLookCameraDevice = null)
         {
-            if (!string.IsNullOrWhiteSpace(nextBackendUrl))
+            if (nextBackendUrl != null && (Application.isMobilePlatform || !string.IsNullOrWhiteSpace(nextBackendUrl)))
             {
                 if (!string.Equals(backendUrl, nextBackendUrl.Trim(), StringComparison.Ordinal))
                 {
@@ -47,8 +47,8 @@ namespace YuiPhysicalAI.UI
                     backendConfigLoaded = false;
                     ttsProviderOptions = Array.Empty<string>();
                 }
-                backendUrl = nextBackendUrl.Trim();
-                client = new YuiBackendClient(backendUrl);
+                backendUrl = YuiBackendAddressPolicy.Resolve(nextBackendUrl, backendUrl, Application.isMobilePlatform);
+                client = new YuiBackendClient(backendUrl, allowUnconfigured: true);
                 ConfigureAiRuntimeRouter();
                 PlayerPrefs.SetString(BackendUrlKey, backendUrl);
             }
@@ -150,7 +150,10 @@ namespace YuiPhysicalAI.UI
 
         private void LoadSavedRuntimeSettings()
         {
-            backendUrl = PlayerPrefs.GetString(BackendUrlKey, backendUrl);
+            backendUrl = YuiBackendAddressPolicy.Resolve(
+                PlayerPrefs.HasKey(BackendUrlKey) ? PlayerPrefs.GetString(BackendUrlKey) : null,
+                backendUrl, Application.isMobilePlatform);
+            if (Application.isMobilePlatform) PlayerPrefs.SetString(BackendUrlKey, backendUrl);
             openAiApiKey = YuiApiKeyStore.Read();
             openAiModel = YuiDirectOpenAiClient.NormalizeModel(PlayerPrefs.GetString(OpenAiModelKey, openAiModel));
             autoAiFallbackEnabled = PlayerPrefs.GetInt(AutoAiFallbackEnabledKey, 1) == 1;
@@ -534,7 +537,7 @@ namespace YuiPhysicalAI.UI
         {
             if (client == null)
             {
-                client = new YuiBackendClient(backendUrl);
+                client = new YuiBackendClient(backendUrl, allowUnconfigured: true);
             }
 
             try

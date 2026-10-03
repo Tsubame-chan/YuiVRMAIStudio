@@ -20,9 +20,9 @@ namespace YuiPhysicalAI.Api
             NullValueHandling = NullValueHandling.Ignore
         };
 
-        public YuiBackendClient(string baseUrl)
+        public YuiBackendClient(string baseUrl, bool allowUnconfigured = false)
         {
-            BaseUrl = NormalizeBaseUrl(baseUrl);
+            BaseUrl = allowUnconfigured && string.IsNullOrWhiteSpace(baseUrl) ? "" : NormalizeBaseUrl(baseUrl);
         }
 
         public string BaseUrl { get; }
@@ -596,6 +596,8 @@ namespace YuiPhysicalAI.Api
 
         private string ToAbsoluteUrl(string pathOrUrl)
         {
+            if (string.IsNullOrWhiteSpace(BaseUrl))
+                throw new InvalidOperationException("Backend接続先が未設定です。設定でPCのVPNアドレスを入力してください。");
             if (pathOrUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                 pathOrUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {

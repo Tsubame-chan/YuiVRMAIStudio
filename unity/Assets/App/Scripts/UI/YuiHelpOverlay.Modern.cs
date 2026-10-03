@@ -50,7 +50,9 @@ namespace YuiPhysicalAI.UI
                         timeout.CancelAfter(TimeSpan.FromSeconds(6));
                         try
                         {
-                            var url = PlayerPrefs.GetString(YuiPrefsKeys.BackendUrl, backendUrl);
+                            var url = YuiBackendAddressPolicy.Resolve(
+                                PlayerPrefs.HasKey(YuiPrefsKeys.BackendUrl) ? PlayerPrefs.GetString(YuiPrefsKeys.BackendUrl) : null,
+                                backendUrl, Application.isMobilePlatform);
                             var client = new YuiBackendClient(url);
                             try { latestStatus = await client.GetProviderStatusAsync(timeout.Token); }
                             catch (YuiBackendException ex) when (ex.StatusCode == 404)
