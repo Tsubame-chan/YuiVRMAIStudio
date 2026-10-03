@@ -217,10 +217,10 @@ namespace YuiPhysicalAI.UI
                     advancedModeDropdown.SetValueWithoutNotify(modeIndex >= 2 && modeIndex <= 6 ? modeIndex - 1 : 0);
                     Place(advancedModeDropdown.transform, row, 88); row += 104;
                     Note(content, chatPanel?.CurrentCapabilitySnapshot().Conversation(ConversationModeValue()).Detail ?? "", ref row);
-                    Row(content, "BackendLabel", "Backend URL", "BackendInput", ref row);
+                    SettingsHelpRow(content, "BackendLabel", "Backend URL", "BackendInput", "BackendAddressHelp", ref row);
                     Note(content, Application.isMobilePlatform
-                        ? YuiSimpleDialog.L("PCでBackendを起動し、PCとこの端末をTailscaleに接続してください。PCのTailscale IPを使い、例：http://100.64.0.9:8000 の形式で入力して「設定を保存」。/healthは付けません。Backendを使わない場合は空欄で構いません。", "Start Backend on your PC and connect both devices to Tailscale. Enter your PC's Tailscale IP, for example http://100.64.0.9:8000, then Save settings. Do not append /health. Leave blank if you do not use Backend.")
-                        : YuiSimpleDialog.L("このPCでBackendを起動する場合は http://127.0.0.1:8000 のままで使えます。別のPCに接続する場合は、そのPCのTailscale IPに変更して「設定を保存」。端末内AIだけを使う場合、この接続は不要です。", "For Backend running on this PC, keep http://127.0.0.1:8000. For another PC, enter that PC's Tailscale IP and Save settings. This connection is not needed for on-device AI."), ref row);
+                        ? YuiSimpleDialog.L("接続するPCのアドレスを入力します。Backendを使わない場合は空欄で構いません。", "Enter the address of the PC to connect to. Leave blank if you do not use Backend.")
+                        : YuiSimpleDialog.L("このPCのBackendには既定のアドレスで接続できます。別のPCへの接続方法は「？」へ。", "The default address connects to Backend on this PC. See ? to connect to another PC."), ref row);
                     Note(content, "AI and voice services for this connection are configured on the PC or server. This app's OpenAI API key is not shared with it.", ref row);
                     Row(content, "AutoAiFallbackLabel", "If a request fails", "AutoAiFallbackToggle", ref row, 116);
                     if (Application.isMobilePlatform)
