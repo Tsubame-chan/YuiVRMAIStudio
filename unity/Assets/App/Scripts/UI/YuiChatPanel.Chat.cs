@@ -143,7 +143,7 @@ namespace YuiPhysicalAI.UI
                 SetStatus("Backend offline");
                 AppendLog(
                     "System",
-                    $"Backendに接続できません。scripts/run_backend.ps1 を起動してください。url={ex.Url}");
+                    $"Backendに接続できません。PCでBackendを起動し、設定の接続先とVPN接続を確認してください。\n接続先: {ex.Url}");
                 Debug.LogError(ex);
             }
             catch (Exception ex)

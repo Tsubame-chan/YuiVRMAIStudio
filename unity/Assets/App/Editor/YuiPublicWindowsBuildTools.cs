@@ -166,6 +166,11 @@ namespace YuiPhysicalAI.Editor
             PlayerSettings.companyName = "Yui VRM AI Studio";
             PlayerSettings.productName = "Yui VRM AI Studio";
             PlayerSettings.bundleVersion = PublicBuildVersion();
+            PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Standalone, "jp.tsubamechan.yuivrm.public");
+#if UNITY_6000_0_OR_NEWER
+            PlayerSettings.SplashScreen.show = false;
+            PlayerSettings.SplashScreen.showUnityLogo = false;
+#endif
             if (Environment.GetEnvironmentVariable("YUI_VALIDATION_PROFILE") == "1")
             {
                 PlayerSettings.productName = "Yui VRM AI Studio Validation";

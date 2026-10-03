@@ -27,6 +27,19 @@ namespace YuiPhysicalAI.EditorTools
         }
         public void OnPreprocessBuild(BuildReport report)
         {
+#if UNITY_6000_0_OR_NEWER
+            // The performance-testing dependency writes machine metadata for every build.
+            // Keep it out of production Players without allowing any new Resources roots.
+            if ((report.summary.options & BuildOptions.IncludeTestAssemblies) == 0)
+            {
+                foreach (var name in new[] { "PerformanceTestRunInfo.json", "PerformanceTestRunSettings.json" })
+                {
+                    var path = "Assets/Resources/" + name;
+                    if (File.Exists(path) && !AssetDatabase.DeleteAsset(path))
+                        throw new BuildFailedException("Cannot remove generated performance-test metadata: " + path);
+                }
+            }
+#endif
             if (!IsPublicBuild(report)) return;
             var scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray();
             // Inspect Resources too: Unity includes them even when no scene references them.

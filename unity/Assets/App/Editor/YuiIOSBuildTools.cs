@@ -16,6 +16,10 @@ namespace YuiPhysicalAI.Editor
     {
         public static void BuildIOSBeta()
         {
+            BuildIOSCandidate();
+        }
+        private static void BuildIOSCandidate()
+        {
             RequireSceneLifecycleEditor(Application.unityVersion);
             var output = Environment.GetEnvironmentVariable("YUI_IOS_BUILD_DIRECTORY");
             if (string.IsNullOrWhiteSpace(output) || !Path.IsPathRooted(output)) throw new InvalidOperationException("Set YUI_IOS_BUILD_DIRECTORY to a fresh absolute candidate directory.");
@@ -28,10 +32,26 @@ namespace YuiPhysicalAI.Editor
             PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.iOS, string.Join(";", defines));
             PlayerSettings.companyName = "Yui VRM AI Studio";
             PlayerSettings.productName = "Yui VRM AI Studio";
+            if (Environment.GetEnvironmentVariable("YUI_VALIDATION_PROFILE") == "1")
+                PlayerSettings.productName = "Yui VRM AI Studio Validation";
+#if UNITY_6000_0_OR_NEWER
+            // Unity 6 Personal permits disabling the engine splash screen.
+            PlayerSettings.SplashScreen.show = false;
+            PlayerSettings.SplashScreen.showUnityLogo = false;
+#endif
             PlayerSettings.bundleVersion = Environment.GetEnvironmentVariable("YUI_IOS_VERSION") ?? "0.2.4";
             PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.iOS,
                 Environment.GetEnvironmentVariable("YUI_IOS_BUNDLE_ID") ?? "jp.tsubamechan.yuivrm.beta");
+            var icon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/App/Art/Yui_icon.png");
+            if (icon == null) throw new InvalidOperationException("Build icon is missing.");
+            PlayerSettings.SetIconsForTargetGroup(BuildTargetGroup.iOS, Enumerable.Repeat(icon, 8).ToArray());
             PlayerSettings.SetScriptingBackend(BuildTargetGroup.iOS, ScriptingImplementation.IL2CPP);
+            PlayerSettings.iOS.sdkVersion = Environment.GetEnvironmentVariable("YUI_IOS_SIMULATOR") == "1"
+                ? iOSSdkVersion.SimulatorSDK : iOSSdkVersion.DeviceSDK;
+            #if UNITY_6000_0_OR_NEWER
+            if (PlayerSettings.iOS.sdkVersion == iOSSdkVersion.SimulatorSDK)
+                PlayerSettings.iOS.simulatorSdkArchitecture = AppleMobileArchitectureSimulator.ARM64;
+#endif
             PlayerSettings.iOS.buildNumber = Environment.GetEnvironmentVariable("YUI_IOS_BUILD_NUMBER") ?? "20260924";
             PlayerSettings.iOS.targetOSVersionString = "26.0";
             PlayerSettings.iOS.cameraUsageDescription = "カメラで選んだ景色をキャラクターに見せます。";
