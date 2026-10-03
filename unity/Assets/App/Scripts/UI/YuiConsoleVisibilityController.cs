@@ -85,7 +85,7 @@ namespace YuiPhysicalAI.UI
 
         private void Awake()
         {
-            rotateAvatarInViewer = PlayerPrefs.GetInt("Yui.Viewer.RotateAvatar", YuiBuildProfile.Current == YuiBuildProfile.Public ? 1 : 0) == 1;
+            rotateAvatarInViewer = PlayerPrefs.GetInt("Yui.Viewer.RotateAvatar", 1) == 1;
             if (targetCamera == null)
             {
                 targetCamera = Camera.main;
