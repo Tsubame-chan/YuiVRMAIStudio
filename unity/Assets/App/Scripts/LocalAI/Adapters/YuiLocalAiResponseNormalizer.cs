@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -38,6 +39,7 @@ namespace YuiPhysicalAI.LocalAI
         public static YuiLocalAiChatResponse NormalizeChat(YuiLocalAiChatResponse response, bool workMode = false)
         {
             response = response ?? new YuiLocalAiChatResponse();
+            response.Text = ExtractFinalAnswer(response.Text);
             var parsed = workMode ? null : TryParseEmbeddedChatJson(response.Text);
             if (parsed != null)
             {
@@ -48,12 +50,52 @@ namespace YuiPhysicalAI.LocalAI
                 response.ShouldTts = parsed.ShouldTts;
             }
 
+            response.Text = ExtractFinalAnswer(response.Text);
             response.Text = workMode ? (response.Text ?? string.Empty).Trim() : CleanSpokenText(response.Text);
             response.Face = NormalizeFace(response.Face);
             response.Animation = NormalizeAnimation(response.Animation);
             response.VoiceStyle = NormalizeVoiceStyle(response.VoiceStyle);
             response.ShouldTts = !string.IsNullOrWhiteSpace(response.Text) && response.ShouldTts;
             return response;
+        }
+
+        // LiteRT-LM normally separates the thought channel. Some model/runtime
+        // responses still contain Gemma's serialized boundary in ordinary text.
+        // Filter before JSON parsing, display, speech and conversation storage.
+        public static string ExtractFinalAnswer(string value)
+        {
+            var text = (value ?? string.Empty).Trim();
+            // Preserve literal protocol examples in code and structured answers.
+            if (text.StartsWith("```", StringComparison.Ordinal) || text.StartsWith("{", StringComparison.Ordinal))
+                return text;
+
+            const string channelEnd = "<channel|>";
+            var boundary = text.IndexOf(channelEnd, StringComparison.Ordinal);
+            if (boundary >= 0)
+            {
+                var payload = text.Substring(boundary + channelEnd.Length).Trim();
+                if (payload.StartsWith("```", StringComparison.Ordinal) || payload.StartsWith("{", StringComparison.Ordinal))
+                    return payload;
+            }
+            var finalHeaders = Regex.Matches(text, @"<\|channel>(?:final|answer)\b\s*", RegexOptions.IgnoreCase);
+            var finalStart = boundary < 0 ? -1 : boundary + channelEnd.Length;
+            foreach (Match header in finalHeaders)
+                finalStart = Math.Max(finalStart, header.Index + header.Length);
+            if (finalStart >= 0)
+                text = text.Substring(finalStart).Trim();
+            else if (Regex.IsMatch(text, @"<\|channel>(?:thought|analysis)\b", RegexOptions.IgnoreCase))
+                return string.Empty; // No completed answer: never speak partial reasoning.
+
+            while (text.StartsWith("<think>", StringComparison.OrdinalIgnoreCase))
+            {
+                var end = text.IndexOf("</think>", StringComparison.OrdinalIgnoreCase);
+                if (end < 0) return string.Empty;
+                text = text.Substring(end + "</think>".Length).Trim();
+            }
+            const string turnEnd = "<end_of_turn>";
+            if (text.EndsWith(turnEnd, StringComparison.Ordinal))
+                text = text.Substring(0, text.Length - turnEnd.Length).TrimEnd();
+            return text;
         }
 
         public static string NormalizeFace(string value)

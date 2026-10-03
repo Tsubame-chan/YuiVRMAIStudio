@@ -18,8 +18,12 @@ namespace YuiPhysicalAI.LocalAI
         public static YuiLocalModelOptions Load(YuiLocalAiModelPack pack,bool work)
         {
             var value=Defaults(pack,work);
-            try { value=JsonConvert.DeserializeObject<YuiLocalModelOptions>(PlayerPrefs.GetString(Key(pack.Id,work),""))??value; }
-            catch(JsonException) { }
+            try {
+                var saved=PlayerPrefs.GetString(Key(pack.Id,work),"");
+                if(!string.IsNullOrWhiteSpace(saved))
+                    JsonConvert.PopulateObject(saved,value);
+            }
+            catch(JsonException) { value=Defaults(pack,work); }
             value.Clamp();return value;
         }
         public void Clamp()

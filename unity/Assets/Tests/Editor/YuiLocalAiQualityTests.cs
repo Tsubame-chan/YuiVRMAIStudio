@@ -11,6 +11,46 @@ namespace YuiPhysicalAI.Tests.Editor
 {
     public sealed class YuiLocalAiQualityTests
     {
+        [TestCase("Thinking Process: determine a concise response.<channel|>こんにちは。", "こんにちは。")]
+        [TestCase("<|channel>thought\nprivate reasoning<channel|>こんにちは。<end_of_turn>", "こんにちは。")]
+        [TestCase("<|channel>analysis\nprivate reasoning<|channel>final\nこんにちは。", "こんにちは。")]
+        [TestCase("<think>private reasoning</think>こんにちは。", "こんにちは。")]
+        [TestCase("こんにちは。", "こんにちは。")]
+        public void ReasoningNeverReachesDisplayedSpokenOrStoredAnswer(string raw, string expected)
+        {
+            foreach (var mode in new[] { "talk", "work" })
+            {
+                var result = YuiLocalAiBackendCompatibility.ToChatResponse(
+                    new YuiLocalAiChatResponse { Success = true, Text = raw, ShouldTts = true }, mode);
+                Assert.AreEqual(expected, result.Text, mode);
+                Assert.AreEqual(expected, result.SpokenText, mode);
+            }
+        }
+
+        [TestCase("<|channel>thought\nunfinished reasoning")]
+        [TestCase("private reasoning<channel|>")]
+        [TestCase("<think>unfinished reasoning")]
+        public void IncompleteReasoningIsAnActionableFailureInsteadOfAnEmptySuccess(string raw)
+        {
+            var error = Assert.Throws<InvalidOperationException>(() => YuiLocalAiBackendCompatibility.ToChatResponse(
+                new YuiLocalAiChatResponse { Success = true, Text = raw, ShouldTts = true }));
+            StringAssert.Contains("初期値", error.Message);
+        }
+
+        [Test]
+        public void WorkCodeAndStructuredFinalAnswerSurviveReasoningRemoval()
+        {
+            var code = "```python\nprint('<channel|>')\n```";
+            var work = YuiLocalAiBackendCompatibility.ToChatResponse(
+                new YuiLocalAiChatResponse { Text = "reasoning<channel|>" + code }, "work");
+            // The inner code marker is literal content, not another channel.
+            Assert.AreEqual(code, work.Text);
+            var structured = YuiLocalAiBackendCompatibility.ToChatResponse(new YuiLocalAiChatResponse {
+                Text = "reasoning<channel|>{\"text\":\"こんにちは。\",\"face\":\"Joy\"}" });
+            Assert.AreEqual("こんにちは。", structured.Text);
+            Assert.AreEqual("Joy", structured.Face);
+        }
+
         [Test]
         public void ChatAndVisionSharingAFileShareCompiledModelCache()
         {

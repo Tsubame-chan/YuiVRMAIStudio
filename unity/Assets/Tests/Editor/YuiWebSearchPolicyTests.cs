@@ -19,7 +19,7 @@ namespace YuiPhysicalAI.Tests.Editor
         public void SourceAnnotationsRemainClickableButAreNotSpoken()
         {
             var annotation=new JObject{["type"]="url_citation",["title"]="Official source",["url"]="https://example.com/news"};
-            var response=new JObject{["output"]=new JArray(new JObject{["content"]=new JArray(new JObject{
+            var response=new JObject{["output"]=new JArray(new JObject{["type"]="message",["content"]=new JArray(new JObject{
                 ["type"]="output_text",["text"]=new JObject{["text"]="調べた結果です。"}.ToString(),
                 ["annotations"]=new JArray(annotation,annotation.DeepClone(),new JObject{["type"]="url_citation",["url"]="file:///private/data"})})})};
             var parsed=YuiDirectOpenAiClient.ParseChatResponse(response.ToString());
