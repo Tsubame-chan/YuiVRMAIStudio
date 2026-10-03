@@ -5,6 +5,22 @@ namespace YuiPhysicalAI.Tests.Editor
 {
     public class YuiIOSBackendNetworkingTests
     {
+        [TestCase("2022.3.62f3")]
+        [TestCase("2022.3.71f1")]
+        [TestCase("6000.0.67f1")]
+        [TestCase("6000.3.7f1")]
+        public void EditorsWithoutSceneLifecycleCannotProduceIosCandidate(string version)
+        {
+            Assert.Throws<UnityEditor.Build.BuildFailedException>(() => YuiIOSBuildTools.RequireSceneLifecycleEditor(version));
+        }
+        [TestCase("2022.3.72f1")]
+        [TestCase("6000.0.68f1")]
+        [TestCase("6000.3.8f1")]
+        [TestCase("6000.3.24f1")]
+        public void SceneLifecycleEditorsAreAccepted(string version)
+        {
+            Assert.DoesNotThrow(() => YuiIOSBuildTools.RequireSceneLifecycleEditor(version));
+        }
         [Test]
         public void PrivateVpnHttpExceptionsKeepPublicHostsProtected()
         {
