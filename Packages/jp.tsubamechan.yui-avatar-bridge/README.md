@@ -1,20 +1,17 @@
-> 2026-09-22: この独自変換器の公開は保留中です。既存の[NDMF VRM Exporter](https://github.com/hkrn/ndmf-vrm-exporter)を使う導線を優先して評価しています。以下は試作の使い方で、正式な推奨手順ではありません。
+# Yui Avatar Bridge
 
-# Yui Avatar Bridge 0.2.0（公開前の候補）
+UnityのアバターをYuiで使うための書き出し拡張です。新しくアバターを用意する方は、[VRMの準備と読み込み](https://github.com/Tsubame-chan/YuiVRMAIStudio/blob/main/docs/AVATAR_IMPORT.md)を参照してください。
 
-自分のVRChat用アバターを、Yuiで開ける共通 `.vrm` 1ファイルへ書き出すUnity拡張です。ユーザー自身で先にVRMへ変換する必要はありません。
+## 配布版とこのソースの違い
 
-VCCへYuiのリポジトリを登録し、対象プロジェクトのManage ProjectからYui Avatar Bridgeを追加します。変換に必要なUniVRM/UniGLTF 0.127.2も依存パッケージとして追加する構成です。0.2.0はまだ公開されておらず、現在の公開索引は旧0.1.1です。
+VCCの公開リポジトリで入手できる **0.1.1はOS別のZIPを書き出す版** です。このソースの0.2.0はVRMを書き出す版で、VCCの公開索引からはまだインストールできません。VRMを用意したい場合、0.1.1の導入は不要です。
 
-`https://raw.githubusercontent.com/Tsubame-chan/YuiVRMAIStudio/main/vpm/index.json`
+既存のZIPを使う場合は[旧ZIPの読み込み](https://github.com/Tsubame-chan/YuiVRMAIStudio/blob/main/docs/YUI_AVATAR_BRIDGE_USER_TEST_GUIDE.md)を参照してください。ZIPは対象OSとUnity版に依存し、別の版のアプリで使えるとは限りません。
 
-1. いつものUnity 2022.3プロジェクトで、使いたい姿のアバターを選びます。
-2. `Yui > Avatar Bridge > Export Avatar for Yui` を開きます。
-3. 利用許可を確認し「Yui用ファイルを書き出す」を押します。
-4. 保存されたファイルを端末へコピーしてYuiで開きます。
+## ソースのVRM書き出し機能
 
-OS別の書出しやBuild Support追加は不要です。元Prefab・Scene・Materialは変更しません。対応するModular Avatarの加工はコピー側で実行します。表情や衣装のアニメーション、独自Shader、VRChat独自ギミックを完全再現するものではありません。変換できない口やまばたき等は完了時に知らせます。
+UniVRM/UniGLTF 0.127.2を使うUnity Editor拡張です。導入済みのプロジェクトでは、アバターを選択し `Yui > Avatar Bridge > Export Avatar for Yui` から、利用許可を確認して書き出します。生成した `.vrm` をYuiへ読み込んでください。
 
-生成したパッケージからVRChat SDK 3.9.0の公式Robot、Modular AvatarのBone Proxy/Merge ArmatureをMac Editorで検証しています。Windows VCCの導入操作・iPhone実機・全アバターの見た目は未受入です。
+元Prefab・Scene・Materialを変更せず、コピーで処理します。対応するModular Avatarの加工もコピー側で実行します。独自シェーダー、衣装メニュー、VRChat独自のギミックが完全に再現されるわけではありません。書き出し後の案内で口パク・まばたきなどの変換結果を確認してください。
 
-[導入と転送](https://github.com/Tsubame-chan/YuiVRMAIStudio/blob/main/docs/AVATAR_IMPORT.md)。`Documentation~/FORMAT.md`は従来ZIPの互換仕様です。本パッケージにアバターやVRChat SDKは含めません。
+本パッケージにアバターやVRChat SDKは含まれません。[旧ZIPのファイル仕様](Documentation~/FORMAT.md)。

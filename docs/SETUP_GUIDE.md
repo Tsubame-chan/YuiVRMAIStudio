@@ -21,7 +21,7 @@ SmartScreenが出る場合は配布元を確認し、OSの案内で許可しま�
 
 ## Backendを使う場合
 
-初回取得した `YuiBackend` の `Start_Yui_Backend.bat` / `Stop_Yui_Backend.bat` を使います。端末内workerはこのHTTPサーバーを必要としません。Startで開く管理画面から、提供元・保存した声・端末同期を設定できます。[Backend Console](BACKEND_CONSOLE.md) / [追加TTS導入](BACKEND_TTS_GUIDE.md)。対象STT/TTSエンジンは別途導入・起動します。アプリのDirect APIキーとは別です。
+初回取得した `YuiBackend` の `Start_Yui_Backend.bat` / `Stop_Yui_Backend.bat` を使います。端末内AIで会話するだけなら、このBackendを起動する必要はありません。Startで開く管理画面から、提供元・保存した声・端末同期を設定できます。[Backend Console](BACKEND_CONSOLE.md) / [追加TTS導入](BACKEND_TTS_GUIDE.md)。対象STT/TTSエンジンは別途導入・起動します。アプリのDirect APIキーとは別です。
 
 ソースからのセットアップではPowerShellで:
 
@@ -33,7 +33,7 @@ notepad .env
 .\scripts\stop_local_services.ps1
 ```
 
-前提ツール・実行ポリシーの案内はスクリプトを参照してください。リモート接続は双方で到達できるVPNアドレスとlisten設定が必要です。
+前提ツール・実行ポリシーの案内はスクリプトを参照してください。別端末から接続する場合は、PCとモバイルの両方をTailscale等へ接続し、PCのVPNアドレスで待ち受ける設定が必要です。[接続先の設定](BACKEND_CONSOLE.md#初めて使うとき)。
 
 ## 困ったとき
 
