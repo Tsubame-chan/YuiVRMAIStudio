@@ -77,13 +77,15 @@ namespace YuiPhysicalAI.Editor
             var plistPath = Path.Combine(pathToBuiltProject, "Info.plist");
             if (!File.Exists(plistPath))
             {
-                Debug.LogWarning($"Yui build: Info.plist was not found for iOS postprocess: {plistPath}");
-                return;
+                throw new UnityEditor.Build.BuildFailedException($"Yui build: Info.plist was not found for iOS postprocess: {plistPath}");
             }
 
             var plist = new PlistDocument();
             plist.ReadFromFile(plistPath);
             var root = plist.root;
+            if (!root.values.ContainsKey("UIApplicationSceneManifest")
+                || !File.Exists(Path.Combine(pathToBuiltProject, "Classes/UI/UnityScene.mm")))
+                throw new UnityEditor.Build.BuildFailedException("The exported iOS project lacks UIScene lifecycle support. Do not archive or distribute this candidate.");
             // Keep the Home Screen label readable for every distribution profile.
             root.SetString("CFBundleDisplayName", "Yui VRM AI");
             root.SetBoolean("UIStatusBarHidden", false);
