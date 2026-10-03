@@ -22,6 +22,27 @@ namespace YuiPhysicalAI.Tests
             viewer.HideConsole(); Field("rotateAvatarInViewer", true); Field("defaultYaw", 0f); Field("currentYaw", -90f);
         }
         [TearDown] public void TearDown() { Object.DestroyImmediate(host); Object.DestroyImmediate(avatar); Object.DestroyImmediate(cameraHost); }
+        [TestCase(-1, true)]
+        [TestCase(0, false)]
+        [TestCase(1, true)]
+        public void StartupDefaultsToBodyRotationAndPreservesExplicitChoice(int savedValue, bool expected)
+        {
+            const string key = "Yui.Viewer.RotateAvatar";
+            var hadValue = PlayerPrefs.HasKey(key);
+            var original = PlayerPrefs.GetInt(key);
+            try
+            {
+                if (savedValue < 0) PlayerPrefs.DeleteKey(key);
+                else PlayerPrefs.SetInt(key, savedValue);
+                typeof(YuiConsoleVisibilityController).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(viewer, null);
+                Assert.That(viewer.ViewerRotatesAvatar, Is.EqualTo(expected));
+            }
+            finally
+            {
+                if (hadValue) PlayerPrefs.SetInt(key, original);
+                else PlayerPrefs.DeleteKey(key);
+            }
+        }
         [Test] public void CameraOrbitKeepsPivotCenteredDuringFastTurnsAndDoesNotTurnModel()
         {
             Field("rotateAvatarInViewer", false);
