@@ -1,0 +1,61 @@
+{
+  "batch_id": "11111111111141118111111111111111",
+  "operations": [
+    {
+      "op_id": "77777777777747778777777777777777",
+      "type": "create_binding",
+      "entity_id": "88888888888848888888888888888888",
+      "expected_revision": 0,
+      "payload": {
+        "purpose": "talk",
+        "connection_id": null,
+        "context_policy": "private_only"
+      }
+    },
+    {
+      "op_id": "99999999999949998999999999999999",
+      "type": "create_conversation",
+      "entity_id": "44444444444444448444444444444444",
+      "expected_revision": 0,
+      "payload": {
+        "purpose": "talk",
+        "binding_id": "88888888888848888888888888888888"
+      }
+    },
+    {
+      "op_id": "22222222222242228222222222222222",
+      "type": "append_record",
+      "entity_id": "33333333333343338333333333333333",
+      "expected_revision": 0,
+      "payload": {
+        "kind": "user_utterance",
+        "conversation_id": "44444444444444448444444444444444",
+        "text": "マンゴーも生姜もおいしかった。",
+        "recorded_at": "2026-10-03T12:00:00+09:00",
+        "realm": "real",
+        "turn_id": "aaaaaaaaaaaa4aaa8aaaaaaaaaaaaaaa",
+        "in_reply_to_record_id": null
+      }
+    },
+    {
+      "op_id": "55555555555545558555555555555555",
+      "type": "put_memory",
+      "entity_id": "66666666666646668666666666666666",
+      "expected_revision": 0,
+      "payload": {
+        "type": "preference",
+        "subject": "user",
+        "text": "マンゴーと生姜のパンケーキをおいしく感じた。",
+        "basis": "user_statement",
+        "source_refs": [
+          {
+            "record_id": "33333333333343338333333333333333",
+            "revision": 1,
+            "quote": "マンゴーも生姜もおいしかった。"
+          }
+        ],
+        "pinned": false
+      }
+    }
+  ]
+}

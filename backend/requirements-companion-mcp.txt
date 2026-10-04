@@ -1,0 +1,3 @@
+# Opt-in private Companion MCP adapter. Install alongside requirements.txt.
+# Keep MCP outside the normal Backend package until the external path is accepted.
+mcp==2.3.0

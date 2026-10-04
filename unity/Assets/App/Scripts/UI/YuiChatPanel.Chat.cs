@@ -40,6 +40,11 @@ namespace YuiPhysicalAI.UI
         private async System.Threading.Tasks.Task SendMessageAsync(string message)
         {
             if (isSending || deviceSyncBusy) return;
+            if (YuiChatRequestModes.IsWork(chatInteractionMode) && HasCompanionWorkTrialConfig())
+            {
+                await ChooseCompanionWorkDestinationAsync(message);
+                return;
+            }
             if (runtimeVrmImporter != null && runtimeVrmImporter.IsImporting)
             { SetStatus("アバターの読み込みが終わってから送信してください。"); return; }
             using var operation = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token);
@@ -57,7 +62,7 @@ namespace YuiPhysicalAI.UI
             var totalTimer = System.Diagnostics.Stopwatch.StartNew();
             isSending = true;
             SetInteractable(false);
-            AppendLog("You", message, Newtonsoft.Json.JsonConvert.SerializeObject(new { request_id=chatRequestId, session_id=sessionId, character_id=characterId, role="user" }));
+            var userArchiveId=AppendLog("You", message, Newtonsoft.Json.JsonConvert.SerializeObject(new { request_id=chatRequestId, session_id=sessionId, character_id=characterId, role="user" }));
             SetStatus("Thinking...");
             SetPendingLine(CharacterName, "考え中...");
             YuiMemoryDiagnostics.LogSnapshot("chat_before_request", $"user_chars={message?.Length ?? 0}");
@@ -99,7 +104,7 @@ namespace YuiPhysicalAI.UI
                 responseReceived = true;
                 if (retainDialogue)
                 {
-                    try { DialogueStore.Append(characterId, dialogueMode, message, chat.Text); CharacterMemoryStore.Remember(characterId, message, !retainDialogue); }
+                    try { DialogueStore.Append(characterId, dialogueMode, message, chat.Text); if (!chat.SharedCanonical && userArchiveId!=null) CharacterMemoryStore.Remember(characterId, message, !retainDialogue, userArchiveId); }
                     catch (Exception ex) { Debug.LogWarning("Recent character dialogue was not saved: " + ex.Message); }
                 }
                 retryChatMessage = null;

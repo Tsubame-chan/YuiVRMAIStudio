@@ -273,6 +273,7 @@ namespace YuiPhysicalAI.UI
 
                 await RefreshBackendConfigAsync(cancellationToken);
                 CheckDeviceSyncOnConnection();
+                _ = RefreshCompanionWorkTrialAsync(cancellationToken);
 
             }
             catch (Exception ex)

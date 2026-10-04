@@ -271,6 +271,7 @@ namespace YuiPhysicalAI.Api
     public sealed class ChatRequest
     {
         [JsonProperty("character_id")] public string CharacterId;
+        [JsonProperty("shared_character_id")] public string SharedCharacterId;
         [JsonProperty("session_id")] public string SessionId;
         [JsonProperty("task_id")] public string TaskId;
         [JsonProperty("request_id")]
@@ -327,6 +328,9 @@ namespace YuiPhysicalAI.Api
 
         [JsonProperty("should_tts")]
         public bool ShouldTts { get; set; }
+
+        [JsonProperty("shared_canonical")]
+        public bool SharedCanonical { get; set; }
     }
 
     [Serializable]

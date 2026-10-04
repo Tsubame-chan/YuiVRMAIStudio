@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     character_name: str = "Yui"
 
     database_url: str = "sqlite:///./data/yui.db"
+    companion_v2_testing_enabled: bool = False
+    companion_v2_cutover_testing_enabled: bool = False
 
     openai_api_key: str = ""
     openai_chat_model: str = "gpt-5.4-mini"

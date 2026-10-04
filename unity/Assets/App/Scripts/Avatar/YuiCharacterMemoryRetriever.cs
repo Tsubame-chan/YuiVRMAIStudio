@@ -38,19 +38,35 @@ namespace YuiPhysicalAI.Avatar
             for(var i=0;i<text.Length;i+=300)chunks.Add(text.Substring(i,Math.Min(450,text.Length-i)));
             return chunks.OrderByDescending(c=>Terms(c).Count(query.Contains)).First()+"…";
         }
+        private static bool HasRequiredLiteral(string query,string content)
+        {
+            var normalizedQuery=(query??"").Normalize(NormalizationForm.FormKC).ToLowerInvariant();
+            var normalizedContent=(content??"").Normalize(NormalizationForm.FormKC).ToLowerInvariant();
+            // Character bigrams can otherwise mistake 1999 for 9999.
+            var contentNumbers=new HashSet<string>(Regex.Matches(normalizedContent,@"(?<![a-z0-9])\d+(?![a-z0-9])").Cast<Match>().Select(m=>m.Value));
+            foreach(Match number in Regex.Matches(normalizedQuery,@"(?<![a-z0-9])\d+(?![a-z0-9])"))
+                if(!contentNumbers.Contains(number.Value))return false;
+            // A bare name lookup must not turn Alice into Alicia through shared bigrams.
+            if(Regex.IsMatch(normalizedQuery,@"^[a-z]{3,}$") &&
+                !Regex.Matches(normalizedContent,@"[a-z]{3,}").Cast<Match>().Any(m=>m.Value==normalizedQuery))return false;
+            return true;
+        }
         public string Retrieve(IReadOnlyList<YuiCharacterMemoryStore.Entry> entries,string query,int maxChars)
         {
             maxChars=Math.Max(0,Math.Min(2400,maxChars));
             var terms=Terms(query);
             var present=new HashSet<string>(entries.Select(e=>e.Id));
-            var ranked=entries.Where(e=>e.SourceIds==null || e.SourceIds.Length==0 || e.SourceIds.All(present.Contains)).Select((entry,index)=>new { Entry=entry,Index=index,
+            var ranked=entries.Where(e=>(e.SourceIds==null || e.SourceIds.Length==0 || e.SourceIds.All(present.Contains)) && HasRequiredLiteral(query,e.Content)).Select((entry,index)=>new { Entry=entry,Index=index,
                 Score=Terms(entry.Content).Count(terms.Contains)*3+(entry.Pinned?12:0) }).ToList();
             var candidates=ranked.Where(e=>e.Score>0).ToList();
-            if(candidates.Count==0)candidates=ranked.Where(e=>Terms(e.Entry.Content).Any(t=>t.StartsWith("category:",StringComparison.Ordinal))).OrderByDescending(e=>RecordedTime(e.Entry.CreatedUtc)).Take(2).ToList();
+            // Empty-query prompts need a small general reminder. A specific unrelated
+            // question must not receive an arbitrary recent personal fact instead.
+            if(candidates.Count==0 && string.IsNullOrWhiteSpace(query))
+                candidates=ranked.Where(e=>Terms(e.Entry.Content).Any(t=>t.StartsWith("category:",StringComparison.Ordinal))).OrderByDescending(e=>RecordedTime(e.Entry.CreatedUtc)).Take(2).ToList();
             var selected=candidates.OrderByDescending(e=>e.Score).ThenByDescending(e=>RecordedTime(e.Entry.CreatedUtc)).ThenByDescending(e=>e.Index).Take(5).ToList();
             var accepted=new List<Tuple<string,string>>();var used=0;
             foreach(var item in selected) {
-                var label=item.Entry.SourceIds!=null && item.Entry.SourceIds.Length>0?"User-confirmed interpretation (sources: "+string.Join(",",item.Entry.SourceIds)+"): ":"User said: ";
+                var label=item.Entry.SourceIds!=null && item.Entry.SourceIds.Length>0?"User-confirmed interpretation (sources: "+string.Join(",",item.Entry.SourceIds)+"): ":"Saved user-related note: ";
                 var line="- "+item.Entry.CreatedUtc+" "+label+Excerpt(item.Entry.Content,terms)+"\n";
                 if(used+line.Length>maxChars)continue;
                 accepted.Add(Tuple.Create(item.Entry.CreatedUtc,line));used+=line.Length;

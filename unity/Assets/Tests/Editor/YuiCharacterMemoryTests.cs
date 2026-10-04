@@ -40,12 +40,37 @@ namespace YuiPhysicalAI.Tests
         [Test] public void AssistantInventedFactsAreNotInferredAndTaskOnlyMessagesAreNotRemembered()
         {
             var store=new YuiCharacterMemoryStore(directory);store.Remember("a","4+4-3を計算して",false);Assert.IsEmpty(store.Read("a"));
+            store.Remember("a","私の名前を覚えていますか？",false);Assert.IsEmpty(store.Read("a"));
+            store.Remember("a","私の名前を覚えていますか",false);Assert.IsEmpty(store.Read("a"));
+            store.Remember("a","What do you remember about my name",false);Assert.IsEmpty(store.Read("a"));
             store.Remember("a","私は猫が好き",false);Assert.AreEqual(1,store.Read("a").Count);
         }
         [Test] public void LaterCorrectionsArePresentedAfterEarlierStatements()
         {
             var store=new YuiCharacterMemoryStore(directory);store.Save("a","私は鶏肉カレーが好き");store.Save("a","今は豆カレーが好き");
             var context=store.Context("a","好きなカレー");Assert.Less(context.IndexOf("鶏肉"),context.IndexOf("豆"));
+        }
+        [Test] public void NumericAndBareNameQueriesDoNotRecallSimilarButDifferentFacts()
+        {
+            var store=new YuiCharacterMemoryStore(directory);
+            store.Save("a","1999年に Alicia と旅行した");
+            Assert.AreEqual("",store.Context("a","9999"));
+            Assert.AreEqual("",store.Context("a","Alice"));
+            store.Save("a","9999年に Alice と旅行した");
+            var year=store.Context("a","9999");
+            StringAssert.Contains("9999",year);
+            StringAssert.DoesNotContain("1999",year);
+            var person=store.Context("a","Alice");
+            StringAssert.Contains("Alice",person);
+            StringAssert.DoesNotContain("Alicia",person);
+            StringAssert.Contains("Saved user-related note",person);
+        }
+        [Test] public void UnrelatedSpecificQuestionDoesNotReceiveRecentPersonalNote()
+        {
+            var store=new YuiCharacterMemoryStore(directory);
+            store.Save("a","私はカレーが好きです");
+            Assert.AreEqual("",store.Context("a","weather"));
+            StringAssert.Contains("カレー",store.Context("a",""));
         }
         [Test] public void LocalNativeAndDesktopPromptsUseSameSavedReference()
         {
@@ -58,6 +83,75 @@ namespace YuiPhysicalAI.Tests
         {
             var store=new YuiCharacterMemoryStore(directory);store.Save("a","私は猫が好き");var file=Directory.GetFiles(directory,"*.json")[0];File.WriteAllText(file,"null");
             Assert.Throws<InvalidDataException>(()=>new YuiCharacterMemoryStore(directory).Save("a","私は犬が好き"));Assert.AreEqual("null",File.ReadAllText(file));
+        }
+        [Test] public void DuplicateMemoryIdsAreRejectedWithoutRewritingTheOriginal()
+        {
+            var store=new YuiCharacterMemoryStore(directory);store.Save("a","私は猫が好き");
+            var file=store.SyncFilePath("a");var entries=store.Read("a");
+            entries.Add(new YuiCharacterMemoryStore.Entry {Id=entries[0].Id,Content="私は犬が好き"});
+            var damaged=Newtonsoft.Json.JsonConvert.SerializeObject(entries);File.WriteAllText(file,damaged);
+            Assert.Throws<InvalidDataException>(()=>new YuiCharacterMemoryStore(directory).Save("a","新しい記憶"));
+            Assert.AreEqual(damaged,File.ReadAllText(file));
+        }
+        [Test] public void HistoryBackedAutomaticNotesFollowTheirOwnHistoryDeletion()
+        {
+            var store=new YuiCharacterMemoryStore(directory);
+            var first=Guid.NewGuid().ToString("N");var second=Guid.NewGuid().ToString("N");
+            store.Remember("a","私は紅茶が好き",false,first);
+            store.Remember("a","私は紅茶が好き",false,second);
+            store.Save("a","私はコーヒーが好き");
+            var entries=store.Read("a");
+            entries.Add(new YuiCharacterMemoryStore.Entry {Id="connection:trial",Content="紅茶とコーヒーの好み",
+                SourceIds=new[]{"auto-history:"+first,entries[2].Id},SourceVersions=new long[]{1,1}});
+            File.WriteAllText(store.SyncFilePath("a"),Newtonsoft.Json.JsonConvert.SerializeObject(entries));
+            store.Invalidate();
+            Assert.AreEqual(4,store.Read("a").Count);
+            store.ForgetHistory("a",first);
+            Assert.AreEqual(2,new YuiCharacterMemoryStore(directory).Read("a").Count);
+            store.ForgetAllHistory("a");
+            var remaining=new YuiCharacterMemoryStore(directory).Read("a");
+            Assert.AreEqual(1,remaining.Count);
+            Assert.AreEqual("私はコーヒーが好き",remaining[0].Content);
+        }
+        [Test] public void ClearingHistoryAcrossCharactersKeepsManualNotes()
+        {
+            var store=new YuiCharacterMemoryStore(directory);
+            store.Remember("a","私は紅茶が好き",false,Guid.NewGuid().ToString("N"));
+            store.Remember("b","私は猫が好き",false,Guid.NewGuid().ToString("N"));
+            store.Save("b","手入力の記憶");
+            store.ForgetAllHistory();
+            Assert.IsEmpty(new YuiCharacterMemoryStore(directory).Read("a"));
+            Assert.AreEqual("手入力の記憶",new YuiCharacterMemoryStore(directory).Read("b")[0].Content);
+        }
+        [Test] public void EditingAnAutomaticNoteDetachesItFromTheOldHistory()
+        {
+            var store=new YuiCharacterMemoryStore(directory);
+            var historyId=Guid.NewGuid().ToString("N");
+            store.Remember("a","私は紅茶が好き",false,historyId);
+            var original=store.Read("a")[0];
+            store.Save("a","今はコーヒーが好き",original.Id,true);
+            var edited=store.Read("a")[0];
+            Assert.AreNotEqual(original.Id,edited.Id);
+            store.ForgetHistory("a",historyId);
+            Assert.AreEqual("今はコーヒーが好き",new YuiCharacterMemoryStore(directory).Read("a")[0].Content);
+        }
+        [Test] public void SyncReplicaPrunesAutomaticNotesWhoseUserSourceIsGoneOrChanged()
+        {
+            var valid=Guid.NewGuid().ToString("N");var missing=Guid.NewGuid().ToString("N");
+            var entries=new List<YuiCharacterMemoryStore.Entry> {
+                new YuiCharacterMemoryStore.Entry {Id="auto-history:"+valid,Content="私は紅茶が好き"},
+                new YuiCharacterMemoryStore.Entry {Id="auto-history:"+missing,Content="私は猫が好き"},
+                new YuiCharacterMemoryStore.Entry {Id="connection:missing",Content="猫の話",
+                    SourceIds=new[]{"auto-history:"+missing,"auto-history:"+valid},SourceVersions=new long[]{1,1}},
+                new YuiCharacterMemoryStore.Entry {Id="manual",Content="手入力"}};
+            var removed=YuiCharacterMemoryStore.PruneUnbackedHistory(entries,
+                new Dictionary<string,string>{{valid,"私は紅茶が好き"}});
+            Assert.AreEqual(2,removed);
+            Assert.AreEqual(2,entries.Count);
+            Assert.IsTrue(entries.Exists(e=>e.Id=="auto-history:"+valid));
+            Assert.IsTrue(entries.Exists(e=>e.Id=="manual"));
+            Assert.AreEqual(1,YuiCharacterMemoryStore.PruneUnbackedHistory(entries,
+                new Dictionary<string,string>{{valid,"訂正済み"}}));
         }
         [Test] public void SecretReadsExistingMemoryWithoutWritingItsOwnStatement()
         {

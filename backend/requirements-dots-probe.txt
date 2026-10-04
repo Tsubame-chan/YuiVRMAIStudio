@@ -1,0 +1,3 @@
+# Optional isolated G0 probe. Keep this out of the normal Backend/runtime bundle.
+mcp>=2.3,<3
+standardwebhooks==1.1.0

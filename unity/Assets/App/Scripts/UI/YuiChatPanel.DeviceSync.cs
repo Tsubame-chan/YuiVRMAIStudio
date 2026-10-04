@@ -28,6 +28,8 @@ namespace YuiPhysicalAI.UI
             var dialog=YuiSimpleDialog.Create("キャラクターと会話を同期",$"送り先: {client.BaseUrl}\n\n名前・人格の指示・記憶・会話履歴を、このPCと登録した端末で共有します。初回は共有先のキャラクターを選び、差分を確認してから反映します。声の設定、APIキー、アバターは送りません。");
             dialog.AddButton("登録済みの端末で差分を確認",()=>{dialog.Close();_=StartDeviceSyncAsync(false);});
             dialog.AddButton("この端末をPCに登録",()=>{dialog.Close();OpenSyncPairing();});
+            if (HasRegisteredDeviceSync())
+                dialog.AddButton("dotの作業接続 (試験)",()=>{dialog.Close();_=OpenCompanionWorkSetupAsync();});
             dialog.AddButton("閉じる",dialog.Close);dialog.Compact(620);
         }
         private bool CanStartDeviceSync()
@@ -84,14 +86,17 @@ namespace YuiPhysicalAI.UI
             var result=new JObject();
             result["profile:name"]=new JObject{{"text",characterName??"Yui"}};
             result["profile:instruction"]=new JObject{{"text",customInstruction??""}};
-            foreach(var m in new YuiCharacterMemoryStore(Path.Combine(Application.persistentDataPath,"CharacterMemory")).Read(ChatCharacterId())) {
+            var page=ConversationArchive(ChatCharacterId()).ReadPage(0,18000);
+            if(page.HasOlder)throw new InvalidDataException("履歴が同期の上限を超えています。元ファイルは保持しています。");
+            if(page.DamagedLines>0)throw new InvalidDataException("履歴に読み込めない行があります。元ファイルは保持しています。");
+            var memories=new YuiCharacterMemoryStore(Path.Combine(Application.persistentDataPath,"CharacterMemory")).Read(ChatCharacterId());
+            YuiCharacterMemoryStore.PruneUnbackedHistory(memories,page.Items.Where(h=>h.Speaker=="You")
+                .ToDictionary(h=>h.Id,h=>h.Text,StringComparer.Ordinal));
+            foreach(var m in memories) {
                 var value=new JObject{{"content",m.Content},{"pinned",m.Pinned},{"recorded_utc",m.CreatedUtc??""}};
                 if(m.SourceIds!=null && m.SourceIds.Length>0) {value["source_ids"]=JArray.FromObject(m.SourceIds);value["source_versions"]=JArray.FromObject(m.SourceVersions??Array.Empty<long>());value["basis"]="user_confirmed_connection";}
                 result["memory:"+m.Id]=value;
             }
-            var page=ConversationArchive(ChatCharacterId()).ReadPage(0,18000);
-            if(page.HasOlder)throw new InvalidDataException("履歴が同期の上限を超えています。元ファイルは保持しています。");
-            if(page.DamagedLines>0)throw new InvalidDataException("履歴に読み込めない行があります。元ファイルは保持しています。");
             foreach(var h in page.Items) {
                 JObject metadata=null;try{if(!string.IsNullOrEmpty(h.Metadata))metadata=JObject.Parse(h.Metadata);}catch(JsonException){}
                 result["history:"+h.Id]=new JObject{{"text",h.Text??""},{"speaker",h.Speaker??""},{"mode",h.Mode??"talk"},{"recorded_utc",h.CreatedUtc??""},
@@ -198,6 +203,12 @@ namespace YuiPhysicalAI.UI
             try{return !string.IsNullOrEmpty(YuiSyncCredentialStore.Read(client.BaseUrl)) && ReadSyncState()[ChatCharacterId()] is JObject;}
             catch(Exception){return false;}
         }
+        private string SharedCharacterForBackendChat(string character)
+        {
+            if (secretMode || client == null || string.IsNullOrEmpty(client.BaseUrl)) return null;
+            var binding = ReadSyncState()[character] as JObject;
+            return (string)binding?["shared_id"];
+        }
         private void ApplySyncSnapshot(string character,JObject state,JObject snapshot)
         {
             var items=(JArray)snapshot["items"];var profile=CaptureCharacterProfile();
@@ -216,6 +227,8 @@ namespace YuiPhysicalAI.UI
                             Metadata=old?.Metadata??new JObject{{"session_id",value["conversation_id"]},{"request_id",value["turn_id"]},{"sync_origin_device",item["origin_device"]}}.ToString(Formatting.None)});break;
                 }
             }
+            YuiCharacterMemoryStore.PruneUnbackedHistory(memories,history.Where(h=>h.Speaker=="You")
+                .ToDictionary(h=>h.Id,h=>h.Text,StringComparer.Ordinal));
             state[character]=new JObject{{"shared_id",snapshot["character_id"]},{"items",items.DeepClone()},{"synced_utc",DateTime.UtcNow.ToString("o")}};
             DateTimeOffset SortTime(YuiTextArchive.Entry e)=>DateTimeOffset.TryParse(e.CreatedUtc,out var time)?time:DateTimeOffset.MinValue;
             var files=new Dictionary<string,string>{

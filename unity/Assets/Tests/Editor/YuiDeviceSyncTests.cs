@@ -40,6 +40,24 @@ namespace YuiPhysicalAI.Tests
             try {Assert.Throws<InvalidDataException>(()=>YuiSyncFileTransaction.Apply(root,new Dictionary<string,string>{{foreign,"overwrite"}}));Assert.AreEqual("keep",File.ReadAllText(foreign));}
             finally{File.Delete(foreign);}
         }
+        [Test]public void HistoryDeletionPurgesOnlyGeneratedSyncBackupsAndRecoversAfterInterruption()
+        {
+            var history=Path.Combine(root,"ConversationHistory","one.jsonl");
+            Directory.CreateDirectory(Path.GetDirectoryName(history));File.WriteAllText(history,"private old history");
+            YuiSyncFileTransaction.Apply(root,new Dictionary<string,string>{{history,"new history"}});
+            var backups=Path.Combine(root,"DeviceSync","Backups");
+            Assert.IsNotEmpty(Directory.GetFiles(backups,"*.bak",SearchOption.AllDirectories));
+            var independent=Path.Combine(backups,"user-copy");Directory.CreateDirectory(independent);
+            File.WriteAllText(Path.Combine(independent,"keep.txt"),"keep");
+            YuiSyncFileTransaction.BeginHistoryForget(root);
+            Assert.IsEmpty(Directory.GetFiles(backups,"*.bak",SearchOption.AllDirectories));
+            Assert.Throws<InvalidOperationException>(()=>YuiSyncFileTransaction.Apply(root,
+                new Dictionary<string,string>{{history,"should not race deletion"}}));
+            YuiSyncFileTransaction.Recover(root);
+            Assert.IsFalse(File.Exists(Path.Combine(root,"DeviceSync","history-forget.pending")));
+            Assert.AreEqual("keep",File.ReadAllText(Path.Combine(independent,"keep.txt")));
+            Assert.AreEqual("new history",File.ReadAllText(history));
+        }
         [Test]public void DiffKeepsStableIdsAndExplicitlyRecordsDeletionAgainstLastAgreement()
         {
             var previous=new JArray(new JObject{{"kind","memory"},{"id","one"},{"version",7},{"deleted",false},{"value",new JObject{{"content","previous"}}}},

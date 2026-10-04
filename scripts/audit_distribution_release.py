@@ -22,6 +22,7 @@ _PRIVATE_AVATAR_DEFAULTS_CLASS = "".join(
 _PRIVATE_AVATAR_DEFAULTS_SOURCE = "unity/Assets/App/Scripts/Avatar/" + _PRIVATE_AVATAR_DEFAULTS_CLASS + ".cs"
 
 PRIVATE_BLOCKERS = [
+    ("_local_tools", "local probe databases, credentials and operational files must not ship"),
     (_PRIVATE_AVATAR_DEFAULTS_SOURCE, "private avatar defaults must not ship"),
     (_PRIVATE_AVATAR_DEFAULTS_SOURCE + ".meta", "private avatar defaults metadata must not ship"),
     ("unity/Assets/App/Editor/YuiAvatarSceneSetup.cs", "local-only editor scene setup script must not ship"),
@@ -44,6 +45,7 @@ PRIVATE_BLOCKERS = [
 GENERATED_BLOCKERS = [
     (".DS_Store", "macOS Finder metadata must not ship"),
     (".pytest_cache", "pytest cache must not ship"),
+    ("unity/runtime-vrm-shaders.txt", "local Unity build path evidence must not ship"),
     ("backend/.pytest_cache", "pytest cache must not ship"),
     ("backend/__pycache__", "Python bytecode cache must not ship"),
     ("scripts/__pycache__", "Python bytecode cache must not ship"),

@@ -189,24 +189,29 @@ namespace YuiPhysicalAI.UI
         {
             var character=historyCharacter??ChatCharacterId();
             var root=CreateSavedDataPanel("履歴削除の確認");
-            SavedDataText(root,all?"この端末の全キャラクターの会話履歴を削除します。保存済み回答とBackend側の記録は残ります。取り消せません。":HistoryCharacterName(character)+" のTalk・Workの会話履歴を端末から削除します。保存済み回答とBackend側の記録は残ります。取り消せません。");
+            SavedDataText(root,all?"この端末の全キャラクターの会話履歴と、その発言から自動保存されたメモを削除します。保存済み回答とBackend側の記録は残ります。取り消せません。":HistoryCharacterName(character)+" のTalk・Workの会話履歴と、その発言から自動保存されたメモを端末から削除します。保存済み回答とBackend側の記録は残ります。取り消せません。");
             var busy=false;
             ComposerButton(root,"Cancel","キャンセル",ShowHistory,.03f,.06f,.47f,.18f);
             ComposerButton(root,"ConfirmDelete","削除する",async ()=> {
                 if(busy)return;
-                if(HasStoppableComposerOperation || isSending) { SetStatus("返答を停止してから消去してください。");return; }
+                if(HasStoppableComposerOperation || isSending || deviceSyncBusy) { SetStatus("会話または同期が終わってから消去してください。");return; }
                 busy=true;
                 try {
                     // No background send can begin between the guard and local deletion.
+                    YuiSyncFileTransaction.BeginHistoryForget(Application.persistentDataPath);
+                    try {
                     if(all) {
+                        CharacterMemoryStore.ForgetAllHistory();
                         var directory=Path.Combine(Application.persistentDataPath,"ConversationHistory");
                         if(Directory.Exists(directory))foreach(var file in Directory.GetFiles(directory,"*.jsonl"))new YuiTextArchive(file).Clear();
                         DialogueStore.ClearAll();
                         PlayerPrefs.SetString("Yui.ChatSession.Generation",Guid.NewGuid().ToString("N"));
                     } else {
+                        CharacterMemoryStore.ForgetAllHistory(character);
                         ConversationArchive(character).Clear();
                         foreach(var mode in new[]{"talk","work"}) { DialogueStore.Clear(character,mode);PlayerPrefs.DeleteKey("Yui.ChatSession."+character+"."+mode+PlayerPrefs.GetString("Yui.ChatSession.Generation","")); }
                     }
+                    } finally { YuiSyncFileTransaction.CompleteHistoryForget(Application.persistentDataPath); }
                     PlayerPrefs.Save(); retryChatMessage=null; historySnapshot=-1; historyPage=0; historyGeneration++;
                     chatLogView?.Clear(); await RestoreConversationViewAsync();
                     if(root!=null && savedDataPanel==root.gameObject)ShowHistory();
@@ -239,16 +244,21 @@ namespace YuiPhysicalAI.UI
             {
                 var confirmed=false;var busy=false;Button remove=null;
                 var store=ResultStore;
-                var character = historyCharacter;
+                var character = historyCharacter??ChatCharacterId();
                 remove=ComposerButton(root,"Delete","Delete",async ()=>
                 {
                     if(busy) return;
                     if(!confirmed) { confirmed=true;YuiUiLocalization.Set(remove.GetComponentInChildren<Text>(),"Delete this entry");return; }
-                    if(!saved && HasStoppableComposerOperation) { SetStatus("返答を停止してから消去してください。");return; }
+                    if(!saved && (HasStoppableComposerOperation || deviceSyncBusy)) { SetStatus("会話または同期が終わってから消去してください。");return; }
                     busy=true;
                     try
                     {
-                        await Task.Run(()=> { if(saved) store.Remove(item.Id);else archive.Remove(item.Id); });
+                        var localRoot=Application.persistentDataPath;
+                        await Task.Run(()=> { if(saved) store.Remove(item.Id);else {
+                            YuiSyncFileTransaction.BeginHistoryForget(localRoot);
+                            try { CharacterMemoryStore.ForgetHistory(character,item.Id);archive.Remove(item.Id); }
+                            finally { YuiSyncFileTransaction.CompleteHistoryForget(localRoot); }
+                        } });
                         if(!saved) { DialogueStore.Clear(character,item.Mode??historyMode);historySnapshot=-1;await RestoreConversationViewAsync(); }
                         if(root!=null && savedDataPanel==root.gameObject) ShowHistory();
                     }

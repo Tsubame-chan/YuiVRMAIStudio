@@ -145,7 +145,12 @@ namespace YuiPhysicalAI.UI
                 localTranscriptionAvailable);
             var chatEndpoint = IsDirectOpenAiConversationMode()
                 ? (Func<ChatRequest, CancellationToken, Task<ChatResponse>>)SendDirectOpenAiChatAsync
-                : ((request, token) => SendWithPermissionAsync(backendUrl, false, () => client.SendChatAsync(request, token), token));
+                : ((request, token) => SendWithPermissionAsync(backendUrl, false, () => {
+                    request.SharedCharacterId = SharedCharacterForBackendChat(request.CharacterId);
+                    return !string.IsNullOrEmpty(request.SharedCharacterId)
+                        ? client.SharedChatAsync(request, YuiSyncCredentialStore.Read(backendUrl), token)
+                        : client.SendChatAsync(request, token);
+                }, token));
             aiRuntimeRouter = new YuiAiRuntimeRouter(
                 localAiService,
                 chatEndpoint,
