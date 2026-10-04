@@ -3,10 +3,13 @@ from pathlib import Path
 from datetime import date
 import logging
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import FileResponse
 
 from app.core.config import Settings, get_settings
+from app.core.device_sync import SyncStore
+from app.core.companion_backend_writer import CompanionBackendWriter
+from app.core.shared_conversation import SharedChat, shared_chat
 from app.core.capabilities import provider_options
 from app.core.runtime_events import record, diagnose, classify_error
 from app.core.provider_status import build_provider_status, probe_http_tts, probe_voicevox
@@ -240,7 +243,32 @@ async def chat(
     settings: Settings = Depends(get_settings),
     repository: ChatRepository = Depends(get_chat_repository),
     memory_repository: MemoryRepository = Depends(get_memory_repository),
+    http_request: Request = None,
 ) -> ChatResponse:
+    if request.shared_character_id:
+        scheme, _, token = (http_request.headers.get("authorization", "") if http_request else "").partition(" ")
+        if scheme.lower() != "bearer" or not token or len(token) > 256:
+            raise HTTPException(401, "端末をPCの管理画面で登録してください。")
+        sync = SyncStore(settings.database_url)
+        sync.authenticate(token)
+        with sync.connect() as db:
+            mode = sync.character_mode(db, request.shared_character_id)
+        if mode == "active_v2":
+            if not request.session_id:
+                raise HTTPException(422, {"code": "shared_session_required"})
+            body = SharedChat(request_id=request.request_id, session_id=request.session_id,
+                              message=request.message, secret=request.secret,
+                              mode="work" if request.mode == "work" else "talk",
+                              response_instruction=request.response_instruction,
+                              context=request.context)
+            result = await shared_chat(CompanionBackendWriter(settings.database_url, require_active=True),
+                                       settings, request.shared_character_id, body)
+            return result.model_copy(update={"shared_canonical": True})
+    elif request.character_id:
+        sync = SyncStore(settings.database_url)
+        with sync.connect() as db:
+            if sync.character_mode(db, request.character_id) == "active_v2":
+                raise HTTPException(409, {"code": "shared_character_binding_required"})
     cached = None if request.secret else repository.get_cached_response(request.request_id, request.user_id, request.character_id, request.session_id, request.task_id)
     if cached is not None:
         record("cached", operation="chat")

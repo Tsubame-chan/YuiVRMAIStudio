@@ -114,6 +114,9 @@ namespace YuiPhysicalAI.UI
         private void UpdateChatInteractionModeUi()
         {
             var workMode = YuiChatRequestModes.IsWork(chatInteractionMode);
+            if (workModeButtonText != null)
+                YuiUiLocalization.Set(workModeButtonText,
+                    HasCompanionWorkTrialConfig() ? "Work · dot" : "Work");
             SetModeButtonVisual(talkModeButton, talkModeButtonText, !workMode);
             SetModeButtonVisual(workModeButton, workModeButtonText, workMode);
         }

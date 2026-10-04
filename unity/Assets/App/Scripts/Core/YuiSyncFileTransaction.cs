@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 
 namespace YuiPhysicalAI.Core
@@ -11,21 +12,47 @@ namespace YuiPhysicalAI.Core
     {
         private sealed class Before { public string Path, Backup; public bool Existed; }
         private static string Journal(string root) => Path.Combine(root,"DeviceSync","import.pending.json");
+        private static string HistoryForgetMarker(string root) => Path.Combine(root,"DeviceSync","history-forget.pending");
         public static void Recover(string root)
         {
-            var journal=Journal(root);if(!File.Exists(journal))return;
-            var entries=JsonConvert.DeserializeObject<List<Before>>(File.ReadAllText(journal));
-            if(entries==null)throw new InvalidDataException("同期の復元記録を読み込めません。元データを保持しています。");
-            foreach(var entry in entries)
+            var journal=Journal(root);
+            if(File.Exists(journal))
             {
-                ValidatePath(root,entry.Path);ValidatePath(root,entry.Backup);
-                if(entry.Existed)Write(entry.Path,File.ReadAllBytes(entry.Backup));
-                else if(File.Exists(entry.Path))File.Delete(entry.Path);
+                var entries=JsonConvert.DeserializeObject<List<Before>>(File.ReadAllText(journal));
+                if(entries==null)throw new InvalidDataException("同期の復元記録を読み込めません。元データを保持しています。");
+                foreach(var entry in entries)
+                {
+                    ValidatePath(root,entry.Path);ValidatePath(root,entry.Backup);
+                    if(entry.Existed)Write(entry.Path,File.ReadAllBytes(entry.Backup));
+                    else if(File.Exists(entry.Path))File.Delete(entry.Path);
+                }
+                File.Delete(journal);
             }
-            File.Delete(journal);
+            if(File.Exists(HistoryForgetMarker(root)))CompleteHistoryForget(root);
+        }
+        public static void BeginHistoryForget(string root)
+        {
+            if(File.Exists(Journal(root)))Recover(root);
+            Write(HistoryForgetMarker(root),System.Text.Encoding.UTF8.GetBytes("pending"));
+            PurgeGeneratedBackups(root);
+        }
+        public static void CompleteHistoryForget(string root)
+        {
+            if(File.Exists(Journal(root)))throw new InvalidOperationException("Sync recovery must finish before history backup cleanup.");
+            PurgeGeneratedBackups(root);
+            if(File.Exists(HistoryForgetMarker(root)))File.Delete(HistoryForgetMarker(root));
+        }
+        private static void PurgeGeneratedBackups(string root)
+        {
+            var backups=Path.Combine(root,"DeviceSync","Backups");
+            if(!Directory.Exists(backups))return;
+            foreach(var folder in Directory.GetDirectories(backups))
+                if(Regex.IsMatch(Path.GetFileName(folder),@"^\d{8}T\d{6}-[a-f0-9]{32}$"))
+                    Directory.Delete(folder,true);
         }
         public static void Apply(string root, IDictionary<string,string> files)
         {
+            if(File.Exists(HistoryForgetMarker(root)))throw new InvalidOperationException("History deletion is in progress.");
             Recover(root);
             var backup=Path.Combine(root,"DeviceSync","Backups",DateTime.UtcNow.ToString("yyyyMMddTHHmmss")+"-"+Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(backup);

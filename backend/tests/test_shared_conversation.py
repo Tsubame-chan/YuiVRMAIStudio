@@ -6,6 +6,13 @@ from app.main import app
 from app.core.config import get_settings
 from app.models.chat import ChatResponse
 from app.providers.router import ProviderRouter
+from app.core.shared_conversation import should_auto_remember
+
+
+def test_auto_memory_keeps_statements_but_skips_questions_without_punctuation():
+    assert should_auto_remember("私は猫が好きです")
+    assert not should_auto_remember("私の名前を覚えていますか")
+    assert not should_auto_remember("What do you remember about my name")
 
 
 @pytest.fixture
@@ -150,6 +157,32 @@ def test_legacy_import_is_scoped_previewed_idempotent_and_copy_only(shared):
     with store.connect() as db:
         assert db.execute('SELECT COUNT(*) FROM memories').fetchone()[0]==2
         assert db.execute('SELECT COUNT(*) FROM conversations').fetchone()[0]==2
+
+
+def test_legacy_imported_session_can_continue_with_original_roles(shared):
+    from app.core.device_sync import SyncStore
+    c,_,char,calls=shared
+    store=SyncStore(get_settings().database_url)
+    with store.connect() as db:
+        for role,text in [('user','最初の発言'),('assistant','最初の返答'),('user','次の発言')]:
+            db.execute("INSERT INTO conversations(user_id,character_id,session_id,role,message) VALUES('legacy-owner','old-yui','old-session',?,?)",(role,text))
+    body={'user_id':'legacy-owner','character_id':'old-yui'}
+    draft=c.post(endpoint(char,'/import-preview'),json=body).json()
+    session=next(x['value']['conversation_id'] for x in draft['items'] if x['kind']=='history')
+    assert ':' in session
+    assert c.post(endpoint(char,'/import'),json={**body,'preview_hash':draft['preview_hash']}).status_code==200
+    assert c.post(endpoint(char,'/chat'),json={'request_id':'continue','session_id':session,'message':'続きを話して','secret':True}).status_code==200
+    assert calls[-1][1]==[{'role':'user','content':'最初の発言'},
+                          {'role':'assistant','content':'最初の返答'},
+                          {'role':'user','content':'次の発言'}]
+    # A pre-fix imported ID had no role suffix. It must not be imported twice.
+    with store.connect() as db:
+        row=db.execute("SELECT kind,id FROM sync_items WHERE character_id=? AND kind='history' ORDER BY id LIMIT 1",(char,)).fetchone()
+        db.execute("UPDATE sync_items SET id=? WHERE character_id=? AND kind=? AND id=?",(row['id'].rsplit(':',1)[0],char,row['kind'],row['id']))
+    again=c.post(endpoint(char,'/import-preview'),json=body).json()
+    assert again['items']==[] and again['already_shared']==3
+    assert c.post(endpoint(char,'/chat'),json={'request_id':'continue-old','session_id':session,'message':'もう一度','secret':True}).status_code==200
+    assert calls[-1][1][0]=={'role':'user','content':'最初の発言'}
 
 
 def test_shared_history_preserves_user_then_assistant_and_context_budget(shared):

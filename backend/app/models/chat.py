@@ -11,12 +11,13 @@ class ChatRequest(BaseModel):
     user_id: str = "local_user"
     message: str
     context: RequestContext = Field(default_factory=RequestContext)
-    mode: Literal["standard", "work"] = "standard"
+    mode: Literal["standard", "talk", "work"] = "standard"
     secret: bool = False
     custom_instruction: str = ""
     response_instruction: str = ""
     character_name: str = ""
     character_id: str | None = Field(default=None, max_length=128, pattern=r"^[A-Za-z0-9_.:-]+$")
+    shared_character_id: str | None = Field(default=None, pattern=r"^[a-f0-9]{32}$")
     session_id: str | None = Field(default=None, max_length=128, pattern=r"^[A-Za-z0-9_.:-]+$")
     task_id: str | None = Field(default=None, max_length=128, pattern=r"^[A-Za-z0-9_.:-]+$")
 
@@ -30,6 +31,7 @@ class ChatResponse(BaseModel):
     should_use_vision: bool = False
     memory_action: Literal["none", "save", "update"] = "none"
     should_tts: bool = True
+    shared_canonical: bool = False
 
 
 class OpenAIChatOutput(BaseModel):

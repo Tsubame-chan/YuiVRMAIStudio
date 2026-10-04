@@ -15,7 +15,35 @@ namespace YuiPhysicalAI.Api
         public async Task<JObject> SyncAsync(string path, JObject body, string token, CancellationToken cancellation = default)
         {
             if (!path.StartsWith("/sync/", StringComparison.Ordinal)) throw new ArgumentException("Sync route required.");
-            var method = body == null ? "GET" : "POST";
+            return await PairedJsonAsync(path, body, token, cancellation);
+        }
+
+        // Protocol 2 remains opt-in. Pairing credentials are used only on the
+        // same server's explicitly scoped Companion endpoints.
+        public Task<JObject> CompanionAsync(string path, JObject body, string token, CancellationToken cancellation = default)
+        {
+            if (string.IsNullOrEmpty(path) || !path.StartsWith("/companion/v2/", StringComparison.Ordinal)
+                || path.Contains("..") || path.Contains("\\") || path.Contains("//"))
+                throw new ArgumentException("Companion route required.");
+            if (string.IsNullOrWhiteSpace(token)) throw new ArgumentException("Paired device token required.");
+            return PairedJsonAsync(path, body, token, cancellation);
+        }
+
+        public async Task<ChatResponse> SharedChatAsync(ChatRequest body, string token,
+            CancellationToken cancellation = default)
+        {
+            if (body == null || string.IsNullOrWhiteSpace(body.SharedCharacterId))
+                throw new ArgumentException("共有キャラクターを確認できません。同期設定を確認してください。");
+            if (string.IsNullOrWhiteSpace(token))
+                throw new ArgumentException("共有キャラクターの端末登録がありません。PCの管理画面でこの端末を再登録してください。");
+            var result = await PairedJsonAsync("/chat", JObject.FromObject(body), token, cancellation);
+            return result.ToObject<ChatResponse>();
+        }
+
+        private async Task<JObject> PairedJsonAsync(string path, JObject body, string token,
+            CancellationToken cancellation, string methodOverride = null)
+        {
+            var method = methodOverride ?? (body == null ? "GET" : "POST");
             var json = body?.ToString(Formatting.None);
             using var request = new UnityWebRequest(ToAbsoluteUrl(path), method);
             request.timeout = 60; request.downloadHandler = new DownloadHandlerBuffer();

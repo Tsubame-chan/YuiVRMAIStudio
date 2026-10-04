@@ -24,7 +24,6 @@ namespace YuiPhysicalAI.UI
         {
             SetStatus("Realtime...");
             SetPendingLine(CharacterName, "Realtime接続中...");
-            AppendLog("You", "(voice)");
             var timer = System.Diagnostics.Stopwatch.StartNew();
             var mode = RealtimeBackendMode();
             var recordingSecret=secretMode;var recordingCharacter=ChatCharacterId();
@@ -36,7 +35,10 @@ namespace YuiPhysicalAI.UI
                 "realtime_recording.wav",
                 cancellationTokenSource.Token, userId, recordingCharacter, recordingSecret);
             if (recordingSecret!=secretMode || recordingCharacter!=ChatCharacterId()) return;
-            if (!secretMode && !string.IsNullOrWhiteSpace(response.InputText)) CharacterMemoryStore.Remember(recordingCharacter,response.InputText, recordingSecret);
+            var transcript=string.IsNullOrWhiteSpace(response.InputText)?"(voice)":response.InputText.Trim();
+            var transcriptArchiveId=AppendLog("You",transcript);
+            if (!recordingSecret && transcriptArchiveId!=null && transcript!="(voice)")
+                CharacterMemoryStore.Remember(recordingCharacter,transcript,false,transcriptArchiveId);
             Debug.Log(
                 $"Yui realtime audio latency: {timer.ElapsedMilliseconds} ms, events={YuiRealtimeLog.FormatEvents(response.Events, YuiRealtimeLog.VerboseEnabled)}");
 
@@ -599,8 +601,8 @@ namespace YuiPhysicalAI.UI
                     Debug.Log($"Yui realtime input transcript: {trimmedTranscript.Length} chars");
                     if (!IsRealtimeTranslateMode())
                     {
-                        AppendLog("You", trimmedTranscript);
-                        if (!secretMode) { try { CharacterMemoryStore.Remember(realtimeSessionCharacter,trimmedTranscript, realtimeSessionSecret); } catch(Exception ex) { Debug.LogWarning("Character memory: "+ex.Message); } }
+                        var transcriptArchiveId=AppendLog("You", trimmedTranscript);
+                        if (!secretMode && transcriptArchiveId!=null) { try { CharacterMemoryStore.Remember(realtimeSessionCharacter,trimmedTranscript, realtimeSessionSecret,transcriptArchiveId); } catch(Exception ex) { Debug.LogWarning("Character memory: "+ex.Message); } }
                     }
                 }
                 if (eventName == "response.created")

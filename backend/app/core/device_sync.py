@@ -64,6 +64,16 @@ class PlanRequest(BaseModel):
     def unique_items(self):
         keys = [(x.kind, x.id) for x in self.items]
         if len(keys) != len(set(keys)): raise ValueError("Duplicate sync item.")
+        submitted_history = {x.id: x.value for x in self.items if x.kind == "history" and not x.deleted}
+        for memory in (x for x in self.items if x.kind == "memory" and not x.deleted
+                       and x.id.startswith("auto-history:")):
+            source_id = memory.id.removeprefix("auto-history:")
+            source = submitted_history.get(source_id)
+            if (not re.fullmatch(r"[a-f0-9]{32}", source_id) or not source
+                    or source.get("speaker") != "You"
+                    or source.get("text") != memory.value["content"]
+                    or memory.value.get("source_ids")):
+                raise ValueError("Automatic memory needs its matching user history in the same snapshot.")
         if len(self.model_dump_json().encode()) > 8 * 1024 * 1024: raise ValueError("Sync snapshot exceeds 8 MiB.")
         return self
 
@@ -73,8 +83,20 @@ def digest(value): return hashlib.sha256(value.encode()).hexdigest()
 
 
 class SyncStore:
-    def __init__(self, database_url):
+    BACKEND_PRINCIPAL = "backend-console-service"
+    def __init__(self, database_url, *, initialize=True):
         self.path = sqlite_path_from_url(database_url)
+        if not initialize:
+            if not self.path.is_file():
+                raise HTTPException(404, {"code": "sync_hub_uninitialized"})
+            with sqlite3.connect(self.path.as_uri() + "?mode=ro", uri=True) as db:
+                if not db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='sync_metadata'").fetchone():
+                    raise HTTPException(409, {"code": "sync_hub_uninitialized"})
+                row = db.execute("SELECT value FROM sync_metadata WHERE key='server_id'").fetchone()
+                if not row:
+                    raise HTTPException(409, {"code": "sync_hub_uninitialized"})
+                self.server_id = row[0]
+            return
         with self.connect() as db:
             db.executescript("""
                 CREATE TABLE IF NOT EXISTS sync_devices (id TEXT PRIMARY KEY, name TEXT NOT NULL,
@@ -87,15 +109,36 @@ class SyncStore:
                 CREATE TABLE IF NOT EXISTS sync_plans (id TEXT PRIMARY KEY, device_id TEXT NOT NULL, character_id TEXT NOT NULL,
                     revision INTEGER NOT NULL, expires REAL NOT NULL, payload TEXT NOT NULL, result TEXT);
                 CREATE TABLE IF NOT EXISTS sync_metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS sync_character_routing (character_id TEXT PRIMARY KEY,
+                    mode TEXT NOT NULL CHECK(mode IN ('v1','active_v2')));
                 CREATE TABLE IF NOT EXISTS sync_backend_responses (character_id TEXT, request_id TEXT, signature TEXT NOT NULL,
                     response TEXT NOT NULL, PRIMARY KEY(character_id,request_id));
             """)
             db.execute("INSERT OR IGNORE INTO sync_metadata VALUES('server_id',?)", (uuid4().hex,))
             self.server_id = db.execute("SELECT value FROM sync_metadata WHERE key='server_id'").fetchone()[0]
+            if not db.execute("SELECT 1 FROM sync_metadata WHERE key='v1_plan_privacy_migrated'").fetchone():
+                # Existing plans may contain text that was subsequently deleted.
+                # Pending plans must be recreated; committed retries need only choices.
+                db.execute("DELETE FROM sync_plans WHERE result IS NULL")
+                for plan in db.execute("SELECT id,result FROM sync_plans WHERE result IS NOT NULL"):
+                    try:
+                        stored = json.loads(plan["result"])
+                    except (TypeError, ValueError):
+                        db.execute("DELETE FROM sync_plans WHERE id=?", (plan["id"],))
+                        continue
+                    if not isinstance(stored.get("choices"), dict):
+                        db.execute("DELETE FROM sync_plans WHERE id=?", (plan["id"],))
+                        continue
+                    retained = {"choices": stored["choices"]}
+                    if stored.get("mode") == "companion_v2": retained["mode"] = "companion_v2"
+                    db.execute("UPDATE sync_plans SET payload='{}',result=? WHERE id=?",
+                               (encoded(retained), plan["id"]))
+                db.execute("INSERT INTO sync_metadata VALUES('v1_plan_privacy_migrated','1')")
 
     def connect(self):
         db = sqlite3.connect(self.path, timeout=15)
         db.row_factory = sqlite3.Row
+        db.execute("PRAGMA secure_delete=ON")
         return db
 
     def pairing_code(self):
@@ -128,16 +171,54 @@ class SyncStore:
 
     def devices(self):
         with self.connect() as db:
-            return [dict(x) for x in db.execute("SELECT id,name,created,last_seen,revoked FROM sync_devices ORDER BY created")]
+            return [dict(x) for x in db.execute("SELECT id,name,created,last_seen,revoked FROM sync_devices "
+                                                "WHERE id<>? ORDER BY created", (self.BACKEND_PRINCIPAL,))]
 
     def revoke(self, device):
+        if device == self.BACKEND_PRINCIPAL:
+            raise HTTPException(403, {"code": "internal_device"})
         with self.connect() as db:
             db.execute("UPDATE sync_devices SET revoked=1 WHERE id=?", (device,))
             db.execute("DELETE FROM sync_plans WHERE device_id=?", (device,))
 
+    def ensure_backend_principal(self):
+        """Create a ledger identity with no recoverable external bearer token."""
+        with self.connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute("SELECT revoked FROM sync_devices WHERE id=?",
+                             (self.BACKEND_PRINCIPAL,)).fetchone()
+            if row and row["revoked"]:
+                raise HTTPException(409, {"code": "backend_principal_revoked"})
+            if not row:
+                now = time.time()
+                db.execute("INSERT INTO sync_devices VALUES(?,?,?,?,?,0)",
+                           (self.BACKEND_PRINCIPAL, "Backend console service",
+                            digest(secrets.token_urlsafe(64)), now, now))
+        return self.BACKEND_PRINCIPAL
+
     def characters(self):
         with self.connect() as db:
-            return [dict(x) for x in db.execute("SELECT * FROM sync_characters ORDER BY name,id")]
+            rows = [dict(x) for x in db.execute("SELECT * FROM sync_characters ORDER BY name,id")]
+            for row in rows:
+                if self.character_mode(db, row["id"]) == "active_v2":
+                    imported = db.execute("SELECT legacy_revision FROM companion_v2_legacy_imports "
+                                          "WHERE character_id=?", (row["id"],)).fetchone()
+                    state = db.execute("SELECT head_seq FROM companion_v2_state WHERE character_id=?",
+                                       (row["id"],)).fetchone()
+                    if not imported or not state:
+                        raise HTTPException(409, {"code": "active_v2_state_missing"})
+                    row["revision"] = imported["legacy_revision"] + state["head_seq"]
+                    profile = db.execute("SELECT payload FROM companion_v2_profiles "
+                                         "WHERE character_id=? AND field='name'", (row["id"],)).fetchone()
+                    if profile:
+                        row["name"] = profile["payload"]
+            return rows
+
+    @staticmethod
+    def character_mode(db, character):
+        row = db.execute("SELECT mode FROM sync_character_routing WHERE character_id=?",
+                         (character,)).fetchone()
+        return row["mode"] if row else "v1"
 
     def create_character(self, name):
         character = uuid4().hex
@@ -162,6 +243,8 @@ class SyncStore:
             self.require_device(db, device)
             char = db.execute("SELECT revision FROM sync_characters WHERE id=?", (request.character_id,)).fetchone()
             if not char: raise HTTPException(404, "共有キャラクターが見つかりません。")
+            if self.character_mode(db, request.character_id) == "active_v2":
+                raise HTTPException(409, {"code": "v1_writer_disabled_for_active_v2"})
             remote = {(x["kind"], x["id"]): x for x in self.items(db, request.character_id)}
             changes, conflicts = [], []
             pulled = []
@@ -189,6 +272,14 @@ class SyncStore:
                 if not item.changed:
                     if previous: pulled.append(previous)
                     continue
+                if previous and previous["deleted"] and not item.deleted:
+                    # Do not retain the stale text even in a pending plan. An old
+                    # client can choose the remote tombstone and then resync.
+                    redacted = item.model_dump()
+                    redacted.update(deleted=True, value={})
+                    conflicts.append({"key": item.kind + ":" + item.id, "local": redacted,
+                                      "remote": previous, "remote_deletion_wins": True})
+                    continue
                 if item.deleted and not previous and item.base_version == 0: continue
                 candidate = item.model_dump()
                 if item.base_version != version:
@@ -215,35 +306,87 @@ class SyncStore:
             self.require_device(db, device)
             row = db.execute("SELECT * FROM sync_plans WHERE id=? AND device_id=?", (plan_id, device)).fetchone()
             if not row or row["expires"] < time.time(): raise HTTPException(409, "確認の有効期限が切れました。もう一度差分を確認してください。")
+            if self.character_mode(db, row["character_id"]) == "active_v2":
+                raise HTTPException(409, {"code": "v1_writer_disabled_for_active_v2"})
             # Idempotent retry is bound to the same device and exact conflict decisions.
             if row["result"]:
                 result = json.loads(row["result"])
+                if result.get("mode") == "companion_v2":
+                    raise HTTPException(409, {"code": "companion_v2_plan_not_active"})
                 if result["choices"] != choices: raise HTTPException(409, "確定済みの選択を変更するには新しい差分確認が必要です。")
-                return result["snapshot"]
+                return self.snapshot_for_sync(db, row["character_id"])
             character = row["character_id"]
             revision = db.execute("SELECT revision FROM sync_characters WHERE id=?", (character,)).fetchone()[0]
             if revision != row["revision"]: raise HTTPException(409, "別の端末で更新されました。最新の差分を確認してください。")
             payload = json.loads(row["payload"])
+            if payload.get("mode") == "companion_v2":
+                raise HTTPException(409, {"code": "companion_v2_plan_not_active"})
             expected = {x["key"] for x in payload["conflicts"]}
             if set(choices) != expected or any(v not in {"local", "remote"} for v in choices.values()):
                 raise HTTPException(422, "競合する項目ごとに使う内容を選んでください。")
+            if any(x["remote"].get("deleted") and choices[x["key"]] == "local" for x in payload["conflicts"]):
+                raise HTTPException(409, "削除済みの項目は同じIDで復元できません。最新の状態を取得してください。")
             changes = payload["changes"] + [x["local"] for x in payload["conflicts"] if choices[x["key"]] == "local"]
             for item in changes:
+                old = db.execute("SELECT deleted FROM sync_items WHERE character_id=? AND kind=? AND id=?",
+                                 (character, item["kind"], item["id"])).fetchone()
+                if old and old["deleted"] and not item["deleted"]:
+                    raise HTTPException(409, "削除済みの項目は同じIDで復元できません。最新の状態を取得してください。")
                 revision += 1
                 db.execute("INSERT OR REPLACE INTO sync_items VALUES(?,?,?,?,?,?,?)",
                            (character, item["kind"], item["id"], revision, int(item["deleted"]), encoded(item["value"]), device))
                 if item["kind"] == "profile" and item["id"] == "name" and not item["deleted"]:
                     db.execute("UPDATE sync_characters SET name=? WHERE id=?", (item["value"]["text"], character))
-                if item["kind"] == "history" and item["deleted"]:
-                    db.execute("DELETE FROM sync_backend_responses WHERE character_id=?", (character,))
+            # Protocol-1 remains the default writer. Enforce the same source
+            # lifetime here as in v2, including clients which delete a history
+            # entry without knowing its derived automatic memory ID.
+            incoming_auto = {item["id"] for item in changes if item["kind"] == "memory"
+                             and item["id"].startswith("auto-history:") and not item["deleted"]}
+            auto_invalidated = False
+            for memory in db.execute("SELECT m.id,m.value_json,h.deleted AS source_deleted,"
+                                     "h.value_json AS source_value_json FROM sync_items AS m "
+                                     "LEFT JOIN sync_items AS h ON h.character_id=m.character_id "
+                                     "AND h.kind='history' AND h.id=substr(m.id,14) "
+                                     "WHERE m.character_id=? AND m.kind='memory' AND m.deleted=0 "
+                                     "AND m.id GLOB 'auto-history:*'", (character,)).fetchall():
+                history_id = memory["id"].removeprefix("auto-history:")
+                source_value = (json.loads(memory["source_value_json"])
+                                if memory["source_value_json"] and not memory["source_deleted"] else None)
+                memory_value = json.loads(memory["value_json"])
+                valid = (re.fullmatch(r"[a-f0-9]{32}", history_id) and source_value
+                         and source_value.get("speaker") == "You"
+                         and source_value.get("text") == memory_value.get("content")
+                         and not memory_value.get("source_ids"))
+                if valid:
+                    continue
+                if memory["id"] in incoming_auto:
+                    raise HTTPException(409, {"code": "automatic_memory_source_unavailable"})
+                revision += 1
+                db.execute("UPDATE sync_items SET version=?,deleted=1,value_json='{}',origin_device=? "
+                           "WHERE character_id=? AND kind='memory' AND id=?",
+                           (revision, device, character, memory["id"]))
+                auto_invalidated = True
             from app.core.shared_conversation import check_connection_sources, invalidate_connections
             for item in changes:
                 if item["kind"] == "memory" and not item["deleted"]:
                     check_connection_sources(db, self, character, item["value"])
+            before_invalidation = revision
             revision = invalidate_connections(db, self, character, revision)
             db.execute("UPDATE sync_characters SET revision=? WHERE id=?", (revision, character))
-            snapshot = {"server_id": self.server_id, "character_id": character, "revision": revision, "items": self.items(db, character)}
-            if len(snapshot["items"]) > 18000 or len(encoded(snapshot).encode()) > 8 * 1024 * 1024:
-                raise HTTPException(413, "共有データが同期の上限を超えています。元データは保持しています。")
-            db.execute("UPDATE sync_plans SET result=? WHERE id=?", (encoded({"choices": choices, "snapshot": snapshot}), plan_id))
+            snapshot = self.snapshot_for_sync(db, character)
+            db.execute("UPDATE sync_plans SET payload='{}',result=? WHERE id=?", (encoded({"choices": choices}), plan_id))
+            if any(item["deleted"] for item in changes) or auto_invalidated or revision != before_invalidation:
+                db.execute("DELETE FROM sync_plans WHERE character_id=? AND id<>? AND result IS NULL", (character, plan_id))
+                db.execute("DELETE FROM sync_backend_responses WHERE character_id=?", (character,))
+        return snapshot
+
+    def snapshot_for_sync(self, db, character):
+        if self.character_mode(db, character) == "active_v2":
+            raise HTTPException(409, {"code": "v1_reader_disabled_for_active_v2"})
+        row = db.execute("SELECT revision FROM sync_characters WHERE id=?", (character,)).fetchone()
+        if not row: raise HTTPException(404, "共有キャラクターが見つかりません。")
+        snapshot = {"server_id": self.server_id, "character_id": character,
+                    "revision": row["revision"], "items": self.items(db, character)}
+        if len(snapshot["items"]) > 18000 or len(encoded(snapshot).encode()) > 8 * 1024 * 1024:
+            raise HTTPException(413, "共有データが同期の上限を超えています。元データは保持しています。")
         return snapshot
