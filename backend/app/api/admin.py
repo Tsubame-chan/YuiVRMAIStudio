@@ -190,7 +190,7 @@ def update_voice_library(body: "LibraryUpdate", settings: Settings = Depends(get
 @router.post("/voice-endpoints/{endpoint_id}/probe")
 async def probe_voice_endpoint(endpoint_id: str, settings: Settings = Depends(get_settings)):
     from app.core.voice_library import load, endpoints, endpoint_settings, capabilities
-    data, _ = load()
+    data, _ = load(settings)
     endpoint = endpoints(data, settings).get(endpoint_id)
     if endpoint is None: raise HTTPException(404)
     resolved=endpoint_settings(endpoint, settings)
@@ -277,7 +277,7 @@ async def preview_voice(body: VoicePreview, settings: Settings = Depends(get_set
     from app.providers.router import ProviderRouter
     from app.providers.voicevox_tts import TTSProviderError
     from app.api.routes import _audio_file_response
-    data, _ = load()
+    data, _ = load(settings)
     profile = {'id':'preview','name':'試聴','endpoint_id':body.endpoint_id,'parameters':body.parameters,
                'voice':body.voice,'model':body.model,'fallback_profile_id':None}
     data = {**data, 'profiles':[profile]}

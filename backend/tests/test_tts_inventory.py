@@ -28,7 +28,7 @@ def test_explicit_engine_path_is_detected_only_for_local_endpoint(tmp_path, monk
 
 
 def test_configured_irodori_offline_is_selectable_not_ready():
-    settings = Settings(_env_file=None, http_tts_base_url="http://127.0.0.1:41080",
+    settings = Settings(_env_file=None, http_tts_base_url="http://127.0.0.1:41090",
         http_tts_provider_id="irodori", http_tts_payload_format="openai_speech")
     result = build_provider_status(settings, database_ok=True,
         voicevox_status={"status": "offline"}, http_tts_status={"status": "offline"})

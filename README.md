@@ -33,11 +33,11 @@
 
 | お使いの端末 | 入手先 |
 | --- | --- |
-| Mac | [macOS版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.2/YuiVRMAIStudio_MacOSPublicBeta_v0.2.4-beta.2_macos.zip)（Apple Silicon向け） |
-| Windows | [Windows版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.2/YuiVRMAIStudio_WindowsPublicBeta_v0.2.4-beta.2_windows.zip) |
+| Mac | [macOS版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.5-beta.1/YuiVRMAIStudio_MacOSPublicBeta_v0.2.5-beta.1_macos.zip)（Apple Silicon向け） |
+| Windows | [Windows版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.5-beta.1/YuiVRMAIStudio_WindowsPublicBeta_v0.2.5-beta.1_windows.zip) |
 | iPhone / iPad | iOS 26以降。[App Store](https://apps.apple.com/jp/app/id6815341780)（日本向け無料版） |
 
-デスクトップ版は **v0.2.4-beta.2** です。Backendの管理画面・保存した声・端末同期が使えます。[Backendの使い方](docs/BACKEND_CONSOLE.md)。ZIPを展開して起動し、初回の案内に沿って必要データを取得してください。約2.5GBの通信と展開用の空き容量が必要です。Wi-Fiをおすすめします。Mac版の署名・公証は未整備です。詳しい起動手順は [Mac](docs/MAC_PUBLIC_BETA.md) / [Windows](docs/SETUP_GUIDE.md)へ。
+iPhone / iPad版 **0.2.4** はApp Storeで公開中です。デスクトップ版は **v0.2.5-beta.1** です。Backendの管理画面・保存した声・端末同期が使えます。[Backendの使い方](docs/BACKEND_CONSOLE.md)。ZIPを展開して起動し、初回の案内に沿って必要データを取得してください。約2.5GBの通信と展開用の空き容量が必要です。Wi-Fiをおすすめします。Mac版の署名・公証は未整備です。詳しい起動手順は [Mac](docs/MAC_PUBLIC_BETA.md) / [Windows](docs/SETUP_GUIDE.md)へ。
 
 **GitHubの「Code → Download ZIP」はソースコードです。** アプリを使う方は上のリンクからダウンロードしてください。
 
@@ -49,7 +49,15 @@
 
 AIは、**オフラインで使える端末内AI** と **OpenAI API** を選べます。端末内AIは軽量なE2Bが標準。Mac・iOSでは、より高品質なE4Bを設定から追加できますが、待ち時間や端末の負荷が増えます。高品質な会話にはOpenAI APIをおすすめします。**APIキーとAPI利用料金が必要**で、ChatGPTの契約とは別です。
 
-標準の声は日本語VOICEVOXの5声です。最新ソースではMac・iOSの設定から、日本語Irodoriの2声（約1.96GB）と英語Kokoroの6声（約67.4MB）を任意に追加できます。既存の配布版0.2.4・デスクトップbeta.2にはこの追加音声機能は含まれません。[音声データの取得](docs/LOCAL_AI_ASSETS.md)。PCのバックエンドに接続する拡張機能については[ヘルプ](docs/HELP.md)、Backendの操作は[コンソール案内](docs/BACKEND_CONSOLE.md)、追加エンジンの導入は[音声導入ガイド](docs/BACKEND_TTS_GUIDE.md)を参照してください。
+標準の声は日本語VOICEVOXの5声です。最新ソースではMac・iOSの設定から、日本語Irodoriの3声（約1.96GB）と英語Kokoroの6声（約67.4MB）を任意に追加できます。既存の配布版0.2.4・デスクトップbeta.2にはこの追加音声機能は含まれません。[音声データの取得](docs/LOCAL_AI_ASSETS.md)。PCのバックエンドに接続する拡張機能については[ヘルプ](docs/HELP.md)、Backendの操作は[コンソール案内](docs/BACKEND_CONSOLE.md)、追加エンジンの導入は[音声導入ガイド](docs/BACKEND_TTS_GUIDE.md)を参照してください。
+
+## 0.2.5の更新内容
+
+- 日本語Irodoriの3声と英語Kokoroの6声を任意に追加。Irodoriの初期声は「明るく元気な女性」です。
+- 設定・説明画面のスクロールバーを細く統一し、モデル詳細を1つのスクロールで操作できるように改善。
+- Mac BackendのIrodoriをV4.1へ更新し、同じ3声のプリセットを追加。
+
+デスクトップ版には上記の更新を反映しています。iOS 0.2.5はAppleへアップロード済みです。App Storeで現在配布中の0.2.4には含まれません。Windows版の実機検証は未実施です。Irodori V4.1のNVIDIA向け追加モデルは [導入手順](docs/IRODORI_TTS_WINDOWS_NVIDIA.md) を参照してください。
 
 ## 記憶とプライバシー
 

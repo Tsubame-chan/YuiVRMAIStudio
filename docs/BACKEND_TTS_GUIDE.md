@@ -60,8 +60,8 @@ Backend Consoleはv0.2.4-beta.2のBackend Bundle、またはGitHubの最新ソ�
 
 1. [mlx-audioの導入手順](https://github.com/Blaizzy/mlx-audio#readme)と[Irodoriの案内](https://github.com/Blaizzy/mlx-audio/tree/main/mlx_audio/tts/models/irodori_tts)に従ってインストールします。
 2. Irodoriモデルを導入します。モデルの例は[Irodori-TTS-v4.1-Small-8bit](https://huggingface.co/mlx-community/Irodori-TTS-v4.1-Small-8bit)。必要なファイルと読込方法は配布ページ・mlx-audioの手順を確認してください。
-3. 導入したPython環境で `python -m mlx_audio.server --host 127.0.0.1 --port 41080` を実行します。
-4. Consoleの「AIと音声 → 読み上げ → 提供元と接続」で「Irodori / Mac MLX」を追加します。接続先は `http://127.0.0.1:41080`、生成パスは `/v1/audio/speech`。モデル名はサーバーで使える名前に合わせます。
+3. 導入したPython環境で `python -m mlx_audio.server --host 127.0.0.1 --port 41090` を実行します。
+4. Consoleの「AIと音声 → 読み上げ → 提供元と接続」で「Irodori / Mac MLX」を追加します。接続先は `http://127.0.0.1:41090`、生成パスは `/v1/audio/speech`。モデル名はサーバーで使える名前に合わせます。
 5. 「新しい声」でその接続先とモデルを選びます。声の説明（例：「明るく、やや高めの女性の声。自然な会話調で」）・性別・言語を指定し、試聴して保存します。
 
 モデル一覧が空の場合は、サーバーへモデルが読み込まれているかを確認してください。録音ファイルをアップロードして声を指定する操作には対応していません。
@@ -91,3 +91,7 @@ Backend Consoleはv0.2.4-beta.2のBackend Bundle、またはGitHubの最新ソ�
 生成できない場合は、エンジンの起動状態、URL・生成パス、APIキー、モデル名・voice名を確認してください。設定値が正しくても失敗する場合は、提供元のAPIが選択した接続形式に対応しているかを確認します。
 
 Console全体の操作は[Backend Consoleの使い方](BACKEND_CONSOLE.md)を参照してください。
+
+### 標準のIrodori音声（V4.1）
+
+標準候補は「明るく元気な女性」（初期選択）、「親しみやすく優しい女性」、「落ち着いたトーンの女性」の3声です。PC V4.1 FP16で作った合成参照音声を同梱し、BackendのV4.1 MLXとモバイルCoreMLの各生成経路で使います。モバイルは参照特徴を事前準備し、日本語の文分割を有効にして生成します。音質・発音を任意の文章で保証するものではありません。既存の利用者作成プリセットは保持します。BackendがIrodori構成で音声ライブラリ未保存の場合は3声を初期候補として表示します。既存の音声ライブラリがある場合は上書きしません。

@@ -130,7 +130,7 @@ def test_settings_schema_has_complete_editable_field_coverage(client):
 def test_http_tts_registry_resolves_existing_adapter(client):
     from app.providers.router import ProviderRouter
     from app.providers.http_tts import HttpTTSProvider
-    settings=get_settings().model_copy(update={'tts_provider':'http','http_tts_base_url':'http://127.0.0.1:41080'})
+    settings=get_settings().model_copy(update={'tts_provider':'http','http_tts_base_url':'http://127.0.0.1:41090'})
     assert isinstance(ProviderRouter(settings).tts(), HttpTTSProvider)
     assert isinstance(ProviderRouter(settings).tts('http'), HttpTTSProvider)
 

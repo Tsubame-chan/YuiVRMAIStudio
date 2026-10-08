@@ -60,7 +60,7 @@ namespace YuiPhysicalAI.UI
             IReadOnlyList<TtsVoiceOption> backendAivisOptions)
         {
             if (string.Equals(mode, "irodori-native", StringComparison.OrdinalIgnoreCase))
-                return new[] { new YuiTtsVoiceOption(YuiSimpleDialog.L("やわらかく可愛い女性", "Soft and sweet"),10001), new YuiTtsVoiceOption(YuiSimpleDialog.L("親しみやすく優しい女性", "Gentle friend"),10002) };
+                return new[] { new YuiTtsVoiceOption(YuiSimpleDialog.L("明るく元気な女性", "Bright and cheerful"),10005), new YuiTtsVoiceOption(YuiSimpleDialog.L("親しみやすく優しい女性", "Gentle friend"),10002), new YuiTtsVoiceOption(YuiSimpleDialog.L("落ち着いたトーンの女性", "Calm tone"),10003) };
             if (string.Equals(mode, "aivis-native", StringComparison.OrdinalIgnoreCase))
             {
                 return FallbackAivisVoiceOptions;

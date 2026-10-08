@@ -17,10 +17,23 @@ namespace YuiPhysicalAI.Tests.Editor
             var modes=YuiVoiceEnvironmentOptions.Build(null,false,false,true,false,true,"server",false,false,true,true);
             Assert.That(modes.Any(x=>x.Key=="irodori-native"));
             var voices=YuiTtsVoiceOptionCatalog.OptionsForMode("irodori-native",null);
-            Assert.That(voices.Select(x=>x.Id),Is.EqualTo(new[]{10001,10002}));
+            Assert.That(voices.Select(x=>x.Id),Is.EqualTo(new[]{10005,10002,10003}));
             var tuning=YuiTtsTuningPrefs.Sanitize("irodori-native",new YuiSavedTtsTuning(10002,1,0,1,1,.1f,.1f));
             Assert.That(tuning.SpeakerId,Is.EqualTo(10002));
             Assert.That(YuiTtsTuningPrefs.NormalizeMode("irodori-native"),Is.Not.EqualTo(YuiTtsTuningPrefs.NormalizeMode("server")));
+        }
+        [TestCase(10005,10005,"bright_natural")]
+        [TestCase(10002,10002,"gentle_friend")]
+        [TestCase(10003,10003,"calm_natural")]
+        [TestCase(10001,10005,"bright_natural")]
+        [TestCase(14,10005,"bright_natural")]
+        public void IrodoriAcceptedVoicesAndRetiredVoiceMigration(int saved, int expected, string voice)
+        {
+            var tuning=YuiTtsTuningPrefs.Sanitize("irodori-native",new YuiSavedTtsTuning(saved,1,0,1,1,.1f,.1f));
+            Assert.That(tuning.SpeakerId,Is.EqualTo(expected));
+            Assert.That(YuiPhysicalAI.LocalAI.YuiIrodoriSpeech.VoiceForSpeaker(tuning.SpeakerId),Is.EqualTo(voice));
+            Assert.That(Resources.Load<TextAsset>("YuiVoicePacks/IrodoriReferences/"+voice).bytes.Length,Is.GreaterThan(44));
+            Assert.That(YuiTtsTuningPrefs.DefaultSpeakerForMode("irodori-native"),Is.EqualTo(10005));
         }
         [Test] public void BodyScrollbarUsesOverflowLayoutForShortAndLongText()
         {

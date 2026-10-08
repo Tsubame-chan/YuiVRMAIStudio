@@ -14,7 +14,7 @@ rm -rf "$BUNDLE_DIR"
 mkdir -p "$BUNDLE_DIR"
 
 rsync -a --delete \
-  --exclude '.venv/' \
+  --exclude '.venv' \
   --exclude '__pycache__/' \
   --exclude '.pytest_cache/' \
   --exclude 'data/*.db' \

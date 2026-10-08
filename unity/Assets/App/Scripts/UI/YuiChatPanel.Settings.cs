@@ -207,7 +207,7 @@ namespace YuiPhysicalAI.UI
                 if(PlayerPrefs.GetInt("Yui.JapaneseIrodori",0)==1 && IrodoriSupported && !YuiPhysicalAI.LocalAI.YuiSpeechLanguage.IsEnglish(YuiUiLocalization.Language))
                 {
                     ttsMode="irodori-native";
-                    var voice=PlayerPrefs.GetString("Yui.IrodoriVoice","soft_yui")=="gentle_friend"?10002:10001;
+                    var voice=PlayerPrefs.GetString("Yui.IrodoriVoice","bright_natural")=="gentle_friend"?10002:10005;
                     speakerId=voice;speedScale=1;pitchScale=0;intonationScale=1;synthesisVolumeScale=1;prePhonemeLength=.1f;postPhonemeLength=.1f;
                     SaveCharacterProfile();
                     YuiTtsTuningPrefs.SaveForMode(ttsMode,new YuiSavedTtsTuning(voice,1,0,1,1,.1f,.1f));
