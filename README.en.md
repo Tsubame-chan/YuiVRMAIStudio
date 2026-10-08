@@ -57,7 +57,7 @@ Standard speech uses five Japanese VOICEVOX voices. The latest source adds optio
 - Consistently thin scrollbars and a single scrolling area in model details.
 - Irodori V4.1 and the same three voice presets in the Mac Backend.
 
-The desktop release includes these updates. iOS 0.2.5 has been uploaded to Apple; the currently available App Store version is 0.2.4. Native Windows acceptance remains pending. See the [optional Irodori V4.1 NVIDIA package](docs/IRODORI_TTS_WINDOWS_NVIDIA.md).
+The desktop release includes these updates. iOS 0.2.5 (19) has been submitted for Apple review and will release automatically after approval; the currently available App Store version is 0.2.4. Native Windows acceptance remains pending. See the [optional Irodori V4.1 NVIDIA package](docs/IRODORI_TTS_WINDOWS_NVIDIA.md).
 
 ## Memory and privacy
 
