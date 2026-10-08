@@ -44,10 +44,13 @@ class LibraryUpdate(BaseModel):
 def library_path():
     return Path(os.environ.get('YUI_VOICE_LIBRARY_PATH', ROOT_DIR/'backend/data/voice-library.json'))
 
-def load():
+def load(settings=None):
     p=library_path()
     if p.is_symlink(): raise ValueError('音声設定の保存先を確認してください。')
-    if not p.exists(): return {'endpoints':[], 'profiles':[]}, 'initial'
+    if not p.exists():
+        from app.core.irodori_presets import profiles
+        irodori = settings is not None and 'irodori' in (settings.http_tts_provider_id+' '+settings.http_tts_model).lower()
+        return {'endpoints':[], 'profiles':profiles(settings) if irodori else []}, 'initial' 
     raw=p.read_bytes()
     if len(raw)>262144: raise ValueError('音声設定が大きすぎます。')
     obj=json.loads(raw)
@@ -88,7 +91,7 @@ def capabilities(e, settings):
                 'voice_instruct':s.http_tts_instruct,'voice_gender':s.http_tts_gender,'voice_lang_code':s.http_tts_lang_code}}
 
 def public_library(settings):
-    data,rev=load();out=[]
+    data,rev=load(settings);out=[]
     for e in endpoints(data,settings).values():
         s=endpoint_settings(e,settings);prefix=e['provider_type']+'_' if e['provider_type']!='http' else 'http_tts_'
         fields={k:v for k,v in s.model_dump().items() if k.startswith(prefix) and k!='http_tts_soundstretch_path'}
@@ -112,7 +115,7 @@ def validate_profile(p, endpoint, settings):
 
 def save(body, settings):
     with LOCK:
-        old,rev=load()
+        old,rev=load(settings)
         if rev!=body.revision:raise FileExistsError('別の画面で音声設定が変更されました。再読込してください。')
         oldmap={e['id']:e for e in old['endpoints']};es=[]
         for item in body.endpoints:
@@ -149,7 +152,7 @@ def save(body, settings):
         return public_library(settings)
 
 def resolve_profile(profile_id, request, settings, data=None, apply_overrides=True):
-    if data is None:data,_=load()
+    if data is None:data,_=load(settings)
     profile=next((p for p in data['profiles'] if p['id']==profile_id),None)
     if profile is None:raise ValueError('指定した音声プリセットがありません。')
     e=endpoints(data,settings).get(profile['endpoint_id'])

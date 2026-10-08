@@ -31,8 +31,8 @@ namespace YuiPhysicalAI.UI
         public bool VoicePackBusy => voicePackCancellation != null;
         public bool IrodoriInstalled => YuiIrodoriSpeech.IsInstalled(Application.persistentDataPath);
         public bool UsesJapaneseIrodori => IsTtsMode("irodori-native") && IrodoriInstalled;
-        public string IrodoriVoice => speakerId == 10002 ? "gentle_friend" : "soft_yui";
-        public string IrodoriVoiceName => IrodoriVoice=="gentle_friend" ? YuiSimpleDialog.L("親しみやすく優しい女性","Gentle friend") : YuiSimpleDialog.L("やわらかく可愛い女性","Soft and sweet");
+        public string IrodoriVoice => YuiIrodoriSpeech.VoiceForSpeaker(speakerId);
+        public string IrodoriVoiceName => IrodoriVoice=="gentle_friend" ? YuiSimpleDialog.L("親しみやすく優しい女性","Gentle friend") : IrodoriVoice=="calm_natural" ? YuiSimpleDialog.L("落ち着いたトーンの女性","Calm tone") : YuiSimpleDialog.L("明るく元気な女性","Bright and cheerful");
         public static bool IrodoriSupported => Application.platform==RuntimePlatform.IPhonePlayer || (Application.platform==RuntimePlatform.OSXPlayer || Application.platform==RuntimePlatform.OSXEditor) && SystemInfo.processorType.IndexOf("Apple",StringComparison.OrdinalIgnoreCase)>=0;
         public void ShowVoicePackDownload(bool irodori)
         {

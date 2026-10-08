@@ -132,3 +132,17 @@ def test_voice_discovery_uses_aivis_speakers_and_irodori_models(client,monkeypat
     assert c['voices']=='design' and 'voice_gender' not in {x['name'] for x in c['text_fields']}
     e['settings']={'http_tts_payload_format':'openai_speech'}
     assert capabilities(e,Settings())['text_fields']==[]
+
+
+def test_irodori_initial_library_offers_three_accepted_presets():
+    settings=Settings(http_tts_provider_id="irodori",http_tts_model="mlx-community/Irodori-TTS-v4.1-Small-8bit",http_tts_payload_format="openai_speech")
+    data,revision=load(settings)
+    assert revision=="initial"
+    assert [p["id"] for p in data["profiles"]]==["yui-irodori-bright_natural","yui-irodori-gentle_friend","yui-irodori-calm_natural"]
+    for p in data["profiles"]:
+        request,_,_,_=resolve_profile(p["id"],TTSRequest(text="こんにちは。"),settings)
+        from app.core.irodori_presets import reference
+        audio,text=reference(request.voice_instruct)
+        assert audio.read_bytes()[:4]==b"RIFF" and "おかえりなさい" in text
+    save(LibraryUpdate(revision=revision,**data),settings)
+    assert len(load(settings)[0]["profiles"])==3

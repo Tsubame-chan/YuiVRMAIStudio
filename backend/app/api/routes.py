@@ -756,7 +756,7 @@ def usage(
 @router.get('/tts/profiles')
 def tts_profiles(settings: Settings = Depends(get_settings)):
     from app.core.voice_library import load, endpoints
-    data, _ = load()
+    data, _ = load(settings)
     known = endpoints(data, settings)
     return {'items': [{'id':p['id'], 'name':p['name'], 'provider':known[p['endpoint_id']]['provider_type']}
                       for p in data['profiles'] if p['endpoint_id'] in known]}

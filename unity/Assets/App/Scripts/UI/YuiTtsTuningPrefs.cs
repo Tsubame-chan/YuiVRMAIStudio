@@ -59,7 +59,7 @@ namespace YuiPhysicalAI.UI
 
         public static int DefaultSpeakerForMode(string ttsMode)
         {
-            if (NormalizeMode(ttsMode) == "irodori-native") return 10001;
+            if (NormalizeMode(ttsMode) == "irodori-native") return YuiPhysicalAI.LocalAI.YuiIrodoriSpeech.DefaultSpeakerId;
             return NormalizeMode(ttsMode) == "aivis" ? 1431611904 : 14;
         }
 
@@ -130,7 +130,7 @@ namespace YuiPhysicalAI.UI
 
         private static int CompatibleSpeakerForMode(string mode, int speakerId)
         {
-            if (NormalizeMode(mode) == "irodori-native") return speakerId == 10002 ? 10002 : 10001;
+            if (NormalizeMode(mode) == "irodori-native") return YuiPhysicalAI.LocalAI.YuiIrodoriSpeech.CompatibleSpeaker(speakerId);
             if (NormalizeMode(mode) != "aivis" && NormalizeMode(mode) != "aivis-native")
                 speakerId = YuiTtsVoiceOptionCatalog.StandardVoicevoxId(speakerId);
             if (speakerId <= 0)

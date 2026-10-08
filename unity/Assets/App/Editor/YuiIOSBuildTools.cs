@@ -121,7 +121,7 @@ namespace YuiPhysicalAI.Editor
                 "Choose a photo to show to your character.");
             root.SetString(
                 "NSSpeechRecognitionUsageDescription",
-                "Transcribe your voice on this iPhone when you use Mic.");
+                "Only the voice you enter with Mic is transcribed on this iPhone. This on-device recognition does not send recordings or conversation history to Apple.");
             root.SetString("NSMicrophoneUsageDescription", "Use the microphone to talk to your character.");
             root.SetString("NSCameraUsageDescription", "Take a photo to show to your character.");
             var languages = root.CreateArray("CFBundleLocalizations");
@@ -276,8 +276,8 @@ namespace YuiPhysicalAI.Editor
         private static void AddPermissionLocalizations(PBXProject project, string target, string directory)
         {
             var keys = new[] { "NSMicrophoneUsageDescription", "NSSpeechRecognitionUsageDescription", "NSCameraUsageDescription", "NSPhotoLibraryUsageDescription", "NSLocalNetworkUsageDescription" };
-            var english = new[] { "Use the microphone to talk to your character.", "Transcribe your voice on this iPhone when you use Mic.", "Take a photo to show to your character.", "Choose a photo to show to your character.", "Connect to the Backend you configure on your local network." };
-            var japanese = new[] { "キャラクターと話すためにマイクを使います。", "Micで入力した声を、このiPhoneで文字に変換します。", "キャラクターに見せる写真を撮影します。", "キャラクターに見せる写真を選びます。", "設定したローカルネットワーク内のBackendに接続します。" };
+            var english = new[] { "Use the microphone to talk to your character.", "Only the voice you enter with Mic is transcribed on this iPhone. This on-device recognition does not send recordings or conversation history to Apple.", "Take a photo to show to your character.", "Choose a photo to show to your character.", "Connect to the Backend you configure on your local network." };
+            var japanese = new[] { "キャラクターと話すためにマイクを使います。", "Micで入力した声だけを、このiPhone内で文字に変換します。この端末内の音声認識では、録音や会話履歴をAppleへ送信しません。", "キャラクターに見せる写真を撮影します。", "キャラクターに見せる写真を選びます。", "設定したローカルネットワーク内のBackendに接続します。" };
             foreach (var language in new[] { "en", "ja" })
             {
                 var relative = language + ".lproj";

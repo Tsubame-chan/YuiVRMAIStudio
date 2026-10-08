@@ -6,6 +6,19 @@ Backend Consoleがある版では、[音声導入ガイドのWindows手順](BACK
 
 <a id="settings-file"></a>
 
+## V4.1の任意追加パッケージ
+
+Desktop v0.2.5-beta.1のReleaseにある `YuiVRMAIStudio_IrodoriV41_WindowsNVIDIA_v0.2.5-beta.1.zip` は、公式V4.1 Small INT8（約914MB）、音声コーデック（約430MB）、公式サーバーの固定版、導入ツールと3つの合成参照音声を含みます。モデルの再取得は不要ですが、初回のPython/PyTorch CUDA依存導入にはインターネットと追加の空き容量が必要です。NVIDIA GPU・対応ドライバー・Git for Windowsが必要です。CPU・AMD・Android対応のパッケージではありません。
+
+1. ZIPを展開し、`YuiIrodoriV4` フォルダーを既存の `YuiBackend` 内へ置きます。
+2. Backendを終了し、`Install_Irodori_V4.bat` を実行します。ファイルのSHA-256を検査してから依存を導入し、元の `.env` をバックアップして接続設定を追加します。
+3. Backendを再起動します。標準VOICEVOXは維持され、Irodoriは別途選択できます。必要なら `Start_Irodori_V4.bat` で音声サーバーのみ起動できます。
+4. 新規の音声ライブラリには「明るく元気」「親しみやすく優しい」「落ち着いたトーン」の3声が表示されます。既存の保存済み音声は保持します。保存済みConsole設定がある場合は、そちらの接続設定が `.env` より優先されるため、ConsoleでV4.1接続に変更してください。
+
+参照はPCのV4.1 FP16で生成したものを使用します。Windows生成はV4.1 INT8/BF16、40 steps、参照音声と文分割ありです。Mac/iPhoneとは実行方式が異なります。今回WindowsのPlayerビルド・モデルハッシュ・生成要求を検証しましたが、Windows上の起動・合成・音質・速度は実機未確認です。
+
+公式モデル: [V4.1 Small Quantized](https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small-Quantized)。実行条件・MITライセンスと利用制限は同梱のモデルREADMEと[公式サーバー](https://github.com/Aratako/Irodori-TTS-Server)を参照してください。
+
 ## 設定ファイルから接続する
 
 Backendの `.env` に以下を設定します。例のURL・モデル名は、起動したIrodoriサーバーの設定に合わせて変更してください。
@@ -17,16 +30,17 @@ HTTP_TTS_ENDPOINT=/v1/audio/speech
 HTTP_TTS_HEALTH_ENDPOINT=/health
 HTTP_TTS_PROVIDER_ID=irodori-server
 HTTP_TTS_PAYLOAD_FORMAT=irodori_openai_speech
-HTTP_TTS_VOICE=none
+HTTP_TTS_VOICE=bright_natural
 HTTP_TTS_MODEL=irodori-tts
 HTTP_TTS_INSTRUCT=明るく、聞き取りやすい自然な声。
 HTTP_TTS_FORMAT=wav
 HTTP_TTS_AUDIO_PROCESSOR=none
-HTTP_TTS_IRODORI_NUM_STEPS=24
-HTTP_TTS_IRODORI_CHUNKING_ENABLED=false
+HTTP_TTS_IRODORI_NUM_STEPS=40
+HTTP_TTS_IRODORI_CHUNKING_ENABLED=true
+HTTP_TTS_IRODORI_CHUNK_MIN_CHARS=1
 ```
 
-設定後にBackendを再起動します。`HTTP_TTS_VOICE=none` は声の説明から生成する設定です。声を固定する場合は、Irodoriサーバーに登録した声の名前を指定してください。
+設定後にBackendを再起動します。`HTTP_TTS_VOICE=bright_natural` は声の説明から生成する設定です。声を固定する場合は、Irodoriサーバーに登録した声の名前を指定してください。
 
 アプリのBackend URLには、Yui BackendのURL（同じPCなら通常 `http://127.0.0.1:8000`）を設定します。IrodoriのURLは `.env` の `HTTP_TTS_BASE_URL` へ設定してください。
 

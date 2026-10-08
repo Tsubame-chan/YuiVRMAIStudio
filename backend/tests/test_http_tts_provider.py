@@ -130,12 +130,12 @@ async def test_http_tts_can_post_openai_speech_payload_for_irodori(tmp_path: Pat
     provider = HttpTTSProvider(
         Settings(
             tts_provider="http",
-            http_tts_base_url="http://127.0.0.1:41080",
+            http_tts_base_url="http://127.0.0.1:41090",
             http_tts_endpoint="/v1/audio/speech",
             http_tts_provider_id="irodori",
             http_tts_payload_format="openai_speech",
             http_tts_voice="yui",
-            http_tts_model="mlx-community/Irodori-TTS-600M-v3-VoiceDesign-8bit",
+            http_tts_model="mlx-community/Irodori-TTS-v4.1-Small-8bit",
             http_tts_gender="female",
             http_tts_instruct="若い女性の、明るく可愛いアニメ調の声で話してください。",
             http_tts_lang_code="ja",
@@ -154,7 +154,7 @@ async def test_http_tts_can_post_openai_speech_payload_for_irodori(tmp_path: Pat
     assert not Path(captured_payloads[1]["ref_audio"]).exists(), "Shared sample must be removed after the call"
     assert len(captured_payloads) == 2
     assert captured_payloads[0] == {
-        "model": "mlx-community/Irodori-TTS-600M-v3-VoiceDesign-8bit",
+        "model": "mlx-community/Irodori-TTS-v4.1-Small-8bit",
         "input": "こんにちは、声の基準を作ります。",
         "voice": "yui",
         "response_format": "wav",
@@ -165,7 +165,7 @@ async def test_http_tts_can_post_openai_speech_payload_for_irodori(tmp_path: Pat
         "lang_code": "ja",
     }
     assert captured_payloads[1] == {
-        "model": "mlx-community/Irodori-TTS-600M-v3-VoiceDesign-8bit",
+        "model": "mlx-community/Irodori-TTS-v4.1-Small-8bit",
         "input": "こんにちは",
         "voice": "yui",
         "response_format": "wav",
@@ -190,11 +190,11 @@ async def test_http_tts_openai_speech_request_instruct_overrides_backend_default
     provider = HttpTTSProvider(
         Settings(
             tts_provider="http",
-            http_tts_base_url="http://127.0.0.1:41080",
+            http_tts_base_url="http://127.0.0.1:41090",
             http_tts_endpoint="/v1/audio/speech",
             http_tts_provider_id="irodori",
             http_tts_payload_format="openai_speech",
-            http_tts_model="mlx-community/Irodori-TTS-600M-v3-VoiceDesign-8bit",
+            http_tts_model="mlx-community/Irodori-TTS-v4.1-Small-8bit",
             http_tts_gender="female",
             http_tts_instruct="若い女性の声で話してください。",
             http_tts_lang_code="ja",
@@ -440,11 +440,11 @@ def test_http_tts_irodori_pitch_and_speed_are_not_added_to_voice_design_instruct
     provider = HttpTTSProvider(
         Settings(
             tts_provider="http",
-            http_tts_base_url="http://127.0.0.1:41080",
+            http_tts_base_url="http://127.0.0.1:41090",
             http_tts_endpoint="/v1/audio/speech",
             http_tts_provider_id="irodori",
             http_tts_payload_format="openai_speech",
-            http_tts_model="mlx-community/Irodori-TTS-600M-v3-VoiceDesign-8bit",
+            http_tts_model="mlx-community/Irodori-TTS-v4.1-Small-8bit",
             http_tts_gender="female",
             http_tts_instruct="若い女性の声で話してください。",
             http_tts_lang_code="ja",
@@ -496,21 +496,21 @@ def test_http_tts_cache_key_separates_audio_processor_settings() -> None:
     request = TTSRequest(text="same text", speed_scale=1.0, pitch_scale=-0.3)
     base = Settings(
         tts_provider="http",
-        http_tts_base_url="http://127.0.0.1:41080",
+        http_tts_base_url="http://127.0.0.1:41090",
         http_tts_endpoint="/v1/audio/speech",
         http_tts_provider_id="irodori",
         http_tts_payload_format="openai_speech",
-        http_tts_model="mlx-community/Irodori-TTS-600M-v3-VoiceDesign-8bit",
+        http_tts_model="mlx-community/Irodori-TTS-v4.1-Small-8bit",
         http_tts_format="wav",
         http_tts_audio_processor="none",
     )
     processed = Settings(
         tts_provider="http",
-        http_tts_base_url="http://127.0.0.1:41080",
+        http_tts_base_url="http://127.0.0.1:41090",
         http_tts_endpoint="/v1/audio/speech",
         http_tts_provider_id="irodori",
         http_tts_payload_format="openai_speech",
-        http_tts_model="mlx-community/Irodori-TTS-600M-v3-VoiceDesign-8bit",
+        http_tts_model="mlx-community/Irodori-TTS-v4.1-Small-8bit",
         http_tts_format="wav",
         http_tts_audio_processor="soundstretch",
         http_tts_soundstretch_path="/opt/homebrew/bin/soundstretch",

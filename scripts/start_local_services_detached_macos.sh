@@ -87,7 +87,7 @@ record_owned_pid() {
     backend) port="$BACKEND_PORT" ;;
     voicevox) port="$VOICEVOX_PORT" ;;
     aivis) port="$(url_port "$AIVIS_BASE_URL")" ;;
-    irodori) port="$(url_port "${IRODORI_BASE_URL:-${HTTP_TTS_BASE_URL:-http://127.0.0.1:41080}}")" ;;
+    irodori) port="$(url_port "${IRODORI_BASE_URL:-${HTTP_TTS_BASE_URL:-http://127.0.0.1:41090}}")" ;;
   esac
   "$BACKEND_DIR/.venv/bin/python" "$SCRIPT_DIR/service_ownership.py" record --directory "$RUNTIME_DIR/owned-services" --name "$name-$port" --pid "$pid"
   [[ -n "${YUI_BACKEND_OWNERSHIP_FILE:-}" ]] || return 0
@@ -202,7 +202,7 @@ resolve_irodori_mlx_python() {
 start_irodori_if_configured() {
   is_irodori_configured || return 0
 
-  local base_url="${IRODORI_BASE_URL:-${HTTP_TTS_BASE_URL:-http://127.0.0.1:41080}}"
+  local base_url="${IRODORI_BASE_URL:-${HTTP_TTS_BASE_URL:-http://127.0.0.1:41090}}"
   local health_endpoint="${HTTP_TTS_HEALTH_ENDPOINT:-/v1/models}"
   local health_url
   health_url="$(join_url "$base_url" "$health_endpoint")"
@@ -394,7 +394,7 @@ if is_aivis_configured; then
   echo "  Aivis   : $AIVIS_BASE_URL/version"
 fi
 if is_irodori_configured; then
-  echo "  Irodori : $(join_url "${IRODORI_BASE_URL:-${HTTP_TTS_BASE_URL:-http://127.0.0.1:41080}}" "${HTTP_TTS_HEALTH_ENDPOINT:-/v1/models}")"
+  echo "  Irodori : $(join_url "${IRODORI_BASE_URL:-${HTTP_TTS_BASE_URL:-http://127.0.0.1:41090}}" "${HTTP_TTS_HEALTH_ENDPOINT:-/v1/models}")"
 fi
 echo "  Backend : $BACKEND_BASE_URL/health"
 echo

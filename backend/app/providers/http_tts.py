@@ -15,6 +15,7 @@ import audioop
 import httpx
 
 from app.core.config import ROOT_DIR, Settings
+from app.core.irodori_presets import reference as preset_reference
 from app.models.tts import TTSRequest, TTSResponse
 from app.providers.interfaces import TTSProvider
 from app.providers.voicevox_tts import TTSProviderError
@@ -78,7 +79,8 @@ class HttpTTSProvider(TTSProvider):
                     sample=Path(shared)/reference.name
                     sample.write_bytes(reference.read_bytes());os.chmod(sample,0o600)
                     payload["ref_audio"]=str(sample)
-                    payload["ref_text"]=IRODORI_VOICE_REFERENCE_TEXT
+                    preset = preset_reference(request.voice_instruct or self.settings.http_tts_instruct)
+                    payload["ref_text"]=preset[1] if preset else IRODORI_VOICE_REFERENCE_TEXT
                     response=await self._client.post(self._endpoint(request),json=payload,headers=headers)
                     response.raise_for_status()
             else:
@@ -226,6 +228,11 @@ class HttpTTSProvider(TTSProvider):
         )
 
     async def _ensure_voice_reference(self, request: TTSRequest) -> Path:
+        preset = preset_reference(request.voice_instruct or self.settings.http_tts_instruct)
+        if preset:
+            if not preset[0].is_file():
+                raise TTSProviderError("The bundled Irodori reference is missing.")
+            return preset[0]
         reference_path = self._voice_reference_path(request)
         if reference_path.exists():
             return reference_path
@@ -589,7 +596,7 @@ class HttpTTSProvider(TTSProvider):
             (
                 settings.http_tts_provider_id,
                 settings.http_tts_payload_format,
-                "postprocess_soundstretch_v6_ref_text_trim_peak_voice_ref_v2",
+                "postprocess_soundstretch_v6_ref_text_trim_peak_voice_ref_v3",
                 request.text,
                 settings.http_tts_base_url,
                 settings.http_tts_endpoint,

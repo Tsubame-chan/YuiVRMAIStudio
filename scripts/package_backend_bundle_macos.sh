@@ -15,7 +15,7 @@ rm -rf "$BUNDLE_DIR"
 mkdir -p "$BUNDLE_DIR"
 
 rsync -a --delete \
-  --exclude '.venv/' \
+  --exclude '.venv' \
   --exclude '__pycache__/' \
   --exclude '.pytest_cache/' \
   --exclude 'data/*.db' \
@@ -66,6 +66,16 @@ if [[ "$INCLUDE_VENV" == "1" && -d "$ROOT_DIR/backend/.venv" ]]; then
         RESOLVED_VENV_PYTHON="$(cd "$(dirname "$VENV_PYTHON")" && cd "$(dirname "$RESOLVED_VENV_PYTHON")" && pwd -P)/$(basename "$RESOLVED_VENV_PYTHON")"
       fi
     fi
+    # A venv interpreter may point at the developer's runtime outside the bundle.
+    # Remove the destination link before copying, so cp cannot overwrite its target.
+    rm -f "$BUNDLE_DIR/backend/.venv/bin/python3"
+    cp -pL "$RESOLVED_VENV_PYTHON" "$BUNDLE_DIR/backend/.venv/bin/python3"
+    ln -sf python3 "$BUNDLE_DIR/backend/.venv/bin/python"
+    ln -sf python3 "$BUNDLE_DIR/backend/.venv/bin/python3.12"
+    cat > "$BUNDLE_DIR/backend/.venv/pyvenv.cfg" <<CFG
+home = bin
+include-system-site-packages = false
+CFG
     RESOLVED_LIBPYTHON="$(cd "$(dirname "$RESOLVED_VENV_PYTHON")/../lib" 2>/dev/null && pwd -P)/libpython3.12.dylib"
     if [[ -f "$RESOLVED_LIBPYTHON" ]]; then
       mkdir -p "$BUNDLE_DIR/backend/.venv/lib"

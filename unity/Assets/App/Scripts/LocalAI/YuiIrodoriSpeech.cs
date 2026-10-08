@@ -22,10 +22,20 @@ namespace YuiPhysicalAI.LocalAI
         private static readonly SemaphoreSlim Gate = new SemaphoreSlim(1,1);
         public static string Root(string persistent) => Path.Combine(persistent,"YuiLocalAI","Irodori");
         public static bool IsInstalled(string persistent) => File.Exists(Path.Combine(Root(persistent),".verified"));
-        public static readonly string[] Voices = {"soft_yui","gentle_friend"};
-        public static string Caption(string voice) => voice == "gentle_friend"
-            ? "若い女性の、親しみやすく優しい声で、落ち着いたテンポで話してください。"
-            : "若い女性の、やわらかく可愛い声で、少し甘めに自然な日本語で話してください。";
+        public const int DefaultSpeakerId = 10005;
+        public static readonly string[] Voices = {"bright_natural","gentle_friend","calm_natural"};
+        public static int CompatibleSpeaker(int id) => id == 10002 || id == 10003 ? id : DefaultSpeakerId;
+        public static string VoiceForSpeaker(int id) => id == 10002 ? "gentle_friend" : id == 10003 ? "calm_natural" : "bright_natural";
+        public static string Caption(string voice)
+        {
+            switch (voice)
+            {
+                case "gentle_friend": return "若い女性の、親しみやすく優しい声で、落ち着いたテンポで話してください。";
+                case "calm_natural": return "落ち着いた女性の声。自然な会話調で、はっきり話してください。";
+                case "bright_natural": return "明るく元気な女性の声。親しみやすく、楽しそうに自然に話してください。";
+                default: throw new ArgumentException("Unknown Irodori voice.", nameof(voice));
+            }
+        }
         // Tiny synthetic reference clips are included; the 1.96 GB model remains optional.
         private static string EnsureReference(string voice, string persistent)
         {
