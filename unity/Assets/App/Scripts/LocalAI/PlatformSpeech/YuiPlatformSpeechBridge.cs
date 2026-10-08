@@ -84,7 +84,7 @@ namespace YuiPhysicalAI.LocalAI
             var payload = JsonConvert.SerializeObject(new
             {
                 text = request?.Text ?? string.Empty,
-                language_code = "ja-JP",
+                language_code = YuiSpeechLanguage.Locale(request?.LanguageCode),
                 speed_scale = request?.SpeedScale ?? 1.0f,
                 pitch_scale = request?.PitchScale ?? 0.0f
             });
@@ -103,7 +103,7 @@ namespace YuiPhysicalAI.LocalAI
             if (!CanTranscribe)
                 return YuiPlatformSpeechTranscriptionResult.Error("platform_unsupported", "Platform speech recognition is not available.");
 #if UNITY_ANDROID && !UNITY_EDITOR
-            return await YuiAndroidSpeechRecognizer.TranscribeLiveAsync("ja-JP", cancellationToken);
+            return await YuiAndroidSpeechRecognizer.TranscribeLiveAsync(YuiSpeechLanguage.Locale(request?.LanguageCode), cancellationToken);
 #else
             if (request?.AudioBytes == null || request.AudioBytes.Length <= 44)
                 return YuiPlatformSpeechTranscriptionResult.Error("invalid_audio", "Recorded audio is empty.");
@@ -113,7 +113,7 @@ namespace YuiPhysicalAI.LocalAI
                     return YuiPlatformSpeechTranscriptionResult.Error("speech_not_authorized", "Speech recognition permission required");
                 return await YuiNativeMediaFile.RunAsync(request.AudioBytes, ".wav", path =>
                 {
-                    var payload = JsonConvert.SerializeObject(new { audio_path = path, language_code = "ja-JP" });
+                    var payload = JsonConvert.SerializeObject(new { audio_path = path, language_code = YuiSpeechLanguage.Locale(request?.LanguageCode) });
 #if UNITY_IOS && !UNITY_EDITOR
                     return ParseTranscription(InvokeNativeJson(() => YuiPlatformSpeechBridge_Transcribe(payload)));
 #else

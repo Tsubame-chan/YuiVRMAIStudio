@@ -163,7 +163,7 @@ namespace YuiPhysicalAI.UI
             MigrateRecentDialogue();
             YuiPhysicalAI.LocalAI.YuiLocalModelSelection.MigrateInstalledChoice();
             await RestoreConversationViewAsync();
-            YuiTutorial.ShowIfNeeded();
+            YuiTutorial.ShowIfNeeded(OfferFirstRunEnglishVoice);
             YuiLocalModelMenu.ResumeConsentedDownload(this);
             if (ShouldMonitorBackend())
             {
@@ -365,7 +365,10 @@ namespace YuiPhysicalAI.UI
 
         private void OnDestroy()
         {
+            voicePackCancellation?.Cancel();
             YuiUiLocalization.Changed -= RenderStatus;
+            YuiUiLocalization.Changed -= OnSpeechLanguageChanged;
+            speechLanguageCancellation.Cancel(); speechLanguageCancellation.Dispose();
             if (savedDataPanel != null) Destroy(savedDataPanel);
             if (composerMenu != null) Destroy(composerMenu.gameObject);
             if (avatarLibraryPanel != null) Destroy(avatarLibraryPanel);

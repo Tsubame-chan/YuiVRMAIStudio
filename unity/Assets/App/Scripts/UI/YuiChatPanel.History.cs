@@ -108,6 +108,7 @@ namespace YuiPhysicalAI.UI
                 const float rowHeight = 176;
                 content.sizeDelta = new Vector2(0, page.Items.Count * rowHeight);
                 var scroll = list.GetComponent<ScrollRect>(); scroll.viewport = list.GetComponent<RectTransform>(); scroll.content = content; scroll.horizontal = false;
+                YuiControlAffordance.Scrollbar(scroll);
                 for(var i=0;i<page.Items.Count;i++)
                 {
                     var item=page.Items[i]; var preview=(item.Text??"").Replace('\n',' ').Replace('\r',' ');
@@ -154,6 +155,7 @@ namespace YuiPhysicalAI.UI
             var content=new GameObject("Content",typeof(RectTransform)).GetComponent<RectTransform>();content.SetParent(viewport.transform,false);
             content.anchorMin=new Vector2(0,1);content.anchorMax=Vector2.one;content.pivot=new Vector2(.5f,1);content.sizeDelta=new Vector2(0,ids.Count*120);
             var scroll=viewport.GetComponent<ScrollRect>();scroll.viewport=viewport.GetComponent<RectTransform>();scroll.content=content;scroll.horizontal=false;
+                YuiControlAffordance.Scrollbar(scroll);
             for(var i=0;i<ids.Count;i++) {
                 var id=ids[i];var button=ComposerButton(content,"Character"+i,HistoryCharacterName(id)+(id==ChatCharacterId()?" · 会話中":""),()=>{historyCharacter=id;historyPage=0;historySnapshot=-1;historySession=ChatSessionId(id);ShowHistory();},0,0,1,1,false);
                 var rect=button.GetComponent<RectTransform>();rect.anchorMin=new Vector2(0,1);rect.anchorMax=Vector2.one;rect.pivot=new Vector2(.5f,1);rect.anchoredPosition=new Vector2(0,-120*i);rect.sizeDelta=new Vector2(0,108);

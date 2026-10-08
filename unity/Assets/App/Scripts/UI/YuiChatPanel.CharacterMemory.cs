@@ -29,6 +29,7 @@ namespace YuiPhysicalAI.UI
                 var content=new GameObject("Content",typeof(RectTransform));content.transform.SetParent(viewport.transform,false);
                 var rect=content.GetComponent<RectTransform>();rect.anchorMin=new Vector2(0,1);rect.anchorMax=Vector2.one;rect.pivot=new Vector2(.5f,1);rect.sizeDelta=new Vector2(0,Mathf.Max(120,page.Count*95));
                 var scroll=viewport.GetComponent<ScrollRect>();scroll.viewport=viewport.GetComponent<RectTransform>();scroll.content=rect;scroll.horizontal=false;
+                YuiControlAffordance.Scrollbar(scroll);
                 for(var i=0;i<page.Count;i++) {
                     var item=page[i];var button=ComposerButton(content.transform,"Memory"+item.Id,(item.Pinned?"★ ":"")+item.Content,()=>EditLocalMemory(character,item),0,0,1,1,false);
                     var r=button.GetComponent<RectTransform>();r.anchorMin=new Vector2(0,1);r.anchorMax=Vector2.one;r.pivot=new Vector2(.5f,1);r.sizeDelta=new Vector2(0,85);r.anchoredPosition=new Vector2(0,-i*95);

@@ -59,6 +59,8 @@ namespace YuiPhysicalAI.UI
             string mode,
             IReadOnlyList<TtsVoiceOption> backendAivisOptions)
         {
+            if (string.Equals(mode, "irodori-native", StringComparison.OrdinalIgnoreCase))
+                return new[] { new YuiTtsVoiceOption(YuiSimpleDialog.L("やわらかく可愛い女性", "Soft and sweet"),10001), new YuiTtsVoiceOption(YuiSimpleDialog.L("親しみやすく優しい女性", "Gentle friend"),10002) };
             if (string.Equals(mode, "aivis-native", StringComparison.OrdinalIgnoreCase))
             {
                 return FallbackAivisVoiceOptions;

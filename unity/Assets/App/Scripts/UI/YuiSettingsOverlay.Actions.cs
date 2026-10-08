@@ -465,8 +465,15 @@ namespace YuiPhysicalAI.UI
 
         private void OnTtsModeDropdownChanged(int _)
         {
-            SaveCurrentVoiceFieldsForMode(lastTtsModeValue);
             var nextMode = TtsModeValue();
+            if (nextMode == "irodori-native" && chatPanel != null && !chatPanel.IrodoriInstalled)
+            {
+                ttsModeDropdown.SetValueWithoutNotify(TtsModeIndex(lastTtsModeValue));
+                ttsModeDropdown.RefreshShownValue();
+                chatPanel.ShowVoicePackDownload(true);
+                return;
+            }
+            SaveCurrentVoiceFieldsForMode(lastTtsModeValue);
             lastTtsModeValue = nextMode;
             EnsureVoiceOptions();
             ConfigureVoiceSliderRanges();

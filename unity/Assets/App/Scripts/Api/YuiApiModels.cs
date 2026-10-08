@@ -270,6 +270,7 @@ namespace YuiPhysicalAI.Api
     [Serializable]
     public sealed class ChatRequest
     {
+        [JsonProperty("language_code")] public string LanguageCode { get; set; } = "ja";
         [JsonProperty("character_id")] public string CharacterId;
         [JsonProperty("shared_character_id")] public string SharedCharacterId;
         [JsonProperty("session_id")] public string SessionId;

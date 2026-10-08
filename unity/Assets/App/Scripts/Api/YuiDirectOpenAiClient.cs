@@ -11,6 +11,7 @@ namespace YuiPhysicalAI.Api
 {
     public sealed class YuiDirectOpenAiClient
     {
+        public string LanguageCode { get; set; } = "ja";
         public const string DefaultModel = "gpt-5.4-mini";
         private const string ResponsesUrl = "https://api.openai.com/v1/responses";
         public const string DefaultTranscriptionModel = "gpt-transcribe";
@@ -33,7 +34,7 @@ namespace YuiPhysicalAI.Api
             var form = new WWWForm();
             form.AddBinaryData("file", wavBytes, filename ?? "recording.wav", "audio/wav");
             form.AddField("model", DefaultTranscriptionModel);
-            form.AddField("language", "ja");
+            form.AddField("language", YuiPhysicalAI.LocalAI.YuiSpeechLanguage.IsEnglish(LanguageCode) ? "en" : "ja");
             form.AddField("response_format", "json");
             using var request = UnityWebRequest.Post("https://api.openai.com/v1/audio/transcriptions", form);
             request.timeout = 60;
@@ -284,7 +285,7 @@ namespace YuiPhysicalAI.Api
 
             return
                 $"You are {characterName}, a friendly Japanese VRM embodied AI assistant. " +
-                "Reply in natural Japanese as the character. " + YuiPhysicalAI.Core.YuiConversationRolePolicy.Text + " " +
+                (YuiPhysicalAI.LocalAI.YuiSpeechLanguage.IsEnglish(request?.LanguageCode) ? "Reply in natural English as the character. " : "Reply in natural Japanese as the character. ") + YuiPhysicalAI.Core.YuiConversationRolePolicy.Text + " " +
                 responseModeInstructions +
                 "Start with the answer itself. " +
                 "Do not announce that you will summarize, organize, keep it brief, or explain your style. " +

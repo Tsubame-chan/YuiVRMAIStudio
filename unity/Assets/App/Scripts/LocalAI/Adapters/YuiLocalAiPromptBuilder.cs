@@ -13,6 +13,7 @@ namespace YuiPhysicalAI.LocalAI
             var prepared = new YuiLocalAiChatRequest
             {
                 RequestId = request.RequestId,
+                LanguageCode = request.LanguageCode,
                 Mode = request.Mode,
                 UserId = request.UserId,
                 Message = request.Message,
@@ -77,6 +78,13 @@ namespace YuiPhysicalAI.LocalAI
             return text.Substring(0, max);
         }
 
+        private static string BuildEnglishInstruction(YuiLocalAiChatRequest request) =>
+            "You are " + (string.IsNullOrWhiteSpace(request?.CharacterName) ? "Yui" : Limit(request.CharacterName, 40))
+            + ", a friendly VRM character. Reply in natural English. Follow the user's personality and response preferences. "
+            + "Answer the request directly and accurately. Do not claim actions you have not performed or invent facts. "
+            + (IsWork(request) ? "Provide a complete usable result with the detail and format the task needs. " : "Use two to four natural spoken sentences without Markdown or code unless requested. ")
+            + YuiPhysicalAI.Core.YuiConversationRolePolicy.Text;
+
         private static bool IsWork(YuiLocalAiChatRequest request) => string.Equals(request?.Mode, "work", StringComparison.OrdinalIgnoreCase);
         private static string WorkInstruction(YuiLocalAiChatRequest request) =>
             "あなたは" + (string.IsNullOrWhiteSpace(request?.CharacterName) ? "Yui" : request.CharacterName.Substring(0, Math.Min(40, request.CharacterName.Length))) + "。日本語でユーザーの依頼に答えてください。"
@@ -86,6 +94,7 @@ namespace YuiPhysicalAI.LocalAI
 
         public static string BuildSystemInstruction(YuiLocalAiChatRequest request)
         {
+            if (YuiSpeechLanguage.IsEnglish(request?.LanguageCode)) return BuildEnglishInstruction(request);
             if (IsWork(request)) return WorkInstruction(request);
             var characterName = string.IsNullOrWhiteSpace(request?.CharacterName)
                 ? "Yui"
@@ -126,6 +135,7 @@ namespace YuiPhysicalAI.LocalAI
 
         public static string BuildCompactSystemInstruction(YuiLocalAiChatRequest request)
         {
+            if (YuiSpeechLanguage.IsEnglish(request?.LanguageCode)) return BuildEnglishInstruction(request);
             if (IsWork(request)) return WorkInstruction(request);
             var characterName = string.IsNullOrWhiteSpace(request?.CharacterName)
                 ? "Yui"

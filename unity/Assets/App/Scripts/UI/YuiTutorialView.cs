@@ -10,6 +10,7 @@ namespace YuiPhysicalAI.UI
     {
         private int page;
         private RectTransform safe,card,imageSlot,bodyViewport,navigation;
+        private Scrollbar bodyScrollbar;
         private RawImage image;
         private Text heading,body,count,imageCaption;
         private CanvasScaler scaler;
@@ -54,6 +55,8 @@ namespace YuiPhysicalAI.UI
             view.body.rectTransform.anchorMin=new Vector2(0,1);view.body.rectTransform.anchorMax=Vector2.one;view.body.rectTransform.pivot=new Vector2(.5f,1);view.body.rectTransform.offsetMin=view.body.rectTransform.offsetMax=Vector2.zero;
             view.body.gameObject.AddComponent<ContentSizeFitter>().verticalFit=ContentSizeFitter.FitMode.PreferredSize;
             var scroll=view.bodyViewport.gameObject.AddComponent<ScrollRect>();scroll.viewport=view.bodyViewport;scroll.content=view.body.rectTransform;scroll.horizontal=false;scroll.movementType=ScrollRect.MovementType.Clamped;
+            view.bodyScrollbar=YuiSimpleDialog.CreateVerticalScrollbar(view.card,"ExplanationScrollbar");
+            scroll.verticalScrollbar=view.bodyScrollbar;scroll.verticalScrollbarVisibility=ScrollRect.ScrollbarVisibility.AutoHide;scroll.scrollSensitivity=24;
             view.count=Label(view.card,"Page",14,TextAnchor.MiddleCenter);view.count.color=YuiUiTheme.Muted;
             view.navigation=Rect(view.card,"Navigation");
             view.back=Button(view.navigation,"Back",YuiSimpleDialog.L("戻る","Back"),()=>YuiTutorial.Show(page-1));
@@ -72,6 +75,8 @@ namespace YuiPhysicalAI.UI
             image.texture=Resources.Load<Texture2D>("YuiTutorial/"+Names[page]+(ja?"-ja":"-en"));image.uvRect=Crops[page];
             foreach(Transform child in image.transform)Destroy(child.gameObject);
             if(image.texture!=null)for(var n=0;n<Targets[page].Length;n++)Highlight(image.transform,Targets[page][n],n+1);
+            body.rectTransform.anchoredPosition=Vector2.zero;
+            bodyViewport.GetComponent<ScrollRect>().verticalNormalizedPosition=1;
             previousSize=Vector2.zero;
         }
         private void Update()
@@ -97,7 +102,8 @@ namespace YuiPhysicalAI.UI
                 var w=width-44;var h=imageHeight-40;if(w/h>aspect)w=h*aspect;else h=w/aspect;
                 var r=image.rectTransform;r.anchorMin=r.anchorMax=new Vector2(.5f,.5f);r.sizeDelta=new Vector2(w,h);r.anchoredPosition=new Vector2(0,-14);
             }
-            var bodyTop=80+imageHeight+20;At(bodyViewport,20,bodyTop,width-40,Mathf.Max(70,height-bodyTop-112));
+            var bodyTop=80+imageHeight+20;At(bodyViewport,20,bodyTop,width-76,Mathf.Max(70,height-bodyTop-112));
+            At((RectTransform)bodyScrollbar.transform,width-60,bodyTop,44,Mathf.Max(70,height-bodyTop-112));
             At(count.rectTransform,20,height-106,width-40,22);At(navigation,18,height-72,width-36,48);
             Stretch((RectTransform)next.transform);Stretch((RectTransform)back.transform);
             if(page>0){var r=(RectTransform)back.transform;r.anchorMax=new Vector2(.34f,1);var nr=(RectTransform)next.transform;nr.anchorMin=new Vector2(.38f,0);}

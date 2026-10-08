@@ -35,7 +35,7 @@ The images show the real app with the included Unity-chan. Captions are Japanese
 | --- | --- |
 | Mac | [macOS app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.2/YuiVRMAIStudio_MacOSPublicBeta_v0.2.4-beta.2_macos.zip) (Apple Silicon runtime) |
 | Windows | [Windows app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.4-beta.2/YuiVRMAIStudio_WindowsPublicBeta_v0.2.4-beta.2_windows.zip) |
-| iPhone / iPad | iOS 26+. [Planned App Store page](https://apps.apple.com/jp/app/id6815341780): free Japan release under review, available after publication |
+| iPhone / iPad | iOS 26+. [App Store](https://apps.apple.com/jp/app/id6815341780): free Japan release |
 
 The desktop version is **v0.2.4-beta.2**. It includes the Backend Console, saved voices and paired character sync. See [Backend setup](docs/BACKEND_CONSOLE.md). Extract the ZIP, open the app and follow the first-run data notice. Allow approximately 2.5GB of downloads plus room for extraction; Wi-Fi is recommended. Mac signing/notarization is not yet provided. Setup: [Mac](docs/MAC_PUBLIC_BETA.en.md) / [Windows](docs/SETUP_GUIDE.md).
 
@@ -49,7 +49,7 @@ The desktop version is **v0.2.4-beta.2**. It includes the Backend Console, saved
 
 Choose **offline, on-device AI** or **OpenAI API**. The lightweight E2B model is standard; Mac and iOS offer optional E4B for better responses at the cost of longer waits and higher device load. OpenAI API is recommended for higher-quality conversation. **An API key and API charges are required**, separately from a ChatGPT subscription.
 
-Standard speech uses five Japanese VOICEVOX voices. Menus support Japanese and English, but an English speech model is not included. Optional PC Backend features are covered in [Help](docs/HELP.md). See [Backend Console](docs/BACKEND_CONSOLE.md) and the [TTS installation guide (Japanese)](docs/BACKEND_TTS_GUIDE.md) for optional Aivis/Irodori engines.
+Standard speech uses five Japanese VOICEVOX voices. The latest source adds optional downloads in Mac/iOS settings: two Japanese Irodori voices (about 1.96GB) and six English Kokoro voices (about 67.4MB). These additional voices are not included in the existing 0.2.4 or desktop beta.2 apps. See [Voice downloads](docs/LOCAL_AI_ASSETS.md), [Help](docs/HELP.md), [Backend Console](docs/BACKEND_CONSOLE.md) and the [Backend TTS installation guide (Japanese)](docs/BACKEND_TTS_GUIDE.md).
 
 ## Memory and privacy
 

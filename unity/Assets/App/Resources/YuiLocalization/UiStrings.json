@@ -2823,6 +2823,14 @@
       "en": "Sync character & conversations",
       "ja": "キャラクターと会話を同期",
       "aliases": []
+    },
+    {
+      "en": "Edit",
+      "ja": "編集"
+    },
+    {
+      "en": "PC VPN address (http://…:8000)",
+      "ja": "PCのVPNアドレス（http://…:8000）"
     }
   ]
 }

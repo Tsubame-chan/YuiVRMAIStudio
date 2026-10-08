@@ -64,7 +64,7 @@ def infer(request):
                 audio_path = audio.name
             prompt = {"role": "user", "content": [
                 {"type": "audio", "path": audio_path},
-                {"type": "text", "text": "聞こえた日本語の発話だけを正確に文字起こししてください。説明や返答を加えないでください。無音なら空文字にしてください。"},
+                {"type": "text", "text": ("Transcribe only the English speech you hear. Do not add explanations or replies. Return an empty string for silence." if str(payload.get("LanguageCode", "ja")).lower().startswith("en") else "聞こえた日本語の発話だけを正確に文字起こししてください。説明や返答を加えないでください。無音なら空文字にしてください。")},
             ]}
         elif capability == "Chat":
             text = payload.get("Input") or payload.get("Prompt") or payload.get("Message") or ""

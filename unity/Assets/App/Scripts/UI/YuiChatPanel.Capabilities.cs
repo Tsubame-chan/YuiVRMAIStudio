@@ -27,7 +27,7 @@ namespace YuiPhysicalAI.UI
             deviceSpeech = true;
 #endif
             return YuiVoiceEnvironmentOptions.Build(providerStatusUrl == backendUrl ? cachedProviderStatus : null,
-                IsBackendRecentlyReachable(), localBackendInstalled, NativeVoicevoxAvailable(), nativeAivis, deviceSpeech, selected);
+                IsBackendRecentlyReachable(), localBackendInstalled, NativeVoicevoxAvailable(), nativeAivis, deviceSpeech, selected, YuiSpeechLanguage.IsEnglish(YuiUiLocalization.Language), EnglishVoiceInstalled, IrodoriSupported, IrodoriInstalled);
         }
 
         public YuiCapabilitySnapshot CurrentCapabilitySnapshot()
@@ -36,14 +36,14 @@ namespace YuiPhysicalAI.UI
             if (providerStatus == null && routingBackendHealth != null && routingBackendUrl == backendUrl
                 && Time.realtimeSinceStartup - routingBackendCheckedAt <= 15f)
                 return YuiCapabilityMatrix.FromHealth(routingBackendHealth, IsBackendRecentlyReachable(),
-                    NativeVoicevoxAvailable(), LocalChatRuntimeAvailable(), !string.IsNullOrWhiteSpace(openAiApiKey), IsRemoteBackend());
+                    NativeVoicevoxAvailable(), LocalChatRuntimeAvailable(), !string.IsNullOrWhiteSpace(openAiApiKey), IsRemoteBackend()).WithIrodori(IrodoriSupported,IrodoriInstalled);
             return YuiCapabilityMatrix.FromProviderStatus(
                 providerStatus,
                 backendReachable: providerStatus != null || IsBackendRecentlyReachable(),
                 nativeVoicevoxAvailable: NativeVoicevoxAvailable(),
                 localChatAvailable: LocalChatRuntimeAvailable(),
                 directOpenAiConfigured: !string.IsNullOrWhiteSpace(openAiApiKey),
-                backendIsRemote: IsRemoteBackend());
+                backendIsRemote: IsRemoteBackend()).WithIrodori(IrodoriSupported,IrodoriInstalled);
         }
 
         public async Task RefreshCapabilitySnapshotAsync(CancellationToken cancellationToken)

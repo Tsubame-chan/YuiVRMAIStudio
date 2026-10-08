@@ -24,6 +24,12 @@ namespace YuiPhysicalAI.LocalAI
             return runtime.Supports(capability);
         }
 
+        public Task ReleaseAsync(YuiLocalAiCapability capability, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return runtime.Supports(capability) ? runtime.ReleaseAsync(capability, cancellationToken) : Task.CompletedTask;
+        }
+
         public Task WarmAsync(YuiLocalAiCapability capability, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();

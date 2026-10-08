@@ -231,6 +231,7 @@ namespace YuiPhysicalAI.UI
             EnsureUiReferences();
             ApplyReadableFont();
             YuiUiLocalization.Changed += RenderStatus;
+            YuiUiLocalization.Changed += OnSpeechLanguageChanged;
             if (avatarSwitcher == null)
             {
                 avatarSwitcher = GetComponent<YuiAvatarSwitcher>() ?? YuiSceneObjectFinder.FindFirst<YuiAvatarSwitcher>();

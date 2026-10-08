@@ -8,6 +8,12 @@ namespace YuiPhysicalAI.UI
 {
     public sealed partial class YuiSettingsOverlay
     {
+        public void RefreshVoicePackUi()
+        {
+            if(settingsRoot == null || !settingsRoot.activeSelf)return;
+            RefreshTtsModeOptions(TtsModeValue());
+            ApplyResponsiveOverlayLayout();
+        }
         private static readonly Color SettingsSurface = new Color32(28, 27, 32, 255);
         private static readonly Color SettingsField = new Color32(43, 41, 49, 255);
         private static readonly Color SettingsAccent = new Color32(208, 188, 255, 255);
@@ -141,6 +147,29 @@ namespace YuiPhysicalAI.UI
                     if (YuiConversationModes.IsRealtime(mode) || TtsModeValue() != "silent") SliderRow(content, "Volume", "Volume", ref row);
                     if ((!YuiConversationModes.IsRealtime(mode) || YuiConversationModes.IsRealtimeTextTts(mode)) && TtsModeValue() != "silent" && TtsModeValue() != "backend-profile")
                     {
+                        if (YuiPhysicalAI.LocalAI.YuiSpeechLanguage.UsesKokoro(YuiUiLocalization.Language, TtsModeValue()))
+                        {
+                            Note(content, "Kokoro follows Language and works offline.", ref row);
+                            var englishVoiceLabel = "English voice: " + (chatPanel?.EnglishVoiceName ?? "Bella") + " · Switch";
+                            if (chatPanel != null && YuiPhysicalAI.LocalAI.YuiKokoroSpeech.InstalledVoices(Application.persistentDataPath).Length > 0)
+                            {
+                            ModernButton(content, "EnglishVoiceChoice", englishVoiceLabel, () => { chatPanel?.ToggleEnglishVoice(); ApplyResponsiveOverlayLayout(); });
+                            Full(content, "EnglishVoiceChoice", englishVoiceLabel, ref row);
+                            }
+                            var downloadLabel = chatPanel != null && chatPanel.EnglishVoiceInstalled ? "English voice data · Ready / Repair" : "Download English voice pack";
+                            ModernButton(content, "EnglishVoiceDownload", downloadLabel, () => chatPanel?.DownloadEnglishVoice());
+                            Full(content, "EnglishVoiceDownload", downloadLabel, ref row);
+                            EnglishVoiceSliders(content, ref row);
+                            Full(content, "VoicePreviewButton", "Preview voice", ref row);
+                        }
+                        else
+                        {
+                        if (TtsModeValue() == "irodori-native")
+                        {
+                            Row(content, "SpeakerLabel", "Voice", "SpeakerDropdown", ref row);
+                            Full(content, "VoicePreviewButton", "Preview voice", ref row);
+                        }
+                        else {
                         if (YuiTtsRuntimeRouting.IsVoicevoxIntent(TtsModeValue()) || IsAivisTtsSelected())
                             Row(content, "SpeakerLabel", "Voice", "SpeakerDropdown", ref row);
                         Full(content, "VoicePreviewButton", "Preview voice", ref row);
@@ -151,6 +180,13 @@ namespace YuiPhysicalAI.UI
                         Row(content, "VoicePresetNameLabel", "Preset name", "VoicePresetNameInput", ref row);
                         Full(content, "VoicePresetSaveButton", "Save voice preset", ref row);
                         Full(content, "VoicePresetDeleteButton", "Delete voice preset", ref row);
+                        }
+                        }
+                    }
+                    if (chatPanel != null && chatPanel.VoicePackBusy)
+                    {
+                        ModernButton(content, "VoicePackProgress", YuiSimpleDialog.L("音声ダウンロードの進捗", "Voice download progress"), () => chatPanel.ShowVoicePackDownload(false));
+                        Full(content, "VoicePackProgress", YuiSimpleDialog.L("音声ダウンロードの進捗", "Voice download progress"), ref row);
                     }
                     if (!YuiConversationModes.IsRealtime(mode) && TtsModeValue() == "server-http")
                     {
@@ -228,7 +264,7 @@ namespace YuiPhysicalAI.UI
                         Heading(content, "On-device data", ref row);
                         Note(content, YuiPhysicalAI.LocalAI.YuiAppleHostedAssets.Enabled
                             ? "Conversation data is delivered by Apple during setup. Once ready, you can chat offline. Standard voice data is included in the app."
-                            : "Standard AI and voice data are included in this app. Additional downloads are available in the desktop app.", ref row);
+                            : YuiSimpleDialog.L("標準のAI・音声データはアプリに含まれています。追加のAIはAIタブ、追加の音声は音声タブから、容量を確認してダウンロードできます。", "Standard AI and voice data are included. Download optional AI in the AI tab and optional voices in the Voice tab after reviewing their size."), ref row);
                     }
                     else
                     {

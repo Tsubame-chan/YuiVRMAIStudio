@@ -1,0 +1,7 @@
+Irodori CoreML SDK: https://github.com/Corvelis/irodori-tts-coreml
+Upstream v0.2.0, commit 948f17da32e94fdb87eeb9420b76326312665d49.
+Yui modification: use CPUAndGPU for decoder_stage_0 on macOS only to avoid a BNNS crash. iOS is unchanged. A C ABI wrapper serializes Unity speech requests and preserves AudioSeal watermarking. Model data is downloaded separately with its own notices.
+
+Yui keeps the engine between speech requests and releases it on memory pressure or before a mobile local-LLM request. Two bundled synthetic voice references were generated with mlx-community/Irodori-TTS-v4.1-Small-fp16 (RF40); no human reference recordings are included. The wrapper supports macOS and iOS.
+
+Yui additionally keeps compiled AudioSeal models at stable cache paths, keyed by package file metadata, rather than deleting their temporary compilation outputs at engine release. AudioSeal remains enabled.

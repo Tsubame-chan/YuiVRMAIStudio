@@ -313,6 +313,8 @@ namespace YuiPhysicalAI.Editor
             project.AddFrameworkToProject(frameworkTargetGuid, "Speech.framework", false);
             project.AddFrameworkToProject(frameworkTargetGuid, "Security.framework", false);
             project.AddFrameworkToProject(frameworkTargetGuid, "Vision.framework", false);
+            project.AddFrameworkToProject(frameworkTargetGuid, "CoreML.framework", false);
+            project.AddFrameworkToProject(frameworkTargetGuid, "Accelerate.framework", false);
             project.SetBuildProperty(targetGuid, "SWIFT_VERSION", "5.0");
             project.SetBuildProperty(targetGuid, "CLANG_ENABLE_MODULES", "YES");
             project.SetBuildProperty(targetGuid, "CLANG_CXX_LANGUAGE_STANDARD", "gnu++17");

@@ -13,7 +13,7 @@ PlayerSettings:
   useOnDemandResources: 0
   accelerometerFrequency: 60
   companyName: Yui VRM AI Studio
-  productName: Yui VRM AI Studio
+  productName: Yui Voice Pack Validation
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -147,7 +147,7 @@ PlayerSettings:
   loadStoreDebugModeEnabled: 0
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
-  bundleVersion: 0.2.4-beta.2
+  bundleVersion: 0.1.0-alpha.1
   preloadedAssets: []
   metroInputSource: 0
   wsaTransparentSwapchain: 0
@@ -171,8 +171,8 @@ PlayerSettings:
   androidMinAspectRatio: 1
   applicationIdentifier:
     Android: jp.tsubamechan.yuivrm.public
-    Standalone: jp.tsubamechan.yuivrm.public
-    iPhone: jp.tsubamechan.yuivrm.public
+    Standalone: jp.tsubamechan.yuivrm.voicepack-validation
+    iPhone: jp.tsubamechan.yuivrm.voicepack-validation
   buildNumber:
     Standalone: 0
     VisionOS: 0
@@ -922,7 +922,7 @@ PlayerSettings:
   scriptingDefineSymbols:
     Android: YUI_PROFILE_PUBLIC
     Standalone: YUI_PROFILE_PUBLIC
-    iPhone: YUI_PROFILE_PUBLIC
+    iPhone: YUI_PROFILE_PUBLIC;YUI_VOICE_PACK_VALIDATION
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:

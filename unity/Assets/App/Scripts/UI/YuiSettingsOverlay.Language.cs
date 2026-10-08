@@ -22,7 +22,7 @@ namespace YuiPhysicalAI.UI
         private void RefreshUiLanguage()
         {
             // Do not RefreshFields here: it would discard unsaved AI/key/personality edits.
-            if (settingsRoot != null) ApplyResponsiveOverlayLayout();
+            if (settingsRoot != null) { RefreshTtsModeOptions(TtsModeValue()); ApplyResponsiveOverlayLayout(); }
         }
         private void LocalizeSettingsOptions()
         {

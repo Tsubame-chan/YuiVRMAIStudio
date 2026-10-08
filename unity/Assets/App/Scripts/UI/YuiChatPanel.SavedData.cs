@@ -86,6 +86,7 @@ namespace YuiPhysicalAI.UI
                 var rect = content.GetComponent<RectTransform>(); rect.anchorMin = new Vector2(0, 1); rect.anchorMax = Vector2.one; rect.pivot = new Vector2(.5f, 1);
                 rect.sizeDelta = new Vector2(0, Mathf.Max(120, response.Items.Count * 95));
                 var scroll = viewport.GetComponent<ScrollRect>(); scroll.viewport = viewport.GetComponent<RectTransform>(); scroll.content = rect; scroll.horizontal = false;
+                YuiControlAffordance.Scrollbar(scroll);
                 for (var i = 0; i < response.Items.Count; i++)
                 {
                     var item = response.Items[i];

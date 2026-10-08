@@ -10,6 +10,7 @@ class ChatRequest(BaseModel):
     request_id: str = Field(..., description="Idempotency key supplied by the client.")
     user_id: str = "local_user"
     message: str
+    language_code: Literal["ja", "en"] = "ja"
     context: RequestContext = Field(default_factory=RequestContext)
     mode: Literal["standard", "talk", "work"] = "standard"
     secret: bool = False
@@ -58,6 +59,7 @@ class OpenAIChatOutput(BaseModel):
 class ConversationItem(BaseModel):
     role: str
     message: str
+    language_code: Literal["ja", "en"] = "ja"
     created_at: str
 
 

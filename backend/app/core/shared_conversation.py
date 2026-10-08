@@ -37,6 +37,7 @@ class SharedChat(BaseModel):
     message: str = Field(min_length=1, max_length=16000)
     secret: bool = False
     mode: str = Field(default="talk", pattern=r"^(talk|work)$")
+    language_code: str = Field(default="ja", pattern=r"^(ja|en)$")
     response_instruction: str = Field(default="", max_length=16000)
     context: RequestContext | None = None
 
@@ -237,7 +238,7 @@ async def shared_chat(store, settings, character, body: SharedChat):
     request = ChatRequest(request_id=body.request_id, user_id="shared-owner", character_id=character, session_id=body.session_id,
                           message=body.message, secret=body.secret,
                           mode="work" if body.mode == "work" else "standard",
-                          response_instruction=body.response_instruction,
+                          response_instruction=body.response_instruction, language_code=body.language_code,
                           context=body.context.model_copy(deep=True) if body.context else RequestContext(),
                           character_name=profiles.get("name", state["name"]), custom_instruction=profiles.get("instruction", ""))
     request.context.extra.pop("recent_character_dialogue", None)

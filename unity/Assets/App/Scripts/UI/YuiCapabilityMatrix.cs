@@ -88,10 +88,22 @@ namespace YuiPhysicalAI.UI
 
         public YuiCapabilityItem Tts(string mode)
         {
+            if (string.Equals(mode,"irodori-native",StringComparison.OrdinalIgnoreCase))
+                return irodori ?? new YuiCapabilityItem("irodori-native", "Irodori", YuiCapabilityState.SetupRequired,
+                    YuiCapabilityRoute.Native, "Install the optional voice pack on a supported device.");
             var normalized = NormalizeTtsMode(mode);
             return tts.TryGetValue(normalized, out var item)
                 ? item
                 : tts["server"];
+        }
+
+        private YuiCapabilityItem irodori;
+        public YuiCapabilitySnapshot WithIrodori(bool supported, bool installed)
+        {
+            irodori = new YuiCapabilityItem("irodori-native", "Irodori",
+                !supported ? YuiCapabilityState.Unavailable : installed ? YuiCapabilityState.Ready : YuiCapabilityState.SetupRequired,
+                YuiCapabilityRoute.Native, installed ? "Local voice pack installed." : "Optional voice pack download required.", supported);
+            return this;
         }
 
         public static string NormalizeTtsMode(string mode)

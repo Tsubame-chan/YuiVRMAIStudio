@@ -33,7 +33,7 @@ namespace YuiPhysicalAI.UI
         public void RequestOptionalTtsAssetDownload()
         {
             EnsureLocalAiDownloadOverlay();
-            localAiDownloadOverlay?.ShowOptionalTtsDownload();
+            localAiDownloadOverlay?.ShowLegacyOptionalTtsDownload();
         }
 
         public void RefreshLocalAiRuntimeAfterAssetInstall()
@@ -154,9 +154,10 @@ namespace YuiPhysicalAI.UI
             aiRuntimeRouter = new YuiAiRuntimeRouter(
                 localAiService,
                 chatEndpoint,
-                (wavBytes, filename, durationMs, token) => SendWithPermissionAsync(backendUrl, false, () => client.TranscribeAudioAsync(wavBytes, filename, durationMs, token), token),
+                (wavBytes, filename, durationMs, token) => SendWithPermissionAsync(backendUrl, false, () => client.TranscribeAudioAsync(wavBytes, filename, durationMs, token, YuiUiLocalization.Language), token),
                 (imageBytes, filename, promptType, mimeType, token) => SendWithPermissionAsync(backendUrl, false, () => client.AnalyzeImageAsync(imageBytes, filename, promptType, mimeType, token), token))
             {
+                SpeechLanguageCode = YuiUiLocalization.Language,
                 PreferLocal = false,
                 PreferLocalChat = preferences.PreferLocalChat,
                 PreferLocalTranscription = preferences.PreferLocalTranscription,
@@ -190,7 +191,13 @@ namespace YuiPhysicalAI.UI
             }
             var endpoint = YuiAiEndpointPolicy.Resolve(conversationMode, routingBackendHealth,
                 !string.IsNullOrWhiteSpace(openAiApiKey), capability);
-            if (capability == YuiLocalAiCapability.Chat) selectedChatEndpoint = endpoint;
+            if (capability == YuiLocalAiCapability.Chat) {
+                selectedChatEndpoint = endpoint;
+                // Avoid keeping the additional 2 GB speech engine beside an on-device LLM.
+                // Compiled CoreML/reference caches survive this release.
+                if (Application.isMobilePlatform && endpoint == YuiAiEndpoint.Local)
+                    await YuiIrodoriSpeech.ReleaseAsync();
+            }
             return endpoint;
         }
 
@@ -233,6 +240,7 @@ namespace YuiPhysicalAI.UI
                 directOpenAiClient = new YuiDirectOpenAiClient(openAiApiKey, openAiModel);
             }
 
+            directOpenAiClient.LanguageCode = YuiUiLocalization.Language;
             return directOpenAiClient;
         }
 
@@ -257,6 +265,7 @@ namespace YuiPhysicalAI.UI
                 ConfigureAiRuntimeRouter();
             }
 
+            request.LanguageCode = YuiUiLocalization.Language;
             return aiRuntimeRouter.SendChatAsync(request, cancellationToken);
         }
 

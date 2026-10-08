@@ -65,6 +65,8 @@ namespace YuiPhysicalAI.UI
             dialog.AddButton(L("保存","Save"),()=>{options.Save(pack,work);ShowAdvanced(panel,work);dialog.Body.text=L("保存しました。メモリと回答用の余地を確保するため、生成上限はコンテキストの半分まで、推論上限は生成上限より小さく調整します。次の会話から適用します。", "Saved. Output is limited to half the context, and thinking leaves room for a final reply. Applies to your next request.");});
             dialog.AddButton(L("変更せず戻る","Back without saving"),()=>Show(panel));
             dialog.Compact(640);
+            dialog.ShowBodyScrollbar();
+            dialog.AddCloseButton(()=>Show(panel));
         }
         private static bool WindowsRuntimeMissing =>
             (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)

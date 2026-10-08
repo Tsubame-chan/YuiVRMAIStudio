@@ -54,15 +54,19 @@ Backend Consoleはv0.2.4-beta.2のBackend Bundle、またはGitHubの最新ソ�
 
 ## Irodori：Apple Silicon Mac
 
+基本モデルは [Irodori-TTS-v4.1-Small-8bit](https://huggingface.co/mlx-community/Irodori-TTS-v4.1-Small-8bit)（約1.39 GB）です。声の説明と参照音声に対応する40ステップ版です。速度を優先する場合は [Small-MF-8bit](https://huggingface.co/mlx-community/Irodori-TTS-v4.1-Small-MF-8bit)（約1.47 GB、4ステップ）も選べます。MF版は高速化された別モデルで、通常版のステップ数だけを減らす設定とは異なります。
+
+対応するPython環境へ `python -m pip install "mlx-audio[server]==0.5.8"` で導入します。旧環境の0.4.4ではV4系を実行できません。既存のV3用環境を残す場合は新しい仮想環境を用意し、自動起動の `IRODORI_MLX_PYTHON` にそのPythonのパスを設定してください。V4はモデルの全ファイルを取得し、V3用の省略したファイル構成を流用しないでください。
+
 1. [mlx-audioの導入手順](https://github.com/Blaizzy/mlx-audio#readme)と[Irodoriの案内](https://github.com/Blaizzy/mlx-audio/tree/main/mlx_audio/tts/models/irodori_tts)に従ってインストールします。
-2. Irodoriモデルを導入します。モデルの例は[Irodori-TTS-600M-v3-VoiceDesign-8bit](https://huggingface.co/mlx-community/Irodori-TTS-600M-v3-VoiceDesign-8bit)。必要なファイルと読込方法は配布ページ・mlx-audioの手順を確認してください。
+2. Irodoriモデルを導入します。モデルの例は[Irodori-TTS-v4.1-Small-8bit](https://huggingface.co/mlx-community/Irodori-TTS-v4.1-Small-8bit)。必要なファイルと読込方法は配布ページ・mlx-audioの手順を確認してください。
 3. 導入したPython環境で `python -m mlx_audio.server --host 127.0.0.1 --port 41080` を実行します。
 4. Consoleの「AIと音声 → 読み上げ → 提供元と接続」で「Irodori / Mac MLX」を追加します。接続先は `http://127.0.0.1:41080`、生成パスは `/v1/audio/speech`。モデル名はサーバーで使える名前に合わせます。
 5. 「新しい声」でその接続先とモデルを選びます。声の説明（例：「明るく、やや高めの女性の声。自然な会話調で」）・性別・言語を指定し、試聴して保存します。
 
 モデル一覧が空の場合は、サーバーへモデルが読み込まれているかを確認してください。録音ファイルをアップロードして声を指定する操作には対応していません。
 
-モデルの利用条件は[配布ページ](https://huggingface.co/mlx-community/Irodori-TTS-600M-v3-VoiceDesign-8bit)と[原モデルの案内](https://huggingface.co/Aratako/Irodori-TTS-600M-v3-VoiceDesign)を確認してください。
+モデルの利用条件は[配布ページ](https://huggingface.co/mlx-community/Irodori-TTS-v4.1-Small-8bit)と[原モデルの案内](https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small)を確認してください。
 
 <a id="irodori-windows"></a>
 
