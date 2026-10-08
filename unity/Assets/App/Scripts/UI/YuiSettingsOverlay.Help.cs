@@ -46,7 +46,6 @@ namespace YuiPhysicalAI.UI
             dialog.AddButton(YuiSimpleDialog.L("閉じる", "Close"),dialog.Close);
             if(address)dialog.Body.text+=YuiSimpleDialog.L("\n\n接続先の例：http://100.64.0.9:8000。同じPCならhttp://127.0.0.1:8000。末尾に/healthや/admin/は付けません。", "\n\nExample: http://100.64.0.9:8000. On the same PC use http://127.0.0.1:8000. Do not append /health or /admin/.");
             dialog.Compact(640);
-            dialog.ShowBodyScrollbar();
         }
 
         private void ShowSettingsHelp(Transform source, string topic)

@@ -25,22 +25,27 @@ namespace YuiPhysicalAI.UI
             view.safe = new GameObject("Safe", typeof(RectTransform)).GetComponent<RectTransform>(); view.safe.SetParent(root.transform,false);
             var card = Box(view.safe,"Card",new Color32(34,33,43,255)); Place(card.rectTransform,.05f,.12f,.95f,.88f); YuiUiTheme.Round(card);
             view.Heading = Label(card.transform,"Title",title,22); Place(view.Heading.rectTransform,.07f,.80f,.93f,.96f);
-            var viewport = new GameObject("BodyViewport",typeof(RectTransform),typeof(RectMask2D),typeof(Image),typeof(ScrollRect));
-            viewport.transform.SetParent(card.transform,false); Place((RectTransform)viewport.transform,.07f,.37f,.93f,.79f);
+            var viewport = new GameObject("DialogViewport",typeof(RectTransform),typeof(RectMask2D),typeof(Image),typeof(ScrollRect));
+            viewport.transform.SetParent(card.transform,false);
             viewport.GetComponent<Image>().color=Color.clear;
-            view.Body = Label(viewport.transform,"Body",message,17);
-            var bodyRect=view.Body.rectTransform;bodyRect.anchorMin=new Vector2(0,1);bodyRect.anchorMax=Vector2.one;bodyRect.pivot=new Vector2(.5f,1);bodyRect.offsetMin=bodyRect.offsetMax=Vector2.zero;
-            view.Body.gameObject.AddComponent<ContentSizeFitter>().verticalFit=ContentSizeFitter.FitMode.PreferredSize;
-            var scroll=viewport.GetComponent<ScrollRect>();scroll.viewport=(RectTransform)viewport.transform;scroll.content=bodyRect;scroll.horizontal=false;scroll.movementType=ScrollRect.MovementType.Clamped;
+            var content=new GameObject("DialogContent",typeof(RectTransform),typeof(VerticalLayoutGroup),typeof(ContentSizeFitter));
+            content.transform.SetParent(viewport.transform,false);
+            var contentRect=(RectTransform)content.transform;
+            contentRect.anchorMin=new Vector2(0,1);contentRect.anchorMax=Vector2.one;contentRect.pivot=new Vector2(.5f,1);
+            contentRect.offsetMin=contentRect.offsetMax=Vector2.zero;
+            var flow=content.GetComponent<VerticalLayoutGroup>();flow.spacing=16;flow.childForceExpandHeight=false;flow.childControlHeight=true;flow.childControlWidth=true;
+            content.GetComponent<ContentSizeFitter>().verticalFit=ContentSizeFitter.FitMode.PreferredSize;
+            view.Body = Label(content.transform,"Body",message,17);
             view.Body.alignment = TextAnchor.UpperLeft;
-            view.Progress = Label(card.transform,"Progress","",14); Place(view.Progress.rectTransform,.07f,.31f,.93f,.37f);
-            var rail = Box(card.transform,"Gauge",new Color32(68,62,81,255)); Place(rail.rectTransform,.07f,.29f,.93f,.30f);
+            var scroll=viewport.GetComponent<ScrollRect>();scroll.viewport=(RectTransform)viewport.transform;scroll.content=contentRect;
+            scroll.horizontal=false;scroll.movementType=ScrollRect.MovementType.Clamped;
+            view.Progress = Label(card.transform,"Progress","",14); Place(view.Progress.rectTransform,.07f,.06f,.93f,.12f);
+            var rail = Box(card.transform,"Gauge",new Color32(68,62,81,255)); Place(rail.rectTransform,.07f,.04f,.93f,.05f);
             var fill = Box(rail.transform,"Fill",YuiUiTheme.Accent); Place(fill.rectTransform,0,0,1,1);
             view.Gauge = rail.gameObject.AddComponent<Slider>(); view.Gauge.fillRect = fill.rectTransform; view.Gauge.interactable=false; rail.gameObject.SetActive(false);
-            var buttons = new GameObject("Actions",typeof(RectTransform),typeof(VerticalLayoutGroup)); buttons.transform.SetParent(card.transform,false);
-            Place((RectTransform)buttons.transform,.07f,.025f,.93f,.28f);
+            var buttons = new GameObject("Actions",typeof(RectTransform),typeof(VerticalLayoutGroup)); buttons.transform.SetParent(content.transform,false);
             var layout = buttons.GetComponent<VerticalLayoutGroup>(); layout.spacing=8; layout.childForceExpandHeight=true;
-            view.actions=buttons.transform; view.ConfigureActionScroll(card.transform,.025f,.28f); view.ShowBodyScrollbar(); view.Update(); return view;
+            view.actions=buttons.transform; view.ConfigureActionScroll(card.transform,.04f,.79f); view.Update(); return view;
         }
         public Button AddButton(string text, Action action)
         {
@@ -91,41 +96,22 @@ namespace YuiPhysicalAI.UI
             card.sizeDelta = new Vector2(351, Mathf.Min(height, Screen.height/Mathf.Max(.01f,scale)*.90f));
             card.anchoredPosition = Vector2.zero;
             Place(Heading.rectTransform,.07f,.84f,.93f,.97f);
-            Place((RectTransform)Body.transform.parent,.07f,.51f,.93f,.83f);
-            ShowBodyScrollbar();
-            ConfigureActionScroll(card,.04f,.48f);
+            ConfigureActionScroll(card,.04f,.83f);
         }
         private void ConfigureActionScroll(Transform card,float bottom,float top)
         {
-            var existing=card.Find("ModelActionsViewport");
-            var viewport=existing!=null?existing.gameObject:new GameObject("ModelActionsViewport",typeof(RectTransform),typeof(RectMask2D),typeof(Image),typeof(ScrollRect));
-            if(existing==null)viewport.transform.SetParent(card,false);
-            viewport.GetComponent<Image>().color=Color.clear;
-            Place((RectTransform)viewport.transform,.07f,bottom,.83f,top);
-            actions.SetParent(viewport.transform,false);
-            var content=(RectTransform)actions;
-            content.anchorMin=new Vector2(0,1);content.anchorMax=Vector2.one;content.pivot=new Vector2(.5f,1);
-            content.offsetMin=content.offsetMax=Vector2.zero;
+            var viewport=(RectTransform)card.Find("DialogViewport");
+            Place(viewport,.07f,bottom,.93f,top);
+            viewport.offsetMax=new Vector2(-44,0);
             var layout=actions.GetComponent<VerticalLayoutGroup>();
-            layout.childForceExpandHeight=false;
-            var fitter=actions.GetComponent<ContentSizeFitter>() ?? actions.gameObject.AddComponent<ContentSizeFitter>();
-            fitter.verticalFit=ContentSizeFitter.FitMode.PreferredSize;
-            var scroll=viewport.GetComponent<ScrollRect>();scroll.viewport=(RectTransform)viewport.transform;scroll.content=content;
-            scroll.horizontal=false;scroll.movementType=ScrollRect.MovementType.Clamped;
-            var oldBar=card.Find("ActionsScrollbar");
-            var bar=oldBar!=null?oldBar.GetComponent<Scrollbar>():CreateVerticalScrollbar(card,"ActionsScrollbar");
-            Place((RectTransform)bar.transform,.85f,bottom,.98f,top);
-            scroll.scrollSensitivity=24;
-            scroll.verticalScrollbar=bar;scroll.verticalScrollbarVisibility=ScrollRect.ScrollbarVisibility.AutoHide;
-        }
-        public void ShowBodyScrollbar()
-        {
-            var viewport=(RectTransform)Body.transform.parent;
-            viewport.anchorMax=new Vector2(.83f,viewport.anchorMax.y);
-            var existing=Heading.transform.parent.Find("BodyScrollbar");
-            var bar=existing!=null?existing.GetComponent<Scrollbar>():CreateVerticalScrollbar(Heading.transform.parent,"BodyScrollbar");
-            Place((RectTransform)bar.transform,.85f,viewport.anchorMin.y,.98f,viewport.anchorMax.y);
-            var scroll=viewport.GetComponent<ScrollRect>();scroll.scrollSensitivity=24;scroll.verticalScrollbar=bar;scroll.verticalScrollbarVisibility=ScrollRect.ScrollbarVisibility.AutoHide;
+            layout.childForceExpandHeight=false;layout.childControlHeight=true;layout.childControlWidth=true;
+            var scroll=viewport.GetComponent<ScrollRect>();
+            var existing=card.Find("DialogScrollbar");
+            var bar=existing!=null?existing.GetComponent<Scrollbar>():CreateVerticalScrollbar(card,"DialogScrollbar");
+            var rect=(RectTransform)bar.transform;
+            rect.anchorMin=new Vector2(.93f,bottom);rect.anchorMax=new Vector2(.93f,top);rect.pivot=new Vector2(1,.5f);
+            rect.offsetMin=new Vector2(-44,0);rect.offsetMax=Vector2.zero;
+            scroll.scrollSensitivity=24;scroll.verticalScrollbar=bar;scroll.verticalScrollbarVisibility=ScrollRect.ScrollbarVisibility.AutoHide;
         }
         internal static Scrollbar CreateVerticalScrollbar(Transform parent,string name)
         {
@@ -134,6 +120,7 @@ namespace YuiPhysicalAI.UI
             var handle=new GameObject("Handle",typeof(RectTransform)).GetComponent<RectTransform>();handle.SetParent(rail.transform,false);
             handle.anchorMin=Vector2.zero;handle.anchorMax=Vector2.one;handle.offsetMin=handle.offsetMax=Vector2.zero;
             var thumb=Box(handle,"Thumb",YuiUiTheme.Accent);Place(thumb.rectTransform,.38f,0,.62f,1);YuiUiTheme.Round(thumb);thumb.raycastTarget=false;
+            rail.gameObject.AddComponent<YuiScrollbarVisual>();
             var bar=rail.gameObject.AddComponent<Scrollbar>();bar.handleRect=handle;bar.targetGraphic=thumb;bar.direction=Scrollbar.Direction.BottomToTop;
             return bar;
         }
@@ -154,6 +141,11 @@ namespace YuiPhysicalAI.UI
             var bottom=Mathf.Max(a.yMin,keyboard);
             safe.anchorMin=new Vector2(a.xMin/Mathf.Max(1,Screen.width),bottom/Mathf.Max(1,Screen.height));
             safe.anchorMax=new Vector2(a.xMax/Mathf.Max(1,Screen.width),a.yMax/Mathf.Max(1,Screen.height));safe.offsetMin=safe.offsetMax=Vector2.zero;
+            var viewport=(RectTransform)Heading.transform.parent.Find("DialogViewport");
+            var lower=Gauge.gameObject.activeSelf || !string.IsNullOrEmpty(Progress.text) ? .14f : .04f;
+            viewport.anchorMin=new Vector2(viewport.anchorMin.x,lower);
+            var bar=(RectTransform)Heading.transform.parent.Find("DialogScrollbar");
+            bar.anchorMin=new Vector2(bar.anchorMin.x,lower);
             if(compactHeight>0)
             {
                 var card=(RectTransform)Heading.transform.parent;
