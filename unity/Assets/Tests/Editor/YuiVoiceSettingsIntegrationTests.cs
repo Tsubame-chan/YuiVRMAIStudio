@@ -50,6 +50,9 @@ namespace YuiPhysicalAI.Tests.Editor
                 Canvas.ForceUpdateCanvases();
                 var scroll=slider.GetComponentInParent<ScrollRect>();
                 Assert.That(scroll,Is.Not.Null);
+                Assert.That(dialog.Body.GetComponentInParent<ScrollRect>(),Is.SameAs(scroll));
+                Assert.That(dialog.GetComponentsInChildren<ScrollRect>().Length,Is.EqualTo(1));
+                Assert.That(dialog.GetComponentsInChildren<Scrollbar>().Length,Is.EqualTo(1));
                 Assert.That(scroll.verticalScrollbar,Is.Not.Null);
                 Assert.That(scroll.content.rect.height,Is.GreaterThan(scroll.viewport.rect.height));
                 var gesture=new PointerEventData(events.GetComponent<EventSystem>()){button=PointerEventData.InputButton.Left,pressPosition=new Vector2(100,100),position=new Vector2(102,160)};
@@ -57,6 +60,23 @@ namespace YuiPhysicalAI.Tests.Editor
                 control.OnPointerDown(gesture);control.OnBeginDrag(gesture);control.OnDrag(gesture);control.OnPointerUp(gesture);control.OnEndDrag(gesture);
                 Assert.That(slider.value,Is.EqualTo(.5f));
             } finally { Object.DestroyImmediate(dialog.gameObject);Object.DestroyImmediate(events); }
+        }
+        [TestCase(1f,44f)]
+        [TestCase(2.5f,120f)]
+        public void VisibleScrollbarWidthDoesNotGrowWithDragTarget(float scale,float targetWidth)
+        {
+            var root=new GameObject("Canvas",typeof(Canvas));
+            try {
+                var canvas=root.GetComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceOverlay;canvas.scaleFactor=scale;
+                var bar=(Scrollbar)typeof(YuiSimpleDialog).GetMethod("CreateVerticalScrollbar",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic).Invoke(null,new object[]{root.transform,"Bar"});
+                ((RectTransform)bar.transform).sizeDelta=new Vector2(targetWidth,300);
+                typeof(YuiScrollbarVisual).GetMethod("LateUpdate",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(bar.GetComponent<YuiScrollbarVisual>(),null);
+                Canvas.ForceUpdateCanvases();
+                var thumb=(RectTransform)bar.transform.Find("Handle/Thumb");
+                var displayScale=Screen.width>Screen.height?Screen.height/844f:Screen.width/390f;
+                Assert.That(thumb.rect.width*canvas.scaleFactor,Is.EqualTo(3.8f*displayScale).Within(.01f));
+                Assert.That(thumb.rect.width,Is.LessThan(targetWidth/4));
+            } finally {Object.DestroyImmediate(root);}
         }
     }
 }
