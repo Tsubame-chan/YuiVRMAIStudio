@@ -88,7 +88,7 @@ namespace YuiPhysicalAI.Api
             byte[] wavBytes,
             string filename = "recording.wav",
             int? durationMs = null,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default, string languageCode = "ja")
         {
             if (wavBytes == null || wavBytes.Length == 0)
             {
@@ -97,6 +97,7 @@ namespace YuiPhysicalAI.Api
 
             var form = new WWWForm();
             form.AddBinaryData("audio", wavBytes, filename, "audio/wav");
+            form.AddField("language_code", YuiPhysicalAI.LocalAI.YuiSpeechLanguage.IsEnglish(languageCode) ? "en" : "ja");
             if (durationMs.HasValue)
             {
                 form.AddField("duration_ms", durationMs.Value);

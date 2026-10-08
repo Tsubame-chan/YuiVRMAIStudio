@@ -151,6 +151,7 @@ namespace YuiPhysicalAI.LocalAI
 
     public sealed class YuiLocalAiChatRequest
     {
+        public string LanguageCode { get; set; } = "ja";
         public string Mode { get; set; } = "talk";
         public string RequestId { get; set; }
         public string UserId { get; set; } = "local_user";

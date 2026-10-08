@@ -60,15 +60,20 @@ namespace YuiPhysicalAI.UI
         public static void Scrollbar(ScrollRect scroll)
         {
             if(scroll==null || scroll.viewport==null) return;
-            var track=EnsureImage(scroll.transform,"ScrollPosition");track.color=new Color32(62,59,69,255);YuiUiTheme.Round(track);
-            var r=track.rectTransform;r.anchorMin=new Vector2(1,0);r.anchorMax=Vector2.one;r.pivot=new Vector2(1,.5f);r.offsetMin=new Vector2(-16,10);r.offsetMax=new Vector2(-6,-10);
-            var handle=EnsureImage(track.transform,"Thumb");handle.color=YuiUiTheme.Muted;YuiUiTheme.Round(handle);
-            handle.rectTransform.anchorMin=Vector2.zero;handle.rectTransform.anchorMax=Vector2.one;handle.rectTransform.offsetMin=handle.rectTransform.offsetMax=Vector2.zero;
-            var bar=track.GetComponent<Scrollbar>() ?? track.gameObject.AddComponent<Scrollbar>();
-            bar.targetGraphic=handle;bar.handleRect=handle.rectTransform;bar.direction=UnityEngine.UI.Scrollbar.Direction.BottomToTop;
+            var existing=scroll.transform.Find("ScrollPosition");
+            var bar=existing!=null?existing.GetComponent<Scrollbar>():YuiSimpleDialog.CreateVerticalScrollbar(scroll.transform,"ScrollPosition");
+            var r=(RectTransform)bar.transform;
+            r.anchorMin=new Vector2(1,0);r.anchorMax=Vector2.one;r.pivot=new Vector2(1,.5f);
+            r.offsetMin=new Vector2(-44,10);r.offsetMax=new Vector2(0,-10);
             bar.navigation=new Navigation {mode=Navigation.Mode.None};
             scroll.verticalScrollbar=bar;scroll.verticalScrollbarVisibility=ScrollRect.ScrollbarVisibility.AutoHide;
-            scroll.viewport.offsetMax=new Vector2(-24,scroll.viewport.offsetMax.y);
+            scroll.scrollSensitivity=Mathf.Max(24,scroll.scrollSensitivity);
+            // Some older lists use the ScrollRect itself as their viewport.
+            // Reserve space in their content, without moving the entire list.
+            if(scroll.viewport==scroll.transform)
+                scroll.content.offsetMax=new Vector2(-44,scroll.content.offsetMax.y);
+            else
+                scroll.viewport.offsetMax=new Vector2(-44,scroll.viewport.offsetMax.y);
         }
         private static Image EnsureImage(Transform parent,string name)
         {

@@ -14,6 +14,7 @@ namespace YuiPhysicalAI.UI
         public static bool UsesNativeSpeech(string ttsMode)
         {
             return string.Equals(ttsMode, "aivis-native", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(ttsMode, "irodori-native", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(ttsMode, "voicevox-native", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(ttsMode, "local-ai", StringComparison.OrdinalIgnoreCase);
         }

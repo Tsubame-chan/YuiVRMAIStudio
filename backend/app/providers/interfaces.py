@@ -41,7 +41,7 @@ class TTSProvider(Provider):
 
 class STTProvider(Provider):
     @abstractmethod
-    async def transcribe(self, *, audio_bytes: bytes, filename: str) -> STTResponse:
+    async def transcribe(self, *, audio_bytes: bytes, filename: str, language_code: str = "ja") -> STTResponse:
         raise NotImplementedError
 
 

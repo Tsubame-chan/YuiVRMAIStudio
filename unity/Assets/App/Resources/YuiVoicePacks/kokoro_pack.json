@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "release_version": "voice-packs-v1",
+  "assets": [
+    {
+      "id": "kokoro-english-v1",
+      "display_name": "Kokoro English \u00b7 4 female / 2 male voices",
+      "kind": "kokoro_english_voice",
+      "platforms": [
+        "macos",
+        "ios"
+      ],
+      "required_for": [
+        "english_speech"
+      ],
+      "optional": true,
+      "version": "2",
+      "filename": "YuiVRMAIStudio_KokoroEnglish_v2.zip",
+      "url": "https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/voice-packs-v1/YuiVRMAIStudio_KokoroEnglish_v2.zip",
+      "sha256": "df69f48f490054cdb849dbdeafbb64ec464684e74d95d5bb460015be05b8a048",
+      "size_bytes": 67379529,
+      "install_root": "YuiLocalAI/Kokoro",
+      "installed_paths": [
+        "Kokoro-Apache-2.0.txt",
+        "MODEL_CARD.md",
+        "Misaki-LICENSE.txt",
+        "NOTICE.txt",
+        "ONNX-conversion-LICENSE.txt",
+        "af_bella.bin",
+        "af_heart.bin",
+        "af_nicole.bin",
+        "af_nova.bin",
+        "am_michael.bin",
+        "am_puck.bin",
+        "config.json",
+        "kokoro-v1.0.int8.onnx",
+        "us_gold.json",
+        "us_silver.json",
+        "pack.json"
+      ]
+    }
+  ]
+}

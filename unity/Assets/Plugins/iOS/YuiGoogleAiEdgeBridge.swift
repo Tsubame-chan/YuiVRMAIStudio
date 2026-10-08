@@ -99,6 +99,12 @@ private func yuiFileSize(_ path: String) -> UInt64 {
     return size.uint64Value
 }
 
+@_cdecl("YuiVoicePack_AvailableBytes")
+public func YuiVoicePack_AvailableBytes(_ path: UnsafePointer<CChar>?) -> Int64 {
+    guard let path else { return -1 }
+    return yuiAvailableBytes(String(cString: path))
+}
+
 private func yuiAvailableBytes(_ path: String) -> Int64 {
     let url = URL(fileURLWithPath: path)
     guard let values = try? url.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),

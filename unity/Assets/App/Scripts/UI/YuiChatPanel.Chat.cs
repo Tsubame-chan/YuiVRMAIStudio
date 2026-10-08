@@ -87,6 +87,7 @@ namespace YuiPhysicalAI.UI
                     new ChatRequest
                     {
                         RequestId = chatRequestId,
+                        LanguageCode = YuiUiLocalization.Language,
                         CharacterId = characterId,
                         SessionId = sessionId,
                         TaskId = taskId,

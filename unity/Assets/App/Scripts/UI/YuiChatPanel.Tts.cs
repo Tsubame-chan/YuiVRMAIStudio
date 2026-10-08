@@ -46,15 +46,19 @@ namespace YuiPhysicalAI.UI
 
             try
             {
+                using var languageOperation = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token, speechLanguageCancellation.Token);
+                var previewToken = languageOperation.Token;
                 SetStatus("Previewing voice...");
-                var previewText = IsHttpTtsMode()
+                var previewText = YuiPhysicalAI.LocalAI.YuiSpeechLanguage.IsEnglish(YuiUiLocalization.Language)
+                    ? "Hello, I am Yui. It is lovely to talk with you!"
+                    : IsHttpTtsMode()
                     ? "こんにちは、ユイです。"
                     : "こんにちは、ユイです。声の設定はこんな感じです。";
                 var clip = await SynthesizeSpeechClipAsync(
                     previewText,
                     "normal",
                     "voice-preview-" + Guid.NewGuid().ToString("N"),
-                    cancellationTokenSource.Token);
+                    previewToken);
                 if (clip == null)
                 {
                     SetStatus("Preview failed");
@@ -67,9 +71,9 @@ namespace YuiPhysicalAI.UI
                 DestroyOwnedAudioClip(previousClip, clip);
                 audioSource.Play();
                 SetStatus("Voice preview");
-                while (audioSource != null && audioSource.isPlaying && !cancellationTokenSource.IsCancellationRequested)
+                while (audioSource != null && audioSource.isPlaying && !previewToken.IsCancellationRequested)
                 {
-                    await Task.Delay(30, cancellationTokenSource.Token);
+                    await Task.Delay(30, previewToken);
                 }
                 ReleaseCurrentPlaybackClip();
             }
@@ -94,6 +98,8 @@ namespace YuiPhysicalAI.UI
             CancellationToken cancellationToken,
             bool allowChunking = true)
         {
+            using var languageOperation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, speechLanguageCancellation.Token);
+            cancellationToken = languageOperation.Token;
             if (audioSource == null)
             {
                 return;
@@ -106,6 +112,10 @@ namespace YuiPhysicalAI.UI
             }
 
             var speechSource = ResolveSpeechText(chat);
+            // The optional English pack can be deferred or still downloading.
+            // Text conversations remain usable without per-reply synthesis failures.
+            if (YuiPhysicalAI.LocalAI.YuiSpeechLanguage.UsesKokoro(YuiUiLocalization.Language, ttsMode)
+                && !EnglishVoiceInstalled) return;
             var shouldSpeak = chat.ShouldTts
                 || (forceTtsForNonEmptyReplies && !string.IsNullOrWhiteSpace(speechSource));
             Debug.Log(
@@ -336,6 +346,32 @@ namespace YuiPhysicalAI.UI
                 return await client.SynthesizeSpeechClipAsync(new TtsRequest {RequestId=requestId,Text=text,VoiceProfileId=backendVoiceProfileId}, cancellationToken);
             }
 
+            if (YuiPhysicalAI.LocalAI.YuiSpeechLanguage.UsesKokoro(YuiUiLocalization.Language, ttsMode))
+            {
+                // E4B remains cached after chat on mobile. Release its idle engine before
+                // loading the additional voice session, rather than keeping both large models resident.
+                if (Application.isMobilePlatform && localAiService != null
+                    && YuiPhysicalAI.LocalAI.YuiLocalModelSelection.SelectedId == YuiPhysicalAI.LocalAI.YuiLocalModelSelection.QualityId)
+                    await localAiService.ReleaseAsync(YuiPhysicalAI.LocalAI.YuiLocalAiCapability.Chat, cancellationToken);
+                var data = await YuiPhysicalAI.LocalAI.YuiKokoroSpeech.SynthesizeAsync(
+                    text, EnglishVoice, Application.persistentDataPath, Application.dataPath, EnglishSpeed, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                var clip = AudioClip.Create(requestId, data.Length, 1, 24000, false);
+                clip.SetData(data, 0);
+                return clip;
+            }
+
+            if (IsTtsMode("irodori-native"))
+            {
+                if (!IrodoriSupported || !IrodoriInstalled)
+                    throw new InvalidOperationException(YuiSimpleDialog.L("設定の音声エンジンからIrodoriのデータを取得してください。", "Download Irodori from Voice engine in Settings."));
+                if (localAiService != null)
+                    await localAiService.ReleaseAsync(YuiPhysicalAI.LocalAI.YuiLocalAiCapability.Chat, cancellationToken);
+                var bytes = await YuiPhysicalAI.LocalAI.YuiIrodoriSpeech.SynthesizeAsync(text, IrodoriVoice, Application.persistentDataPath, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                return WavUtility.ToAudioClip(bytes, requestId);
+            }
+
             if (IsTtsMode("aivis-native"))
             {
                 return await SynthesizeAivisNativeSpeechClipAsync(text, requestId, cancellationToken);
@@ -393,7 +429,7 @@ namespace YuiPhysicalAI.UI
                         {
                             Text = text,
                             VoiceStyle = voiceStyle,
-                            LanguageCode = "ja",
+                            LanguageCode = YuiUiLocalization.Language,
                             SpeedScale = speedScale,
                             PitchScale = pitchScale
                         },

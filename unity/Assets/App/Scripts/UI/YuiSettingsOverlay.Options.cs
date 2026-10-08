@@ -18,7 +18,7 @@ namespace YuiPhysicalAI.UI
                 {
                     backendUrlInput.text = chatPanel.BackendUrl;
                     if (Application.isMobilePlatform && backendUrlInput.placeholder is Text hint)
-                        hint.text = YuiSimpleDialog.L("PCのVPNアドレス（http://…:8000）", "PC VPN address (http://…:8000)");
+                        YuiUiLocalization.Set(hint, "PC VPN address (http://…:8000)");
                 }
                 if (openAiApiKeyInput != null)
                 {
@@ -36,7 +36,7 @@ namespace YuiPhysicalAI.UI
                 RefreshTtsModeOptions();
                 if (ttsModeDropdown != null)
                 {
-                    ttsModeDropdown.value = TtsModeIndex(chatPanel.TtsMode);
+                    ttsModeDropdown.SetValueWithoutNotify(TtsModeIndex(chatPanel.TtsMode));
                     ttsModeDropdown.RefreshShownValue();
                 }
                 lastTtsModeValue = TtsModeValue();

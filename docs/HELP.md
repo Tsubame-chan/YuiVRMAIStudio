@@ -10,7 +10,7 @@ MacはMacOSPublicBeta、WindowsはWindowsPublicBetaのアプリZIPです。Code 
 
 **iPhone版は？**
 
-iOS 26以降。日本向け無料版を審査へ提出しました。[App Storeの予定リンク](https://apps.apple.com/jp/app/id6815341780)は承認・公開後に利用できます。審査中は公開ページや入手ボタンが表示されない場合があります。
+iOS 26以降。日本向け無料版を[App Store](https://apps.apple.com/jp/app/id6815341780)から入手できます。
 
 **初回に通信する？**
 
@@ -51,7 +51,7 @@ iOS 26以降。日本向け無料版を審査へ提出しました。[App Store�
 ## English
 
 - Download the **MacOSPublicBeta** or **WindowsPublicBeta** app ZIP from [Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.2). The Code ZIP is source only. See the [Mac guide](MAC_PUBLIC_BETA.en.md).
-- The free Japan iOS release requires iOS 26 and is under review. The [planned App Store page](https://apps.apple.com/jp/app/id6815341780) becomes available after approval/publication.
+- The free Japan iOS release requires iOS 26 and is available on the [App Store](https://apps.apple.com/jp/app/id6815341780).
 - Desktop first-run setup downloads approximately 2.5GB of AI/voice data plus its OS runtime after confirmation. Leave extra room for extraction. iOS includes standard E2B and speech data; E4B is optional. macOS also offers optional E4B.
 - E2B favors lighter offline use; E4B improves quality at the cost of latency, memory and storage. OpenAI API is recommended for higher-quality chat and requires an API key and API charges, separately from a ChatGPT subscription.
 - Character settings accept written personality/tone instructions. Common and model-specific instructions also apply. Local advanced settings control context/output/thinking budgets and sampling per Talk/Work mode; defaults are a good starting point.

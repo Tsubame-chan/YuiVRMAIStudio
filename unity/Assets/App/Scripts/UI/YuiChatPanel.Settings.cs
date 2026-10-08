@@ -202,6 +202,20 @@ namespace YuiPhysicalAI.UI
                 PlayerPrefs.Save();
             }
             SelectCharacterProfile(true);
+            if(PlayerPrefs.HasKey("Yui.JapaneseIrodori"))
+            {
+                if(PlayerPrefs.GetInt("Yui.JapaneseIrodori",0)==1 && IrodoriSupported && !YuiPhysicalAI.LocalAI.YuiSpeechLanguage.IsEnglish(YuiUiLocalization.Language))
+                {
+                    ttsMode="irodori-native";
+                    var voice=PlayerPrefs.GetString("Yui.IrodoriVoice","soft_yui")=="gentle_friend"?10002:10001;
+                    speakerId=voice;speedScale=1;pitchScale=0;intonationScale=1;synthesisVolumeScale=1;prePhonemeLength=.1f;postPhonemeLength=.1f;
+                    SaveCharacterProfile();
+                    YuiTtsTuningPrefs.SaveForMode(ttsMode,new YuiSavedTtsTuning(voice,1,0,1,1,.1f,.1f));
+                    PlayerPrefs.SetString(TtsModeKey,ttsMode);
+                }
+                PlayerPrefs.DeleteKey("Yui.JapaneseIrodori");PlayerPrefs.DeleteKey("Yui.IrodoriVoice");PlayerPrefs.Save();
+            }
+
         }
 
         public void SetDirectOpenAiSettings(string apiKey, string model)
@@ -666,6 +680,7 @@ namespace YuiPhysicalAI.UI
 #endif
             if (string.Equals(mode, "server", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(mode, "local", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(mode, "irodori-native", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(mode, "backend-profile", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(mode, "server-http", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(mode, "aivis", StringComparison.OrdinalIgnoreCase)

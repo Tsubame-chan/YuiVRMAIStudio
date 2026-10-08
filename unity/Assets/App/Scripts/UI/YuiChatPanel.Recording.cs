@@ -170,7 +170,7 @@ namespace YuiPhysicalAI.UI
                 SetStatus("Listening...");
 
                 var transcript = await YuiAndroidSpeechRecognizer.TranscribeLiveAsync(
-                    "ja-JP",
+                    YuiPhysicalAI.LocalAI.YuiSpeechLanguage.Locale(YuiUiLocalization.Language),
                     voiceOperation.Token);
                 var message = transcript.Text?.Trim();
                 if (!transcript.Ok || string.IsNullOrEmpty(message))

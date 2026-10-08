@@ -21,8 +21,21 @@ namespace YuiPhysicalAI.UI
         public static event Action Changed;
         public static string ResolveLanguage(string saved, SystemLanguage system) => saved == "ja" || saved == "en"
             ? saved : system == SystemLanguage.Japanese ? "ja" : "en";
-        public static string Language => language ?? (language = ResolveLanguage(
-            PlayerPrefs.GetString(YuiPrefsKeys.UiLanguage, ""), Application.systemLanguage));
+        public static string Language
+        {
+            get
+            {
+                if (language != null) return language;
+                var saved = PlayerPrefs.GetString(YuiPrefsKeys.UiLanguage, "");
+                language = ResolveLanguage(saved, Application.systemLanguage);
+                if (Application.isPlaying && saved != language)
+                {
+                    PlayerPrefs.SetString(YuiPrefsKeys.UiLanguage, language);
+                    PlayerPrefs.Save();
+                }
+                return language;
+            }
+        }
         public static void SetLanguage(string value)
         {
             if (value != "ja" && value != "en") throw new ArgumentException("Unsupported UI language", nameof(value));

@@ -53,7 +53,7 @@ public func YuiPlatformSpeechBridge_Synthesize(_ requestJsonPointer: UnsafePoint
     let speedScale = max(0.75, min(1.35, (request["speed_scale"] as? Double) ?? 1.0))
     let pitchScale = max(-0.3, min(0.3, (request["pitch_scale"] as? Double) ?? 0.0))
     let utterance = AVSpeechUtterance(string: text)
-    utterance.voice = preferredJapaneseVoice()
+    utterance.voice = preferredVoice((request["language_code"] as? String) ?? "ja-JP")
     utterance.rate = Float(max(0.38, min(0.58, Double(AVSpeechUtteranceDefaultSpeechRate) * speedScale)))
     utterance.pitchMultiplier = Float(max(0.85, min(1.25, 1.04 + pitchScale)))
     utterance.volume = 1.0
@@ -174,9 +174,9 @@ public func YuiPlatformSpeechBridge_Transcribe(_ requestJsonPointer: UnsafePoint
         return yuiSpeechError("speech_not_authorized", "Speech recognition permission is not granted.")
     }
 
-    let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "ja-JP"))
+    let recognizer = SFSpeechRecognizer(locale: Locale(identifier: (request["language_code"] as? String) ?? "ja-JP"))
     guard let recognizer, recognizer.isAvailable else {
-        return yuiSpeechError("speech_unavailable", "Japanese speech recognizer is not available.")
+        return yuiSpeechError("speech_unavailable", "Speech recognizer for the selected language is not available.")
     }
 
     if #available(iOS 13.0, *) {
@@ -264,9 +264,9 @@ public func YuiPlatformSpeechBridge_Free(_ pointer: UnsafeMutablePointer<CChar>?
     pointer?.deallocate()
 }
 
-private func preferredJapaneseVoice() -> AVSpeechSynthesisVoice? {
+private func preferredVoice(_ language: String) -> AVSpeechSynthesisVoice? {
     let voices = AVSpeechSynthesisVoice.speechVoices()
-        .filter { $0.language == "ja-JP" }
+        .filter { $0.language == language }
 
     let preferredNames = ["Kyoko", "Otoya"]
     for name in preferredNames {
@@ -275,7 +275,7 @@ private func preferredJapaneseVoice() -> AVSpeechSynthesisVoice? {
         }
     }
 
-    return AVSpeechSynthesisVoice(language: "ja-JP")
+    return AVSpeechSynthesisVoice(language: language)
 }
 
 @_cdecl("YuiPlatformSpeechBridge_AuthorizationStatus")

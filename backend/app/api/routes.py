@@ -259,7 +259,7 @@ async def chat(
             body = SharedChat(request_id=request.request_id, session_id=request.session_id,
                               message=request.message, secret=request.secret,
                               mode="work" if request.mode == "work" else "talk",
-                              response_instruction=request.response_instruction,
+                              response_instruction=request.response_instruction, language_code=request.language_code,
                               context=request.context)
             result = await shared_chat(CompanionBackendWriter(settings.database_url, require_active=True),
                                        settings, request.shared_character_id, body)
@@ -555,6 +555,7 @@ def _audio_file_response(filename: str) -> FileResponse:
 async def stt(
     audio: UploadFile = File(...),
     duration_ms: int | None = Form(default=None),
+    language_code: str = Form(default="ja", pattern="^(ja|en)$"),
     settings: Settings = Depends(get_settings),
     usage_repository: UsageRepository = Depends(get_usage_repository),
 ) -> STTResponse:
@@ -577,6 +578,7 @@ async def stt(
         response = await provider.transcribe(
             audio_bytes=audio_bytes,
             filename=audio.filename or "audio.wav",
+            language_code=language_code,
         )
         usage_repository.log(
             request_id=None,

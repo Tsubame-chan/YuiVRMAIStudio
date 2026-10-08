@@ -19,6 +19,7 @@ namespace YuiPhysicalAI.UI
 
         [SerializeField] private string manifestUrl = DefaultManifestUrl;
 
+        private bool englishVoiceDownloadMode;
         private YuiChatPanel chatPanel;
         private YuiLocalAiAssetManifest manifest;
         private YuiLocalAiAssetPlan currentPlan;
@@ -137,9 +138,17 @@ namespace YuiPhysicalAI.UI
             }
         }
 
+        public void ShowLegacyOptionalTtsDownload() { englishVoiceDownloadMode = false; ShowOptionalTtsDownload(); }
+
+        public void ShowEnglishVoiceDownload()
+        {
+            englishVoiceDownloadMode = true;
+            ShowOptionalTtsDownload();
+        }
+
         public async void ShowOptionalTtsDownload()
         {
-            if (!IsDesktopSupported)
+            if (!IsDesktopSupported && !englishVoiceDownloadMode)
             {
                 return;
             }
@@ -242,7 +251,7 @@ namespace YuiPhysicalAI.UI
 
         private async Task RefreshOptionalTtsPlanAsync(CancellationToken cancellationToken)
         {
-            if (!IsDesktopSupported)
+            if (!IsDesktopSupported && !englishVoiceDownloadMode)
             {
                 CurrentStatusText = "Additional voices: managed by platform store";
                 currentPlan = null;
@@ -259,7 +268,7 @@ namespace YuiPhysicalAI.UI
                 ledger,
                 AssetStorageRoot(),
                 YuiLocalAiModelRegistry.CurrentPlatformKey(),
-                OptionalTtsAddonKind);
+                englishVoiceDownloadMode ? "kokoro_english_voice" : OptionalTtsAddonKind);
             CurrentStatusText = FormatOptionalTtsPlanStatus(currentPlan);
         }
 
@@ -267,14 +276,14 @@ namespace YuiPhysicalAI.UI
         {
             EnsureUi();
             Show();
-            SetTitle(optionalTtsDownloadMode ? "追加音声ダウンロード" : "会話データの準備");
+            SetTitle(englishVoiceDownloadMode ? "English voice download" : optionalTtsDownloadMode ? "追加音声ダウンロード" : "会話データの準備");
             forceDownloadMode = force && currentPlan != null && currentPlan.State == YuiLocalAiAssetPlanState.UpToDate;
             if (!forceDownloadMode && (currentPlan == null || currentPlan.State != YuiLocalAiAssetPlanState.NeedsDownload))
             {
                 if (optionalTtsDownloadMode && currentPlan != null && currentPlan.State == YuiLocalAiAssetPlanState.NoRequiredAssets)
                 {
                     SetBody(
-                        "このOS向けの追加音声パックはまだありません。",
+                        englishVoiceDownloadMode ? "English voice data has not been published in this release manifest yet." : "このOS向けの追加音声パックはまだありません。",
                         CurrentStatusText);
                     SetButtons(download: false, retry: false, cancel: true);
                     return;
@@ -291,8 +300,10 @@ namespace YuiPhysicalAI.UI
             if (optionalTtsDownloadMode)
             {
                 SetBody(
-                    "追加音声データをダウンロードします。",
-                    $"対象: {count}件。AivisSpeech HDなどの追加TTSデータをGitHub Releasesから取得します。");
+                    englishVoiceDownloadMode ? "Download English voice data" : "追加音声データをダウンロードします。",
+                    englishVoiceDownloadMode
+                        ? $"English voice · {currentPlan.AssetsToDownload.Sum(asset => asset.SizeBytes) / 1000000f:F1} MB download. About 100 MB installed; allow 200 MB free space. Heart and Bella run offline after download."
+                        : $"対象: {count}件。AivisSpeech HDなどの追加TTSデータをGitHub Releasesから取得します。");
             }
             else
             {
@@ -346,7 +357,8 @@ namespace YuiPhysicalAI.UI
                 if (optionalMode)
                 {
                     await RefreshOptionalTtsPlanAsync(CancellationToken.None);
-                    chatPanel?.RefreshAfterOptionalTtsAssetInstall();
+                    if (englishVoiceDownloadMode) chatPanel?.RefreshAfterEnglishVoiceInstall();
+                    else chatPanel?.RefreshAfterOptionalTtsAssetInstall();
                 }
                 else
                 {
@@ -358,7 +370,7 @@ namespace YuiPhysicalAI.UI
                 SetProgress(1f, "完了");
                 SetBody(
                     optionalMode ? "追加音声データの準備が完了しました。" : "ローカルAIデータの準備が完了しました。",
-                    optionalMode ? "必要に応じてBackendを再起動すると追加TTSが有効になります。" : "Local Gemmaを使用できます。");
+                    optionalMode ? (englishVoiceDownloadMode ? "English voice is ready. Preview it in Settings → Voice." : "必要に応じてBackendを再起動すると追加TTSが有効になります。") : "Local Gemmaを使用できます。");
                 SetButtons(download: false, retry: false, cancel: true);
                 await Task.Delay(1200);
                 Hide();

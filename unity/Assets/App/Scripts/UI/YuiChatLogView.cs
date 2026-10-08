@@ -37,6 +37,7 @@ namespace YuiPhysicalAI.UI
             bubbleSprite = bubbleSprite != null ? bubbleSprite : YuiChatLogStyle.CreateRoundedBubbleSprite();
             EnsureRuntimeBubbleTemplate();
             bubbleMode = TryPrepareBubbleMode();
+            YuiControlAffordance.Scrollbar(scrollRect);
             lastViewportSize = CurrentViewportSize();
             RenderAll();
         }

@@ -25,6 +25,7 @@ namespace YuiPhysicalAI.LocalAI
             this.backendVision = backendVision ?? throw new ArgumentNullException(nameof(backendVision));
         }
 
+        public string SpeechLanguageCode { get; set; } = "ja";
         public bool PreferLocal { get; set; }
         public bool PreferLocalChat { get; set; }
         public bool PreferLocalTranscription { get; set; }
@@ -91,6 +92,7 @@ namespace YuiPhysicalAI.LocalAI
         private static YuiLocalAiChatRequest ToLocalChatRequest(ChatRequest request) => new YuiLocalAiChatRequest
         {
             RequestId = request?.RequestId,
+            LanguageCode = request?.LanguageCode ?? "ja",
             UserId = request?.UserId,
             Message = request?.Message,
             Mode = request?.Mode ?? "talk",
@@ -123,6 +125,7 @@ namespace YuiPhysicalAI.LocalAI
                     new YuiLocalAiAudioRequest
                     {
                         AudioBytes = wavBytes,
+                        LanguageCode = SpeechLanguageCode,
                         MimeType = "audio/wav",
                         SampleRate = TryReadWavSampleRate(wavBytes) ?? 0
                     },
@@ -151,6 +154,7 @@ namespace YuiPhysicalAI.LocalAI
                 var local = await localService.TranscribeAsync(new YuiLocalAiAudioRequest
                 {
                     AudioBytes = wavBytes,
+                        LanguageCode = SpeechLanguageCode,
                     MimeType = "audio/wav",
                     SampleRate = TryReadWavSampleRate(wavBytes) ?? 0
                 }, cancellationToken);
