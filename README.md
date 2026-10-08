@@ -57,7 +57,7 @@ AIは、**オフラインで使える端末内AI** と **OpenAI API** を選べ�
 - 設定・説明画面のスクロールバーを細く統一し、モデル詳細を1つのスクロールで操作できるように改善。
 - Mac BackendのIrodoriをV4.1へ更新し、同じ3声のプリセットを追加。
 
-デスクトップ版には上記の更新を反映しています。iOS 0.2.5はAppleへアップロード済みです。App Storeで現在配布中の0.2.4には含まれません。Windows版の実機検証は未実施です。Irodori V4.1のNVIDIA向け追加モデルは [導入手順](docs/IRODORI_TTS_WINDOWS_NVIDIA.md) を参照してください。
+デスクトップ版には上記の更新を反映しています。iOS 0.2.5 (19)はAppleへ審査提出済みです。承認後に自動公開されます。App Storeで現在配布中の0.2.4には含まれません。Windows版の実機検証は未実施です。Irodori V4.1のNVIDIA向け追加モデルは [導入手順](docs/IRODORI_TTS_WINDOWS_NVIDIA.md) を参照してください。
 
 ## 記憶とプライバシー
 
