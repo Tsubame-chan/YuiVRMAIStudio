@@ -5,16 +5,52 @@ The parent owns the process and kills it on cancellation/timeout. Keep imports l
 VOICEVOX does not load the language model. Runtime dependencies are pinned by packaging.
 """
 import base64
+import array
 import contextlib
 import ctypes as C
 import io
 import json
+import math
 import os
 from pathlib import Path
 import sys
 import tempfile
 import time
 import wave
+
+
+def inference_backends(lm, capability, platform=None):
+    # Windows 0.17.0 GPU text decoding corrupts audio-conditioned output even
+    # with the audio encoder on CPU. Keep chat accelerated and macOS unchanged.
+    if (platform or sys.platform) == "win32" and capability == "Transcription":
+        return (lm.Backend.CPU(),)
+    return (lm.Backend.GPU(), lm.Backend.CPU())
+
+
+def transcription_audio_info(data):
+    with wave.open(io.BytesIO(data)) as wav:
+        frames, rate, channels = wav.getnframes(), wav.getframerate(), wav.getnchannels()
+        if not 0 < frames / rate <= 120:
+            raise ValueError("Audio must be between 0 and 120 seconds.")
+        if wav.getsampwidth() != 2 or wav.getcomptype() != "NONE":
+            raise ValueError("Transcription requires PCM16 WAV audio.")
+        pcm = wav.readframes(frames)
+        if len(pcm) != frames * channels * 2:
+            raise ValueError("Recorded audio is truncated.")
+    samples = array.array("h", pcm)
+    if sys.byteorder != "little":
+        samples.byteswap()
+    rms = math.sqrt(sum(float(x) * x for x in samples) / len(samples)) / 32768
+    peak = max(abs(x) for x in samples) / 32768
+    return frames / rate, rate, channels, rms, peak
+
+
+def validate_transcript(text, duration):
+    # Fail rather than send or silently truncate a hallucinated long transcript.
+    # Allow a generous 24 non-space characters/sec plus a short-utterance margin.
+    if sum(not c.isspace() for c in text) > max(64, math.ceil(duration * 24 + 32)):
+        raise ValueError("Transcript is too long for the recorded audio. Please try again.")
+    return text
 
 
 def output_token_budget(capability, payload, request=None):
@@ -56,9 +92,23 @@ def infer(request):
     try:
         if capability == "Transcription":
             data = base64.b64decode(payload.get("AudioBytes", ""), validate=True)
-            with wave.open(io.BytesIO(data)) as wav:
-                if not 0 < wav.getnframes() / wav.getframerate() <= 120:
-                    raise ValueError("Audio must be between 0 and 120 seconds.")
+            windows_stt = sys.platform == "win32"
+            if windows_stt:
+                duration, rate, channels, rms, peak = transcription_audio_info(data)
+            else:
+                # Preserve macOS's existing WAV formats and native preprocessing.
+                with wave.open(io.BytesIO(data)) as wav:
+                    duration = wav.getnframes() / wav.getframerate()
+                    rate, channels = wav.getframerate(), wav.getnchannels()
+                    if not 0 < duration <= 120:
+                        raise ValueError("Audio must be between 0 and 120 seconds.")
+                rms = peak = None
+            print(json.dumps({"event": "transcription_audio", "duration_ms": round(duration * 1000),
+                              "sample_rate": rate, "channels": channels, "rms": round(rms, 6) if rms is not None else None,
+                              "peak": round(peak, 6) if peak is not None else None,
+                              "decoder": "cpu" if windows_stt else "gpu_with_cpu_fallback"}), file=sys.stderr)
+            if windows_stt and rms < .0005 and peak < .003:
+                return {"Success": True, "Text": "", "ShouldTts": False}
             with tempfile.NamedTemporaryFile(suffix=".wav", dir=cache, delete=False) as audio:
                 audio.write(data)
                 audio_path = audio.name
@@ -74,7 +124,7 @@ def infer(request):
         else:
             raise ValueError("Unsupported desktop inference capability: " + str(capability))
         result = None
-        for backend in (lm.Backend.GPU(), lm.Backend.CPU()):
+        for backend in inference_backends(lm, capability):
             try:
                 engine = lm.Engine(str(model), backend=backend, max_num_tokens=4096 if audio_path else max(4096,min(8192,int(request.get("context_tokens",8192)))),
                     cache_dir=str(cache), audio_backend=lm.Backend.CPU() if audio_path else None,
@@ -101,6 +151,8 @@ def infer(request):
         text = "".join(c.get("text", "") for c in (result or {}).get("content", []) if c.get("type") == "text").strip()
         if not text and not audio_path:
             raise ValueError("Local model returned an empty response.")
+        if audio_path and sys.platform == "win32":
+            validate_transcript(text, duration)
         return {"Success": True, "Text": text, "Face": "Neutral", "Animation": "idle_normal", "ShouldTts": not bool(audio_path)}
     finally:
         if audio_path:
