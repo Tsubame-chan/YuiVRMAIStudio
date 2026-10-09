@@ -121,6 +121,7 @@ namespace YuiPhysicalAI.LocalAI
 
             if (requiresLocal && localService != null)
             {
+                ValidateLocalTranscriptionDuration(durationMs);
                 var local = await localService.TranscribeAsync(
                     new YuiLocalAiAudioRequest
                     {
@@ -151,6 +152,7 @@ namespace YuiPhysicalAI.LocalAI
                 && IsBackendUnavailable(ex))
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                ValidateLocalTranscriptionDuration(durationMs);
                 var local = await localService.TranscribeAsync(new YuiLocalAiAudioRequest
                 {
                     AudioBytes = wavBytes,
@@ -161,6 +163,12 @@ namespace YuiPhysicalAI.LocalAI
                 if (local.Success) return YuiLocalAiBackendCompatibility.ToSttResponse(local);
                 throw new InvalidOperationException(LocalError(local), ex);
             }
+        }
+
+        private static void ValidateLocalTranscriptionDuration(int? durationMs)
+        {
+            if (durationMs.HasValue && durationMs.Value > 30000)
+                throw new InvalidOperationException("ローカル音声入力は1回30秒までです。短く録音し直すか、API音声認識を使用してください。");
         }
 
         private static int? TryReadWavSampleRate(byte[] wavBytes)

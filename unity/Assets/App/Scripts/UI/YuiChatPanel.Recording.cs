@@ -38,6 +38,7 @@ namespace YuiPhysicalAI.UI
         private CancellationTokenSource activeVoiceCancellation;
 
         private bool startingRecording;
+        private bool recordingUsesLocalTranscription;
 
         private async void StartRecording()
         {
@@ -90,6 +91,17 @@ namespace YuiPhysicalAI.UI
                 catch (Exception ex) { SetStatus("Microphone unavailable"); AppendLog("System", ex.Message); return; }
             }
 #endif
+
+            recordingUsesLocalTranscription = false;
+            if (!IsRealtimeConversationMode())
+            {
+                if (aiRuntimeRouter == null) ConfigureAiRuntimeRouter();
+                var endpoint = await SelectAiEndpointAsync(YuiLocalAiCapability.Transcription, cancellationTokenSource.Token);
+                recordingUsesLocalTranscription = endpoint == YuiAiEndpoint.Local
+                    || aiRuntimeRouter.PreferLocal || aiRuntimeRouter.PreferLocalTranscription;
+                if (recordingUsesLocalTranscription)
+                    AppendLog("System", "ローカル音声入力は1回30秒までです。上限で録音を停止して送信します。");
+            }
 
             var device = SelectMicrophoneDevice();
             if (string.IsNullOrEmpty(device))
@@ -248,6 +260,8 @@ namespace YuiPhysicalAI.UI
                 return 10;
             }
 
+            if (recordingUsesLocalTranscription) return Mathf.Clamp(maxRecordingSeconds, 1, 30);
+
 #if (UNITY_IOS || UNITY_ANDROID) && !UNITY_EDITOR
             return Mathf.Clamp(maxRecordingSeconds, 1, 60);
 #else
@@ -266,7 +280,7 @@ namespace YuiPhysicalAI.UI
             }
 
             var recorder = new YuiMacEditorMicrophoneRecorder();
-            if (recorder.Start(activeRecordingFrequency, maxRecordingSeconds))
+            if (recorder.Start(activeRecordingFrequency, EffectiveRecordingClipLengthSeconds(false)))
             {
                 macEditorMicrophoneRecorder = recorder;
                 Debug.Log("Yui macOS editor microphone fallback started.");

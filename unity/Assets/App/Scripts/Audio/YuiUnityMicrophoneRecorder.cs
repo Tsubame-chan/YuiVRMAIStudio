@@ -22,6 +22,7 @@ namespace YuiPhysicalAI.Audio
         public AudioClip Clip { get; private set; }
         public string ActiveDevice { get; private set; }
         public int ActiveFrequency { get; private set; }
+        private float recordingStartedAt;
 
         public bool HasClip => Clip != null && !string.IsNullOrEmpty(ActiveDevice);
 
@@ -43,6 +44,7 @@ namespace YuiPhysicalAI.Audio
 
             if (Clip != null)
             {
+                recordingStartedAt = Time.realtimeSinceStartup;
                 return true;
             }
 
@@ -73,13 +75,30 @@ namespace YuiPhysicalAI.Audio
 
             if (samplePosition <= 0 && !wasStillRecording && clip != null)
             {
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+                // A disconnected/failed device can report stopped with position 0
+                // after a short recording. It does not prove the 60s clip is full.
+                samplePosition = ResolveStoppedSamplePosition(samplePosition, wasStillRecording,
+                    clip.samples, clip.length, Time.realtimeSinceStartup - recordingStartedAt);
+                if (samplePosition == 0)
+                    Debug.LogWarning("Windows microphone stopped without a valid sample position; refusing a full-buffer recording.");
+#else
                 samplePosition = clip.samples;
+#endif
             }
 
             Clip = null;
             ActiveDevice = null;
             ActiveFrequency = 0;
             return new StopResult(clip, samplePosition, wasStillRecording);
+        }
+
+        public static int ResolveStoppedSamplePosition(int position, bool wasRecording,
+            int clipSamples, float clipSeconds, float elapsedSeconds)
+        {
+            if (position > 0) return Math.Min(position, clipSamples);
+            return !wasRecording && clipSeconds > 0 && elapsedSeconds >= clipSeconds
+                ? clipSamples : 0;
         }
 
         public float RecentLevel(float[] sampleBuffer, float fallbackLevel = 0f)
