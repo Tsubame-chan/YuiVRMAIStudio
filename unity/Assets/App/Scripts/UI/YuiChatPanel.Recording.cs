@@ -350,6 +350,7 @@ namespace YuiPhysicalAI.UI
 
         private async Task StopRecordingAndSendAsync()
         {
+            var recordingElapsedMs = Mathf.RoundToInt((Time.realtimeSinceStartup - recordingStartedAt) * 1000f);
             var stopResult = unityMicrophoneRecorder != null
                 ? unityMicrophoneRecorder.Stop()
                 : new YuiUnityMicrophoneRecorder.StopResult(null, 0, false);
@@ -417,6 +418,7 @@ namespace YuiPhysicalAI.UI
                     wavBytes = macEditorWavBytes;
                 }
                 var durationMs = Mathf.RoundToInt(samplePosition * 1000f / activeRecordingFrequency);
+                Debug.Log($"Yui PTT audio: elapsedMs={recordingElapsedMs}, samples={samplePosition}, frequency={activeRecordingFrequency}, durationMs={durationMs}, bytes={wavBytes.Length}, rms={unityStats.rms:F8}, peak={unityStats.peak:F8}, wasRecording={stopResult.WasStillRecording}");
                 var transcript = await TranscribeViaRuntimeAsync(
                     wavBytes,
                     "ptt_recording.wav",
@@ -424,6 +426,7 @@ namespace YuiPhysicalAI.UI
                     voiceOperation.Token);
 
                 var message = transcript.Text?.Trim();
+                Debug.Log($"Yui PTT transcript: durationMs={durationMs}, chars={message?.Length ?? 0}");
                 if (string.IsNullOrEmpty(message))
                 {
                     SetStatus("No speech detected");
