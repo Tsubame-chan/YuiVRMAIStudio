@@ -5,6 +5,14 @@ namespace YuiPhysicalAI.Tests.Editor
 {
     public sealed class YuiMicrophoneStopPositionTests
     {
+        [TestCase(0, false, 29.99f, 0)]
+        [TestCase(0, true, 30f, 0)]
+        [TestCase(0, false, 30f, 1440000)]
+        public void ThirtySecondRecordingDoesNotSubmitAnEmptyBuffer(int position, bool recording, float elapsed, int expected)
+        {
+            Assert.AreEqual(expected, YuiUnityMicrophoneRecorder.ResolveStoppedSamplePosition(position, recording, 1440000, 30f, elapsed));
+        }
+
         [TestCase(0, false, 3f, 0)]
         [TestCase(0, true, 3f, 0)]
         [TestCase(0, false, 59.99f, 0)]

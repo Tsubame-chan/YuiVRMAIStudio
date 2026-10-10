@@ -19,6 +19,30 @@ namespace YuiPhysicalAI.Tests.Editor
             => Assert.AreEqual(expected, YuiDesktopInferenceProcess.QuoteArgument(value));
 
         [UnityTest]
+        public IEnumerator WorkerDoesNotInheritAnotherPythonHome()
+        {
+            if (!YuiDesktopInferenceProcess.IsAvailable) Assert.Ignore("Bundled desktop Python is not installed.");
+            var home = Environment.GetEnvironmentVariable("PYTHONHOME");
+            var path = Environment.GetEnvironmentVariable("PYTHONPATH");
+            try
+            {
+                Environment.SetEnvironmentVariable("PYTHONHOME", Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N")));
+                Environment.SetEnvironmentVariable("PYTHONPATH", "not-the-worker-environment");
+                var task = Task.Run(() => YuiDesktopInferenceProcess.Invoke("{\"capability\":\"Chat\",\"model_path\":\"missing-model-for-environment-test\"}", CancellationToken.None));
+                while (!task.IsCompleted) yield return null;
+                var response = Newtonsoft.Json.Linq.JObject.Parse(task.GetAwaiter().GetResult());
+                // The worker can start and report a controlled error. A foreign
+                // PYTHONHOME would kill Python before it can emit this response.
+                Assert.IsFalse(response.Value<bool>("ok"));
+            }
+            finally
+            {
+                Environment.SetEnvironmentVariable("PYTHONHOME", home);
+                Environment.SetEnvironmentVariable("PYTHONPATH", path);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator ActualDesktopWorkerTranscribesAndChatsWithoutBackend()
         {
             if (Environment.GetEnvironmentVariable("YUI_RUN_NATIVE_AI_TESTS") != "1") Assert.Ignore("Native model integration is opt-in.");

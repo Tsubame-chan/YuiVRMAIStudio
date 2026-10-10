@@ -122,6 +122,8 @@ namespace YuiPhysicalAI.LocalAI
             if (requiresLocal && localService != null)
             {
                 ValidateLocalTranscriptionDuration(durationMs);
+                if (TryReadWavInfo(wavBytes, out _, out var audioDurationMs) && audioDurationMs > 30000)
+                    ValidateLocalTranscriptionDuration((int)Math.Ceiling(audioDurationMs));
                 var local = await localService.TranscribeAsync(
                     new YuiLocalAiAudioRequest
                     {
@@ -153,6 +155,8 @@ namespace YuiPhysicalAI.LocalAI
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 ValidateLocalTranscriptionDuration(durationMs);
+                if (TryReadWavInfo(wavBytes, out _, out var audioDurationMs) && audioDurationMs > 30000)
+                    ValidateLocalTranscriptionDuration((int)Math.Ceiling(audioDurationMs));
                 var local = await localService.TranscribeAsync(new YuiLocalAiAudioRequest
                 {
                     AudioBytes = wavBytes,
@@ -173,47 +177,51 @@ namespace YuiPhysicalAI.LocalAI
 
         private static int? TryReadWavSampleRate(byte[] wavBytes)
         {
-            if (wavBytes == null || wavBytes.Length < 28)
-            {
-                return null;
-            }
-
-            if (wavBytes[0] != (byte)'R'
-                || wavBytes[1] != (byte)'I'
-                || wavBytes[2] != (byte)'F'
-                || wavBytes[3] != (byte)'F'
-                || wavBytes[8] != (byte)'W'
-                || wavBytes[9] != (byte)'A'
-                || wavBytes[10] != (byte)'V'
-                || wavBytes[11] != (byte)'E')
-            {
-                return null;
-            }
-
-            var offset = 12;
-            while (offset + 16 <= wavBytes.Length)
-            {
-                var chunkSize = wavBytes[offset + 4]
-                    | (wavBytes[offset + 5] << 8)
-                    | (wavBytes[offset + 6] << 16)
-                    | (wavBytes[offset + 7] << 24);
-                if (wavBytes[offset] == (byte)'f'
-                    && wavBytes[offset + 1] == (byte)'m'
-                    && wavBytes[offset + 2] == (byte)'t'
-                    && wavBytes[offset + 3] == (byte)' ')
-                {
-                    var sampleRateOffset = offset + 12;
-                    return wavBytes[sampleRateOffset]
-                        | (wavBytes[sampleRateOffset + 1] << 8)
-                        | (wavBytes[sampleRateOffset + 2] << 16)
-                        | (wavBytes[sampleRateOffset + 3] << 24);
-                }
-
-                offset += 8 + chunkSize + (chunkSize & 1);
-            }
-
-            return null;
+            return TryReadWavInfo(wavBytes, out var sampleRate, out _) ? sampleRate : (int?)null;
         }
+
+        internal static bool TryReadWavInfo(byte[] bytes, out int sampleRate, out double durationMs)
+        {
+            sampleRate = 0;
+            durationMs = 0;
+            if (bytes == null || bytes.Length < 12 || !ChunkIs(bytes, 0, "RIFF") || !ChunkIs(bytes, 8, "WAVE")) return false;
+            uint byteRate = 0;
+            int blockAlign = 0;
+            long dataSize = -1;
+            for (long offset = 12; offset + 8 <= bytes.Length;)
+            {
+                var index = (int)offset;
+                uint size = ReadWavUInt32(bytes, index + 4);
+                long body = offset + 8;
+                long next = body + size + (size & 1);
+                // Reject truncated and overflowing chunks rather than looping on
+                // a negative signed size or reading outside the supplied buffer.
+                if (body + size > bytes.Length || next <= offset) return false;
+                if (ChunkIs(bytes, index, "fmt "))
+                {
+                    if (size < 16) return false;
+                    uint rate = ReadWavUInt32(bytes, (int)body + 4);
+                    if (rate == 0 || rate > int.MaxValue) return false;
+                    sampleRate = (int)rate;
+                    byteRate = ReadWavUInt32(bytes, (int)body + 8);
+                    blockAlign = bytes[(int)body + 12] | (bytes[(int)body + 13] << 8);
+                    if (blockAlign == 0 || byteRate != (long)sampleRate * blockAlign) return false;
+                }
+                else if (ChunkIs(bytes, index, "data")) dataSize = size;
+                offset = next;
+            }
+            if (sampleRate == 0 || byteRate == 0 || dataSize < 0 || dataSize % blockAlign != 0) return false;
+            durationMs = dataSize * 1000.0 / byteRate;
+            return true;
+        }
+
+        private static bool ChunkIs(byte[] bytes, int offset, string name) =>
+            bytes[offset] == name[0] && bytes[offset + 1] == name[1]
+            && bytes[offset + 2] == name[2] && bytes[offset + 3] == name[3];
+
+        private static uint ReadWavUInt32(byte[] bytes, int offset) =>
+            (uint)bytes[offset] | ((uint)bytes[offset + 1] << 8)
+            | ((uint)bytes[offset + 2] << 16) | ((uint)bytes[offset + 3] << 24);
 
         public async Task<VisionResponse> AnalyzeImageAsync(
             byte[] imageBytes,

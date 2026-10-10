@@ -616,3 +616,13 @@ async def test_http_tts_enforces_cache_limit_without_touching_voice_references(t
     assert len(cached) == 3
     assert "http_voice_ref_keep.wav" in cached
     assert len([name for name in cached if not name.startswith("http_voice_ref_")]) == 2
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("provider_id,dialect,read_timeout", [("irodori", "openai_speech", 180), ("", "irodori_openai_speech", 180), ("other", "generic", 60)])
+async def test_cold_irodori_has_longer_read_timeout_without_slow_connect(tmp_path, provider_id, dialect, read_timeout):
+    provider = HttpTTSProvider(Settings(http_tts_base_url="http://localhost:8088", http_tts_provider_id=provider_id, http_tts_payload_format=dialect, http_tts_model=""), audio_dir=tmp_path)
+    try:
+        assert provider._client.timeout.read == read_timeout
+        assert provider._client.timeout.connect == 10
+    finally:
+        await provider._client.aclose()

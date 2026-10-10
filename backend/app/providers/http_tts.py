@@ -43,9 +43,16 @@ class HttpTTSProvider(TTSProvider):
             raise TTSProviderError("HTTP_TTS_BASE_URL is required when TTS_PROVIDER=http.")
         self._client = httpx.AsyncClient(
             base_url=self.settings.http_tts_base_url,
-            timeout=60.0,
+            # A cold Irodori load may fetch/load watermark weights before synthesis.
+            # Keep connection failure fast while allowing that first local response.
+            timeout=httpx.Timeout(180.0 if self._is_irodori(settings) else 60.0, connect=10.0),
             transport=transport,
         )
+
+    @staticmethod
+    def _is_irodori(settings: Settings) -> bool:
+        return (settings.http_tts_payload_format == "irodori_openai_speech"
+                or "irodori" in (settings.http_tts_provider_id + " " + settings.http_tts_model).lower())
 
     async def synthesize(self, request: TTSRequest) -> TTSResponse:
         started_at = time.perf_counter()

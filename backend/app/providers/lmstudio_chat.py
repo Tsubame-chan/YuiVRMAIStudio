@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 import httpx
@@ -50,6 +51,10 @@ class LMStudioChatProvider(ChatProvider):
             response = await self._client.post("/chat/completions", json=payload)
             response.raise_for_status()
             text = self._extract_content(response.json())
+            # Some OpenAI-compatible engines put reasoning in content rather
+            # than a separate reasoning field. Remove that leading reasoning block;
+            # preserve literal tags inside a normal answer or structured JSON.
+            text = re.sub(r"^(?:\s*<think>.*?(?:</think>|$))+", "", text, flags=re.DOTALL | re.IGNORECASE).strip()
             if not text.strip():
                 raise ChatProviderError("Local model returned no assistant text. Check the model, output budget, and server response format.")
             parsed = self._openai_helpers._parse_fallback(text)

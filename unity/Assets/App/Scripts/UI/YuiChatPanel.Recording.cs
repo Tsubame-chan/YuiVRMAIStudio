@@ -432,6 +432,8 @@ namespace YuiPhysicalAI.UI
                     wavBytes = macEditorWavBytes;
                 }
                 var durationMs = Mathf.RoundToInt(samplePosition * 1000f / activeRecordingFrequency);
+                if (YuiAiRuntimeRouter.TryReadWavInfo(wavBytes, out _, out var wavDurationMs))
+                    durationMs = (int)Math.Ceiling(wavDurationMs);
                 Debug.Log($"Yui PTT audio: elapsedMs={recordingElapsedMs}, samples={samplePosition}, frequency={activeRecordingFrequency}, durationMs={durationMs}, bytes={wavBytes.Length}, rms={unityStats.rms:F8}, peak={unityStats.peak:F8}, wasRecording={stopResult.WasStillRecording}");
                 var transcript = await TranscribeViaRuntimeAsync(
                     wavBytes,

@@ -1,5 +1,8 @@
 param([string]$PackRoot = (Split-Path $PSScriptRoot -Parent), [string]$BackendRoot = '')
 $ErrorActionPreference = 'Stop'
+# Each service selects its own interpreter; never inherit another Python home.
+Remove-Item Env:PYTHONHOME -ErrorAction SilentlyContinue
+Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
 $PackRoot = (Resolve-Path -LiteralPath $PackRoot).Path
 if (-not (Get-Command nvidia-smi.exe -ErrorAction SilentlyContinue)) {
     throw 'This INT8 V4.1 package requires an NVIDIA GPU and current CUDA-capable driver. VOICEVOX remains available without this package.'
@@ -21,7 +24,10 @@ function Resolve-IrodoriPython {
     # must not terminate PowerShell 5.1 before the executable fallback runs.
     $ErrorActionPreference = 'Continue'
     $candidate = & $uv python find --managed-python 3.11 2>$null
-    if ($LASTEXITCODE -eq 0 -and $candidate) { return [string]$candidate }
+    if ($LASTEXITCODE -eq 0 -and $candidate -and (Test-Path -LiteralPath ([string]$candidate))) {
+        & ([string]$candidate) -c 'import sys; sys.exit(0 if sys.version_info[:2] == (3, 11) else 1)' 2>$null
+        if ($LASTEXITCODE -eq 0) { return [string]$candidate }
+    }
     & $uv python install 3.11 --no-bin --no-registry | Out-Host
     # uv can finish extracting Python but fail to create its Windows minor-version
     # junction. Use the verified executable, without changing any global links.

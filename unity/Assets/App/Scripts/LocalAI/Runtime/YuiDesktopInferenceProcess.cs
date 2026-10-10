@@ -62,6 +62,10 @@ namespace YuiPhysicalAI.LocalAI
                 RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
                 StandardOutputEncoding = Encoding.UTF8, StandardErrorEncoding = Encoding.UTF8, CreateNoWindow = true
             };
+            // This worker uses its own bundled interpreter, independently of
+            // the Backend, optional TTS, and the shell that launched the Player.
+            start.EnvironmentVariables.Remove("PYTHONHOME");
+            start.EnvironmentVariables.Remove("PYTHONPATH");
             start.EnvironmentVariables["PYTHONUTF8"] = "1";
             start.EnvironmentVariables["PYTHONIOENCODING"] = "utf-8";
             var venv = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(python), ".."));

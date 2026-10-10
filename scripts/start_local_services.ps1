@@ -16,6 +16,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+# Each service selects its own interpreter; never inherit another Python home.
+Remove-Item Env:PYTHONHOME -ErrorAction SilentlyContinue
+Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $backendDir = Join-Path $repoRoot "backend"

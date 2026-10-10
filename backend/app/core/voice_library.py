@@ -56,7 +56,19 @@ def load(settings=None):
     obj=json.loads(raw)
     if obj.get('schema')!=1: raise ValueError('音声設定の形式を確認してください。')
     model=LibraryUpdate(revision='', endpoints=obj['endpoints'], profiles=obj['profiles'])
-    return model.model_dump(exclude={'revision'}), hashlib.sha256(raw).hexdigest()
+    data = model.model_dump(exclude={'revision'})
+    # Builtin endpoints follow current settings. Adapt only untouched factory
+    # presets when the API dialect changes; never discard user tuning or write
+    # the file during a read. The revision still identifies the stored bytes.
+    if (settings is not None and settings.http_tts_payload_format in {'openai_speech', 'irodori_openai_speech'}
+            and 'irodori' in (settings.http_tts_provider_id+' '+settings.http_tts_model).lower()):
+        from app.core.irodori_presets import profiles
+        alternate = settings.model_copy(update={'http_tts_payload_format':
+            'openai_speech' if settings.http_tts_payload_format == 'irodori_openai_speech' else 'irodori_openai_speech'})
+        previous = {p['id']: p for p in profiles(alternate)}
+        current = {p['id']: p for p in profiles(settings)}
+        data['profiles'] = [current[p['id']] if p == previous.get(p['id']) else p for p in data['profiles']]
+    return data, hashlib.sha256(raw).hexdigest()
 
 def endpoints(data, settings):
     # Virtual entries read current .env/admin overrides; no secret copies on migration.
