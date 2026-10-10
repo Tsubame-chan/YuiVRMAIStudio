@@ -407,7 +407,7 @@ def test_snapshot_is_fixed_paged_scoped_and_purged_on_forget(client):
 def test_shared_unity_python_contract_fixture(client):
     c, character, _ = client
     fixture = Path(__file__).resolve().parents[2] / "unity/Assets/Tests/Fixtures/companion_v2_commit.json"
-    body = json.loads(fixture.read_text())
+    body = json.loads(fixture.read_text(encoding="utf-8"))
     assert len(Commit.model_validate(body).operations) == 4
     response = c.post(f"/companion/v2/characters/{character}/commit", json=body)
     assert response.status_code == 200, response.text

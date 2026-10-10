@@ -7,7 +7,8 @@ VOICES = json.loads((ROOT / "voices.json").read_text(encoding="utf-8"))
 def profiles(settings=None):
     server = settings is not None and settings.http_tts_payload_format == "irodori_openai_speech"
     return [{"id":"yui-irodori-"+v["id"],"name":v["name"],"endpoint_id":"builtin-http",
-             "parameters":{"voice_instruct":v["caption"],"voice_gender":"female","voice_lang_code":"ja"},
+             "parameters":({"voice_instruct":v["caption"]} if server else
+                           {"voice_instruct":v["caption"],"voice_gender":"female","voice_lang_code":"ja"}),
              "voice":v["id"] if server else "none","model":"","fallback_profile_id":None} for v in VOICES]
 
 def reference(caption):

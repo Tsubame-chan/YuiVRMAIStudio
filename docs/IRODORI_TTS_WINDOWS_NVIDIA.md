@@ -15,7 +15,9 @@ Desktop v0.2.5-beta.1のReleaseにある `YuiVRMAIStudio_IrodoriV41_WindowsNVIDI
 3. Backendを再起動します。標準VOICEVOXは維持され、Irodoriは別途選択できます。必要なら `Start_Irodori_V4.bat` で音声サーバーのみ起動できます。
 4. 新規の音声ライブラリには「明るく元気」「親しみやすく優しい」「落ち着いたトーン」の3声が表示されます。既存の保存済み音声は保持します。保存済みConsole設定がある場合は、そちらの接続設定が `.env` より優先されるため、ConsoleでV4.1接続に変更してください。
 
-参照はPCのV4.1 FP16で生成したものを使用します。Windows生成はV4.1 INT8/BF16、40 steps、参照音声と文分割ありです。Mac/iPhoneとは実行方式が異なります。今回WindowsのPlayerビルド・モデルハッシュ・生成要求を検証しましたが、Windows上の起動・合成・音質・速度は実機未確認です。
+参照はPCのV4.1 FP16で生成したものを使用します。Windows生成はV4.1 INT8/BF16、40 steps、参照音声と文分割ありです。Mac/iPhoneとは実行方式が異なります。2026-10-11にRTX5070 Tiで起動・3声のWAV生成・Backend Consoleの試聴プレイヤー表示を実機確認しました。温まった短文生成は約2.5〜4.7秒でしたが、初回は追加データ取得とロードを伴い、約50.7秒かかりました。一般的な速度・主観的な音質・完全オフライン初回を保証する試験ではありません。[検証記録](WINDOWS_VALIDATION_20261011.md)。
+
+公開済みv0.2.5-beta.1パッケージの旧installerはPython3.12を選び、SentencePiece依存の導入に失敗する場合があります。最新ソースの `scripts/setup_irodori_v4_windows.ps1` はPython3.11を指定し、uvのjunction作成失敗後も実体を検査して復帰します。既存Release ZIPはこの修正で再発行されていません。既存パッケージで修正版を使う場合は、同梱ファイルを上書きせず、最新ソースのinstallerを `-PackRoot` と `-BackendRoot` を指定して実行してください。
 
 公式モデル: [V4.1 Small Quantized](https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small-Quantized)。実行条件・MITライセンスと利用制限は同梱のモデルREADMEと[公式サーバー](https://github.com/Aratako/Irodori-TTS-Server)を参照してください。
 

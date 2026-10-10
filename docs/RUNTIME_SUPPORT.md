@@ -3,13 +3,15 @@
 | 端末 | 端末内AI | 標準の読み上げ | 利用条件 |
 | --- | --- | --- | --- |
 | Mac | E2B、任意でE4B | 日本語VOICEVOX・5声 | Apple Silicon向け。初回に必要データを取得 |
-| Windows | E2B | 日本語VOICEVOX・5声 | 64-bit版。初回に必要データを取得 |
+| Windows | E2B、最新ソースでは任意でE4B | 日本語VOICEVOX・5声 | 64-bit版。初回に必要データを取得 |
 | iPhone / iPad | E2B、任意でE4B | 日本語VOICEVOX・OS音声 | iOS 26以降。標準データ同梱。日本向けApp Store版を配信中 |
 | Android | 公開アプリなし | — | ダウンロードできるアプリは提供していません |
 
 OpenAI APIを選ぶ場合はインターネット接続とAPIキーが必要で、API利用料金がかかります。AIと読み上げの選択は独立しています。最新ソースのMac・iOSではIrodori日本語2声とKokoro英語6声を設定から任意取得できます。既存の配布版0.2.4・デスクトップbeta.2にはこの追加音声機能は含まれません。Windows・Androidの端末内Irodoriには未対応です。
 
 E4BはE2Bより多くの空き容量とメモリを使い、回答にも時間がかかります。機種、メモリ、他のアプリの使用状況によって動作は変わります。動作が重い場合はE2Bへ戻してください。
+
+2026-10-11のWindows検証では、v0.2.5-beta.1アプリへ最新のモデル登録JSONを配置してE4Bの設定選択と実会話を確認しました。今回のソース変更を含むPlayerの再ビルド・Release再発行は未実施です。[検証と未確認事項](WINDOWS_VALIDATION_20261011.md)。Windows向けIrodoriは端末内音声ではなく、[任意追加Backendパッケージ](IRODORI_TTS_WINDOWS_NVIDIA.md)で利用します。
 
 GitHubの最新ソースと、ダウンロードできるデスクトップ版v0.2.4-beta.2では機能が異なります。最新ソースはUnity 6.3 LTSを使いますが、配布済みデスクトップ版は以前のUnity版です。ソースを取得してもインストール済みアプリやBackendは更新されません。
 

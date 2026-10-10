@@ -82,7 +82,7 @@ namespace YuiPhysicalAI.LocalAI
                         DiskBudgetMb = 3660,
                         Priority = 12,
                         StartupPolicy = YuiLocalAiStartupPolicy.WarmTextOnly,
-                        Platforms = new[] { "ios", "macos" },
+                        Platforms = new[] { "ios", "macos", "windows" },
                         Notes = "Optional higher-quality conversation model. Longer responses and increased device load."
                     },
                     new YuiLocalAiModelPack

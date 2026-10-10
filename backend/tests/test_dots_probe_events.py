@@ -1,5 +1,6 @@
 import base64
 import json
+import os
 import socket
 from pathlib import Path
 
@@ -43,7 +44,8 @@ def test_synthetic_subscription_verification_delivery_and_restart(tmp_path, monk
         events.emit("probe-private")
     assert events.unsubscribe(params) == {}
     assert events.emit("probe-deadbeef") == 0
-    assert path.stat().st_mode & 0o077 == 0
+    if os.name != "nt":
+        assert path.stat().st_mode & 0o077 == 0
 
 
 def test_synthetic_events_reject_non_openai_callback(tmp_path):

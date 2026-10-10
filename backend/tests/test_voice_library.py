@@ -34,7 +34,8 @@ def test_multiple_endpoints_keys_reload_conflict(client):
     body['revision']=r.json()['revision'];body['endpoints'][0]['settings']['http_tts_api_key']=None
     assert client.put('/admin/api/voice-library',json=body).status_code==200
     assert load()[0]['endpoints'][0]['settings']['http_tts_api_key']==''
-    assert os.stat(os.environ['YUI_VOICE_LIBRARY_PATH']).st_mode&0o777==0o600
+    if os.name != 'nt':  # Windows chmod does not implement POSIX permission bits.
+        assert os.stat(os.environ['YUI_VOICE_LIBRARY_PATH']).st_mode&0o777==0o600
 
 def test_explicit_fields_override_profile_without_model_defaults():
     save(LibraryUpdate(revision='initial',endpoints=[endpoint()],profiles=[profile()]),Settings())
@@ -134,13 +135,19 @@ def test_voice_discovery_uses_aivis_speakers_and_irodori_models(client,monkeypat
     assert capabilities(e,Settings())['text_fields']==[]
 
 
-def test_irodori_initial_library_offers_three_accepted_presets():
-    settings=Settings(http_tts_provider_id="irodori",http_tts_model="mlx-community/Irodori-TTS-v4.1-Small-8bit",http_tts_payload_format="openai_speech")
+@pytest.mark.parametrize("dialect", ["openai_speech", "irodori_openai_speech"])
+def test_irodori_initial_library_offers_three_accepted_presets(dialect):
+    settings=Settings(http_tts_provider_id="irodori",http_tts_model="mlx-community/Irodori-TTS-v4.1-Small-8bit",http_tts_payload_format=dialect)
     data,revision=load(settings)
     assert revision=="initial"
     assert [p["id"] for p in data["profiles"]]==["yui-irodori-bright_natural","yui-irodori-gentle_friend","yui-irodori-calm_natural"]
     for p in data["profiles"]:
-        request,_,_,_=resolve_profile(p["id"],TTSRequest(text="こんにちは。"),settings)
+        request,resolved_settings,_,_=resolve_profile(p["id"],TTSRequest(text="こんにちは。"),settings)
+        if dialect == "irodori_openai_speech":
+            assert resolved_settings.http_tts_voice == p["id"].removeprefix("yui-irodori-")
+            assert request.voice_gender is None and request.voice_lang_code is None
+        else:
+            assert request.voice_gender == "female" and request.voice_lang_code == "ja"
         from app.core.irodori_presets import reference
         audio,text=reference(request.voice_instruct)
         assert audio.read_bytes()[:4]==b"RIFF" and "おかえりなさい" in text

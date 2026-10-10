@@ -1,6 +1,9 @@
 import json
 import wave
 import audioop
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import httpx
@@ -301,8 +304,8 @@ def test_http_tts_rejects_unsupported_audio_format(tmp_path: Path) -> None:
         raise AssertionError("Expected unsupported HTTP_TTS_FORMAT to be rejected")
 
 
-def test_http_tts_wav_postprocess_changes_audio_when_speed_or_pitch_is_requested() -> None:
-    source = tmp_path = Path("/tmp/yui-http-tts-postprocess-source.wav")
+def test_http_tts_wav_postprocess_changes_audio_when_speed_or_pitch_is_requested(tmp_path: Path) -> None:
+    source = tmp_path / "source.wav"
     with wave.open(str(source), "wb") as writer:
         writer.setnchannels(1)
         writer.setsampwidth(2)
@@ -319,7 +322,7 @@ def test_http_tts_wav_postprocess_changes_audio_when_speed_or_pitch_is_requested
     assert processed != content
     with wave.open(str(source), "rb") as original:
         original_frames = original.getnframes()
-    processed_path = tmp_path.with_name("yui-http-tts-postprocess-processed.wav")
+    processed_path = tmp_path / "processed.wav"
     processed_path.write_bytes(processed)
     with wave.open(str(processed_path), "rb") as changed:
         assert changed.getframerate() == 24000
@@ -402,7 +405,7 @@ def test_http_tts_irodori_neutral_postprocess_trims_and_normalizes(tmp_path: Pat
     assert audioop.max(samples, 2) < 32000
 
 
-def test_http_tts_irodori_postprocess_uses_soundstretch_when_configured(tmp_path: Path) -> None:
+def test_http_tts_irodori_postprocess_uses_soundstretch_when_configured(tmp_path: Path, monkeypatch) -> None:
     source = tmp_path / "source.wav"
     with wave.open(str(source), "wb") as writer:
         writer.setnchannels(1)
@@ -420,6 +423,14 @@ def test_http_tts_irodori_postprocess_uses_soundstretch_when_configured(tmp_path
         encoding="utf-8",
     )
     tool.chmod(tool.stat().st_mode | 0o111)
+
+    if os.name == "nt":
+        # Execute the CLI fixture with Python; Windows cannot launch a shebang file.
+        run = subprocess.run
+        def run_fixture(command, **kwargs):
+            assert command[0] == str(tool)
+            return run([sys.executable, *command], **kwargs)
+        monkeypatch.setattr(subprocess, "run", run_fixture)
 
     content = source.read_bytes()
     processed = HttpTTSProvider._postprocess_audio(
@@ -484,12 +495,34 @@ def test_http_tts_soundstretch_postprocess_is_skipped_when_tool_is_unavailable(t
 
 
 def test_http_tts_resolves_bundled_soundstretch_from_repo_tools(tmp_path: Path) -> None:
-    tool = tmp_path / "tools" / "tts" / "soundtouch" / "bin" / "soundstretch"
+    filename = "soundstretch.exe" if sys.platform == "win32" else "soundstretch"
+    tool = tmp_path / "tools" / "tts" / "soundtouch" / "bin" / filename
     tool.parent.mkdir(parents=True)
     tool.write_text("#!/usr/bin/env sh\n", encoding="utf-8")
     tool.chmod(tool.stat().st_mode | 0o111)
 
     assert HttpTTSProvider._resolve_soundstretch_path("", bundled_root=tmp_path) == str(tool)
+
+
+@pytest.mark.parametrize("platform,expected", [("win32", "soundstretch.exe"), ("darwin", "soundstretch")])
+def test_soundstretch_auto_selection_ignores_foreign_os_binary(tmp_path: Path, monkeypatch, platform, expected):
+    directory = tmp_path / "tools" / "tts" / "soundtouch" / "bin"
+    directory.mkdir(parents=True)
+    for name in ("soundstretch", "soundstretch.exe"):
+        path = directory / name
+        path.touch()
+        path.chmod(path.stat().st_mode | 0o111)
+    monkeypatch.setattr(sys, "platform", platform)
+    assert HttpTTSProvider._resolve_soundstretch_path("", bundled_root=tmp_path) == str(directory / expected)
+
+
+def test_mac_soundstretch_auto_selection_does_not_try_windows_only_bundle(tmp_path: Path, monkeypatch):
+    directory = tmp_path / "tools" / "tts" / "soundtouch" / "bin"
+    directory.mkdir(parents=True)
+    (directory / "soundstretch.exe").touch()
+    monkeypatch.setattr(sys, "platform", "darwin")
+    monkeypatch.setattr("shutil.which", lambda _: None)
+    assert HttpTTSProvider._resolve_soundstretch_path("", bundled_root=tmp_path) == ""
 
 
 def test_http_tts_cache_key_separates_audio_processor_settings() -> None:

@@ -4,6 +4,8 @@ import subprocess
 
 import pytest
 
+pytestmark = pytest.mark.skipif(os.name == "nt", reason="macOS shell launcher tests require POSIX")
+
 
 @pytest.mark.parametrize("script", ["start_local_services_macos.sh", "start_local_services_detached_macos.sh"])
 @pytest.mark.parametrize("value", ['"fake-key"', "'fake-key'", "fake-key\r"])

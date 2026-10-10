@@ -51,7 +51,8 @@ def test_secret_redaction_persistence_and_conflict(client):
     assert get_settings().openai_api_key=='test-secret-never-return'
     assert get_settings().openai_chat_model=='model-new'
     assert 'openai_api_key' not in read_overrides()[0]
-    assert os.stat(settings_path()).st_mode & 0o777 == 0o600
+    if os.name != "nt":  # Windows chmod does not implement POSIX permission bits.
+        assert os.stat(settings_path()).st_mode & 0o777 == 0o600
     assert client.patch('/admin/api/settings',json={'revision':settings['revision'],'changes':{'character_name':'overwritten'}}).status_code==409
     get_settings.cache_clear()
     assert get_settings().openai_chat_model=='model-new'

@@ -16,9 +16,31 @@ foreach ($file in $manifest.files) {
 }
 $server = Join-Path $PackRoot 'server'
 $uv = Join-Path $PackRoot 'runtime/uv.exe'
+function Resolve-IrodoriPython {
+    # Native discovery/install errors are checked below; an incomplete junction
+    # must not terminate PowerShell 5.1 before the executable fallback runs.
+    $ErrorActionPreference = 'Continue'
+    $candidate = & $uv python find --managed-python 3.11 2>$null
+    if ($LASTEXITCODE -eq 0 -and $candidate) { return [string]$candidate }
+    & $uv python install 3.11 --no-bin --no-registry | Out-Host
+    # uv can finish extracting Python but fail to create its Windows minor-version
+    # junction. Use the verified executable, without changing any global links.
+    $pythonRoot = & $uv python dir
+    if ($LASTEXITCODE -ne 0) { throw 'Could not locate the managed Python installation.' }
+    foreach ($directory in @(Get-ChildItem -LiteralPath ([string]$pythonRoot) -Directory -Filter 'cpython-3.11.*-windows-x86_64-none' | Sort-Object Name -Descending)) {
+        $candidate = Join-Path $directory.FullName 'python.exe'
+        if (-not (Test-Path -LiteralPath $candidate)) { continue }
+        & $candidate -c 'import sys; sys.exit(0 if sys.version_info[:2] == (3, 11) else 1)' 2>$null
+        if ($LASTEXITCODE -eq 0) { return $candidate }
+    }
+    throw 'Python 3.11 installation failed. No Backend settings were changed.'
+}
 Push-Location $server
 try {
-    & $uv sync --frozen --extra cu128 --python 3.12
+    # The pinned upstream runtime requires sentencepiece 0.1.99. Its Windows
+    # wheel supports Python 3.11, not 3.12; avoid a failing native source build.
+    $python = Resolve-IrodoriPython
+    & $uv sync --frozen --extra cu128 --python $python
     if ($LASTEXITCODE -ne 0) { throw 'Python/CUDA dependency installation failed. No Backend settings were changed.' }
 } finally { Pop-Location }
 if (-not $BackendRoot) {

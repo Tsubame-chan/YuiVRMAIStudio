@@ -8,6 +8,7 @@ import tempfile
 import time
 import wave
 import os
+import sys
 from urllib.parse import urlsplit
 from pathlib import Path
 import audioop
@@ -511,14 +512,14 @@ class HttpTTSProvider(TTSProvider):
             return ""
 
         root = bundled_root or ROOT_DIR
+        # Never pick a binary for another OS when both packages are present.
+        filename = "soundstretch.exe" if sys.platform == "win32" else "soundstretch"
         candidates = (
-            root / "tools" / "tts" / "soundtouch" / "bin" / "soundstretch",
-            root / "tools" / "tts" / "soundtouch" / "bin" / "soundstretch.exe",
-            root / "tools" / "tts" / "bin" / "soundstretch",
-            root / "tools" / "tts" / "bin" / "soundstretch.exe",
+            root / "tools" / "tts" / "soundtouch" / "bin" / filename,
+            root / "tools" / "tts" / "bin" / filename,
         )
         for candidate in candidates:
-            if candidate.is_file():
+            if candidate.is_file() and (sys.platform == "win32" or os.access(candidate, os.X_OK)):
                 return str(candidate)
 
         on_path = shutil.which("soundstretch")

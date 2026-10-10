@@ -6,6 +6,7 @@ import pytest
 from app.core.config import Settings
 from app.models.chat import ChatRequest
 from app.providers.lmstudio_chat import LMStudioChatProvider
+from app.providers.openai_chat import ChatProviderError
 from app.providers.router import ProviderRouter
 
 
@@ -126,3 +127,43 @@ async def test_lmstudio_chat_falls_back_from_plain_text() -> None:
     assert response.text == "もちろん"
     assert response.face == "Joy"
     assert response.animation == "nod_small"
+
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("payload", [
+    {}, {"choices": []}, {"choices": [None]},
+    {"choices": [{"message": {"content": "  "}}]},
+    {"choices": [{"message": {"content": None, "reasoning_content": "private reasoning"}}]},
+    {"choices": [{"message": {"tool_calls": [{"id": "internal-tool"}]}}]},
+    {"choices": [{"message": {"content": [{"type": "image_url", "text": "unexpected"}]}}]},
+    {"choices": [{"message": {"content": "[face: Joy] [anim=nod_small]"}}]},
+    {"choices": [{"message": {"content": json.dumps({"text": "", "face": "Neutral", "animation": "idle_normal"})}}]},
+])
+async def test_lmstudio_rejects_missing_assistant_text(payload) -> None:
+    provider = LMStudioChatProvider(
+        Settings(chat_provider="lmstudio"),
+        transport=httpx.MockTransport(lambda _: httpx.Response(200, json=payload)),
+    )
+    try:
+        with pytest.raises(ChatProviderError, match="assistant text"):
+            await provider.generate(ChatRequest(request_id="empty-test", message="こんにちは"))
+    finally:
+        await provider._client.aclose()
+
+
+@pytest.mark.anyio
+async def test_lmstudio_accepts_text_content_blocks() -> None:
+    provider = LMStudioChatProvider(
+        Settings(chat_provider="lmstudio"),
+        transport=httpx.MockTransport(lambda _: httpx.Response(200, json={
+            "choices": [{"message": {"content": [
+                {"type": "text", "text": "こんにちは。"},
+                {"type": "text", "text": "元気です。"},
+            ]}}],
+        })),
+    )
+    try:
+        response = await provider.generate(ChatRequest(request_id="blocks-test", message="こんにちは"))
+        assert response.text == "こんにちは。\n元気です。"
+    finally:
+        await provider._client.aclose()
