@@ -6,7 +6,7 @@ import {mountWork} from './work.js';
 
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const NAV = [['home','ホーム'],['providers','AIと音声'],['playground','試す'],['work','作業'],['memory','記憶'],['activity','履歴と利用状況'],['settings','接続と設定']];
+const NAV = [['home','ホーム'],['providers','AIと音声'],['playground','試す'],['memory','記憶'],['activity','履歴と利用状況'],['settings','接続と設定']];
 const labels = {ok:'接続確認済み',configured:'設定済み・動作未確認',missing_key:'キー未設定',offline:'接続できません',not_configured:'未設定',unknown:'未確認'};
 let state, draft = {}, identities = [], probes = {}, view = 'home', section = '', page = 0, generation = 0, dataGeneration = 0, noticeTimer, activeRequest, audioUrl, diagnostics, voiceEditor;
 let scope = {user_id:'local_user',character_id:'',session_id:''};
@@ -120,12 +120,12 @@ function settings() {
 }
 async function render() {
     unmountSync?.();unmountSync=null;unmountWork?.();unmountWork=null;
-    const route=location.hash.slice(1).split('/');view=NAV.some(x=>x[0]===route[0])?route[0]:'home';section=route[1]||'';page=0;const ticket=++generation;
+    const route=location.hash.slice(1).split('/');view=route[0]==='work'||NAV.some(x=>x[0]===route[0])?route[0]:'home';section=route[1]||'';page=0;const ticket=++generation;
     $('#nav').innerHTML=NAV.map(([id,label],i)=>`<a href="#${id}" ${id===view?'aria-current="page"':''}><span class="navnum">0${i+1}</span>${label}</a>`).join('');
-    $('#breadcrumb').textContent=`ワークスペース / ${NAV.find(x=>x[0]===view)[1]}`;
+    $('#breadcrumb').textContent=`ワークスペース / ${view==='work'?'CSV集計（実験）':NAV.find(x=>x[0]===view)[1]}`;
     if(['memory','activity'].includes(view)) {try{identities=(await api('api/identities')).items;}catch(e){notice(e.message);}}
     if(ticket!==generation)return;
-    $('#content').innerHTML=({home,providers,playground,memory,activity,settings,work:()=>'<div id="csv-workbench"></div>'})[view]();changed();
+    $('#content').innerHTML=({home,providers,playground,memory,activity,settings,work:()=>'<div class="info">CSV集計は実験機能です。保存済みの作業と成果物は引き続き利用できます。 <a href="#home">ホームへ戻る</a></div><div id="csv-workbench"></div>'})[view]();changed();
     $('#content').querySelectorAll('[data-setting]').forEach(el=>el.addEventListener(el.matches('select,[type=checkbox]')?'change':'input',()=>{const f=state.settings.fields.find(f=>f.name===el.dataset.setting);let v=f.type==='boolean'?el.checked:f.type==='number'?Number(el.value):el.value;if(f.secret&&!v){delete draft[f.name];changed();return;}draft[f.name]=v;if(!f.secret&&v===state.settings.values[f.name])delete draft[f.name];changed();if(el.dataset.rerender)render();}));
     if($('#voice-workbench')){voiceEditor ||= createVoiceEditor(api,notice,state.settings.fields,confirmAction);voiceEditor.mount($('#voice-workbench')).catch(e=>notice(e.message));}
     if($('#device-sync'))unmountSync=mountDeviceSync($('#device-sync'),api,notice,confirmAction);

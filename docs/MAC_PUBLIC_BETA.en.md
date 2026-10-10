@@ -4,7 +4,7 @@
 
 ## Run the app
 
-1. Download `YuiVRMAIStudio_MacOSPublicBeta_v0.2.4-beta.2_macos.zip` from [v0.2.4-beta.2](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.2).
+1. Download `YuiVRMAIStudio_MacOSPublicBeta_v0.2.5-beta.2_macos.zip` from [v0.2.5-beta.2](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.5-beta.2).
 2. Extract and open `Yui VRM AI Studio.app`. The bundled local runtime targets Apple Silicon.
 3. Read the first-run notice and start the data download. It installs standard E2B, five Japanese voices, a dictionary and the Mac runtime: approximately 2.5GB, plus space needed for extraction.
 4. Send a message, then use Settings to customize personality, voice and your VRM. Replay the illustrated tutorial from Help.
@@ -29,7 +29,7 @@ Select a `.vrm` from character Settings and wait for loading. Change appearance 
 
 Use `Start_Yui_Backend.command` / `Stop_Yui_Backend.command` inside the downloaded `YuiBackend`. Configure its provider keys and selected STT/TTS runtime separately. For another device, connect both devices to Tailscale or another trusted VPN and enter the PC’s VPN URL in the app, for example `http://100.x.x.x:8000`. The newer Backend provides `scripts/start_mobile_backend_macos.sh`, which obtains the Tailscale address and accepts both local PC and VPN connections. Keep the PC awake.
 
-The distributed beta.2 Backend does not include that launcher. It can listen on a VPN IP using `BACKEND_HOST`, but a newer Backend is needed to retain localhost Console access at the same time. Connecting a VPN does not make a localhost-only server reachable from other devices.
+The older v0.2.4-beta.2 Backend does not include that launcher. Connecting a VPN does not make a localhost-only server reachable from other devices.
 
 For source setup:
 
@@ -44,3 +44,7 @@ open -e .env
 Follow the scripts' prerequisites for Python and other dependencies. Backend `.env` credentials do not configure the app's Direct API key. Backend VOICEVOX or other speech engines also need their runtime.
 
 [端末ごとの対応 / Compatibility](RUNTIME_SUPPORT.md)
+
+## Update an existing Backend
+
+Updating the app ZIP does not replace an existing YuiBackend in persistent storage, which takes precedence. Stop the app and its services, and privately back up the entire active YuiBackend. Extract the matching `YuiVRMAIStudio_BackendBundle_v0.2.5-beta.2_macos.zip` into an empty folder, then copy its distribution files over the active Backend without deleting/replacing the destination folder. Retain `.env`, `backend/data` and installed optional engines. The ZIP contains no user databases, settings or saved voices. Restart and test a short conversation/transcription/voice preview; restore the backup if necessary.

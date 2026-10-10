@@ -8,7 +8,7 @@ Backend Consoleがある版では、[音声導入ガイドのWindows手順](BACK
 
 ## V4.1の任意追加パッケージ
 
-Desktop v0.2.5-beta.1のReleaseにある `YuiVRMAIStudio_IrodoriV41_WindowsNVIDIA_v0.2.5-beta.1.zip` は、公式V4.1 Small INT8（約914MB）、音声コーデック（約430MB）、公式サーバーの固定版、導入ツールと3つの合成参照音声を含みます。モデルの再取得は不要ですが、初回のPython/PyTorch CUDA依存導入にはインターネットと追加の空き容量が必要です。NVIDIA GPU・対応ドライバー・Git for Windowsが必要です。CPU・AMD・Android対応のパッケージではありません。
+Desktop v0.2.5-beta.2のReleaseにある `YuiVRMAIStudio_IrodoriV41_WindowsNVIDIA_v0.2.5-beta.2.zip` は、公式V4.1 Small INT8（約914MB）、音声コーデック（約430MB）、公式サーバーの固定版、導入ツールと3つの合成参照音声を含みます。モデルの再取得は不要ですが、初回のPython/PyTorch CUDA依存導入にはインターネットと追加の空き容量が必要です。NVIDIA GPU・対応ドライバー・Git for Windowsが必要です。CPU・AMD・Android対応のパッケージではありません。
 
 1. ZIPを展開し、`YuiIrodoriV4` フォルダーを既存の `YuiBackend` 内へ置きます。
 2. Backendを終了し、`Install_Irodori_V4.bat` を実行します。ファイルのSHA-256を検査してから依存を導入し、元の `.env` をバックアップして接続設定を追加します。
@@ -17,7 +17,7 @@ Desktop v0.2.5-beta.1のReleaseにある `YuiVRMAIStudio_IrodoriV41_WindowsNVIDI
 
 参照はPCのV4.1 FP16で生成したものを使用します。Windows生成はV4.1 INT8/BF16、40 steps、参照音声と文分割ありです。Mac/iPhoneとは実行方式が異なります。2026-10-11にRTX5070 Tiで起動・3声のWAV生成・Backend Consoleの試聴プレイヤー表示を実機確認しました。温まった短文生成は約2.5〜4.7秒でしたが、初回は追加データ取得とロードを伴い、約50.7秒かかりました。一般的な速度・主観的な音質・完全オフライン初回を保証する試験ではありません。[検証記録](WINDOWS_VALIDATION_20261011.md)。
 
-公開済みv0.2.5-beta.1パッケージの旧installerはPython3.12を選び、SentencePiece依存の導入に失敗する場合があります。最新ソースの `scripts/setup_irodori_v4_windows.ps1` はPython3.11を指定し、uvのjunction作成失敗後も実体を検査して復帰します。既存Release ZIPはこの修正で再発行されていません。既存パッケージで修正版を使う場合は、同梱ファイルを上書きせず、最新ソースのinstallerを `-PackRoot` と `-BackendRoot` を指定して実行してください。
+公開済みv0.2.5-beta.1パッケージの旧installerはPython3.12を選び、SentencePiece依存の導入に失敗する場合があります。最新ソースの `scripts/setup_irodori_v4_windows.ps1` はPython3.11を指定し、uvのjunction作成失敗後も実体を検査して復帰します。旧v0.2.5-beta.1のZIPは保持し、修正したinstaller/start scriptと再計算したfiles.jsonを含む新しいv0.2.5-beta.2追加ZIPを配布します。新版installerのWindows実機受入は未完了です。既存パッケージで修正版を使う場合は、同梱ファイルを上書きせず、最新ソースのinstallerを `-PackRoot` と `-BackendRoot` を指定して実行してください。
 
 公式モデル: [V4.1 Small Quantized](https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small-Quantized)。実行条件・MITライセンスと利用制限は同梱のモデルREADMEと[公式サーバー](https://github.com/Aratako/Irodori-TTS-Server)を参照してください。
 
