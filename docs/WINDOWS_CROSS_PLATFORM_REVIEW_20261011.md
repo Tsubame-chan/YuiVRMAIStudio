@@ -35,3 +35,6 @@ VRM pickerは共通の二重起動guardがあり、インポート中の二重�
 
 iOS/Androidにも共通の録音・WAV・Backend TTS待機修正を反映したが、新しいiPhone/Android Playerの実機受入やApp Store再提出は実施していない。既存承認済みiOS0.2.5(19)は今回の修正を含む版ではない。
 
+## v0.2.5-beta.2への反映
+
+本記録の修正をデスクトップ新版へ反映。BackendのCSVを通常ナビから外し、旧URLと成果物を維持する。任意LLMは次の大型更新の方針として文書へ記録し、今回の実装済み機能と区別する。初期の検証候補v0.2.5-beta.1表示とは別に、新規タグへmanifestをpinしてWindows/Macをビルドする。iOSの再提出はこのGitHub更新の対象外。

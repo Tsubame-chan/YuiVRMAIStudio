@@ -2,11 +2,11 @@
 
 [FAQ](HELP.md) · [macOS](MAC_PUBLIC_BETA.md)
 
-現在のWindows配布版は **v0.2.4-beta.2**（ベータ版）です。
+現在のWindows配布版は **v0.2.5-beta.2**（ベータ版）です。
 
 ## アプリを使う
 
-1. [Release](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.2)から `YuiVRMAIStudio_WindowsPublicBeta_v0.2.4-beta.2_windows.zip` を取得します。
+1. [Release](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.5-beta.2)から `YuiVRMAIStudio_WindowsPublicBeta_v0.2.5-beta.2_windows.zip` を取得します。
 2. フォルダ全体を展開して `Yui VRM AI Studio.exe` を起動します。`YuiFilePickerHelper.exe` とDataフォルダ等を移動・削除しないでください。
 3. 初回案内を確認して、AI/音声とWindows runtimeを取得します。約2.5GBに加え展開用空き容量が必要です。通常Pythonを別に導入する必要はありません。
 4. 端末内AI、または設定したOpenAI APIで会話します。高品質なAPI会話にはAPIキー・通信・API利用料金が必要です。
@@ -43,3 +43,13 @@ notepad .env
 - APIが失敗: アプリのキーとモデル利用権、通信・利用枠を確認。
 
 English: download and extract the entire Windows app ZIP, keep the helper/Data files together, and confirm first-run data installation. Python is bundled. Local E2B/STT/VOICEVOX run through the bundled worker. API keys and charges apply to Direct API. See [HELP](HELP.md) for the English FAQ and [runtime support](RUNTIME_SUPPORT.md) for boundaries.
+
+## 既存Backendを更新する
+
+アプリZIPの更新だけでは、保存領域の既存YuiBackendは置き換わりません。旧Backendが優先されるため、今回の音声認識・TTS修正にはBackendも更新してください。
+
+1. アプリとBackend、Irodoriを終了し、使用中のYuiBackendフォルダーを非公開の場所へ丸ごとバックアップします。
+2. 同じReleaseの `YuiVRMAIStudio_BackendBundle_v0.2.5-beta.2_windows.zip` を別の空フォルダーへ展開します。
+3. 展開したYuiBackendの配布ファイルを、使用中のYuiBackendへ上書きコピーします。コピー先のフォルダー全体を削除・置換しないでください。既存の `.env`、`backend/data`、導入済み `YuiIrodoriV4` を保持します。配布ZIPは利用者のDB・設定・保存した声を含みません。
+4. WindowsのIrodori利用者は同じReleaseの新しいNVIDIA追加ZIPを別の場所へ展開し、そこからinstallerを使います。旧パッケージ内のハッシュ対象スクリプトだけを上書きしないでください。[手順](IRODORI_TTS_WINDOWS_NVIDIA.md)。
+5. 再起動して音声認識・会話・保存した声を短文で確認します。不具合があれば終了し、バックアップへ戻してください。
