@@ -153,3 +153,28 @@ def test_irodori_initial_library_offers_three_accepted_presets(dialect):
         assert audio.read_bytes()[:4]==b"RIFF" and "おかえりなさい" in text
     save(LibraryUpdate(revision=revision,**data),settings)
     assert len(load(settings)[0]["profiles"])==3
+
+@pytest.mark.parametrize("source,target", [("openai_speech", "irodori_openai_speech"), ("irodori_openai_speech", "openai_speech")])
+def test_untouched_factory_profiles_follow_builtin_dialect_without_rewriting_file(source, target):
+    from app.core.irodori_presets import profiles
+    from app.core.voice_library import library_path
+    old = Settings(http_tts_provider_id="irodori", http_tts_payload_format=source)
+    updated = old.model_copy(update={"http_tts_payload_format": target})
+    save(LibraryUpdate(revision="initial", endpoints=[], profiles=profiles(old)), old)
+    stored = library_path().read_bytes()
+    data, revision = load(updated)
+    assert data["profiles"] == profiles(updated)
+    for profile in data["profiles"]:
+        resolve_profile(profile["id"], TTSRequest(text="こんにちは。"), updated)
+    assert library_path().read_bytes() == stored
+    assert revision == load(old)[1]
+
+
+def test_custom_voice_tuning_is_not_silently_removed_on_dialect_change():
+    from app.core.irodori_presets import profiles
+    old = Settings(http_tts_provider_id="irodori", http_tts_payload_format="openai_speech")
+    custom = profiles(old)
+    custom[0]["parameters"]["voice_gender"] = "male"
+    save(LibraryUpdate(revision="initial", endpoints=[], profiles=custom), old)
+    data, _ = load(old.model_copy(update={"http_tts_payload_format": "irodori_openai_speech"}))
+    assert data["profiles"][0] == custom[0]

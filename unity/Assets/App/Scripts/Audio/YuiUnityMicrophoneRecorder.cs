@@ -75,16 +75,12 @@ namespace YuiPhysicalAI.Audio
 
             if (samplePosition <= 0 && !wasStillRecording && clip != null)
             {
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
                 // A disconnected/failed device can report stopped with position 0
                 // after a short recording. It does not prove the 60s clip is full.
                 samplePosition = ResolveStoppedSamplePosition(samplePosition, wasStillRecording,
                     clip.samples, clip.length, Time.realtimeSinceStartup - recordingStartedAt);
                 if (samplePosition == 0)
-                    Debug.LogWarning("Windows microphone stopped without a valid sample position; refusing a full-buffer recording.");
-#else
-                samplePosition = clip.samples;
-#endif
+                    Debug.LogWarning("Microphone stopped without a valid sample position; refusing a full-buffer recording.");
             }
 
             Clip = null;

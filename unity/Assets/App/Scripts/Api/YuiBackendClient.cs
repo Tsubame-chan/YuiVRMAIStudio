@@ -13,7 +13,10 @@ namespace YuiPhysicalAI.Api
 {
     public sealed partial class YuiBackendClient
     {
-        private static readonly HttpClient FallbackHttpClient = new HttpClient();
+        // Per-request cancellation below owns the deadline (TTS can exceed
+        // HttpClient's default 100 seconds on a cold model).
+        private static readonly HttpClient FallbackHttpClient = new HttpClient
+        { Timeout = System.Threading.Timeout.InfiniteTimeSpan };
 
         private readonly JsonSerializerSettings jsonSettings = new JsonSerializerSettings
         {
@@ -325,7 +328,7 @@ namespace YuiPhysicalAI.Api
             var json = JsonConvert.SerializeObject(body, jsonSettings);
             var bytes = Encoding.UTF8.GetBytes(json);
             using var request = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST);
-            request.timeout = 60;
+            request.timeout = 210;
             request.uploadHandler = new UploadHandlerRaw(bytes);
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Content-Type", "application/json; charset=utf-8");
@@ -343,7 +346,7 @@ namespace YuiPhysicalAI.Api
                     HttpMethod.Post,
                     url,
                     content,
-                    60,
+                    210,
                     "audio/wav",
                     cancellationToken);
                 return WavBytesToAudioClip(wavBytes, "YuiBackendAudio");
@@ -432,7 +435,8 @@ namespace YuiPhysicalAI.Api
             var bytes = Encoding.UTF8.GetBytes(json);
 
             using var request = new UnityWebRequest(ToAbsoluteUrl(path), UnityWebRequest.kHttpVerbPOST);
-            request.timeout = 60;
+            var timeoutSeconds = string.Equals(path, "/tts", StringComparison.Ordinal) ? 210 : 60;
+            request.timeout = timeoutSeconds;
             request.uploadHandler = new UploadHandlerRaw(bytes);
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Content-Type", "application/json; charset=utf-8");
@@ -451,7 +455,7 @@ namespace YuiPhysicalAI.Api
                     HttpMethod.Post,
                     ToAbsoluteUrl(path),
                     content,
-                    60,
+                    timeoutSeconds,
                     "application/json",
                     cancellationToken);
                 return Deserialize<TResponse>(responseJson);

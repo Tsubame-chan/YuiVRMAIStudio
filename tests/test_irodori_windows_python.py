@@ -46,7 +46,7 @@ class Stub {
     return executable
 
 
-@pytest.mark.parametrize("scenario", ["existing", "extracted-after-junction-failure", "wrong-version"])
+@pytest.mark.parametrize("scenario", ["existing", "extracted-after-junction-failure", "wrong-version", "wrong-existing-version"])
 def test_managed_python_resolver_handles_junction_failure(tmp_path, stub_executable, scenario):
     python_root = tmp_path / "日本語 空白"
     candidate = python_root / "cpython-3.11.17-windows-x86_64-none" / "python.exe"
@@ -63,11 +63,11 @@ def test_managed_python_resolver_handles_junction_failure(tmp_path, stub_executa
     log = tmp_path / "uv.log"
     env = dict(os.environ, YUI_FAKE_UV=str(stub_executable), YUI_FAKE_LOG=str(log),
                YUI_FAKE_PYTHON_ROOT=str(python_root),
-               YUI_FAKE_EXISTING=str(candidate) if scenario == "existing" else "",
-               YUI_FAKE_BAD_VERSION="1" if scenario == "wrong-version" else "0")
+               YUI_FAKE_EXISTING=str(candidate) if scenario in {"existing", "wrong-existing-version"} else "",
+               YUI_FAKE_BAD_VERSION="1" if scenario in {"wrong-version", "wrong-existing-version"} else "0")
     result = subprocess.run(["powershell.exe", "-NoProfile", "-File", str(harness)],
                             env=env, capture_output=True, text=True, encoding="utf-8")
-    if scenario == "wrong-version":
+    if scenario in {"wrong-version", "wrong-existing-version"}:
         assert result.returncode == 1
         assert "No Backend settings were changed" in result.stdout
     else:

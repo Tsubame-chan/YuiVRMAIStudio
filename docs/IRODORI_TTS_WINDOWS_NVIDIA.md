@@ -42,7 +42,7 @@ HTTP_TTS_IRODORI_CHUNKING_ENABLED=true
 HTTP_TTS_IRODORI_CHUNK_MIN_CHARS=1
 ```
 
-設定後にBackendを再起動します。`HTTP_TTS_VOICE=bright_natural` は声の説明から生成する設定です。声を固定する場合は、Irodoriサーバーに登録した声の名前を指定してください。
+設定後にBackendを再起動します。`HTTP_TTS_VOICE=bright_natural` は同梱の「明るく元気」参照音声を使う登録済みの声IDです。ほかの登録済み声を使う場合は、その声IDを指定してください。声の説明から自由生成する設定とは区別します。
 
 アプリのBackend URLには、Yui BackendのURL（同じPCなら通常 `http://127.0.0.1:8000`）を設定します。IrodoriのURLは `.env` の `HTTP_TTS_BASE_URL` へ設定してください。
 

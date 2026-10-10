@@ -132,6 +132,8 @@ async def test_lmstudio_chat_falls_back_from_plain_text() -> None:
 @pytest.mark.anyio
 @pytest.mark.parametrize("payload", [
     {}, {"choices": []}, {"choices": [None]},
+    {"choices": [{"message": {"content": "<think>private reasoning only</think>"}}]},
+    {"choices": [{"message": {"content": "<think>unfinished reasoning"}}]},
     {"choices": [{"message": {"content": "  "}}]},
     {"choices": [{"message": {"content": None, "reasoning_content": "private reasoning"}}]},
     {"choices": [{"message": {"tool_calls": [{"id": "internal-tool"}]}}]},
@@ -165,5 +167,16 @@ async def test_lmstudio_accepts_text_content_blocks() -> None:
     try:
         response = await provider.generate(ChatRequest(request_id="blocks-test", message="こんにちは"))
         assert response.text == "こんにちは。\n元気です。"
+    finally:
+        await provider._client.aclose()
+
+@pytest.mark.anyio
+async def test_lmstudio_does_not_display_or_speak_inline_reasoning():
+    provider = LMStudioChatProvider(Settings(chat_provider="lmstudio"), transport=httpx.MockTransport(
+        lambda _: httpx.Response(200, json={"choices": [{"message": {"content": "<think>internal deliberation</think>こんにちは。"}}]})))
+    try:
+        response = await provider.generate(ChatRequest(request_id="reasoning-test", message="こんにちは"))
+        assert response.text == "こんにちは。"
+        assert "internal" not in response.spoken_text
     finally:
         await provider._client.aclose()
