@@ -273,6 +273,8 @@ namespace YuiPhysicalAI.LocalAI
             var stagedRoot = Path.Combine(staging, "new");
             var backupRoot = Path.Combine(staging, "old");
             var committed = new List<string>();
+            YuiBackendVenvInstallTransaction backendVenv = null;
+            var preserveBackup = false;
             try
             {
                 Directory.CreateDirectory(stagedRoot);
@@ -283,6 +285,20 @@ namespace YuiPhysicalAI.LocalAI
                     if (!candidate.StartsWith(stagedRoot + Path.DirectorySeparatorChar, StringComparison.Ordinal)
                         || (!File.Exists(candidate) && !Directory.Exists(candidate)))
                         throw new InvalidDataException("Downloaded archive lacks required path: " + required);
+                }
+                if (string.Equals(asset.Kind, "desktop_backend_bundle", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (Directory.Exists(Path.Combine(stagedRoot, "backend", ".venv")))
+                    {
+                        // Include platform-required native libraries in validation
+                        // before discarding a working runtime's old files.
+                        var platform = asset.Platforms != null && asset.Platforms.Length > 0
+                            ? asset.Platforms[0] : YuiLocalAiModelRegistry.CurrentPlatformKey();
+                        var status = YuiLocalAiAssetInstallProbe.CheckAtInstallRoot(asset, stagedRoot, platform);
+                        if (!status.Installed) throw new InvalidDataException(status.Detail);
+                    }
+                    backendVenv = new YuiBackendVenvInstallTransaction(stagedRoot, installRoot, backupRoot);
+                    backendVenv.Install(cancellationToken);
                 }
                 foreach (var file in Directory.GetFiles(stagedRoot, "*", SearchOption.AllDirectories))
                 {
@@ -299,22 +315,38 @@ namespace YuiPhysicalAI.LocalAI
                     committed.Add(relative);
                     File.Move(file, target);
                 }
+                cancellationToken.ThrowIfCancellationRequested();
                 ApplyPostInstallPermissions(asset, installRoot);
+                cancellationToken.ThrowIfCancellationRequested();
             }
-            catch
+            catch (Exception installError)
             {
-                for (var i = committed.Count - 1; i >= 0; i--)
+                try
                 {
-                    var target = Path.Combine(installRoot, committed[i]);
-                    var backup = Path.Combine(backupRoot, committed[i]);
-                    if (File.Exists(target)) File.Delete(target);
-                    if (File.Exists(backup)) File.Move(backup, target);
+                    // Restore the runtime even if restoring a distribution file fails.
+                    try
+                    {
+                        for (var i = committed.Count - 1; i >= 0; i--)
+                        {
+                            var target = Path.Combine(installRoot, committed[i]);
+                            var backup = Path.Combine(backupRoot, committed[i]);
+                            if (File.Exists(target)) File.Delete(target);
+                            if (File.Exists(backup)) File.Move(backup, target);
+                        }
+                    }
+                    finally { backendVenv?.Rollback(); }
+                }
+                catch (Exception rollbackError)
+                {
+                    preserveBackup = true;
+                    throw new AggregateException("Backend update rollback failed. Backup retained at: " + staging,
+                        installError, rollbackError);
                 }
                 throw;
             }
             finally
             {
-                if (Directory.Exists(staging)) Directory.Delete(staging, true);
+                if (!preserveBackup && Directory.Exists(staging)) Directory.Delete(staging, true);
             }
             progress?.Report(new YuiLocalAiAssetDownloadProgress(asset.DisplayName ?? asset.Id, zipSize, asset.SizeBytes, 1f, "install"));
         }
