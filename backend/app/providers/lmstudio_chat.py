@@ -1,4 +1,3 @@
-import json
 from typing import Any
 
 import httpx
@@ -51,10 +50,12 @@ class LMStudioChatProvider(ChatProvider):
             response = await self._client.post("/chat/completions", json=payload)
             response.raise_for_status()
             text = self._extract_content(response.json())
+            if not text.strip():
+                raise ChatProviderError("Local model returned no assistant text. Check the model, output budget, and server response format.")
             parsed = self._openai_helpers._parse_fallback(text)
             if parsed is None:
                 parsed = OpenAIChatOutput(
-                    text=text.strip() or "ローカルモデルから空の返答が返ってきました。",
+                    text=text.strip(),
                     spoken_text="",
                     face="Neutral",
                     animation="idle_normal",
@@ -63,7 +64,12 @@ class LMStudioChatProvider(ChatProvider):
                     memory_action="none",
                     should_tts=True,
                 )
-            return self._openai_helpers._normalize_response(parsed, request)
+            result = self._openai_helpers._normalize_response(parsed, request)
+            if not result.text.strip():
+                raise ChatProviderError("Local model returned no assistant text after response normalization.")
+            return result
+        except ChatProviderError:
+            raise
         except httpx.HTTPError as exc:
             raise ChatProviderError(str(exc)) from exc
         except Exception as exc:
@@ -95,6 +101,8 @@ class LMStudioChatProvider(ChatProvider):
         return {"role": "user", "content": content}
 
     def _extract_content(self, payload: dict[str, Any]) -> str:
+        if not isinstance(payload, dict):
+            return ""
         choices = payload.get("choices")
         if not isinstance(choices, list) or not choices:
             return ""
@@ -108,11 +116,12 @@ class LMStudioChatProvider(ChatProvider):
                 return content
             if isinstance(content, list):
                 return "\n".join(
-                    str(item.get("text"))
+                    item["text"]
                     for item in content
-                    if isinstance(item, dict) and item.get("text")
+                    if isinstance(item, dict) and item.get("type") in {None, "text"}
+                    and isinstance(item.get("text"), str)
                 )
         text = first.get("text")
         if isinstance(text, str):
             return text
-        return json.dumps(payload, ensure_ascii=False)
+        return ""

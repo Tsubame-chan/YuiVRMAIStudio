@@ -23,7 +23,8 @@
       "startup_policy": "WarmTextOnly",
       "platforms": [
         "ios",
-        "macos"
+        "macos",
+        "windows"
       ],
       "notes": "Optional higher-quality model. Download and select in Settings; slower responses and increased device load.",
       "supports_thinking": true,
