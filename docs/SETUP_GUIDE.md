@@ -50,6 +50,6 @@ English: download and extract the entire Windows app ZIP, keep the helper/Data f
 
 1. アプリとBackend、Irodoriを終了し、使用中のYuiBackendフォルダーを非公開の場所へ丸ごとバックアップします。
 2. 同じReleaseの `YuiVRMAIStudio_BackendBundle_v0.2.5-beta.2_windows.zip` を別の空フォルダーへ展開します。
-3. 展開したYuiBackendの配布ファイルを、使用中のYuiBackendへ上書きコピーします。コピー先のフォルダー全体を削除・置換しないでください。既存の `.env`、`backend/data`、導入済み `YuiIrodoriV4` を保持します。配布ZIPは利用者のDB・設定・保存した声を含みません。
+3. `backend/.venv` は旧環境をバックアップへ移動してから、新版の環境全体へ置き換えます。内容を上書きマージすると古いパッケージ情報・モジュールが残ります。[共通更新手順](BACKEND_UPDATE.md)に従い、残りの配布ファイルを更新します。既存の `.env`、`backend/data`、導入済み `YuiIrodoriV4` とモデルは保持します。
 4. WindowsのIrodori利用者は同じReleaseの新しいNVIDIA追加ZIPを別の場所へ展開し、そこからinstallerを使います。旧パッケージ内のハッシュ対象スクリプトだけを上書きしないでください。[手順](IRODORI_TTS_WINDOWS_NVIDIA.md)。
 5. 再起動して音声認識・会話・保存した声を短文で確認します。不具合があれば終了し、バックアップへ戻してください。

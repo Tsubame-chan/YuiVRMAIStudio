@@ -224,6 +224,12 @@ namespace YuiPhysicalAI.LocalAI
             }
 
             var root = Path.Combine(assetStorageRoot ?? string.Empty, NormalizeRelativePath(asset.InstallRoot));
+            return CheckAtInstallRoot(asset, root, platform);
+        }
+
+        internal static YuiLocalAiAssetInstallStatus CheckAtInstallRoot(
+            YuiLocalAiReleaseAsset asset, string root, string platform)
+        {
             var installedPaths = asset.InstalledPaths ?? Array.Empty<string>();
             if(string.Equals(platform,"windows",StringComparison.OrdinalIgnoreCase)
                 && string.Equals(asset.Kind,"desktop_backend_bundle",StringComparison.OrdinalIgnoreCase))
