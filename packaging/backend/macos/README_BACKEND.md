@@ -30,6 +30,14 @@ Run:
 This command stops only services recorded as started by this installation.
 An engine started separately stays running; stop it in its own application.
 
+## Updating an existing Backend
+
+For an existing Backend, replace `backend/.venv` as a complete environment after
+stopping services and moving the old environment to private backup. Do not merge
+its contents: obsolete Python modules and version metadata would remain.
+Preserve Mac links/permissions, `.env`, `backend/data`, optional engines and models.
+See the [shared update procedure](https://github.com/Tsubame-chan/YuiVRMAIStudio/blob/main/docs/BACKEND_UPDATE.md).
+
 ## API Keys
 
 Set Backend API keys in its Console. The app’s Direct API key is separate.

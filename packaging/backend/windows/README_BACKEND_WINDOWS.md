@@ -46,6 +46,14 @@ Use **AI and voice** to configure providers and saved voices. Use **Connection a
 VOICEVOX, AivisSpeech and Irodori server applications are installed separately.
 See the [TTS installation guide](https://github.com/Tsubame-chan/YuiVRMAIStudio/blob/main/docs/BACKEND_TTS_GUIDE.md).
 
+## Updating an existing Backend
+
+For an existing Backend, replace `backend/.venv` as a complete environment after
+stopping services and moving the old environment to private backup. Do not merge
+its contents: obsolete Python modules and version metadata would remain.
+Retain `.env`, `backend/data`, optional engines and models. See the
+[shared update procedure](https://github.com/Tsubame-chan/YuiVRMAIStudio/blob/main/docs/BACKEND_UPDATE.md).
+
 ## Optional Irodori V4.1 (NVIDIA)
 
 The release has a separate optional Irodori V4.1 package with the INT8 model,
