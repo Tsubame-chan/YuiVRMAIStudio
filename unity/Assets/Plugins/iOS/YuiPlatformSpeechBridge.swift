@@ -39,12 +39,67 @@ private func yuiSpeechParse(_ requestJsonPointer: UnsafePointer<CChar>?) -> [Str
     return try? JSONSerialization.jsonObject(with: data) as? [String: Any]
 }
 
+// One state per managed request. Completion/cancellation share the callback lock;
+// late buffers cannot mutate data after the worker returns.
+final class YuiSpeechOperation {
+    let lock = NSLock()
+    let semaphore = DispatchSemaphore(value: 0)
+    private(set) var completed = false
+    private(set) var cancelled = false
+    private var stop: (() -> Void)?
+
+    func finishLocked() { completed = true; stop = nil; semaphore.signal() }
+    func installStop(_ action: @escaping () -> Void) {
+        lock.lock(); let shouldStop = completed
+        if !completed { stop = action }
+        lock.unlock()
+        if shouldStop { DispatchQueue.main.async(execute: action) }
+    }
+    func cancel() {
+        lock.lock()
+        guard !completed else { lock.unlock(); return }
+        let action = stop; cancelled = true; finishLocked(); lock.unlock()
+        if let action { DispatchQueue.main.async(execute: action) }
+    }
+    func expire() {
+        lock.lock()
+        guard !completed else { lock.unlock(); return }
+        completed = true; let action = stop; stop = nil; lock.unlock()
+        if let action { DispatchQueue.main.async(execute: action) }
+    }
+}
+private let yuiSpeechRegistryLock = NSLock()
+private var yuiSpeechOperations: [String: YuiSpeechOperation] = [:]
+
+@_cdecl("YuiPlatformSpeechBridge_Begin")
+public func YuiPlatformSpeechBridge_Begin(_ id: UnsafePointer<CChar>?) {
+    guard let id else { return }
+    yuiSpeechRegistryLock.lock(); defer { yuiSpeechRegistryLock.unlock() }
+    yuiSpeechOperations[String(cString: id)] = YuiSpeechOperation()
+}
+@_cdecl("YuiPlatformSpeechBridge_Cancel")
+public func YuiPlatformSpeechBridge_Cancel(_ id: UnsafePointer<CChar>?) {
+    guard let id else { return }
+    yuiSpeechRegistryLock.lock(); let operation = yuiSpeechOperations[String(cString: id)]; yuiSpeechRegistryLock.unlock()
+    operation?.cancel()
+}
+@_cdecl("YuiPlatformSpeechBridge_End")
+public func YuiPlatformSpeechBridge_End(_ id: UnsafePointer<CChar>?) {
+    guard let id else { return }
+    yuiSpeechRegistryLock.lock(); yuiSpeechOperations.removeValue(forKey: String(cString: id)); yuiSpeechRegistryLock.unlock()
+}
+private func yuiSpeechOperation(_ request: [String: Any]) -> YuiSpeechOperation {
+    yuiSpeechRegistryLock.lock(); defer { yuiSpeechRegistryLock.unlock() }
+    return yuiSpeechOperations[request["request_id"] as? String ?? ""] ?? YuiSpeechOperation()
+}
+
 @_cdecl("YuiPlatformSpeechBridge_Synthesize")
 public func YuiPlatformSpeechBridge_Synthesize(_ requestJsonPointer: UnsafePointer<CChar>?) -> UnsafePointer<CChar>? {
     guard let request = yuiSpeechParse(requestJsonPointer) else {
         return yuiSpeechError("invalid_request", "Platform TTS request is not valid JSON.")
     }
 
+    let operation = yuiSpeechOperation(request)
     let text = ((request["text"] as? String) ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
     if text.isEmpty {
         return yuiSpeechError("invalid_request", "Platform TTS text is empty.")
@@ -59,18 +114,24 @@ public func YuiPlatformSpeechBridge_Synthesize(_ requestJsonPointer: UnsafePoint
     utterance.volume = 1.0
 
     let synthesizer = AVSpeechSynthesizer()
-    let semaphore = DispatchSemaphore(value: 0)
+    let semaphore = operation.semaphore
     var pcmSamples = [Int16]()
     var sampleRate = 24000
     var failure: String?
 
-    synthesizer.write(utterance) { buffer in
+    operation.installStop { synthesizer.stopSpeaking(at: .immediate) }
+    DispatchQueue.main.async {
+      operation.lock.lock(); let finished = operation.completed; operation.lock.unlock()
+      guard !finished else { return }
+      synthesizer.write(utterance) { buffer in
+        operation.lock.lock(); defer { operation.lock.unlock() }
+        guard !operation.completed else { return }
         guard let pcmBuffer = buffer as? AVAudioPCMBuffer else {
             return
         }
 
         if pcmBuffer.frameLength == 0 {
-            semaphore.signal()
+            operation.finishLocked()
             return
         }
 
@@ -106,15 +167,18 @@ public func YuiPlatformSpeechBridge_Synthesize(_ requestJsonPointer: UnsafePoint
             }
         } else {
             failure = "Unsupported AVSpeech audio buffer format."
-            semaphore.signal()
+            operation.finishLocked()
         }
     }
 
+    }
     if semaphore.wait(timeout: .now() + 45) == .timedOut {
-        synthesizer.stopSpeaking(at: .immediate)
+        operation.expire()
         return yuiSpeechError("tts_timeout", "Platform TTS timed out.")
     }
 
+    operation.lock.lock(); defer { operation.lock.unlock() }
+    if operation.cancelled { return yuiSpeechError("cancelled", "Platform TTS was cancelled.") }
     if let failure {
         return yuiSpeechError("tts_error", failure)
     }
@@ -164,6 +228,7 @@ public func YuiPlatformSpeechBridge_Transcribe(_ requestJsonPointer: UnsafePoint
         return yuiSpeechError("invalid_request", "Platform STT request is not valid JSON.")
     }
 
+    let operation = yuiSpeechOperation(request)
     let audioPath = (request["audio_path"] as? String) ?? ""
     guard FileManager.default.fileExists(atPath: audioPath) else {
         return yuiSpeechError("audio_missing", "Recorded audio file was not found.")
@@ -194,17 +259,19 @@ public func YuiPlatformSpeechBridge_Transcribe(_ requestJsonPointer: UnsafePoint
         recognitionRequest.requiresOnDeviceRecognition = true
     }
 
-    let semaphore = DispatchSemaphore(value: 0)
+    let semaphore = operation.semaphore
     var timeline = YuiSpeechTranscriptTimeline()
-    let resultLock = NSLock()
-    var completed = false
+    let resultLock = operation.lock
     var confidence: Float?
     var failure: Error?
     var task: SFSpeechRecognitionTask?
-    task = recognizer.recognitionTask(with: recognitionRequest) { result, error in
+    DispatchQueue.main.async {
+      resultLock.lock(); let finished = operation.completed; resultLock.unlock()
+      guard !finished else { return }
+      task = recognizer.recognitionTask(with: recognitionRequest) { result, error in
         resultLock.lock()
         defer { resultLock.unlock() }
-        guard !completed else { return }
+        guard !operation.completed else { return }
         if let result {
             let transcription = result.bestTranscription
             let formatted = transcription.formattedString as NSString
@@ -218,28 +285,29 @@ public func YuiPlatformSpeechBridge_Transcribe(_ requestJsonPointer: UnsafePoint
             }, isFinal: result.isFinal, hasMetadata: result.speechRecognitionMetadata != nil)
             confidence = result.bestTranscription.segments.last?.confidence
             if result.isFinal {
-                completed = true
-                semaphore.signal()
+                operation.finishLocked()
             }
         }
         if let error {
             failure = error
-            completed = true
-            semaphore.signal()
+            operation.finishLocked()
         }
     }
 
+    }
+    operation.installStop { task?.cancel() }
     if semaphore.wait(timeout: .now() + 30) == .timedOut {
-        resultLock.lock(); completed = true; resultLock.unlock()
-        task?.cancel()
+        operation.expire()
         return yuiSpeechError("stt_timeout", "Platform STT timed out.")
     }
 
     resultLock.lock()
+    let wasCancelled = operation.cancelled
     let recognizedText = timeline.text
     let finalFailure = failure
     let finalConfidence = confidence
     resultLock.unlock()
+    if wasCancelled { return yuiSpeechError("cancelled", "Platform STT was cancelled.") }
     if let failure = finalFailure {
         return yuiSpeechError("stt_error", failure.localizedDescription)
     }

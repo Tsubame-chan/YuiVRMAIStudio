@@ -626,3 +626,56 @@ async def test_cold_irodori_has_longer_read_timeout_without_slow_connect(tmp_pat
         assert provider._client.timeout.connect == 10
     finally:
         await provider._client.aclose()
+
+
+@pytest.mark.anyio
+async def test_slow_audio_postprocess_does_not_block_other_requests(tmp_path, monkeypatch):
+    import asyncio
+    import threading
+    started, release = threading.Event(), threading.Event()
+    def slow_process(content, *args, **kwargs):
+        started.set()
+        assert release.wait(2), "postprocessing must not hold the event loop"
+        return content
+    monkeypatch.setattr(HttpTTSProvider, "_postprocess_audio", staticmethod(slow_process))
+    provider = HttpTTSProvider(Settings(_env_file=None, http_tts_base_url="https://tts.example.test"),
+        audio_dir=tmp_path, transport=httpx.MockTransport(lambda _: httpx.Response(200, content=b"RIFF-audio")))
+    task = asyncio.create_task(provider.synthesize(TTSRequest(text="slow")))
+    try:
+        assert await asyncio.wait_for(asyncio.to_thread(started.wait, 1), 1.5)
+        assert not task.done()
+        async def health():
+            await asyncio.sleep(0)
+            return "ok"
+        assert await asyncio.wait_for(health(), 0.2) == "ok"
+    finally:
+        release.set()
+        await task
+        await provider._client.aclose()
+    assert list(tmp_path.glob("http_*.wav"))
+
+
+@pytest.mark.anyio
+async def test_cancelled_postprocess_does_not_publish_audio(tmp_path, monkeypatch):
+    import asyncio
+    import threading
+    started, release, finished = threading.Event(), threading.Event(), threading.Event()
+    def slow_process(content, *args, **kwargs):
+        started.set()
+        release.wait(2)
+        finished.set()
+        return content
+    monkeypatch.setattr(HttpTTSProvider, "_postprocess_audio", staticmethod(slow_process))
+    provider = HttpTTSProvider(Settings(_env_file=None, http_tts_base_url="https://tts.example.test"),
+        audio_dir=tmp_path, transport=httpx.MockTransport(lambda _: httpx.Response(200, content=b"RIFF-audio")))
+    task = asyncio.create_task(provider.synthesize(TTSRequest(text="cancel")))
+    try:
+        assert await asyncio.wait_for(asyncio.to_thread(started.wait, 1), 1.5)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+    finally:
+        release.set()
+        assert await asyncio.to_thread(finished.wait, 2)
+        await provider._client.aclose()
+    assert not list(tmp_path.glob("http_*"))

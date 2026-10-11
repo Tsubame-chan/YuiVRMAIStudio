@@ -37,7 +37,7 @@ The images show the real app with the included Unity-chan. Captions are Japanese
 | Windows | [Windows app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.5-beta.3/YuiVRMAIStudio_WindowsPublicBeta_v0.2.5-beta.3_windows.zip) |
 | iPhone / iPad | iOS 26+. [App Store](https://apps.apple.com/jp/app/id6815341780): free Japan release |
 
-The desktop version is **v0.2.5-beta.3**. It includes the Backend Console, saved voices and paired character sync. See [Backend setup](docs/BACKEND_CONSOLE.md). Extract the ZIP, open the app and follow the first-run data notice. Allow approximately 2.5GB of downloads plus room for extraction; Wi-Fi is recommended. Mac signing/notarization is not yet provided. Setup: [Mac](docs/MAC_PUBLIC_BETA.en.md) / [Windows](docs/SETUP_GUIDE.md).
+iOS **0.2.5** is public on the App Store. iOS **0.2.6 (20)** was submitted for review on 2026-10-11 and is not yet public. The desktop version is **v0.2.5-beta.3**. It includes the Backend Console, saved voices and paired character sync. See [Backend setup](docs/BACKEND_CONSOLE.md). Extract the ZIP, open the app and follow the first-run data notice. Allow approximately 2.5GB of downloads plus room for extraction; Wi-Fi is recommended. Mac signing/notarization is not yet provided. Setup: [Mac](docs/MAC_PUBLIC_BETA.en.md) / [Windows](docs/SETUP_GUIDE.md).
 
 **GitHub's “Code → Download ZIP” is source code.** To use the app, choose a download above.
 
@@ -49,7 +49,9 @@ The desktop version is **v0.2.5-beta.3**. It includes the Backend Console, saved
 
 Choose **offline, on-device AI** or **OpenAI API**. The lightweight E2B model is standard; Mac, Windows and iOS offer optional E4B for better responses at the cost of longer waits and higher device load. OpenAI API is recommended for higher-quality conversation. **An API key and API charges are required**, separately from a ChatGPT subscription.
 
-Standard speech uses five Japanese VOICEVOX voices. Mac/iOS version 0.2.5 and later offer optional downloads in settings: three Japanese Irodori voices (about 1.96GB) and six English Kokoro voices (about 67.4MB). These additional voices are not included in the older iOS 0.2.4 or desktop v0.2.4-beta.2 apps. See [Voice downloads](docs/LOCAL_AI_ASSETS.md), [Help](docs/HELP.md), [Backend Console](docs/BACKEND_CONSOLE.md) and the [Backend TTS installation guide (Japanese)](docs/BACKEND_TTS_GUIDE.md).
+Standard speech uses five Japanese VOICEVOX voices. Mac/iOS version 0.2.5 and later offer optional downloads in settings: three Japanese Irodori voices (about 1.96GB) and six English Kokoro voices (about 67.4MB). These additional voices are not included in the older iOS 0.2.4 or desktop v0.2.4-beta.2 apps. Windows NVIDIA users can add V4.1 INT8 through the [Backend Console](docs/BACKEND_ASSET_DOWNLOADS.md#english). See [Voice downloads](docs/LOCAL_AI_ASSETS.md), [Help](docs/HELP.md), [Backend Console](docs/BACKEND_CONSOLE.md) and the [Backend TTS installation guide (Japanese)](docs/BACKEND_TTS_GUIDE.md).
+
+The source also includes improvements to speech cancellation, Backend startup waits and audio postprocessing, plus shared release metadata. These changes target the next update and are not included in the existing downloads. See [fixes and validation scope](docs/SOURCE_REVIEW_20261011.md).
 
 ## Desktop v0.2.5-beta.3 changes
 
@@ -57,7 +59,7 @@ Standard speech uses five Japanese VOICEVOX voices. Mac/iOS version 0.2.5 and la
 - Percentage-based download progress, balanced dialog spacing and clearer saved voice names.
 - Replace the entire bundled Python environment during Backend updates, restoring it on failure while preserving settings, databases and models.
 
-See [voice downloads](docs/BACKEND_ASSET_DOWNLOADS.md) and [safe Backend updates](docs/BACKEND_UPDATE.md). Native acceptance of the new Windows acquisition flow is ongoing.
+See [voice downloads](docs/BACKEND_ASSET_DOWNLOADS.md#english) and [safe Backend updates](docs/BACKEND_UPDATE.md). Native acceptance of the new Windows acquisition flow is ongoing.
 
 ## Desktop v0.2.5-beta.2 changes
 

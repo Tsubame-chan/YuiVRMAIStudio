@@ -3,10 +3,17 @@ param(
     [switch]$RequireBuilds,
     [ValidateSet("windows", "macos", "all")]
     [string]$Platform = "windows",
-    [string]$ReleaseVersion = $(if ($env:YUI_RELEASE_VERSION) { $env:YUI_RELEASE_VERSION } else { "v0.2.0-beta.3" })
+    [string]$ReleaseVersion = $(if ($env:YUI_RELEASE_VERSION) { $env:YUI_RELEASE_VERSION } else { "" })
 )
 
 $ErrorActionPreference = "Stop"
+if (-not $ReleaseVersion) {
+    $metadataPath = Join-Path $ProjectRoot "backend/app/core/release_versions.json"
+    $ReleaseVersion = (Get-Content -LiteralPath $metadataPath -Raw | ConvertFrom-Json).desktop_tag
+}
+if ($ReleaseVersion -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$') {
+    throw "Invalid release version: $ReleaseVersion"
+}
 $organizationIdField = "organization" + "Id"
 $organizationIdPattern = $organizationIdField + ":[ \t]*[^\r\n \t]+"
 $privateHashRules = @(

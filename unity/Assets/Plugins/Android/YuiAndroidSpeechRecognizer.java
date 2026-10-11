@@ -12,6 +12,7 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import com.unity3d.player.UnityPlayer;
 import java.util.ArrayList;
+import org.json.JSONObject;
 
 public final class YuiAndroidSpeechRecognizer {
     private static final String CANCELLED = "__YUI_CANCELLED__";
@@ -19,7 +20,7 @@ public final class YuiAndroidSpeechRecognizer {
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
 
     private static SpeechRecognizer recognizer;
-    private static String callbackObjectName;
+    private static String activeRequestId;
 
     private YuiAndroidSpeechRecognizer() {
     }
@@ -29,92 +30,96 @@ public final class YuiAndroidSpeechRecognizer {
         return activity != null && SpeechRecognizer.isRecognitionAvailable(activity);
     }
 
-    public static void start(String callback, String languageCode) {
-        callbackObjectName = callback == null ? "" : callback;
-        MAIN.post(() -> startOnMain(languageCode == null || languageCode.trim().isEmpty() ? "ja-JP" : languageCode));
+    public static void start(String callback, String requestId, String languageCode) {
+        MAIN.post(() -> startOnMain(callback, requestId,
+            languageCode == null || languageCode.trim().isEmpty() ? "ja-JP" : languageCode));
     }
 
-    public static void cancel() {
+    public static void cancel(String requestId) {
         MAIN.post(() -> {
+            if (requestId == null || !requestId.equals(activeRequestId)) return;
+            activeRequestId = null;
             if (recognizer != null) {
-                try {
-                    recognizer.cancel();
-                } catch (Throwable ignored) {
-                    // Best effort cancellation.
-                }
+                try { recognizer.cancel(); } catch (Throwable ignored) { }
                 destroyRecognizer();
             }
         });
     }
 
-    private static void startOnMain(String languageCode) {
+    private static void startOnMain(String callback, String requestId, String languageCode) {
+        activeRequestId = requestId;
+        destroyRecognizer();
         Activity activity = UnityPlayer.currentActivity;
         if (activity == null) {
-            send(ERROR_PREFIX + "Unity Activity is not available.");
+            send(callback, requestId, ERROR_PREFIX + "Unity Activity is not available.");
             return;
         }
 
         if (activity.checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            send(ERROR_PREFIX + "Microphone permission is not granted.");
+            send(callback, requestId, ERROR_PREFIX + "Microphone permission is not granted.");
             return;
         }
 
         if (!SpeechRecognizer.isRecognitionAvailable(activity)) {
-            send(ERROR_PREFIX + "Android speech recognition service is not available on this device.");
+            send(callback, requestId, ERROR_PREFIX + "Android speech recognition service is not available on this device.");
             return;
         }
 
-        destroyRecognizer();
-        recognizer = SpeechRecognizer.createSpeechRecognizer(activity);
-        recognizer.setRecognitionListener(new RecognitionListener() {
-            @Override public void onReadyForSpeech(Bundle params) { }
-            @Override public void onBeginningOfSpeech() { }
-            @Override public void onRmsChanged(float rmsdB) { }
-            @Override public void onBufferReceived(byte[] buffer) { }
-            @Override public void onEndOfSpeech() { }
-            @Override public void onPartialResults(Bundle partialResults) { }
-            @Override public void onEvent(int eventType, Bundle params) { }
-
-            @Override
-            public void onError(int error) {
-                destroyRecognizer();
-                if (error == SpeechRecognizer.ERROR_CLIENT
-                    || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
-                    || error == SpeechRecognizer.ERROR_NO_MATCH) {
-                    send(CANCELLED);
-                    return;
-                }
-
-                send(ERROR_PREFIX + errorMessage(error));
-            }
-
-            @Override
-            public void onResults(Bundle results) {
-                destroyRecognizer();
-                ArrayList<String> matches = results == null
-                    ? null
-                    : results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                if (matches == null || matches.isEmpty() || matches.get(0) == null || matches.get(0).trim().isEmpty()) {
-                    send(ERROR_PREFIX + "Android speech recognition returned an empty transcript.");
-                    return;
-                }
-
-                send(matches.get(0));
-            }
-        });
-
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageCode);
-        intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
-        intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
-        intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, activity.getPackageName());
-
         try {
+            recognizer = SpeechRecognizer.createSpeechRecognizer(activity);
+            recognizer.setRecognitionListener(new RecognitionListener() {
+                @Override public void onReadyForSpeech(Bundle params) { }
+                @Override public void onBeginningOfSpeech() { }
+                @Override public void onRmsChanged(float rmsdB) { }
+                @Override public void onBufferReceived(byte[] buffer) { }
+                @Override public void onEndOfSpeech() { }
+                @Override public void onPartialResults(Bundle partialResults) { }
+                @Override public void onEvent(int eventType, Bundle params) { }
+
+                @Override
+                public void onError(int error) {
+                    if (!requestId.equals(activeRequestId)) return;
+                    activeRequestId = null;
+                    destroyRecognizer();
+                    if (error == SpeechRecognizer.ERROR_CLIENT
+                        || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
+                        || error == SpeechRecognizer.ERROR_NO_MATCH) {
+                        send(callback, requestId, CANCELLED);
+                        return;
+                    }
+
+                    send(callback, requestId, ERROR_PREFIX + errorMessage(error));
+                }
+
+                @Override
+                public void onResults(Bundle results) {
+                    if (!requestId.equals(activeRequestId)) return;
+                    activeRequestId = null;
+                    destroyRecognizer();
+                    ArrayList<String> matches = results == null
+                        ? null
+                        : results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                    if (matches == null || matches.isEmpty() || matches.get(0) == null || matches.get(0).trim().isEmpty()) {
+                        send(callback, requestId, ERROR_PREFIX + "Android speech recognition returned an empty transcript.");
+                        return;
+                    }
+
+                    send(callback, requestId, matches.get(0));
+                }
+            });
+
+            Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageCode);
+            intent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false);
+            intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
+            intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, activity.getPackageName());
+
             recognizer.startListening(intent);
         } catch (Throwable ex) {
+            activeRequestId = null;
             destroyRecognizer();
-            send(ERROR_PREFIX + message(ex));
+            send(callback, requestId, ERROR_PREFIX + message(ex));
         }
     }
 
@@ -131,9 +136,14 @@ public final class YuiAndroidSpeechRecognizer {
         recognizer = null;
     }
 
-    private static void send(String message) {
-        if (callbackObjectName != null && !callbackObjectName.isEmpty()) {
-            UnityPlayer.UnitySendMessage(callbackObjectName, "OnAndroidSpeechResult", message == null ? "" : message);
+    private static void send(String callback, String requestId, String message) {
+        if (callback != null && !callback.isEmpty()) {
+            try {
+                JSONObject payload = new JSONObject();
+                payload.put("request_id", requestId);
+                payload.put("message", message == null ? "" : message);
+                UnityPlayer.UnitySendMessage(callback, "OnAndroidSpeechResult", payload.toString());
+            } catch (Exception ignored) { }
         }
     }
 

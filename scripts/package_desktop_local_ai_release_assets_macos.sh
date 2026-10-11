@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${YUI_RELEASE_VERSION:-v0.2.0-beta.5}"
+VERSION="$(python3 "$ROOT_DIR/scripts/release_version.py")"
 OUT_DIR="${YUI_RELEASE_OUT_DIR:-$ROOT_DIR/releases/$VERSION}"
 PACKAGE_NAME="YuiVRMAIStudio_LocalAIAssets_DesktopMinimum_${VERSION}.zip"
 BACKEND_PACKAGE_NAME="YuiVRMAIStudio_BackendBundle_${VERSION}_macos.zip"

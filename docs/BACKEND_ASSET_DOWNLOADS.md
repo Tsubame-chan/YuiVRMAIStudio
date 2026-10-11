@@ -22,3 +22,11 @@ Desktop v0.2.5-beta.3から利用できます。旧v0.2.5-beta.2では、Windows
 導入後に生成できない場合は「データを再検証・修復」を使います。既に追加音声を使用している場合、修復中はその音声エンジンの再起動が必要になります。声の選択・編集は保持します。
 
 管理対象は通常 `backend/data/addons` です。管理画面の設定保存先を変更した場合は、その隣の `addons` に保存します。モデル・キャッシュ・個別の依存環境は公開GitやBackend配布ビルドへ含めません。
+
+## English
+
+Desktop v0.2.5-beta.3 supports background Irodori acquisition from Backend Console → AI and speech → Read-aloud → Add Irodori voices. Review the download size and required disk space before starting. Progress is shown as a percentage; verification, dependency installation and voice preparation are separate phases. You can use other screens while downloading. Open the bottom banner for details, cancellation or retry. Connected compatible apps display Backend progress; manage cancellation and retry in the Console on that PC.
+
+Apple Silicon Mac uses V4.1 Small MLX 8bit (about 1.39 GB), a separate Python 3.12 environment and mlx-audio 0.5.8; allow about 5 GiB free. Windows NVIDIA uses V4.1 Small INT8 (about 1.21 GB archive), a separate Python 3.11 environment, Git for Windows and a CUDA 12.8-compatible driver; allow about 10 GiB free. This Windows option does not support CPU/AMD GPUs. Its fixed package is reused from v0.2.5-beta.2; native Windows acceptance of the new automatic installer remains pending.
+
+Readiness includes actual synthesis. Refresh the voice list to add the three synthetic reference presets (bright, gentle and calm), then assign a saved Backend voice in the app. Existing settings, saved voices and API keys are preserved. Retry reuses verified files. Repair rechecks the installation and may restart an active added TTS engine. The Backend stops only servers it owns. User-installed models and environments stay under `backend/data/addons` (or beside a custom settings store) and are excluded from source and distribution bundles. These Backend weights are separate from the mobile CoreML download.

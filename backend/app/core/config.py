@@ -1,6 +1,8 @@
 from functools import lru_cache
 from pathlib import Path
 
+from app.core.release_version import desktop_version
+
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -33,7 +35,7 @@ class Settings(BaseSettings):
         frozen=True,
     )
 
-    app_version: str = "0.2.0-beta.5"
+    app_version: str = desktop_version()
     character_name: str = "Yui"
 
     database_url: str = "sqlite:///./data/yui.db"

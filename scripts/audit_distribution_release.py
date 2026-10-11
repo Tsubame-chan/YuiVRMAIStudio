@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import hashlib
 import os
 import re
@@ -80,6 +81,10 @@ DESCEND_SKIP_DIR_NAMES = {
 PRIVATE_PATTERN_FILE = "scripts/audit_private_patterns.txt"
 
 REQUIRED_SOURCE_PATHS = [
+    ("backend/app/core/release_versions.json", "builds and runtime settings need shared release metadata"),
+    ("backend/app/core/release_version.py", "Backend and packaging need the validated release reader"),
+    ("scripts/release_version.py", "package scripts need the shared release entrypoint"),
+    ("unity/Assets/App/Editor/YuiReleaseVersionMetadata.cs", "public Unity builds need the release metadata reader"),
     ("unity/Assets/App/Editor/YuiCredentialStoreBuild.cs", "macOS key storage must be built and checked"),
     ("unity/Assets/Plugins/iOS/YuiCredentialStore.mm", "Apple API keys require Keychain integration"),
     ("docs/PRIVACY.md", "users need the data handling policy"),
@@ -105,7 +110,7 @@ REQUIRED_SOURCE_PATHS = [
     ("docs/LOCAL_AI_ASSETS.md", "source builders need local AI/TTS asset instructions"),
 ]
 
-DEFAULT_RELEASE_VERSION = "v0.2.0-beta.3"
+DEFAULT_RELEASE_VERSION = json.loads((Path(__file__).resolve().parents[1] / "backend/app/core/release_versions.json").read_text(encoding="utf-8"))["desktop_tag"]
 
 FORBIDDEN_ZIP_ENTRY_PATTERNS = [
     re.compile(r"(^|/)__MACOSX(/|$)"),

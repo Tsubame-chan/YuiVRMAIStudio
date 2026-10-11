@@ -33,6 +33,11 @@ class DistributionEntrypointTests(unittest.TestCase):
             (root / "scripts").mkdir()
             script = root / "scripts/package_minimum_local_ai_assets_macos.sh"
             shutil.copy2(ROOT / "scripts" / script.name, script)
+            shutil.copy2(ROOT / "scripts/release_version.py", root / "scripts/release_version.py")
+            core = root / "backend/app/core"
+            core.mkdir(parents=True)
+            for name in ("release_version.py", "release_versions.json"):
+                shutil.copy2(ROOT / "backend/app/core" / name, core / name)
             assets = root / "unity/Assets/StreamingAssets/YuiLocalAI"
             files = {
                 "local_ai_model_packs.json": "{}",
@@ -51,10 +56,10 @@ class DistributionEntrypointTests(unittest.TestCase):
                 path = assets / name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(content)
-            env = dict(os.environ, YUI_RELEASE_VERSION="test", YUI_RELEASE_SPLIT="0")
+            env = dict(os.environ, YUI_RELEASE_VERSION="v9.8.7-test", YUI_RELEASE_SPLIT="0")
             result = subprocess.run(["bash", str(script)], env=env, capture_output=True, text=True)
             self.assertEqual(result.returncode, 0, result.stderr)
-            with zipfile.ZipFile(root / "releases/test/YuiVRMAIStudio_LocalAIAssets_Minimum_test.zip") as archive:
+            with zipfile.ZipFile(root / "releases/v9.8.7-test/YuiVRMAIStudio_LocalAIAssets_Minimum_v9.8.7-test.zip") as archive:
                 names = archive.namelist()
                 self.assertTrue(any(name.endswith("/gemma-4-E2B-it.litertlm") for name in names))
                 self.assertTrue(any(name.endswith("/meimei_himari_1.vvm") for name in names))

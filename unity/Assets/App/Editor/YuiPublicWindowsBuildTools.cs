@@ -17,7 +17,6 @@ namespace YuiPhysicalAI.Editor
         private const string IconPath = "Assets/App/Art/Yui_icon.png";
         private const string WindowsExeName = "Yui VRM AI Studio.exe";
         private const string MacAppName = "Yui VRM AI Studio.app";
-        private const string DefaultReleaseVersion = "v0.2.5-beta.3";
         private const string PublicProfileDefine = "YUI_PROFILE_PUBLIC";
 
         [MenuItem("Yui/Build/Build Windows Public Beta", false, 501)]
@@ -222,7 +221,7 @@ namespace YuiPhysicalAI.Editor
         private static string PublicBuildVersionTag()
         {
             var value = Environment.GetEnvironmentVariable("YUI_RELEASE_VERSION");
-            return string.IsNullOrWhiteSpace(value) ? DefaultReleaseVersion : value.Trim();
+            return string.IsNullOrWhiteSpace(value) ? YuiReleaseVersionMetadata.Read("desktop_tag") : value.Trim();
         }
 
         private static string PublicBuildVersion()

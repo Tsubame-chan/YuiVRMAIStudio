@@ -104,12 +104,13 @@ namespace YuiPhysicalAI.Backend
                 }, cancellationToken);
                 UnityEngine.Debug.Log(launchStatus);
 
-                localServicesChecked = true;
                 startedByThisProcess = File.Exists(ownershipFile);
                 await WaitUntilHealthyAsync(configuredBackendUrl, TimeSpan.FromSeconds(startupTimeoutSeconds), cancellationToken);
+                localServicesChecked = true;
             }
             catch (Exception ex) when (!(ex is OperationCanceledException))
             {
+                localServicesChecked = false;
                 UnityEngine.Debug.LogWarning($"Yui bundled backend auto-start failed: {ex.Message}");
             }
         }
@@ -135,6 +136,10 @@ namespace YuiPhysicalAI.Backend
 
                     return IsHealthyPayload(await response.Content.ReadAsStringAsync());
                 }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch
             {
@@ -178,6 +183,8 @@ namespace YuiPhysicalAI.Backend
 
                 await Task.Delay(1000, cancellationToken);
             }
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new TimeoutException($"Bundled Backend did not become healthy within {timeout.TotalSeconds:0} seconds: {url}");
         }
 
         private void StopOwnedBackendProcesses()

@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using Newtonsoft.Json.Linq;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
 using UnityEngine.Android;
@@ -16,7 +17,15 @@ namespace YuiPhysicalAI.LocalAI
         private const string Cancelled = "__YUI_CANCELLED__";
         private const string ErrorPrefix = "__YUI_ERROR__:";
 
-        private static TaskCompletionSource<YuiPlatformSpeechTranscriptionResult> pending;
+        private sealed class RecognitionRequest
+        {
+            public readonly string Id = Guid.NewGuid().ToString("N");
+            public readonly TaskCompletionSource<YuiPlatformSpeechTranscriptionResult> Completion =
+                new TaskCompletionSource<YuiPlatformSpeechTranscriptionResult>(TaskCreationOptions.RunContinuationsAsynchronously);
+            public Action CancelNative;
+        }
+        private static readonly object RequestLock = new object();
+        private static RecognitionRequest pending;
         private static YuiAndroidSpeechRecognizer bridge;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -51,94 +60,124 @@ namespace YuiPhysicalAI.LocalAI
             CancellationToken cancellationToken = default)
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
-            if (pending != null)
-            {
-                return YuiPlatformSpeechTranscriptionResult.Error("busy", "Speech recognition is already running.");
-            }
-
-            if (!await EnsureMicrophonePermissionAsync(cancellationToken))
-            {
-                return YuiPlatformSpeechTranscriptionResult.Error("permission_denied", "Microphone permission was not granted.");
-            }
-
             EnsureBridge();
-            pending = new TaskCompletionSource<YuiPlatformSpeechTranscriptionResult>();
-            var registration = cancellationToken.Register(Cancel);
-            try
+            return await RunRecognitionAsync(EnsureMicrophonePermissionAsync, id =>
             {
-                using (var bridgeClass = new AndroidJavaClass(JavaClassName))
-                {
-                    bridgeClass.CallStatic("start", BridgeObjectName, string.IsNullOrWhiteSpace(languageCode) ? "ja-JP" : languageCode);
-                }
-
-                return await pending.Task;
-            }
-            catch (Exception ex)
+                using var bridgeClass = new AndroidJavaClass(JavaClassName);
+                bridgeClass.CallStatic("start", BridgeObjectName, id,
+                    string.IsNullOrWhiteSpace(languageCode) ? "ja-JP" : languageCode);
+            }, id =>
             {
-                var completion = pending;
-                pending = null;
-                completion?.TrySetResult(YuiPlatformSpeechTranscriptionResult.Error("bridge_error", ex.Message));
-                return YuiPlatformSpeechTranscriptionResult.Error("bridge_error", ex.Message);
-            }
-            finally
-            {
-                registration.Dispose();
-            }
+                using var bridgeClass = new AndroidJavaClass(JavaClassName);
+                bridgeClass.CallStatic("cancel", id);
+            }, cancellationToken);
 #else
             return await Task.FromResult(YuiPlatformSpeechTranscriptionResult.Error("platform_unsupported", "Android speech recognition is not available."));
 #endif
         }
 
-        public static void Cancel()
+        // Kept platform independent so cancellation and late native callbacks can be tested.
+        public static async Task<YuiPlatformSpeechTranscriptionResult> RunRecognitionAsync(
+            Func<CancellationToken, Task<bool>> requestPermission, Action<string> startNative,
+            Action<string> cancelNative, CancellationToken cancellationToken)
         {
-#if UNITY_ANDROID && !UNITY_EDITOR
+            cancellationToken.ThrowIfCancellationRequested();
+            var request = new RecognitionRequest();
+            var context = SynchronizationContext.Current;
+            request.CancelNative = () =>
+            {
+                void Stop(object _) { try { cancelNative(request.Id); }
+                    catch (Exception ex) { Debug.LogWarning("Android speech cancel failed: " + ex.Message); } }
+                // JNI/Unity work belongs to the caller's Unity thread, not a token worker.
+                if (context != null) context.Post(Stop, null); else Stop(null);
+            };
+            lock (RequestLock)
+            {
+                if (pending != null)
+                    return YuiPlatformSpeechTranscriptionResult.Error("busy", "Speech recognition is already running.");
+                pending = request;
+            }
+            using var registration = cancellationToken.Register(() => CancelRequest(request, cancellationToken));
             try
             {
-                using (var bridgeClass = new AndroidJavaClass(JavaClassName))
+                var permission = requestPermission(cancellationToken);
+                // Stop also settles a request whose OS permission dialog has not returned.
+                var ready = await Task.WhenAny(permission, request.Completion.Task);
+                if (ready == request.Completion.Task)
                 {
-                    bridgeClass.CallStatic("cancel");
+                    _ = permission.ContinueWith(t => { _ = t.Exception; },
+                        CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                        TaskScheduler.Default);
+                    return await request.Completion.Task;
                 }
+                if (!await permission)
+                    return YuiPlatformSpeechTranscriptionResult.Error("permission_denied", "Microphone permission was not granted.");
+                cancellationToken.ThrowIfCancellationRequested();
+                lock (RequestLock)
+                {
+                    // Serialize start with cancel; a queued cancel cannot precede a later start.
+                    if (ReferenceEquals(pending, request)) startNative(request.Id);
+                }
+                return await request.Completion.Task;
             }
+            catch (OperationCanceledException) { throw; }
             catch (Exception ex)
             {
-                Debug.LogWarning($"Android speech recognizer cancel failed: {ex.Message}");
+                request.CancelNative();
+                return YuiPlatformSpeechTranscriptionResult.Error("bridge_error", ex.Message);
             }
-#endif
+            finally
+            {
+                lock (RequestLock) { if (ReferenceEquals(pending, request)) pending = null; }
+            }
         }
 
-        public void OnAndroidSpeechResult(string message)
+        public static void Cancel()
         {
-            var completion = pending;
-            pending = null;
-            if (completion == null)
-            {
-                return;
-            }
+            RecognitionRequest request;
+            lock (RequestLock) request = pending;
+            CancelRequest(request, default);
+        }
 
-            if (string.Equals(message, Cancelled, StringComparison.Ordinal))
+        private static void CancelRequest(RecognitionRequest request, CancellationToken token)
+        {
+            lock (RequestLock)
             {
+                if (request == null || !ReferenceEquals(pending, request)) return;
+                pending = null;
+            }
+            request.CancelNative();
+            if (token.IsCancellationRequested) request.Completion.TrySetCanceled(token);
+            else request.Completion.TrySetResult(YuiPlatformSpeechTranscriptionResult.Error("cancelled", "Speech recognition was cancelled."));
+        }
+
+        public void OnAndroidSpeechResult(string message) => CompleteNativeResult(message);
+
+        public static void CompleteNativeResult(string message)
+        {
+            string id, result;
+            try
+            {
+                var payload = JObject.Parse(message ?? "");
+                id = (string)payload["request_id"];
+                result = (string)payload["message"];
+            }
+            catch { return; }
+            RecognitionRequest request;
+            lock (RequestLock)
+            {
+                request = pending;
+                if (request == null || request.Id != id) return;
+                pending = null;
+            }
+            var completion = request.Completion;
+            if (string.Equals(result, Cancelled, StringComparison.Ordinal))
                 completion.TrySetResult(YuiPlatformSpeechTranscriptionResult.Error("cancelled", "Speech recognition was cancelled."));
-                return;
-            }
-
-            if (!string.IsNullOrEmpty(message) && message.StartsWith(ErrorPrefix, StringComparison.Ordinal))
-            {
-                completion.TrySetResult(YuiPlatformSpeechTranscriptionResult.Error("recognizer_error", message.Substring(ErrorPrefix.Length)));
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(message))
-            {
+            else if (result != null && result.StartsWith(ErrorPrefix, StringComparison.Ordinal))
+                completion.TrySetResult(YuiPlatformSpeechTranscriptionResult.Error("recognizer_error", result.Substring(ErrorPrefix.Length)));
+            else if (string.IsNullOrWhiteSpace(result))
                 completion.TrySetResult(YuiPlatformSpeechTranscriptionResult.Error("empty_transcript", "Platform STT returned an empty transcript."));
-                return;
-            }
-
-            completion.TrySetResult(new YuiPlatformSpeechTranscriptionResult
-            {
-                Ok = true,
-                Text = message,
-                Confidence = null
-            });
+            else completion.TrySetResult(new YuiPlatformSpeechTranscriptionResult { Ok = true, Text = result, Confidence = null });
         }
 
         private static void EnsureBridge()
@@ -167,30 +206,32 @@ namespace YuiPhysicalAI.LocalAI
             }
 
             var completion = new TaskCompletionSource<bool>();
-            permissionCallbacks = new PermissionCallbacks();
-            permissionCallbacks.PermissionGranted += _ =>
+            cancellationToken.ThrowIfCancellationRequested();
+            var callbacks = new PermissionCallbacks();
+            permissionCallbacks = callbacks;
+            callbacks.PermissionGranted += _ =>
             {
-                permissionCallbacks = null;
+                if (ReferenceEquals(permissionCallbacks, callbacks)) permissionCallbacks = null;
                 completion.TrySetResult(true);
             };
-            permissionCallbacks.PermissionDenied += _ =>
+            callbacks.PermissionDenied += _ =>
             {
-                permissionCallbacks = null;
+                if (ReferenceEquals(permissionCallbacks, callbacks)) permissionCallbacks = null;
                 completion.TrySetResult(false);
             };
-            permissionCallbacks.PermissionDeniedAndDontAskAgain += _ =>
+            callbacks.PermissionDeniedAndDontAskAgain += _ =>
             {
-                permissionCallbacks = null;
+                if (ReferenceEquals(permissionCallbacks, callbacks)) permissionCallbacks = null;
                 completion.TrySetResult(false);
             };
 
             var registration = cancellationToken.Register(() =>
             {
-                permissionCallbacks = null;
+                if (ReferenceEquals(permissionCallbacks, callbacks)) permissionCallbacks = null;
                 completion.TrySetCanceled();
             });
             completion.Task.ContinueWith(_ => registration.Dispose());
-            Permission.RequestUserPermission(Permission.Microphone, permissionCallbacks);
+            Permission.RequestUserPermission(Permission.Microphone, callbacks);
             return completion.Task;
         }
 #endif

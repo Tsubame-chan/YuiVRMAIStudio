@@ -82,7 +82,8 @@ namespace YuiPhysicalAI.LocalAI
                 () =>
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var result = YuiPlatformSpeechBridge.Synthesize(request);
+                    var result = YuiPlatformSpeechBridge.Synthesize(request, cancellationToken);
+                    cancellationToken.ThrowIfCancellationRequested();
                     if (!result.Ok)
                     {
                         return new YuiLocalAiSpeechResponse

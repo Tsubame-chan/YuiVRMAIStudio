@@ -20,6 +20,9 @@ namespace YuiPhysicalAI.LocalAI
 
         [DllImport("__Internal")]
         private static extern void YuiPlatformSpeechBridge_Free(IntPtr pointer);
+        [DllImport("__Internal")] private static extern void YuiPlatformSpeechBridge_Begin(string id);
+        [DllImport("__Internal")] private static extern void YuiPlatformSpeechBridge_Cancel(string id);
+        [DllImport("__Internal")] private static extern void YuiPlatformSpeechBridge_End(string id);
         [DllImport("__Internal")] private static extern int YuiPlatformSpeechBridge_AuthorizationStatus();
         [DllImport("__Internal")] private static extern void YuiPlatformSpeechBridge_RequestAuthorization();
 #endif
@@ -74,15 +77,18 @@ namespace YuiPhysicalAI.LocalAI
             }
         }
 
-        public static YuiPlatformSpeechSynthesisResult Synthesize(YuiLocalAiSpeechRequest request)
+        public static YuiPlatformSpeechSynthesisResult Synthesize(YuiLocalAiSpeechRequest request, CancellationToken cancellationToken = default)
         {
             if (!CanSynthesize)
             {
                 return YuiPlatformSpeechSynthesisResult.Error("platform_unsupported", "Platform speech synthesis is not available.");
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+            var requestId = Guid.NewGuid().ToString("N");
             var payload = JsonConvert.SerializeObject(new
             {
+                request_id = requestId,
                 text = request?.Text ?? string.Empty,
                 language_code = YuiSpeechLanguage.Locale(request?.LanguageCode),
                 speed_scale = request?.SpeedScale ?? 1.0f,
@@ -90,7 +96,7 @@ namespace YuiPhysicalAI.LocalAI
             });
 
 #if UNITY_IOS && !UNITY_EDITOR
-            return ParseSynthesis(InvokeNativeJson(() => YuiPlatformSpeechBridge_Synthesize(payload)));
+            return InvokeCancellable(requestId, () => ParseSynthesis(InvokeNativeJson(() => YuiPlatformSpeechBridge_Synthesize(payload))), cancellationToken);
 #else
             return YuiPlatformSpeechSynthesisResult.Error("platform_unsupported", "Platform speech synthesis is not available.");
 #endif
@@ -113,9 +119,10 @@ namespace YuiPhysicalAI.LocalAI
                     return YuiPlatformSpeechTranscriptionResult.Error("speech_not_authorized", "Speech recognition permission required");
                 return await YuiNativeMediaFile.RunAsync(request.AudioBytes, ".wav", path =>
                 {
-                    var payload = JsonConvert.SerializeObject(new { audio_path = path, language_code = YuiSpeechLanguage.Locale(request?.LanguageCode) });
+                    var requestId = Guid.NewGuid().ToString("N");
+                    var payload = JsonConvert.SerializeObject(new { request_id = requestId, audio_path = path, language_code = YuiSpeechLanguage.Locale(request?.LanguageCode) });
 #if UNITY_IOS && !UNITY_EDITOR
-                    return ParseTranscription(InvokeNativeJson(() => YuiPlatformSpeechBridge_Transcribe(payload)));
+                    return InvokeCancellable(requestId, () => ParseTranscription(InvokeNativeJson(() => YuiPlatformSpeechBridge_Transcribe(payload))), cancellationToken);
 #else
                     return YuiPlatformSpeechTranscriptionResult.Error("platform_unsupported", "Platform speech recognition is not available.");
 #endif
@@ -127,6 +134,12 @@ namespace YuiPhysicalAI.LocalAI
         }
 
 #if UNITY_IOS && !UNITY_EDITOR
+        private static T InvokeCancellable<T>(string requestId, Func<T> invoke, CancellationToken token)
+        {
+            return YuiNativeSpeechRequest.Run(requestId, invoke, token,
+                YuiPlatformSpeechBridge_Begin, YuiPlatformSpeechBridge_Cancel, YuiPlatformSpeechBridge_End);
+        }
+
         private static string InvokeNativeJson(Func<IntPtr> invoke)
         {
             var pointer = invoke();

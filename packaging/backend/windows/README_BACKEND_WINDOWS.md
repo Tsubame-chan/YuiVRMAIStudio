@@ -43,7 +43,7 @@ Advanced users can also create a local `.env` next to this file.
 Manual Start opens the Backend Console at `http://127.0.0.1:8000/admin/`.
 Use **AI and voice** to configure providers and saved voices. Use **Connection and settings → Devices and sync** to display a one-time device registration code. A sync-capable Yui app lets you choose the shared character and review changes before applying them.
 
-VOICEVOX, AivisSpeech and Irodori server applications are installed separately.
+VOICEVOX and AivisSpeech servers are installed separately. Desktop v0.2.5-beta.3 can acquire and prepare Irodori from the Console in the background; the app remains usable. See the [download guide](https://github.com/Tsubame-chan/YuiVRMAIStudio/blob/main/docs/BACKEND_ASSET_DOWNLOADS.md#english).
 See the [TTS installation guide](https://github.com/Tsubame-chan/YuiVRMAIStudio/blob/main/docs/BACKEND_TTS_GUIDE.md).
 
 ## Updating an existing Backend
@@ -56,7 +56,7 @@ Retain `.env`, `backend/data`, optional engines and models. See the
 
 ## Optional Irodori V4.1 (NVIDIA)
 
-The release has a separate optional Irodori V4.1 package with the INT8 model,
+Prefer Console → AI and voice → Read-aloud → Add Irodori voices. The manual alternative reuses the fixed v0.2.5-beta.2 package with the INT8 model,
 codec and three synthetic reference voices. Extract its `YuiIrodoriV4` folder
 inside this Backend folder, stop the Backend, and run `Install_Irodori_V4.bat`.
 The installer verifies package hashes and installs Python/CUDA dependencies.
