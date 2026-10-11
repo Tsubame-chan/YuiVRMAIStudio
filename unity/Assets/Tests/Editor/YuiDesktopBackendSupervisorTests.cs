@@ -1,4 +1,8 @@
+using System;
 using System.IO;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using YuiPhysicalAI.Backend;
 
@@ -6,6 +10,17 @@ namespace YuiPhysicalAI.Tests
 {
     public sealed class YuiDesktopBackendSupervisorTests
     {
+        [Test]
+        public void HealthDeadlineIsFailureAndCancellationStaysCancellation()
+        {
+            var method = typeof(YuiDesktopBackendSupervisor).GetMethod("WaitUntilHealthyAsync", BindingFlags.Static | BindingFlags.NonPublic);
+            var timedOut = (Task)method.Invoke(null, new object[] { "http://127.0.0.1:1", TimeSpan.Zero, CancellationToken.None });
+            Assert.Throws<TimeoutException>(() => timedOut.GetAwaiter().GetResult());
+            using var cancelled = new CancellationTokenSource(); cancelled.Cancel();
+            var stopped = (Task)method.Invoke(null, new object[] { "http://127.0.0.1:1", TimeSpan.Zero, cancelled.Token });
+            Assert.Catch<OperationCanceledException>(() => stopped.GetAwaiter().GetResult());
+        }
+
         [Test]
         public void ResolveMacBackendRoot_ReturnsSiblingOfAppBundle()
         {

@@ -39,7 +39,7 @@ namespace YuiPhysicalAI.Editor
             PlayerSettings.SplashScreen.show = false;
             PlayerSettings.SplashScreen.showUnityLogo = false;
 #endif
-            PlayerSettings.bundleVersion = Environment.GetEnvironmentVariable("YUI_IOS_VERSION") ?? "0.2.4";
+            PlayerSettings.bundleVersion = Environment.GetEnvironmentVariable("YUI_IOS_VERSION") ?? YuiReleaseVersionMetadata.Read("ios_version");
             PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.iOS,
                 Environment.GetEnvironmentVariable("YUI_IOS_BUNDLE_ID") ?? "jp.tsubamechan.yuivrm.beta");
             var icon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/App/Art/Yui_icon.png");
@@ -52,7 +52,7 @@ namespace YuiPhysicalAI.Editor
             if (PlayerSettings.iOS.sdkVersion == iOSSdkVersion.SimulatorSDK)
                 PlayerSettings.iOS.simulatorSdkArchitecture = AppleMobileArchitectureSimulator.ARM64;
 #endif
-            PlayerSettings.iOS.buildNumber = Environment.GetEnvironmentVariable("YUI_IOS_BUILD_NUMBER") ?? "20260924";
+            PlayerSettings.iOS.buildNumber = Environment.GetEnvironmentVariable("YUI_IOS_BUILD_NUMBER") ?? YuiReleaseVersionMetadata.Read("ios_build");
             PlayerSettings.iOS.targetOSVersionString = "26.0";
             PlayerSettings.iOS.cameraUsageDescription = "カメラで選んだ景色をキャラクターに見せます。";
             PlayerSettings.iOS.microphoneUsageDescription = "キャラクターと話すためにマイクを使います。";

@@ -4,7 +4,7 @@
 
 ## Run the app
 
-1. Download `YuiVRMAIStudio_MacOSPublicBeta_v0.2.5-beta.2_macos.zip` from [v0.2.5-beta.2](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.5-beta.2).
+1. Download `YuiVRMAIStudio_MacOSPublicBeta_v0.2.5-beta.3_macos.zip` from [v0.2.5-beta.3](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.5-beta.3).
 2. Extract and open `Yui VRM AI Studio.app`. The bundled local runtime targets Apple Silicon.
 3. Read the first-run notice and start the data download. It installs standard E2B, five Japanese voices, a dictionary and the Mac runtime: approximately 2.5GB, plus space needed for extraction.
 4. Send a message, then use Settings to customize personality, voice and your VRM. Replay the illustrated tutorial from Help.
@@ -47,4 +47,4 @@ Follow the scripts' prerequisites for Python and other dependencies. Backend `.e
 
 ## Update an existing Backend
 
-Updating the app ZIP does not replace an existing YuiBackend in persistent storage, which takes precedence. Stop the app and its services, and privately back up the active YuiBackend. Extract the matching `YuiVRMAIStudio_BackendBundle_v0.2.5-beta.2_macos.zip` into an empty folder. Replace `backend/.venv` as a complete environment, moving the old one to backup first; merging files retains obsolete package metadata and modules. Follow the [shared update procedure](BACKEND_UPDATE.md), preserving Mac links and permissions. Update the remaining distribution files while retaining `.env`, `backend/data`, optional engines and models. Restart and test; restore the old files and environment together if necessary.
+Updating the app ZIP does not replace an existing YuiBackend in persistent storage, which takes precedence. Stop the app and its services, and privately back up the active YuiBackend. Extract the matching `YuiVRMAIStudio_BackendBundle_v0.2.5-beta.3_macos.zip` into an empty folder. Replace `backend/.venv` as a complete environment, moving the old one to backup first; merging files retains obsolete package metadata and modules. Follow the [shared update procedure](BACKEND_UPDATE.md), preserving Mac links and permissions. Update the remaining distribution files while retaining `.env`, `backend/data`, optional engines and models. Restart and test; restore the old files and environment together if necessary.

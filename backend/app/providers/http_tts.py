@@ -1,3 +1,4 @@
+import asyncio
 import hashlib
 import io
 import logging
@@ -101,16 +102,16 @@ class HttpTTSProvider(TTSProvider):
         tmp_path = output_path.with_suffix(f".{audio_format}.partial")
         try:
             post_started_at = time.perf_counter()
-            tmp_path.write_bytes(
-                self._postprocess_audio(
-                    response.content,
-                    request,
-                    audio_format,
-                    protect_quality=self._should_use_voice_reference(request),
-                    audio_processor=self.settings.http_tts_audio_processor,
-                    soundstretch_path=self.settings.http_tts_soundstretch_path,
-                )
+            processed = await asyncio.to_thread(
+                self._postprocess_audio,
+                response.content,
+                request,
+                audio_format,
+                protect_quality=self._should_use_voice_reference(request),
+                audio_processor=self.settings.http_tts_audio_processor,
+                soundstretch_path=self.settings.http_tts_soundstretch_path,
             )
+            tmp_path.write_bytes(processed)
             postprocess_ms = int((time.perf_counter() - post_started_at) * 1000)
             tmp_path.replace(output_path)
         except OSError as exc:

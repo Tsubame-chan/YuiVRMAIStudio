@@ -1,5 +1,7 @@
 # WindowsでIrodoriをBackendに接続する
 
+Desktop v0.2.5-beta.3では、[Backend Consoleからの追加取得](BACKEND_ASSET_DOWNLOADS.md)を推奨します。以下は手動導入の代替手順です。NVIDIA追加ZIPはv0.2.5-beta.2で公開した固定資産を再利用します。新版の自動取得はWindows実機での追加確認を継続中です。
+
 Irodori-TTS-Serverを導入して起動し、Yui Backendから接続する手順です。必要なGPU・CUDA・モデルは[公式の導入案内](https://github.com/Aratako/Irodori-TTS-Server#readme)を確認してください。
 
 Backend Consoleがある版では、[音声導入ガイドのWindows手順](BACKEND_TTS_GUIDE.md#irodori-windows)から設定できます。管理画面のない版や設定ファイルを使う場合は、次の手順で接続します。
