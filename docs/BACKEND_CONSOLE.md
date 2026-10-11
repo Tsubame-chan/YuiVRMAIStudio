@@ -1,5 +1,7 @@
 # Backend Consoleの使い方
 
+v0.2.5-beta.3では、[ConsoleからIrodoriをバックグラウンド取得](BACKEND_ASSET_DOWNLOADS.md)できます。旧v0.2.5-beta.2の手動導入手順も引き続き参照できます。
+
 Backendで使うAI・音声、接続先、記憶・履歴を管理する画面です。
 
 Backendを起動し、同じPCのブラウザで `http://127.0.0.1:8000/admin/` を開きます。ポートを変更している場合はURLも合わせてください。

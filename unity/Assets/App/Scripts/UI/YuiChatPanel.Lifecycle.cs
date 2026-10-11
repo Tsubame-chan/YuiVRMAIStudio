@@ -35,6 +35,7 @@ namespace YuiPhysicalAI.UI
                 SendCurrentInput();
 #endif
             UpdateAppAwareness();
+            PollBackendAssetDownloads();
             PlayNextRealtimeQueuedClip();
             var realtimeMode = IsRealtimeConversationMode();
             var macRealtimeInputActive = realtimeMode
@@ -365,6 +366,7 @@ namespace YuiPhysicalAI.UI
 
         private void OnDestroy()
         {
+            if (backendAssetBanner != null) backendAssetBanner.Close();
             voicePackCancellation?.Cancel();
             YuiUiLocalization.Changed -= RenderStatus;
             YuiUiLocalization.Changed -= OnSpeechLanguageChanged;

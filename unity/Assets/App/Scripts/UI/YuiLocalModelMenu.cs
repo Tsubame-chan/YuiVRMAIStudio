@@ -162,7 +162,7 @@ namespace YuiPhysicalAI.UI
             if(plan.State == YuiLocalAiAssetPlanState.NoRequiredAssets)
                 throw new IOException("Windows required runtime is missing from the release manifest.");
             var progress = new Progress<YuiLocalAiAssetDownloadProgress>(p => {
-                if(banner!=null)banner.Set(L("Windows実行データ · ", "Windows runtime · ")+p.Stage, p.Percent);
+                if(banner!=null)banner.Set(L("Windows実行データ · ", "Windows runtime · ")+YuiLocalAiDownloadOverlay.DownloadProgressLabel(p), p.Percent);
             });
             var result = await downloader.InstallAssetsAsync(manifest, plan.AssetsToDownload, progress, token);
             if(!result.Success)throw new IOException(result.ErrorMessage);

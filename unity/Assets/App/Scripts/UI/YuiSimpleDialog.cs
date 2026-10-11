@@ -12,6 +12,9 @@ namespace YuiPhysicalAI.UI
         private RectTransform safe;
         private Transform actions;
         private float compactHeight;
+        private string measuredText;
+        private int measuredActions = -1;
+        private Vector2 measuredViewport;
         public static bool Japanese => YuiUiLocalization.Language == "ja";
         public static string L(string ja, string en) => Japanese ? ja : en;
         public static YuiSimpleDialog Create(string title, string message)
@@ -19,7 +22,7 @@ namespace YuiPhysicalAI.UI
             var root = new GameObject("YuiDialog", typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
             var canvas = root.GetComponent<Canvas>(); canvas.renderMode = RenderMode.ScreenSpaceOverlay; canvas.sortingOrder = 32500;
             var scaler = root.GetComponent<CanvasScaler>(); scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(390, 844); scaler.matchWidthOrHeight = Screen.width>Screen.height?1:0;
+            scaler.referenceResolution = Screen.width>Screen.height ? new Vector2(844,390) : new Vector2(390,844); scaler.matchWidthOrHeight = Screen.width>Screen.height?1:0;
             var view = root.AddComponent<YuiSimpleDialog>();
             var shade = Box(root.transform, "Shade", new Color(0,0,0,.72f)); Place(shade.rectTransform, 0,0,1,1);
             view.safe = new GameObject("Safe", typeof(RectTransform)).GetComponent<RectTransform>(); view.safe.SetParent(root.transform,false);
@@ -92,8 +95,9 @@ namespace YuiPhysicalAI.UI
             var card = (RectTransform)Heading.transform.parent;
             card.anchorMin = card.anchorMax = new Vector2(.5f,.5f);
             card.pivot = new Vector2(.5f,.5f);
-            var scale=Screen.width>Screen.height?Screen.height/844f:Screen.width/390f;
-            card.sizeDelta = new Vector2(351, Mathf.Min(height, Screen.height/Mathf.Max(.01f,scale)*.90f));
+            var landscape=Screen.width>Screen.height;
+            var scale=landscape?Screen.height/390f:Screen.width/390f;
+            card.sizeDelta = new Vector2(landscape?640:351, Mathf.Min(height, Screen.height/Mathf.Max(.01f,scale)*.90f));
             card.anchoredPosition = Vector2.zero;
             Place(Heading.rectTransform,.07f,.84f,.93f,.97f);
             ConfigureActionScroll(card,.04f,.83f);
@@ -102,7 +106,7 @@ namespace YuiPhysicalAI.UI
         {
             var viewport=(RectTransform)card.Find("DialogViewport");
             Place(viewport,.07f,bottom,.93f,top);
-            viewport.offsetMax=new Vector2(-44,0);
+            measuredActions = -1;
             var layout=actions.GetComponent<VerticalLayoutGroup>();
             layout.childForceExpandHeight=false;layout.childControlHeight=true;layout.childControlWidth=true;
             var scroll=viewport.GetComponent<ScrollRect>();
@@ -135,6 +139,7 @@ namespace YuiPhysicalAI.UI
         {
             if(safe==null)return;
             var scaler=GetComponent<CanvasScaler>();
+            scaler.referenceResolution=Screen.width>Screen.height ? new Vector2(844,390) : new Vector2(390,844);
             scaler.matchWidthOrHeight=Screen.width>Screen.height?1:0;
             var a=Screen.safeArea;
             var keyboard=TouchScreenKeyboard.visible?TouchScreenKeyboard.area.height:0;
@@ -149,8 +154,31 @@ namespace YuiPhysicalAI.UI
             if(compactHeight>0)
             {
                 var card=(RectTransform)Heading.transform.parent;
-                var scale=Screen.width>Screen.height?Screen.height/844f:Screen.width/390f;
-                card.sizeDelta=new Vector2(Mathf.Min(351,a.width/Mathf.Max(.01f,scale)*.9f),Mathf.Min(compactHeight,Mathf.Max(1,a.yMax-bottom)/Mathf.Max(.01f,scale)*.9f));
+                var landscape=Screen.width>Screen.height;
+                var scale=landscape?Screen.height/390f:Screen.width/390f;
+                card.sizeDelta=new Vector2(Mathf.Min(landscape?640:351,a.width/Mathf.Max(.01f,scale)*.9f),Mathf.Min(compactHeight,Mathf.Max(1,a.yMax-bottom)/Mathf.Max(.01f,scale)*.9f));
+            }
+        }
+        private void LateUpdate() { RefreshContentWidth(); }
+        private void RefreshContentWidth()
+        {
+            if (Body == null || actions == null) return;
+            var scroll = Body.GetComponentInParent<ScrollRect>();
+            var viewport = scroll.viewport;
+            viewport.ForceUpdateRectTransforms();
+            // Measure at the full width, so a wrapped paragraph cannot keep an
+            // unnecessary scrollbar gutter after the content becomes shorter.
+            var fullSize = viewport.rect.size - new Vector2(viewport.offsetMax.x, 0);
+            if (measuredActions == actions.childCount && measuredText == Body.text && measuredViewport == fullSize) return;
+            measuredActions = actions.childCount; measuredText = Body.text; measuredViewport = fullSize;
+            viewport.offsetMax = Vector2.zero;
+            viewport.ForceUpdateRectTransforms();
+            LayoutRebuilder.ForceRebuildLayoutImmediate(scroll.content);
+            if (scroll.content.rect.height > viewport.rect.height + .5f)
+            {
+                viewport.offsetMax = new Vector2(-44, 0);
+                viewport.ForceUpdateRectTransforms();
+                LayoutRebuilder.ForceRebuildLayoutImmediate(scroll.content);
             }
         }
         private static Image Box(Transform parent,string name,Color color)

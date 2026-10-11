@@ -1,5 +1,6 @@
-param([string]$PackRoot = (Split-Path $PSScriptRoot -Parent))
+param([string]$PackRoot = (Split-Path $PSScriptRoot -Parent), [int]$Port = 8088)
 $ErrorActionPreference = 'Stop'
+if ($Port -lt 1024 -or $Port -gt 65535) { throw 'Invalid local server port.' }
 # Each service selects its own interpreter; never inherit another Python home.
 Remove-Item Env:PYTHONHOME -ErrorAction SilentlyContinue
 Remove-Item Env:PYTHONPATH -ErrorAction SilentlyContinue
@@ -22,6 +23,6 @@ $env:IRODORI_DEFAULT_CHUNK_MIN_CHARS = '1'
 $env:IRODORI_DEFAULT_FIRST_SENTENCE_CHUNK_MIN_CHARS = '1'
 Push-Location $server
 try {
-    & (Join-Path $server '.venv/Scripts/python.exe') -m irodori_openai_tts --host 127.0.0.1 --port 8088
+    & (Join-Path $server '.venv/Scripts/python.exe') -m irodori_openai_tts --host 127.0.0.1 --port $Port
     if ($LASTEXITCODE -ne 0) { throw "Irodori exited with code $LASTEXITCODE" }
 } finally { Pop-Location }

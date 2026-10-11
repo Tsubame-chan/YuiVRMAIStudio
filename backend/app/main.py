@@ -22,7 +22,14 @@ async def lifespan(app: FastAPI):
     from app.core.csv_work import WorkStore
     with WorkStore(settings.database_url).db.connect() as db:
         db.execute("UPDATE csv_work SET state='failed', detail='Backendの再起動で作業が中断しました。CSVを選んで再実行してください。' WHERE state='running'")
-    yield
+    from app.core.asset_downloads import AssetManager
+    manager = AssetManager()
+    app.state.asset_manager = manager
+    await manager.restore()
+    try:
+        yield
+    finally:
+        await manager.close()
 
 
 settings = get_settings()
@@ -36,6 +43,9 @@ app = FastAPI(
 app.include_router(router)
 app.include_router(admin_public)
 app.include_router(admin_router)
+from app.api.asset_downloads import admin as assets_admin, public as assets_public
+app.include_router(assets_admin)
+app.include_router(assets_public)
 app.include_router(sync_router)
 app.include_router(sync_admin)
 app.include_router(companion_router)

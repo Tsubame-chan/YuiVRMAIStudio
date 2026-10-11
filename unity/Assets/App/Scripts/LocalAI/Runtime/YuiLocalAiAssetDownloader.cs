@@ -182,15 +182,23 @@ namespace YuiPhysicalAI.LocalAI
             CancellationToken cancellationToken)
         {
             var installed = new List<YuiLocalAiReleaseAsset>();
+            var batch = (assets ?? Enumerable.Empty<YuiLocalAiReleaseAsset>()).Where(a => a != null).ToArray();
+            var totalBytes = batch.Sum(a => Math.Max(0, a.SizeBytes));
+            long completedBytes = 0;
             try
             {
                 Directory.CreateDirectory(assetStorageRoot);
                 Directory.CreateDirectory(cacheRoot);
                 var ledger = YuiLocalAiInstalledAssetLedger.Load(LedgerPath);
-                foreach (var asset in assets ?? Enumerable.Empty<YuiLocalAiReleaseAsset>())
+                foreach (var asset in batch)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    await DownloadVerifyAndExtractAsync(asset, progress, cancellationToken).ConfigureAwait(false);
+                    var offset = completedBytes;
+                    var batchProgress = new BatchProgress(p => progress?.Report(new YuiLocalAiAssetDownloadProgress(
+                        p.Name, offset + Math.Max(0, Math.Min(asset.SizeBytes, p.DownloadedBytes)), totalBytes,
+                        totalBytes > 0 ? (float)((double)(offset + Math.Max(0, Math.Min(asset.SizeBytes, p.DownloadedBytes))) / totalBytes) : p.Percent,
+                        p.Stage)));
+                    await DownloadVerifyAndExtractAsync(asset, batchProgress, cancellationToken).ConfigureAwait(false);
                     var verificationPlatform = asset.Platforms != null && asset.Platforms.Length > 0
                         ? asset.Platforms[0]
                         : YuiLocalAiModelRegistry.CurrentPlatformKey();
@@ -203,6 +211,7 @@ namespace YuiPhysicalAI.LocalAI
                     ledger.MarkInstalled(asset, manifest?.ReleaseVersion);
                     ledger.Save(LedgerPath);
                     installed.Add(asset);
+                    completedBytes += Math.Max(0, asset.SizeBytes);
                 }
 
                 return new YuiLocalAiAssetInstallResult
@@ -224,6 +233,13 @@ namespace YuiPhysicalAI.LocalAI
                     InstalledAssets = installed
                 };
             }
+        }
+
+        private sealed class BatchProgress : IProgress<YuiLocalAiAssetDownloadProgress>
+        {
+            private readonly Action<YuiLocalAiAssetDownloadProgress> report;
+            public BatchProgress(Action<YuiLocalAiAssetDownloadProgress> report) { this.report = report; }
+            public void Report(YuiLocalAiAssetDownloadProgress value) { report(value); }
         }
 
         private async Task DownloadVerifyAndExtractAsync(

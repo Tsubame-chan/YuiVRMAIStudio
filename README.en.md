@@ -33,11 +33,11 @@ The images show the real app with the included Unity-chan. Captions are Japanese
 
 | Your device | Download |
 | --- | --- |
-| Mac | [macOS app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.5-beta.2/YuiVRMAIStudio_MacOSPublicBeta_v0.2.5-beta.2_macos.zip) (Apple Silicon runtime) |
-| Windows | [Windows app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.5-beta.2/YuiVRMAIStudio_WindowsPublicBeta_v0.2.5-beta.2_windows.zip) |
+| Mac | [macOS app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.5-beta.3/YuiVRMAIStudio_MacOSPublicBeta_v0.2.5-beta.3_macos.zip) (Apple Silicon runtime) |
+| Windows | [Windows app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.5-beta.3/YuiVRMAIStudio_WindowsPublicBeta_v0.2.5-beta.3_windows.zip) |
 | iPhone / iPad | iOS 26+. [App Store](https://apps.apple.com/jp/app/id6815341780): free Japan release |
 
-The desktop version is **v0.2.5-beta.2**. It includes the Backend Console, saved voices and paired character sync. See [Backend setup](docs/BACKEND_CONSOLE.md). Extract the ZIP, open the app and follow the first-run data notice. Allow approximately 2.5GB of downloads plus room for extraction; Wi-Fi is recommended. Mac signing/notarization is not yet provided. Setup: [Mac](docs/MAC_PUBLIC_BETA.en.md) / [Windows](docs/SETUP_GUIDE.md).
+The desktop version is **v0.2.5-beta.3**. It includes the Backend Console, saved voices and paired character sync. See [Backend setup](docs/BACKEND_CONSOLE.md). Extract the ZIP, open the app and follow the first-run data notice. Allow approximately 2.5GB of downloads plus room for extraction; Wi-Fi is recommended. Mac signing/notarization is not yet provided. Setup: [Mac](docs/MAC_PUBLIC_BETA.en.md) / [Windows](docs/SETUP_GUIDE.md).
 
 **GitHub's “Code → Download ZIP” is source code.** To use the app, choose a download above.
 
@@ -50,6 +50,14 @@ The desktop version is **v0.2.5-beta.2**. It includes the Backend Console, saved
 Choose **offline, on-device AI** or **OpenAI API**. The lightweight E2B model is standard; Mac, Windows and iOS offer optional E4B for better responses at the cost of longer waits and higher device load. OpenAI API is recommended for higher-quality conversation. **An API key and API charges are required**, separately from a ChatGPT subscription.
 
 Standard speech uses five Japanese VOICEVOX voices. Mac/iOS version 0.2.5 and later offer optional downloads in settings: three Japanese Irodori voices (about 1.96GB) and six English Kokoro voices (about 67.4MB). These additional voices are not included in the older iOS 0.2.4 or desktop v0.2.4-beta.2 apps. See [Voice downloads](docs/LOCAL_AI_ASSETS.md), [Help](docs/HELP.md), [Backend Console](docs/BACKEND_CONSOLE.md) and the [Backend TTS installation guide (Japanese)](docs/BACKEND_TTS_GUIDE.md).
+
+## Desktop v0.2.5-beta.3 changes
+
+- Download and prepare optional Irodori V4.1 voices in the background from Backend Console, with progress, cancellation and retry.
+- Percentage-based download progress, balanced dialog spacing and clearer saved voice names.
+- Replace the entire bundled Python environment during Backend updates, restoring it on failure while preserving settings, databases and models.
+
+See [voice downloads](docs/BACKEND_ASSET_DOWNLOADS.md) and [safe Backend updates](docs/BACKEND_UPDATE.md). Native acceptance of the new Windows acquisition flow is ongoing.
 
 ## Desktop v0.2.5-beta.2 changes
 

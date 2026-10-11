@@ -20,7 +20,7 @@ WindowsとmacOSの共通事項です。古い `backend/.venv` へ新版のファ
 
 Pythonを含まないソースのみのbundleや、Backend以外のモデル・音声アセットでは、この環境置換を行いません。
 
-この変更は次のPlayerビルドへのソース修正です。公開済みv0.2.5-beta.2のアプリZIPをGitHubのソース更新だけで変更した扱いにはしません。既存配布版を手動更新する場合は上の手順を使用してください。
+この変更はv0.2.5-beta.3のPlayerに含まれます。公開済みv0.2.5-beta.2のアプリZIPは変更していません。既存配布版を手動更新する場合は上の手順を使用してください。
 
 ## English
 
@@ -28,4 +28,4 @@ This affects both Windows and macOS: copying a new bundle over an existing envir
 
 Stop the app and services, and privately back up the active Backend. Extract the matching OS/release ZIP into an empty folder. Prepare a complete new `backend/.venv`, move the old environment to a private backup on the same volume, and move the new environment into place. Never merge their contents. Preserve Mac links and permissions. Copy the remaining distribution files while retaining `.env`, `backend/data`, optional engines and models. Test after restarting; on failure restore the old distribution files and environment together.
 
-The shared installer now replaces a bundled environment as a unit, validates required files before switching, and restores the previous environment on failure or cancellation. A failed rollback retains its backup. Source-only bundles and non-Backend assets preserve existing environments. This requires a new Player build; existing beta.2 ZIPs are unchanged.
+The shared installer now replaces a bundled environment as a unit, validates required files before switching, and restores the previous environment on failure or cancellation. A failed rollback retains its backup. Source-only bundles and non-Backend assets preserve existing environments. The replacement installer is included in beta.3 Players; existing beta.2 ZIPs are unchanged.

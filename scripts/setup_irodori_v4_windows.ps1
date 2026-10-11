@@ -1,4 +1,4 @@
-param([string]$PackRoot = (Split-Path $PSScriptRoot -Parent), [string]$BackendRoot = '')
+param([string]$PackRoot = (Split-Path $PSScriptRoot -Parent), [string]$BackendRoot = '', [switch]$DependenciesOnly)
 $ErrorActionPreference = 'Stop'
 # Each service selects its own interpreter; never inherit another Python home.
 Remove-Item Env:PYTHONHOME -ErrorAction SilentlyContinue
@@ -49,6 +49,7 @@ try {
     & $uv sync --frozen --extra cu128 --python $python
     if ($LASTEXITCODE -ne 0) { throw 'Python/CUDA dependency installation failed. No Backend settings were changed.' }
 } finally { Pop-Location }
+if ($DependenciesOnly) { Write-Host 'Dependencies ready. Existing Backend settings were preserved.'; exit 0 }
 if (-not $BackendRoot) {
     $parent = Split-Path $PackRoot -Parent
     if (Test-Path (Join-Path $parent 'backend/app/main.py')) { $BackendRoot = $parent }

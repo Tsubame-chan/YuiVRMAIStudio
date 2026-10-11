@@ -599,12 +599,20 @@ namespace YuiPhysicalAI.UI
                 return;
             }
 
-            var mb = progress.DownloadedBytes / 1024f / 1024f;
-            var total = progress.TotalBytes > 0 ? progress.TotalBytes / 1024f / 1024f : 0f;
-            var detail = total > 0f
-                ? $"{progress.Stage}: {mb:F1} MB / {total:F1} MB"
-                : $"{progress.Stage}: {mb:F1} MB";
-            SetProgress(progress.Percent, detail);
+            SetProgress(progress.Percent, DownloadProgressLabel(progress));
+        }
+
+        public static string DownloadProgressLabel(YuiLocalAiAssetDownloadProgress progress)
+        {
+            switch (progress.Stage)
+            {
+                case "verify": return YuiSimpleDialog.L("ファイルを検証中…", "Verifying files…");
+                case "extract": return YuiSimpleDialog.L("ファイルを展開中…", "Extracting files…");
+                case "install": case "extracted": return YuiSimpleDialog.L("準備中…", "Preparing…");
+                default: return progress.TotalBytes > 0
+                    ? $"{Mathf.FloorToInt(Mathf.Clamp01(progress.Percent)*100)}% / 100%"
+                    : YuiSimpleDialog.L("準備中…", "Preparing…");
+            }
         }
 
         private void SetProgress(float value, string detail)

@@ -19,7 +19,7 @@ namespace YuiPhysicalAI.UI
                 dialog.Body.text=YuiSimpleDialog.L("コンソールで保存した声を、このキャラクターに割り当てます。声の調整はBackend側で行います。", "Assign a voice saved in Backend Console to this character. Edit its parameters in the console.");
                 foreach(var item in result.Items ?? Array.Empty<BackendVoiceProfile>()) {
                     var profile=item;
-                    dialog.AddButton(profile.Name+" · "+profile.Provider,()=>{
+                    dialog.AddButton(profile.Name,()=>{
                         if(!CanSwitchLocalModel || owner!=ChatCharacterId() || server!=backendUrl){SetStatus("キャラクターまたは接続先が変わりました。声を選び直してください。");return;}
                         backendVoiceProfileId=profile.Id;backendVoiceProfileName=profile.Name;backendVoiceServer=server;ttsMode="backend-profile";
                         SaveCharacterProfile();ConfigureAiRuntimeRouter();ConfigureChatdollKitVoicevoxTts();

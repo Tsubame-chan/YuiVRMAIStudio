@@ -1,5 +1,7 @@
 # Backendに音声エンジンを追加する
 
+v0.2.5-beta.3では、[ConsoleからIrodoriをバックグラウンド取得](BACKEND_ASSET_DOWNLOADS.md)できます。旧v0.2.5-beta.2の手動導入手順も引き続き参照できます。
+
 VOICEVOX、AivisSpeech、Irodoriを使うには、音声エンジンと必要なモデルを導入して起動します。その後、Backend Consoleで接続先を設定し、声の選択・調整・試聴を行います。
 
 Backend Consoleはv0.2.5-beta.2のBackend Bundle、またはGitHubの最新ソースで利用できます。
