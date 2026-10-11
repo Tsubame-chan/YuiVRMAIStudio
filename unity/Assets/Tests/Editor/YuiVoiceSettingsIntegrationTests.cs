@@ -44,13 +44,33 @@ namespace YuiPhysicalAI.Tests.Editor
                 Assert.That(scroll.verticalScrollbarVisibility,Is.EqualTo(ScrollRect.ScrollbarVisibility.AutoHide));
                 var late=typeof(ScrollRect).GetMethod("LateUpdate",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
                 Canvas.ForceUpdateCanvases();late.Invoke(scroll,null);
+                var measure=typeof(YuiSimpleDialog).GetMethod("RefreshContentWidth",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+                measure.Invoke(dialog,null);
+                Assert.That(scroll.viewport.offsetMax.x,Is.EqualTo(0),"Short dialogs must not reserve a hidden scrollbar gutter.");
                 // Unity deliberately shows AutoHide scrollbars in EditMode; visibility is verified in Player.
                 Assert.That(scroll.content.rect.height,Is.LessThan(scroll.viewport.rect.height));
                 dialog.Body.text=string.Join("\n",Enumerable.Repeat("Long explanation",100));
                 Canvas.ForceUpdateCanvases();late.Invoke(scroll,null);
+                measure.Invoke(dialog,null);
+                Assert.That(scroll.viewport.offsetMax.x,Is.EqualTo(-44),"Long dialogs must retain the scrollbar touch area.");
                 Assert.That(scroll.verticalScrollbar,Is.Not.Null);
                 Assert.That(scroll.content.rect.height,Is.GreaterThan(scroll.viewport.rect.height));
+                dialog.Body.text="Short again.";
+                Canvas.ForceUpdateCanvases();measure.Invoke(dialog,null);
+                Assert.That(scroll.viewport.offsetMax.x,Is.EqualTo(0));
             } finally {Object.DestroyImmediate(dialog.gameObject);}
+        }
+        [TestCase("download",.239f,"23% / 100%")]
+        [TestCase("download",2f,"100% / 100%")]
+        public void DownloadStatusUsesPercentage(string stage,float percent,string expected)
+        {
+            var p=new YuiPhysicalAI.LocalAI.YuiLocalAiAssetDownloadProgress("Irodori",239,1000,percent,stage);
+            Assert.That(YuiLocalAiDownloadOverlay.DownloadProgressLabel(p),Is.EqualTo(expected));
+        }
+        [Test] public void VerificationIsNotPresentedAsDownloadPercentage()
+        {
+            var p=new YuiPhysicalAI.LocalAI.YuiLocalAiAssetDownloadProgress("Irodori",1000,1000,1,"verify");
+            Assert.That(YuiLocalAiDownloadOverlay.DownloadProgressLabel(p),Does.Not.Contain("%"));
         }
         [Test] public void AdvancedDialogProvidesScrollbarAndVerticalDragDoesNotChangeValue()
         {
@@ -74,6 +94,12 @@ namespace YuiPhysicalAI.Tests.Editor
                 Assert.That(slider.value,Is.EqualTo(.5f));
             } finally { Object.DestroyImmediate(dialog.gameObject);Object.DestroyImmediate(events); }
         }
+        [TestCase("downloading",true)]
+        [TestCase("preparing",true)]
+        [TestCase("ready",false)]
+        [TestCase("failed",false)]
+        public void BackendDownloadPreparationIsAnActiveJob(string phase,bool active)
+            => Assert.That(YuiChatPanel.BackendAssetPhaseActive(phase),Is.EqualTo(active));
         [TestCase(1f,44f)]
         [TestCase(2.5f,120f)]
         public void VisibleScrollbarWidthDoesNotGrowWithDragTarget(float scale,float targetWidth)

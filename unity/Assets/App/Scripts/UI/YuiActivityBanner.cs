@@ -38,6 +38,28 @@ namespace YuiPhysicalAI.UI
         public void SetAction(string caption, Action callback)
         { actionLabel.text=caption; action.onClick.RemoveAllListeners(); action.onClick.AddListener(()=>callback?.Invoke()); }
         public void Close() { gameObject.SetActive(false); Destroy(gameObject); }
+        public void SetVerticalOffset(float bottom)
+        {
+            var rect=(RectTransform)label.transform.parent;
+            rect.offsetMin=new Vector2(8,bottom);rect.offsetMax=new Vector2(-8,bottom+52);
+        }
+        public void PlaceAboveOtherBanners()
+        {
+            var bottom=100f;
+            var others=UnityEngine.Object.FindObjectsByType<YuiActivityBanner>(FindObjectsSortMode.None);
+            bool occupied;
+            do
+            {
+                occupied=false;
+                foreach(var other in others)
+                {
+                    if(other==this || !other.gameObject.activeInHierarchy || other.label==null)continue;
+                    var rect=(RectTransform)other.label.transform.parent;
+                    if(Mathf.Abs(rect.offsetMin.y-bottom)<54f){occupied=true;bottom+=56f;break;}
+                }
+            } while(occupied);
+            SetVerticalOffset(bottom);
+        }
         private void Update()
         { if(safe==null)return; var a=Screen.safeArea; safe.anchorMin=new Vector2(a.xMin/Mathf.Max(1,Screen.width),a.yMin/Mathf.Max(1,Screen.height)); safe.anchorMax=new Vector2(a.xMax/Mathf.Max(1,Screen.width),a.yMax/Mathf.Max(1,Screen.height)); safe.offsetMin=safe.offsetMax=Vector2.zero; }
         private static Text TextAt(Transform parent,string name,string message,int size,Vector2 min,Vector2 max)

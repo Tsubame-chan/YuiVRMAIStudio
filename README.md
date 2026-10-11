@@ -33,11 +33,11 @@
 
 | お使いの端末 | 入手先 |
 | --- | --- |
-| Mac | [macOS版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.5-beta.2/YuiVRMAIStudio_MacOSPublicBeta_v0.2.5-beta.2_macos.zip)（Apple Silicon向け） |
-| Windows | [Windows版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.5-beta.2/YuiVRMAIStudio_WindowsPublicBeta_v0.2.5-beta.2_windows.zip) |
+| Mac | [macOS版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.5-beta.3/YuiVRMAIStudio_MacOSPublicBeta_v0.2.5-beta.3_macos.zip)（Apple Silicon向け） |
+| Windows | [Windows版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.5-beta.3/YuiVRMAIStudio_WindowsPublicBeta_v0.2.5-beta.3_windows.zip) |
 | iPhone / iPad | iOS 26以降。[App Store](https://apps.apple.com/jp/app/id6815341780)（日本向け無料版） |
 
-iPhone / iPad版 **0.2.5** はApp Storeで公開中です。デスクトップ版は **v0.2.5-beta.2** です。Backendの管理画面・保存した声・端末同期が使えます。[Backendの使い方](docs/BACKEND_CONSOLE.md)。ZIPを展開して起動し、初回の案内に沿って必要データを取得してください。約2.5GBの通信と展開用の空き容量が必要です。Wi-Fiをおすすめします。Mac版の署名・公証は未整備です。詳しい起動手順は [Mac](docs/MAC_PUBLIC_BETA.md) / [Windows](docs/SETUP_GUIDE.md)へ。
+iPhone / iPad版 **0.2.5** はApp Storeで公開中です。デスクトップ版は **v0.2.5-beta.3** です。Backendの管理画面・保存した声・端末同期が使えます。[Backendの使い方](docs/BACKEND_CONSOLE.md)。ZIPを展開して起動し、初回の案内に沿って必要データを取得してください。約2.5GBの通信と展開用の空き容量が必要です。Wi-Fiをおすすめします。Mac版の署名・公証は未整備です。詳しい起動手順は [Mac](docs/MAC_PUBLIC_BETA.md) / [Windows](docs/SETUP_GUIDE.md)へ。
 
 **GitHubの「Code → Download ZIP」はソースコードです。** アプリを使う方は上のリンクからダウンロードしてください。
 
@@ -50,6 +50,14 @@ iPhone / iPad版 **0.2.5** はApp Storeで公開中です。デスクトップ�
 AIは、**オフラインで使える端末内AI** と **OpenAI API** を選べます。端末内AIは軽量なE2Bが標準。Mac・Windows・iOSでは、より高品質なE4Bを設定から追加できますが、待ち時間や端末の負荷が増えます。高品質な会話にはOpenAI APIをおすすめします。**APIキーとAPI利用料金が必要**で、ChatGPTの契約とは別です。
 
 標準の声は日本語VOICEVOXの5声です。Mac・iOS版0.2.5以降では設定から、日本語Irodoriの3声（約1.96GB）と英語Kokoroの6声（約67.4MB）を任意に追加できます。以前のiOS 0.2.4・デスクトップv0.2.4-beta.2にはこの追加音声機能は含まれません。[音声データの取得](docs/LOCAL_AI_ASSETS.md)。PCのバックエンドに接続する拡張機能については[ヘルプ](docs/HELP.md)、Backendの操作は[コンソール案内](docs/BACKEND_CONSOLE.md)、追加エンジンの導入は[音声導入ガイド](docs/BACKEND_TTS_GUIDE.md)を参照してください。
+
+## デスクトップ v0.2.5-beta.3の更新内容
+
+- Backend ConsoleからIrodori V4.1をバックグラウンド取得・準備。進捗、中止、再試行を表示します。
+- ダウンロード中は百分率を表示し、設定ダイアログの余白と声名の表示を改善しました。
+- Backend更新時にPython環境を丸ごと置き換え、古いパッケージ情報の残留を防止。失敗時は旧環境へ戻し、設定・DB・モデルを保持します。
+
+[追加音声の取得](docs/BACKEND_ASSET_DOWNLOADS.md) / [Backend更新手順](docs/BACKEND_UPDATE.md)。Windowsの新しい自動取得は実機での追加確認を継続中です。
 
 ## デスクトップ v0.2.5-beta.2の更新内容
 

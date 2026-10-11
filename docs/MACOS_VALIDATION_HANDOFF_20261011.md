@@ -1,5 +1,7 @@
 # macOSへの不具合・検証引き継ぎ
 
+追記（2026-10-11）：Mac側で配布用Pythonを使った実更新・失敗時復元・設定/DB/モデル保持と、Irodori V4.1の準備/3声生成を確認しました。結果と残るWindows/iPhone実機確認は [beta.3検証範囲](DESKTOP_BETA3_VALIDATION.md) を参照してください。以下はWindows側で作成した元の引き継ぎ記録です。
+
 更新日：2026-10-11。Windowsでの検証と、GitHub取得コードの共通経路調査に基づく。**この作業環境からMac実機を操作していない。** 以下の「確認」はWindows実機、共通Pythonコードのテスト、またはコード上の条件を指す。Mac実機での再現を済ませた意味ではない。[Windowsの全体記録](WINDOWS_VALIDATION_20261011.md)。
 
 ## 確認できた共通経路と修正

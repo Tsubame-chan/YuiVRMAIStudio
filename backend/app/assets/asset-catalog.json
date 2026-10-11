@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "assets": [
+    {
+      "id": "irodori-macos-v41",
+      "name": "Irodori V4.1",
+      "platform": "macos-arm64",
+      "adapter": "irodori-mlx",
+      "version": "c81956b675ce21422c305ef683fb2ac59d7faf6a",
+      "files": [
+        {
+          "path": "README.md",
+          "url": "https://huggingface.co/mlx-community/Irodori-TTS-v4.1-Small-8bit/resolve/c81956b675ce21422c305ef683fb2ac59d7faf6a/README.md",
+          "bytes": 2544,
+          "sha256": "462db03669322f7f6a2997422f5250c166e8b023051279b7f22eb421bc8570a1"
+        },
+        {
+          "path": "config.json",
+          "url": "https://huggingface.co/mlx-community/Irodori-TTS-v4.1-Small-8bit/resolve/c81956b675ce21422c305ef683fb2ac59d7faf6a/config.json",
+          "bytes": 4707,
+          "sha256": "fe37faab132a418f259cf97fda047da19dd8abe60e458e3b634edc790bb545a1"
+        },
+        {
+          "path": "dacvae/config.json",
+          "url": "https://huggingface.co/mlx-community/Irodori-TTS-v4.1-Small-8bit/resolve/c81956b675ce21422c305ef683fb2ac59d7faf6a/dacvae/config.json",
+          "bytes": 329,
+          "sha256": "8e01edaa4900841e36e1970bfced16470e8e4f4a5dc710f6ace1deefe731daf4"
+        },
+        {
+          "path": "dacvae/model.safetensors",
+          "url": "https://huggingface.co/mlx-community/Irodori-TTS-v4.1-Small-8bit/resolve/c81956b675ce21422c305ef683fb2ac59d7faf6a/dacvae/model.safetensors",
+          "bytes": 429504516,
+          "sha256": "0bf3ff42e8101bd42ad082115ff0ea6867b6e994e64ab45f247bd50c49d0a0b9"
+        },
+        {
+          "path": "model.safetensors",
+          "url": "https://huggingface.co/mlx-community/Irodori-TTS-v4.1-Small-8bit/resolve/c81956b675ce21422c305ef683fb2ac59d7faf6a/model.safetensors",
+          "bytes": 952595714,
+          "sha256": "b24b776dda4a03c12174896f0e00412b9d3521abca11fadab32ea715144d3ab0"
+        },
+        {
+          "path": "tokenizer/tokenizer.json",
+          "url": "https://huggingface.co/mlx-community/Irodori-TTS-v4.1-Small-8bit/resolve/c81956b675ce21422c305ef683fb2ac59d7faf6a/tokenizer/tokenizer.json",
+          "bytes": 6718495,
+          "sha256": "6a0734cf21c802169defaffe719bc2ef12bb9d0be37e54b61ed27aa89394723d"
+        },
+        {
+          "path": "tokenizer/tokenizer_config.json",
+          "url": "https://huggingface.co/mlx-community/Irodori-TTS-v4.1-Small-8bit/resolve/c81956b675ce21422c305ef683fb2ac59d7faf6a/tokenizer/tokenizer_config.json",
+          "bytes": 668,
+          "sha256": "d229a271c64de1a7939d20d3665498e873fa91d5ee2edf135d73ec752cb9c9d3"
+        }
+      ],
+      "minimum_free_bytes": 5368709120,
+      "license_url": "https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small",
+      "source_url": "https://huggingface.co/mlx-community/Irodori-TTS-v4.1-Small-8bit/tree/c81956b675ce21422c305ef683fb2ac59d7faf6a",
+      "license_notice": "モデルはMIT。音声の利用については配布元の説明を確認できます。",
+      "port": 41091
+    },
+    {
+      "id": "irodori-windows-v41",
+      "name": "Irodori V4.1",
+      "platform": "windows-nvidia",
+      "adapter": "irodori-cuda",
+      "version": "v0.2.5-beta.2",
+      "files": [
+        {
+          "path": "package.zip",
+          "url": "https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.5-beta.2/YuiVRMAIStudio_IrodoriV41_WindowsNVIDIA_v0.2.5-beta.2.zip",
+          "bytes": 1214516429,
+          "sha256": "7f2c5e46889bde5e59c12ac572b85d016e7434cce475d1b1f70e24b696385929"
+        }
+      ],
+      "minimum_free_bytes": 10737418240,
+      "maximum_expanded_bytes": 3221225472,
+      "archive_root": "YuiIrodoriV4",
+      "license_url": "https://huggingface.co/Aratako/Irodori-TTS-v4.1-Small",
+      "source_url": "https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.5-beta.2",
+      "license_notice": "モデルはMIT。配布パッケージには各構成要素のライセンスを同梱しています。",
+      "port": 41092,
+      "package_manifest_sha256": "6958ba65b5b8f067c3018c2b52d4cf34aed04cabec14189081eb8957b8bdb55e"
+    }
+  ]
+}

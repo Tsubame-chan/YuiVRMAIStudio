@@ -67,7 +67,7 @@ def admin_page(): return FileResponse(STATIC / "index.html")
 
 @public.get("/admin/assets/{name}", include_in_schema=False)
 def admin_asset(name: str):
-    if name not in {"console.css", "console.js", "realtime.js", "diagnostics.js", "voices.js", "tts-guides.js", "device-sync.js", "shared-character.js", "work.js", "NotoSansJP-Regular.otf", "font-license.txt", "icon.png"}:
+    if name not in {"console.css", "console.js", "asset-downloads.js", "realtime.js", "diagnostics.js", "voices.js", "tts-guides.js", "device-sync.js", "shared-character.js", "work.js", "NotoSansJP-Regular.otf", "font-license.txt", "icon.png"}:
         raise HTTPException(404)
     return FileResponse(STATIC / name)
 

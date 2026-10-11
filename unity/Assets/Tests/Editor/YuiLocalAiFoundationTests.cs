@@ -1569,6 +1569,40 @@ namespace YuiPhysicalAI.Tests.Editor
             }
         }
 
+        [Test]
+        public void BatchDownloadPercentageDoesNotRestartForEachAsset()
+        {
+            var temp=Path.Combine(Path.GetTempPath(),"yui-batch-progress-"+Guid.NewGuid().ToString("N"));
+            try
+            {
+                Directory.CreateDirectory(temp);
+                var file=Path.Combine(temp,"data.zip");
+                using(var zip=ZipFile.Open(file,ZipArchiveMode.Create))
+                using(var writer=new StreamWriter(zip.CreateEntry("data.bin").Open()))writer.Write("model-data");
+                var bytes=File.ReadAllBytes(file);
+                var assets=Enumerable.Range(0,2).Select(i=>new YuiLocalAiReleaseAsset{
+                    Id="asset-"+i,Filename="data-"+i+".zip",Url="memory://data",SizeBytes=bytes.Length,
+                    Sha256=Sha256(bytes),InstallRoot="model-"+i,InstalledPaths=new[]{"data.bin"},Platforms=new[]{"macos-arm64"}
+                }).ToArray();
+                var samples=new List<YuiLocalAiAssetDownloadProgress>();
+                var progress=new ImmediateProgress(samples.Add);
+                var http=new InMemoryAssetHttpClient("",new Dictionary<string,byte[]>{{"memory://data",bytes}});
+                var result=new YuiLocalAiAssetDownloader(http,temp,temp).InstallAssetsAsync(new YuiLocalAiAssetManifest(),assets,progress,CancellationToken.None).GetAwaiter().GetResult();
+                Assert.That(result.Success,Is.True,result.ErrorMessage);
+                var downloads=samples.Where(x=>x.Stage=="download").ToArray();
+                Assert.That(downloads.Select(x=>x.Percent),Is.Ordered);
+                Assert.That(downloads.Last().Percent,Is.EqualTo(1));
+                Assert.That(downloads.All(x=>x.TotalBytes==2*bytes.Length),Is.True);
+            }
+            finally { if(Directory.Exists(temp))Directory.Delete(temp,true); }
+        }
+        private sealed class ImmediateProgress : IProgress<YuiLocalAiAssetDownloadProgress>
+        {
+            private readonly Action<YuiLocalAiAssetDownloadProgress> report;
+            public ImmediateProgress(Action<YuiLocalAiAssetDownloadProgress> report){this.report=report;}
+            public void Report(YuiLocalAiAssetDownloadProgress value){report(value);}
+        }
+
         private sealed class InMemoryAssetHttpClient : IYuiLocalAiAssetHttpClient
         {
             private readonly string manifestJson;

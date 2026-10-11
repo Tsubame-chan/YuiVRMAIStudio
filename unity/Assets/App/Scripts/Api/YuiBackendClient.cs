@@ -36,6 +36,8 @@ namespace YuiPhysicalAI.Api
         }
 
         public Task<BackendVoiceProfiles> GetVoiceProfilesAsync(CancellationToken cancellationToken = default) => GetJsonAsync<BackendVoiceProfiles>("/tts/profiles", cancellationToken);
+        public Task<Newtonsoft.Json.Linq.JObject> GetAssetDownloadStatusAsync(CancellationToken cancellationToken = default)
+            => GetJsonAsync<Newtonsoft.Json.Linq.JObject>("/assets/downloads/status", cancellationToken);
 
         public Task<ConfigResponse> GetConfigAsync(CancellationToken cancellationToken = default)
         {

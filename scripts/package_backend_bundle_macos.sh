@@ -21,6 +21,7 @@ rsync -a --delete \
   --exclude 'data/*.db' \
   --exclude 'data/*.db-*' \
   --exclude 'data/audio/' \
+  --exclude 'data/addons/' \
   --exclude 'data/voice-library.json' \
   --exclude 'data/.voice-library*' \
   --exclude 'data/admin-settings.json' \

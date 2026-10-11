@@ -72,9 +72,9 @@ namespace YuiPhysicalAI.UI
                 if(free>=0 && free<(irodori?4200000000L:250000000L))throw new IOException(YuiSimpleDialog.L("空き容量が足りません。空きを増やして再試行してください。","Not enough free storage. Free space and try again."));
                 var http=new YuiUnityAssetHttpClient();
                 var progress=new Progress<YuiLocalAiAssetDownloadProgress>(p=>{
-                    voicePackProgress=p.Percent;voicePackStatus=$"{p.DownloadedBytes/1000000f:F1} / {p.TotalBytes/1000000f:F1} MB";
-                    if(voicePackBanner!=null)voicePackBanner.Set(packName+" · "+voicePackStatus,p.Percent);
-                    if(voicePackDialog!=null){voicePackDialog.Body.text=voicePackStatus;voicePackDialog.SetProgress(p.Percent);}
+                    voicePackProgress=p.Stage=="download"?p.Percent:-1;voicePackStatus=YuiLocalAiDownloadOverlay.DownloadProgressLabel(p);
+                    if(voicePackBanner!=null)voicePackBanner.Set(packName+" · "+voicePackStatus,voicePackProgress);
+                    if(voicePackDialog!=null){voicePackDialog.Body.text=voicePackStatus;voicePackDialog.SetProgress(voicePackProgress);}
                 });
                 var name=irodori?"irodori_files":"kokoro_pack";
                 var catalog=Resources.Load<TextAsset>("YuiVoicePacks/"+name);

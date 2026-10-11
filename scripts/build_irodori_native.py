@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the pinned CoreML SDK with Yui's C ABI; model data is never bundled."""
 import argparse, pathlib, shutil, subprocess
-p=argparse.ArgumentParser();p.add_argument('--platform',choices=['macos','ios'],default='macos');p.add_argument('--sdk',type=pathlib.Path,required=True);p.add_argument('--output',type=pathlib.Path,required=True);a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--platform',choices=['macos','ios','ios-simulator'],default='macos');p.add_argument('--sdk',type=pathlib.Path,required=True);p.add_argument('--output',type=pathlib.Path,required=True);a=p.parse_args()
 root=pathlib.Path(__file__).resolve().parents[1]
 work=root/('builds/irodori-unity-native-'+a.platform)
 work.mkdir(parents=True,exist_ok=True)
@@ -13,7 +13,8 @@ watermark=work/'Sources/IrodoriTTS/AudioWatermark.swift'
 source=watermark.read_text()
 old='        let compiled = try MLModel.compileModel(at: package)\n        let config = MLModelConfiguration()\n        config.computeUnits = .cpuAndGPU\n        do { return (try MLModel(contentsOf: compiled, configuration: config), compiled) }\n        catch { try? FileManager.default.removeItem(at: compiled); throw error }'
 new='        let config = MLModelConfiguration()\n        config.computeUnits = .cpuAndGPU\n        return try YuiCoreMLModelCache.load(package: package, configuration: config)'
-if old not in source: raise RuntimeError('Unsupported SDK AudioWatermark source; review cache patch before building.')
+if old not in source and new not in source:
+    raise RuntimeError('Unsupported SDK AudioWatermark source; review cache patch before building.')
 source=source.replace(old,new).replace('deinit { for url in compiledURLs { try? FileManager.default.removeItem(at: url) } }','// Compiled models are persistent cache entries; retain them across engine release.')
 watermark.write_text(source)
 shutil.copy2(root/'scripts/native/irodori/YuiCoreMLModelCache.swift',work/'Sources/IrodoriTTS/YuiCoreMLModelCache.swift')
@@ -27,15 +28,17 @@ let package = Package(name: "YuiIrodoriBridge", platforms: [.macOS(.v14), .iOS(.
 .target(name:"YuiIrodoriBridge",dependencies:["IrodoriTTS"])], cxxLanguageStandard:.cxx17)
 ''')
 package=work/'Package.swift'
-if a.platform=='ios':
+if a.platform.startswith('ios'):
     package.write_text(package.read_text().replace('type:.dynamic','type:.static'))
 command=['swift','build','-c','release','--product','YuiIrodoriBridge']
-if a.platform=='ios':
-    sdk=subprocess.check_output(['xcrun','--sdk','iphoneos','--show-sdk-path'],text=True).strip()
-    command += ['--sdk',sdk,'--triple','arm64-apple-ios18.0']
+if a.platform.startswith('ios'):
+    sdk_name = 'iphonesimulator' if a.platform=='ios-simulator' else 'iphoneos'
+    sdk=subprocess.check_output(['xcrun','--sdk',sdk_name,'--show-sdk-path'],text=True).strip()
+    triple = 'arm64-apple-ios18.0-simulator' if a.platform=='ios-simulator' else 'arm64-apple-ios18.0'
+    command += ['--sdk',sdk,'--triple',triple]
 subprocess.run(command,cwd=work,check=True)
 a.output.parent.mkdir(parents=True,exist_ok=True)
-binary_name='libYuiIrodoriBridge.a' if a.platform=='ios' else 'libYuiIrodoriBridge.dylib'
+binary_name='libYuiIrodoriBridge.a' if a.platform.startswith('ios') else 'libYuiIrodoriBridge.dylib'
 candidates=[p for p in (work/'.build').rglob(binary_name) if not any(part.endswith('.dSYM') for part in p.parts)]
 if not candidates: raise RuntimeError('Swift build produced no '+binary_name)
 shutil.copy2(max(candidates,key=lambda p:p.stat().st_mtime),a.output)

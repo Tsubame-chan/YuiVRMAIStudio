@@ -36,6 +36,21 @@ namespace YuiPhysicalAI.Tests.Editor
                 Object.DestroyImmediate(host);
             }
         }
+        [Test]
+        public void BackendNoticeUsesLowestFreeSlotAndMovesDownWhenOtherNoticeCloses()
+        {
+            var native=YuiActivityBanner.Create("Native");
+            var backend=YuiActivityBanner.Create("Backend");
+            try
+            {
+                backend.PlaceAboveOtherBanners();
+                Assert.AreEqual(156f,backend.transform.Find("Safe/Banner").GetComponent<RectTransform>().offsetMin.y);
+                native.gameObject.SetActive(false);
+                backend.PlaceAboveOtherBanners();
+                Assert.AreEqual(100f,backend.transform.Find("Safe/Banner").GetComponent<RectTransform>().offsetMin.y);
+            }
+            finally { Object.DestroyImmediate(native.gameObject);Object.DestroyImmediate(backend.gameObject); }
+        }
         private static void Call(object owner, string method) => owner.GetType().GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(owner, null);
     }
 }

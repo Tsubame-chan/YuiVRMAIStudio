@@ -3,6 +3,7 @@ import {createVoiceEditor} from './voices.js';
 import {bindDiagnostics} from './diagnostics.js';
 import {mountDeviceSync} from './device-sync.js';
 import {mountWork} from './work.js';
+import {bindAssetDownloads} from './asset-downloads.js';
 
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -10,7 +11,7 @@ const NAV = [['home','ホーム'],['providers','AIと音声'],['playground','試
 const labels = {ok:'接続確認済み',configured:'設定済み・動作未確認',missing_key:'キー未設定',offline:'接続できません',not_configured:'未設定',unknown:'未確認'};
 let state, draft = {}, identities = [], probes = {}, view = 'home', section = '', page = 0, generation = 0, dataGeneration = 0, noticeTimer, activeRequest, audioUrl, diagnostics, voiceEditor;
 let scope = {user_id:'local_user',character_id:'',session_id:''};
-let unmountSync, unmountWork;
+let unmountSync, unmountWork, assetDownloads;
 const current = k => Object.hasOwn(draft,k) ? draft[k] : state.settings.values[k];
 const provider = id => state.providers.find(p => p.id === id);
 const button = (action,label,cls='',attrs='') => `<button type="button" class="${cls}" data-action="${action}" ${attrs}>${label}</button>`;
@@ -71,7 +72,7 @@ function providerFields(id, cap) {
     });
 }
 function providers() {
-    if(section==='tts') return heading('音声の設定','保存した声を編集・試聴し、提供元の接続先を管理します。')+tabs(Object.entries(state.capabilities),'tts','providers')+'<div id=voice-workbench></div><details><summary>既存アプリ向けの提供元設定</summary><a href="#providers/tts-settings">既存の提供元・代替設定を開く</a></details>';
+    if(section==='tts') return heading('音声の設定','保存した声を編集・試聴し、提供元の接続先を管理します。')+tabs(Object.entries(state.capabilities),'tts','providers')+'<div id=asset-acquisition></div><div id=voice-workbench></div><details><summary>既存アプリ向けの提供元設定</summary><a href="#providers/tts-settings">既存の提供元・代替設定を開く</a></details>';
     const cap=section==='tts-settings'?'tts':Object.hasOwn(state.capabilities,section)?section:'chat';
     const opts=state.providers.filter(p=>p.capabilities.includes(cap));
     const id=cap==='realtime'?'openai':current(`${cap}_provider`), p=provider(id)||opts[0];
@@ -127,6 +128,7 @@ async function render() {
     if(ticket!==generation)return;
     $('#content').innerHTML=({home,providers,playground,memory,activity,settings,work:()=>'<div class="info">CSV集計は実験機能です。保存済みの作業と成果物は引き続き利用できます。 <a href="#home">ホームへ戻る</a></div><div id="csv-workbench"></div>'})[view]();changed();
     $('#content').querySelectorAll('[data-setting]').forEach(el=>el.addEventListener(el.matches('select,[type=checkbox]')?'change':'input',()=>{const f=state.settings.fields.find(f=>f.name===el.dataset.setting);let v=f.type==='boolean'?el.checked:f.type==='number'?Number(el.value):el.value;if(f.secret&&!v){delete draft[f.name];changed();return;}draft[f.name]=v;if(!f.secret&&v===state.settings.values[f.name])delete draft[f.name];changed();if(el.dataset.rerender)render();}));
+    assetDownloads?.mount();
     if($('#voice-workbench')){voiceEditor ||= createVoiceEditor(api,notice,state.settings.fields,confirmAction);voiceEditor.mount($('#voice-workbench')).catch(e=>notice(e.message));}
     if($('#device-sync'))unmountSync=mountDeviceSync($('#device-sync'),api,notice,confirmAction);
     if($('#csv-workbench')){const cleanup=await mountWork($('#csv-workbench'),api,notice);if(ticket===generation)unmountWork=cleanup;else cleanup();}
@@ -195,5 +197,5 @@ $('#refresh').onclick=async()=>{if(Object.keys(draft).length){notice('未保存�
 window.addEventListener('beforeunload',e=>{if(Object.keys(draft).length||voiceEditor?.dirty()||activeRequest){e.preventDefault();e.returnValue='';}});
 window.addEventListener('hashchange',async()=>{if(location.hash==='#content'){$('#content').focus();return;}activeRequest?.abort();await stopLive();await render();window.scrollTo({top:0});});
 diagnostics=bindDiagnostics(api);
-try {await api('session',{method:'POST'});state=await api('api/overview');scope.user_id=state.settings.values.default_user_id;await render();}
+try {await api('session',{method:'POST'});state=await api('api/overview');scope.user_id=state.settings.values.default_user_id;await render();assetDownloads=bindAssetDownloads(api,notice,confirmAction,async()=>{if(voiceEditor?.dirty()){notice('編集中の声を保存するか、変更を戻してから一覧を更新してください。');return;}voiceEditor?.refresh();if(location.hash!=='#providers/tts')location.hash='providers/tts';else await render();notice('声の一覧を更新しました。Irodoriの3声を選べます。');});await assetDownloads.start();}
 catch(e){$('#content').innerHTML=heading('Backendに接続できません。',esc(e.message))+'<p>Backendが起動しているPCのlocalhostで開き直してください。</p>';}
