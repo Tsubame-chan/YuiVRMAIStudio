@@ -16,7 +16,7 @@ namespace YuiPhysicalAI.LocalAI
         public static IEnumerable<YuiLocalAiModelPack> Available =>
             YuiLocalAiModelRegistry.FromStreamingAssetsOrDefault().EnabledFor(YuiLocalAiCapability.Chat)
                 .Where(p => p.DeploymentKind == YuiLocalAiDeploymentKind.OnDeviceEmbedded
-                    && string.Equals(p.Format, "litert-lm", System.StringComparison.OrdinalIgnoreCase));
+                    && (string.Equals(p.Format, "litert-lm", System.StringComparison.OrdinalIgnoreCase) || (p.Format == "gguf" && YuiLlamaRuntime.PlatformSupported)));
         public static string Name(YuiLocalAiModelPack pack) => pack == null ? "—" :
             pack.Id == StandardId ? "Gemma 4 E2B" : pack.Id == QualityId ? "Gemma 4 E4B" : pack.DisplayName;
         public static void MigrateInstalledChoice()

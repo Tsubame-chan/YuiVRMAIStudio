@@ -1,6 +1,6 @@
 # はじめに・よくある質問 / Help & FAQ
 
-[README 日本語](../README.md) · [README English](../README.en.md) · [ダウンロード / Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.5-beta.3) · [不具合報告 / Issues](https://github.com/Tsubame-chan/YuiVRMAIStudio/issues)
+[README 日本語](../README.md) · [README English](../README.en.md) · [ダウンロード / Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases) · [不具合報告 / Issues](https://github.com/Tsubame-chan/YuiVRMAIStudio/issues)
 
 ## 日本語
 
@@ -19,6 +19,14 @@ iOS 26以降。日本向け無料版を[App Store](https://apps.apple.com/jp/app
 **どのAIを使う？**
 
 標準E2Bは軽量でオフライン会話向け。Mac・Windows・iOSの任意E4Bはより高品質ですが、応答時間と負荷が増えます。高品質な会話にはOpenAI APIを推奨します。APIキーと利用料金が必要で、ChatGPTの契約とは別です。詳細設定ではTalk/Work別に生成上限、コンテキスト、温度などを調整できます。迷ったら既定値を使ってください。
+
+**自分でダウンロードしたAIモデルを使える？**
+
+追加モデル対応版では、設定 → AI → 端末内AI → 追加から、単一GGUF（.gguf）または互換LiteRT-LM（.litertlm）の文章モデルを取り込み、モデル一覧から選択します。PCやBackendは不要です。生のsafetensors、分割GGUF、画像・音声用追加ファイルは直接使えません。形式だけで互換性や品質を保証できず、大きいモデルは停止・クラッシュする可能性があります。標準Gemmaとは別の実験用機能です。対応OS・実行エンジンの条件と配布状況は[追加モデルの案内](LOCAL_MODEL_IMPORT.md)を確認してください。アプリ内ヘルプにも日英の常設案内があります。
+
+**Backendはどこから入手する？**
+
+[GitHub Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases)からPC版のアプリZIPを入手し、初回準備後にYuiBackend内のStart_Yui_Backend.command（Mac）／Start_Yui_Backend.bat（Windows）で起動します。Code ZIPはソースです。スマートフォンから使う場合はPCと同じTailscaleへ接続し、設定にPCの接続先を入力します。端末内AI・端末内音声・OpenAIへの直接接続だけなら不要です。[Mac手順](MAC_PUBLIC_BETA.md) / [Windows手順](SETUP_GUIDE.md)。対応版ではヘルプの接続状況と設定の「？」からも入手・接続方法を開けます。
 
 **性格はどこで変える？**
 
@@ -50,7 +58,10 @@ iOS 26以降。日本向け無料版を[App Store](https://apps.apple.com/jp/app
 
 ## English
 
-- Download the **MacOSPublicBeta** or **WindowsPublicBeta** app ZIP from [Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.5-beta.3). The Code ZIP is source only. See the [Mac guide](MAC_PUBLIC_BETA.en.md).
+- Builds supporting additional models offer Settings → AI → On-device AI → Add for single-file `.gguf` and compatible `.litertlm` text/chat models. Select the imported model in Models. No PC or Backend is required. Raw safetensors, split GGUF and separate vision/audio files are unsupported. Compatibility, speed and quality depend on the model, runtime and OS; large models may stop or crash. See [supported formats and release status](LOCAL_MODEL_IMPORT.md). The app also includes permanent instructions in Help.
+- Get Backend through the desktop app ZIP in [GitHub Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases), complete first-run setup, then start `Start_Yui_Backend.command` (Mac) or `Start_Yui_Backend.bat` (Windows) inside YuiBackend. The Code ZIP is source. For a phone connection, join both devices to Tailscale and enter the PC address in Settings. Backend is optional for on-device AI/voices and direct OpenAI access. Help → Connections and the Settings question-mark button provide acquisition and connection instructions in supporting builds.
+
+- Download the **MacOSPublicBeta** or **WindowsPublicBeta** app ZIP from [Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases). The Code ZIP is source only. See the [Mac guide](MAC_PUBLIC_BETA.en.md).
 - The free Japan iOS release requires iOS 26 and is available on the [App Store](https://apps.apple.com/jp/app/id6815341780).
 - Desktop first-run setup downloads approximately 2.5GB of AI/voice data plus its OS runtime after confirmation. Leave extra room for extraction. iOS includes standard E2B and speech data; E4B is optional. Mac, Windows and iOS offer optional E4B.
 - E2B favors lighter offline use; E4B improves quality at the cost of latency, memory and storage. OpenAI API is recommended for higher-quality chat and requires an API key and API charges, separately from a ChatGPT subscription.

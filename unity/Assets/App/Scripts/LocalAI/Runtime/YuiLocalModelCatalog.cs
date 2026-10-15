@@ -41,18 +41,18 @@ namespace YuiPhysicalAI.LocalAI
             reason = "Invalid local model registration.";
             if (pack == null || !Regex.IsMatch(pack.Id ?? "", "^[a-zA-Z0-9_-]{1,80}$")) return false;
             if (string.IsNullOrWhiteSpace(pack.DisplayName) || pack.DisplayName.Length > 100) return false;
-            if (!string.Equals(pack.Format, "litert-lm", StringComparison.OrdinalIgnoreCase)
+            if (!(string.Equals(pack.Format, "litert-lm", StringComparison.OrdinalIgnoreCase) || (pack.SourceKind == "local-file" && pack.Format == "gguf"))
                 || pack.DeploymentKind != YuiLocalAiDeploymentKind.OnDeviceEmbedded
                 || !(pack.Capabilities?.Contains(YuiLocalAiCapability.Chat) ?? false)) return false;
-            if (!Regex.IsMatch(pack.RuntimeModelRef ?? "", "^[a-zA-Z0-9_.-]+\\.litertlm$")
+            if (!Regex.IsMatch(pack.RuntimeModelRef ?? "", "^[a-zA-Z0-9_.-]+\\." + (pack.Format == "gguf" ? "gguf" : "litertlm") + "$")
                 || pack.RuntimeModelRef.Contains("..")) return false;
             if ((existing ?? Array.Empty<YuiLocalAiModelPack>()).Any(p =>
                 string.Equals(p.Id, pack.Id, StringComparison.OrdinalIgnoreCase)
                 || string.Equals(YuiLocalAiModelPathResolver.ModelFileName(p), pack.RuntimeModelRef, StringComparison.OrdinalIgnoreCase)))
             { reason = "The model ID or file name is already registered."; return false; }
             if (!Regex.IsMatch(pack.Sha256 ?? "", "^[a-fA-F0-9]{64}$")
-                || !Uri.TryCreate(pack.DownloadUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps
-                || !string.IsNullOrEmpty(uri.UserInfo)) return false;
+                || (pack.SourceKind != "local-file" && (!Uri.TryCreate(pack.DownloadUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps || !string.IsNullOrEmpty(uri.UserInfo)))) return false;
+            if (pack.SourceKind == "local-file" && (pack.Provider != (pack.Format == "gguf" ? "llama.cpp" : "google-litert-lm") || pack.Capabilities.Length != 1 || pack.Capabilities[0] != YuiLocalAiCapability.Chat || pack.SupportsSpeculativeDecoding || !string.IsNullOrEmpty(pack.AppleAssetPackId) || !Regex.IsMatch(pack.Id,"^imported_[a-f0-9]{64}$") || pack.RuntimeModelRef != pack.Id + (pack.Format == "gguf" ? ".gguf" : ".litertlm"))) return false;
             if (pack.ThinkingTokenBudget < 1 || pack.ThinkingTokenBudget > 768
                 || pack.WorkThinkingTokenBudget < 1 || pack.WorkThinkingTokenBudget > 768
                 || pack.TalkOutputTokenBudget < 256 || pack.TalkOutputTokenBudget > 2304

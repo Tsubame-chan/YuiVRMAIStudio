@@ -13,6 +13,9 @@ namespace YuiPhysicalAI.LocalAI
             registry ??= new YuiLocalAiModelRegistry(Array.Empty<YuiLocalAiModelPack>());
 
             var runtimes = new List<IYuiLocalAiRuntime>();
+            YuiLocalModelLifecycle.Ensure();
+            var selected = registry.Packs.FirstOrDefault(p => p.Id == YuiLocalModelSelection.SelectedId);
+            if (selected?.Format == "gguf") runtimes.Add(new YuiLlamaRuntime(registry));
             if (HasGoogleAiEdgePacks(registry))
             {
                 runtimes.Add(new YuiGoogleAiEdgeLocalAiRuntime(registry));
@@ -39,6 +42,20 @@ namespace YuiPhysicalAI.LocalAI
             }
 
             return runtimes.Count == 1 ? runtimes[0] : new YuiCompositeLocalAiRuntime(runtimes);
+        }
+
+        // Readiness follows the selected chat engine, independently of speech
+        // and the availability of the other model format's runtime.
+        public static bool HasAvailableChat(YuiLocalAiModelRegistry registry,string selectedId,
+            bool googleAvailable,bool ggufAvailable,Func<YuiLocalAiModelPack,bool> assetAvailable)
+        {
+            registry ??= new YuiLocalAiModelRegistry(Array.Empty<YuiLocalAiModelPack>());
+            var selected=registry.Packs.FirstOrDefault(p=>p.Id==selectedId);
+            if(selected?.Format=="gguf")
+                return ggufAvailable && IsOnDeviceEmbeddedPack(selected)
+                    && YuiLocalAiModelRegistry.HasCapability(selected,YuiLocalAiCapability.Chat)
+                    && (assetAvailable?.Invoke(selected) ?? HasRuntimeAsset(selected));
+            return googleAvailable && HasOnDeviceEmbeddedPack(registry,YuiLocalAiCapability.Chat,assetAvailable);
         }
 
         public static bool IsOnDeviceEmbeddedPack(YuiLocalAiModelPack pack)

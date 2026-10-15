@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -33,6 +34,8 @@ namespace YuiPhysicalAI.Platform
             }
         }
 
+        public static Task<Result> OpenModelFileAsync(CancellationToken token, IProgress<float> progress) => OpenFileAsync(YuiFilePurpose.Model, token, progress);
+
         public static Task<Result> OpenImageFileAsync()
         {
             return OpenFileAsync(YuiFilePurpose.Image);
@@ -50,20 +53,27 @@ namespace YuiPhysicalAI.Platform
 
         private static bool pickerOpen;
         public static bool IsOpen => pickerOpen;
-        private static async Task<Result> OpenFileAsync(YuiFilePurpose purpose)
+        private static async Task<Result> OpenFileAsync(YuiFilePurpose purpose, CancellationToken token = default, IProgress<float> progress = null)
         {
             if (pickerOpen) return new Result(false,null,"A file picker is already open.");
             pickerOpen=true;
             Result result = default;
             try
             {
+                token.ThrowIfCancellationRequested();
+#if UNITY_IOS && !UNITY_EDITOR
+                result=purpose == YuiFilePurpose.Model ? await YuiIOSDocumentPicker.OpenModelAsync(token,progress) : await OpenPlatformFileAsync(purpose.ToString().ToLowerInvariant());
+#else
                 result=await OpenPlatformFileAsync(purpose.ToString().ToLowerInvariant());
+#endif
+                if(token.IsCancellationRequested){result.Dispose();token.ThrowIfCancellationRequested();}
                 if (!result.Opened) return result;
                 var error=YuiPickedFilePolicy.Validate(result.Path,purpose);
                 if (error==null) return result;
                 result.Dispose();
                 return new Result(false,null,error);
             }
+            catch(OperationCanceledException){result.Dispose();throw;}
             catch(Exception ex)
             {
                 result.Dispose();
@@ -78,20 +88,20 @@ namespace YuiPhysicalAI.Platform
 #if UNITY_EDITOR
             var path = EditorUtility.OpenFilePanelWithFilters(
                 YuiPhysicalAI.UI.YuiUiLocalization.Text(mode == "image" ? "Choose image" : "Open Custom VRM"), "",
-                new[] { mode == "image" ? "Images" : "Avatars", mode == "image" ? "png,jpg,jpeg" : mode == "avatar" ? "vrm,zip" : "vrm" });
+                new[] { mode == "model" ? "Models" : mode == "image" ? "Images" : "Avatars", mode == "model" ? "gguf,litertlm" : mode == "image" ? "png,jpg,jpeg" : mode == "avatar" ? "vrm,zip" : "vrm" });
             return Task.FromResult(new Result(!string.IsNullOrWhiteSpace(path), path, null));
 #elif UNITY_STANDALONE_WIN
             return OpenWindowsHelperFilePanelAsync(mode);
 #elif UNITY_STANDALONE_OSX
             return OpenMacFilePanelAsync(mode);
 #elif UNITY_ANDROID
-            return mode == "avatar"
+            return mode == "model" ? YuiAndroidFilePicker.OpenModelAsync() : mode == "avatar"
                 ? YuiAndroidFilePicker.OpenAvatarAsync()
                 : mode == "vrm"
                 ? YuiAndroidFilePicker.OpenVrmAsync()
                 : YuiAndroidFilePicker.OpenImageAsync();
 #elif UNITY_IOS
-            return mode == "avatar"
+            return mode == "model" ? YuiIOSDocumentPicker.OpenModelAsync(CancellationToken.None,null) : mode == "avatar"
                 ? YuiIOSDocumentPicker.OpenAvatarAsync()
                 : mode == "vrm"
                 ? YuiIOSDocumentPicker.OpenVrmAsync()
@@ -121,7 +131,7 @@ namespace YuiPhysicalAI.Platform
             macPickerOpen = true;
             try
             {
-                var prompt = mode == "avatar" ? "Open VRM or Unity Avatar Package ZIP" : mode == "vrm" ? "Open Custom VRM" : "Choose image";
+                var prompt = mode == "model" ? "Choose model file" : mode == "avatar" ? "Open VRM or Unity Avatar Package ZIP" : mode == "vrm" ? "Open Custom VRM" : "Choose image";
                 var started = YuiMacFilePicker_Open(mode, YuiPhysicalAI.UI.YuiUiLocalization.Text(prompt));
                 if (started != 1) return new Result(false, null, "Could not open the file picker.");
                 // Captures Unity's main-thread context; Cocoa must never be polled on Task.Run.

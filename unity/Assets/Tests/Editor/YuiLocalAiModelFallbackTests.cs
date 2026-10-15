@@ -10,6 +10,16 @@ namespace YuiPhysicalAI.Tests.Editor
 {
     public sealed class YuiLocalAiModelFallbackTests
     {
+        [TestCase(false,true,true,true)]
+        [TestCase(true,false,true,false)]
+        [TestCase(false,true,false,false)]
+        public void GgufReadinessDoesNotRequireLiteRt(bool google,bool gguf,bool present,bool expected)
+        {
+            var pack=new YuiLocalAiModelPack{Id="gguf-test",Format="gguf",EnabledByDefault=true,
+                DeploymentKind=YuiLocalAiDeploymentKind.OnDeviceEmbedded,Platforms=new[]{"all"},
+                Capabilities=new[]{YuiLocalAiCapability.Chat}};
+            Assert.That(YuiLocalAiRuntimeFactory.HasAvailableChat(new YuiLocalAiModelRegistry(new[]{pack}),pack.Id,google,gguf,_=>present),Is.EqualTo(expected));
+        }
         [TestCase("core_text_e2b", true, true, "core_text_e2b")]
         [TestCase("core_text", true, true, "core_text")]
         [TestCase("core_text_e2b", true, false, "core_text_e2b")]

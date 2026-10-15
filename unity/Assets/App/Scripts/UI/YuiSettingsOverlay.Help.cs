@@ -36,14 +36,31 @@ namespace YuiPhysicalAI.UI
             settingsHelpLayer = null;
         }
 
-        private void ShowBackendAcquisitionHelp(bool address)
+        [System.Serializable]
+        private sealed class ReleaseLinkMetadata { public string desktop_tag; }
+        internal static string BackendReleaseUrl()
+        {
+            var asset=Resources.Load<TextAsset>("YuiReleaseVersions");
+            try
+            {
+                var tag=asset!=null?JsonUtility.FromJson<ReleaseLinkMetadata>(asset.text)?.desktop_tag:null;
+                if(!string.IsNullOrEmpty(tag) && System.Text.RegularExpressions.Regex.IsMatch(tag,@"^v[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"))
+                    return "https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/"+tag;
+            }
+            catch(System.ArgumentException) { }
+            return "https://github.com/Tsubame-chan/YuiVRMAIStudio#readme";
+        }
+
+        internal static void ShowBackendAcquisitionHelp(bool address)
         {
             var dialog=YuiSimpleDialog.Create(YuiSimpleDialog.L("Backendの入手と接続", "Get and connect Backend"),
-                YuiSimpleDialog.L("Backendは、ご自身のMacやWindows PCで動かす追加機能です。\n\n1. 下の配布ページからPC版Yuiを入手し、展開・起動して必要データを準備します。\n2. 導入手順に沿ってPCでBackendを起動します。\n3. スマートフォンから使う場合は両方を同じTailscaleに接続し、この設定画面にPCの接続先を入力します。\n\n端末内AI・端末内音声・OpenAIへの直接接続だけなら不要です。",
-                "Backend is an optional service running on your own Mac or Windows PC.\n\n1. Get the desktop Yui app below, extract and launch it, then prepare its data.\n2. Follow the setup guide to start Backend on the PC.\n3. To connect from your phone, join both devices to the same Tailscale account and enter the PC address in Settings.\n\nOn-device AI, local voices and direct OpenAI access do not require Backend."));
-            dialog.AddButton(YuiSimpleDialog.L("PC版を入手（Mac / Windows） ↗", "Get desktop app (Mac / Windows) ↗"),()=>Application.OpenURL("https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/v0.2.4-beta.2"));
+                YuiSimpleDialog.L("Backendは、ご自身のMacやWindows PCで動かす追加機能です。\n\n1. 下の配布ページからPC版Yuiを入手し、展開・起動して必要データを準備します。\n2. 準備されたYuiBackend内のStart_Yui_Backend.command（Mac）／Start_Yui_Backend.bat（Windows）で起動します。\n3. スマートフォンから使う場合は両方を同じTailscaleに接続し、この設定画面にPCの接続先を入力します。\n\n端末内AI・端末内音声・OpenAIへの直接接続だけなら不要です。",
+                "Backend is an optional service running on your own Mac or Windows PC.\n\n1. Get the desktop Yui app below, extract and launch it, then prepare its data.\n2. In the prepared YuiBackend folder, run Start_Yui_Backend.command (Mac) or Start_Yui_Backend.bat (Windows).\n3. To connect from your phone, join both devices to the same Tailscale account and enter the PC address in Settings.\n\nOn-device AI, local voices and direct OpenAI access do not require Backend."));
+            dialog.AddButton(YuiSimpleDialog.L("PC版を入手（Mac / Windows） ↗", "Get desktop app (Mac / Windows) ↗"),()=>Application.OpenURL(BackendReleaseUrl()));
             dialog.AddButton(YuiSimpleDialog.L("導入・接続手順を開く ↗", "Open setup and connection guide ↗"),()=>Application.OpenURL("https://github.com/Tsubame-chan/YuiVRMAIStudio#readme"));
-            dialog.AddButton(YuiSimpleDialog.L("閉じる", "Close"),dialog.Close);
+            dialog.AddButton(YuiSimpleDialog.L("Macの導入手順 ↗", "Mac setup guide ↗"),()=>Application.OpenURL("https://github.com/Tsubame-chan/YuiVRMAIStudio/blob/main/docs/MAC_PUBLIC_BETA.md"));
+            dialog.AddButton(YuiSimpleDialog.L("Windowsの導入手順 ↗", "Windows setup guide ↗"),()=>Application.OpenURL("https://github.com/Tsubame-chan/YuiVRMAIStudio/blob/main/docs/SETUP_GUIDE.md"));
+            dialog.AddCloseButton(dialog.Close);
             if(address)dialog.Body.text+=YuiSimpleDialog.L("\n\n接続先の例：http://100.64.0.9:8000。同じPCならhttp://127.0.0.1:8000。末尾に/healthや/admin/は付けません。", "\n\nExample: http://100.64.0.9:8000. On the same PC use http://127.0.0.1:8000. Do not append /health or /admin/.");
             dialog.Compact(640);
         }

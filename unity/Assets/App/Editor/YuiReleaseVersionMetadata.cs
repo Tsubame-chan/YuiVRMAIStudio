@@ -8,6 +8,19 @@ namespace YuiPhysicalAI.Editor
 {
     public static class YuiReleaseVersionMetadata
     {
+        public static void SyncRuntimeMetadata()
+        {
+            var value = new JObject { ["desktop_tag"] = Read("desktop_tag"), ["ios_version"] = Read("ios_version"), ["ios_build"] = Read("ios_build") };
+            const string asset = "Assets/App/Resources/YuiReleaseVersions.json";
+            var path = Path.Combine(Application.dataPath, "App/Resources/YuiReleaseVersions.json");
+            var text = value.ToString(Newtonsoft.Json.Formatting.Indented) + "\n";
+            if (!File.Exists(path) || File.ReadAllText(path) != text)
+            {
+                File.WriteAllText(path, text);
+                UnityEditor.AssetDatabase.ImportAsset(asset, UnityEditor.ImportAssetOptions.ForceSynchronousImport);
+            }
+        }
+
         public static string Read(string field)
         {
             var path = Path.GetFullPath(Path.Combine(Application.dataPath, "../../backend/app/core/release_versions.json"));

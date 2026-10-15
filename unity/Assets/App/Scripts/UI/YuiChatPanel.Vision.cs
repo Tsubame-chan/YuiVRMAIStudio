@@ -20,6 +20,7 @@ namespace YuiPhysicalAI.UI
     {
         private async Task ImportImageAndAnalyzeFromPickerAsync()
         {
+            if (ModelImportBlocksComposer()) return;
             using var result = await YuiFilePicker.OpenImageFileAsync();
             // Native dialogs can clear Unity's selected control even on cancel
             // or a decode error. Restore the same keyboard path in every case.
@@ -44,6 +45,7 @@ namespace YuiPhysicalAI.UI
 
         private async Task CaptureScreenAndAnalyzeAsync()
         {
+            if (ModelImportBlocksComposer()) return;
             if (!await TryCaptureCameraAndAnalyzeAsync())
             {
                 SetStatus("Look camera not selected");
@@ -350,6 +352,7 @@ namespace YuiPhysicalAI.UI
 
         private async Task ImportImageAndAnalyzeAsync(string path)
         {
+            if (ModelImportBlocksComposer()) return;
             try
             {
                 isSending = true;

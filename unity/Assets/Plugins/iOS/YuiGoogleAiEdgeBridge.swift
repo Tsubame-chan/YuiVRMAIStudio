@@ -637,3 +637,11 @@ private func yuiVisionPrompt(payload: [String: Any]) -> String {
 public func YuiGoogleAiEdgeBridge_Free(_ pointer: UnsafeMutablePointer<CChar>?) {
     pointer?.deallocate()
 }
+
+// Called from the serialized native worker before another engine takes device memory.
+@_cdecl("YuiGoogleAiEdgeBridge_Release")
+public func YuiGoogleAiEdgeBridge_Release() {
+    let done = DispatchSemaphore(value: 0)
+    Task { await YuiLiteRtLmEngineStore.shared.reset(); done.signal() }
+    done.wait()
+}

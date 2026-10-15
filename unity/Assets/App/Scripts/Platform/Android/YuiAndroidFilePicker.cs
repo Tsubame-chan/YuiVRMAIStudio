@@ -15,6 +15,8 @@ namespace YuiPhysicalAI.Platform
         private static TaskCompletionSource<YuiFilePicker.Result> pending;
         private static YuiAndroidFilePicker bridge;
 
+        public static Task<YuiFilePicker.Result> OpenModelAsync() => OpenAsync("model");
+
         public static Task<YuiFilePicker.Result> OpenImageAsync()
         {
             return OpenAsync("image");

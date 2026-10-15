@@ -60,6 +60,70 @@ namespace YuiPhysicalAI.Tests.Editor
                 Assert.That(scroll.viewport.offsetMax.x,Is.EqualTo(0));
             } finally {Object.DestroyImmediate(dialog.gameObject);}
         }
+        [TestCase(true)]
+        [TestCase(false)]
+        public void CompactHeaderReservesCloseSpaceRegardlessOfCallOrder(bool closeFirst)
+        {
+            var dialog=YuiSimpleDialog.Create("処理を停止してから変更してください","Body");
+            try {
+                if(closeFirst)dialog.AddCloseButton(dialog.Close);
+                dialog.Compact(440);
+                if(!closeFirst)dialog.AddCloseButton(dialog.Close);
+                Canvas.ForceUpdateCanvases();
+                var close=(RectTransform)dialog.Heading.transform.parent.Find("Close");
+                var heading=dialog.Heading.rectTransform;
+                var h=new Vector3[4];var c=new Vector3[4];heading.GetWorldCorners(h);close.GetWorldCorners(c);
+                Assert.That(h[2].x,Is.LessThan(c[0].x),"Title must reserve the close control's width.");
+                Assert.That(heading.rect.height,Is.GreaterThanOrEqualTo(dialog.Heading.preferredHeight-.5f));
+                Assert.That(close.rect.width,Is.EqualTo(44).Within(.1f));
+            }finally{Object.DestroyImmediate(dialog.gameObject);}
+        }
+        [Test] public void ContentFitNoticeShrinksAndLongBodyKeepsOverflow()
+        {
+            var dialog=YuiSimpleDialog.Create("処理中","会話が終わってから保存できます。");
+            try {
+                dialog.AddButton("閉じる",dialog.Close);dialog.AddCloseButton(dialog.Close);dialog.FitToContent(440);
+                var update=typeof(YuiSimpleDialog).GetMethod("Update",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+                var measure=typeof(YuiSimpleDialog).GetMethod("RefreshContentWidth",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+                Canvas.ForceUpdateCanvases();measure.Invoke(dialog,null);Canvas.ForceUpdateCanvases();measure.Invoke(dialog,null);
+                var card=(RectTransform)dialog.Heading.transform.parent;var shortHeight=card.rect.height;
+                var scroll=dialog.Body.GetComponentInParent<ScrollRect>();
+                Assert.That(shortHeight,Is.LessThan(300));
+                Assert.That(scroll.content.rect.height,Is.LessThanOrEqualTo(scroll.viewport.rect.height));
+                dialog.Body.text=string.Join("\n",Enumerable.Repeat("Long explanation",100));
+                Canvas.ForceUpdateCanvases();measure.Invoke(dialog,null);update.Invoke(dialog,null);Canvas.ForceUpdateCanvases();measure.Invoke(dialog,null);
+                Assert.That(card.rect.height,Is.GreaterThan(shortHeight));
+                Assert.That(card.rect.height,Is.LessThanOrEqualTo(440));
+                Assert.That(scroll.content.rect.height,Is.GreaterThan(scroll.viewport.rect.height));
+                Assert.That(scroll.viewport.offsetMax.x,Is.EqualTo(-44));
+            }finally{Object.DestroyImmediate(dialog.gameObject);}
+        }
+        [Test] public void TwelveModelRowsScrollWhileTabsAndFooterStayOutsideViewport()
+        {
+            var dialog=YuiSimpleDialog.Create("On-device AI","Choose a model.");
+            try {
+                dialog.SettingsTabs(0,new[]{"Models","Add","Settings"},_=>{});
+                for(int i=0;i<12;i++)dialog.AddModelChoice("A very long imported model file name with quantization Q4_K_M "+i,"GGUF · Use this model",()=>{},i==0);
+                var save=dialog.AddFooterButton("Save",()=>{},true);dialog.AddCloseButton(dialog.Close);dialog.Compact(640);
+                var update=typeof(YuiSimpleDialog).GetMethod("Update",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+                var measure=typeof(YuiSimpleDialog).GetMethod("RefreshContentWidth",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic);
+                Canvas.ForceUpdateCanvases();update.Invoke(dialog,null);Canvas.ForceUpdateCanvases();measure.Invoke(dialog,null);
+                var scroll=dialog.Body.GetComponentInParent<ScrollRect>();
+                Assert.That(scroll.content.rect.height,Is.GreaterThan(scroll.viewport.rect.height));
+                Assert.That(save.GetComponentInParent<ScrollRect>(),Is.Null);
+                Assert.That(dialog.Heading.transform.parent.Find("DialogTabs").GetComponentInParent<ScrollRect>(),Is.Null);
+                foreach(var text in scroll.content.GetComponentsInChildren<Text>()) {
+                    if(text.transform.parent.name=="ModelChoice" && (text.name=="Label" || text.name=="Status")) {
+                        Assert.That(text.rectTransform.rect.height,Is.GreaterThanOrEqualTo(text.preferredHeight-.5f));
+                        Assert.That(text.verticalOverflow,Is.EqualTo(VerticalWrapMode.Overflow));
+                        Assert.That(text.cachedTextGenerator.Populate(text.text,text.GetGenerationSettings(text.rectTransform.rect.size)),Is.True);
+                        Assert.That(text.cachedTextGenerator.vertexCount,Is.GreaterThan(4),text.name+" must draw visible glyphs after layout measurement");
+                    }
+                }
+                var footer=(RectTransform)save.transform.parent;var top=new Vector3[4];var bottom=new Vector3[4];scroll.viewport.GetWorldCorners(top);footer.GetWorldCorners(bottom);
+                Assert.That(bottom[1].y,Is.LessThanOrEqualTo(top[0].y));
+            }finally{Object.DestroyImmediate(dialog.gameObject);}
+        }
         [TestCase("download",.239f,"23% / 100%")]
         [TestCase("download",2f,"100% / 100%")]
         public void DownloadStatusUsesPercentage(string stage,float percent,string expected)
@@ -77,10 +141,18 @@ namespace YuiPhysicalAI.Tests.Editor
             var events=new GameObject("TestEvents",typeof(EventSystem));
             var dialog=YuiSimpleDialog.Create("Test","Body");
             try {
-                var slider=dialog.AddSetting("Temperature",.5f,0,1,.05f,_=>{});
+                var slider=dialog.AddSetting("Output limit (thinking + reply)",.5f,0,1,.05f,_=>{});
                 for(var i=0;i<8;i++)dialog.AddButton("Action",()=>{});
                 dialog.Compact(640);
                 Canvas.ForceUpdateCanvases();
+                typeof(YuiSimpleDialog).GetMethod("RefreshContentWidth",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).Invoke(dialog,null);
+                Canvas.ForceUpdateCanvases();
+                var caption=slider.transform.parent.Find("Label").GetComponent<Text>();
+                Assert.That(caption.verticalOverflow,Is.EqualTo(VerticalWrapMode.Overflow));
+                Assert.That(caption.rectTransform.rect.height,Is.GreaterThanOrEqualTo(caption.preferredHeight));
+                Assert.That(caption.cachedTextGenerator.Populate(caption.text,caption.GetGenerationSettings(caption.rectTransform.rect.size)),Is.True);
+                Assert.That(caption.cachedTextGenerator.vertexCount,Is.GreaterThan(4),"Slider caption must draw after measurement");
+                Assert.That(((RectTransform)slider.transform.parent).rect.height-caption.rectTransform.rect.height,Is.GreaterThanOrEqualTo(43.5f));
                 var scroll=slider.GetComponentInParent<ScrollRect>();
                 Assert.That(scroll,Is.Not.Null);
                 Assert.That(dialog.Body.GetComponentInParent<ScrollRect>(),Is.SameAs(scroll));
@@ -89,6 +161,10 @@ namespace YuiPhysicalAI.Tests.Editor
                 Assert.That(scroll.verticalScrollbar,Is.Not.Null);
                 Assert.That(scroll.content.rect.height,Is.GreaterThan(scroll.viewport.rect.height));
                 var gesture=new PointerEventData(events.GetComponent<EventSystem>()){button=PointerEventData.InputButton.Left,pressPosition=new Vector2(100,100),position=new Vector2(102,160)};
+                Assert.That(((RectTransform)slider.transform).rect.height,Is.GreaterThanOrEqualTo(44),"Thin track must retain a usable touch target");
+                Assert.That(slider.fillRect.rect.height,Is.LessThanOrEqualTo(4.1f));
+                Assert.That(slider.handleRect,Is.Not.Null);
+                Assert.That(slider.handleRect.rect.height,Is.InRange(12,16),"Slider must not stretch the thumb across its touch target");
                 var control=(YuiScrollableSettingSlider)slider;
                 control.OnPointerDown(gesture);control.OnBeginDrag(gesture);control.OnDrag(gesture);control.OnPointerUp(gesture);control.OnEndDrag(gesture);
                 Assert.That(slider.value,Is.EqualTo(.5f));

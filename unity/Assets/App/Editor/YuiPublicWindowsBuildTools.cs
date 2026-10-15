@@ -162,6 +162,7 @@ namespace YuiPhysicalAI.Editor
 
         private static void ConfigureStandalonePlayer()
         {
+            YuiReleaseVersionMetadata.SyncRuntimeMetadata();
             PlayerSettings.companyName = "Yui VRM AI Studio";
             PlayerSettings.productName = "Yui VRM AI Studio";
             PlayerSettings.bundleVersion = PublicBuildVersion();
@@ -172,8 +173,8 @@ namespace YuiPhysicalAI.Editor
 #endif
             if (Environment.GetEnvironmentVariable("YUI_VALIDATION_PROFILE") == "1")
             {
-                PlayerSettings.productName = "Yui VRM AI Studio Validation";
-                PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Standalone, "jp.tsubamechan.yuivrm.validation");
+                PlayerSettings.productName = Environment.GetEnvironmentVariable("YUI_VALIDATION_PRODUCT_NAME") ?? "Yui VRM AI Studio Validation";
+                PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Standalone, Environment.GetEnvironmentVariable("YUI_VALIDATION_BUNDLE_ID") ?? "jp.tsubamechan.yuivrm.validation");
             }
 
             PlayerSettings.defaultScreenWidth = YuiStandaloneWindowBootstrap.DefaultWindowWidth;

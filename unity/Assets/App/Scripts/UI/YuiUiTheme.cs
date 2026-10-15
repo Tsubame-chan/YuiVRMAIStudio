@@ -12,6 +12,32 @@ namespace YuiPhysicalAI.UI
         public static readonly Color Accent = new Color32(208, 188, 255, 255);
         public static readonly Color Text = new Color32(235, 230, 240, 255);
         public static readonly Color Muted = new Color32(185, 180, 194, 255);
+        private static Sprite settingsRounded;
+        public static void RoundSettings(Image image)
+        {
+            if (image == null) return;
+            if (settingsRounded == null)
+            {
+                // Editor built-in UI sprites are not available in every Player.
+                const int size = 64; const float radius = 14f;
+                var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+                texture.name = "Settings rounded surface"; texture.hideFlags = HideFlags.HideAndDontSave;
+                texture.wrapMode = TextureWrapMode.Clamp;
+                var pixels = new Color[size * size];
+                for (var y = 0; y < size; y++) for (var x = 0; x < size; x++)
+                {
+                    var dx = Mathf.Max(radius - x - .5f, x + .5f - (size - radius), 0);
+                    var dy = Mathf.Max(radius - y - .5f, y + .5f - (size - radius), 0);
+                    pixels[y * size + x] = new Color(1, 1, 1, Mathf.Clamp01(radius - Mathf.Sqrt(dx * dx + dy * dy)));
+                }
+                texture.SetPixels(pixels); texture.Apply(false, true);
+                settingsRounded = Sprite.Create(texture, new Rect(0,0,size,size), new Vector2(.5f,.5f),100,0,SpriteMeshType.FullRect,new Vector4(radius,radius,radius,radius));
+                settingsRounded.hideFlags = HideFlags.HideAndDontSave;
+            }
+            image.sprite = settingsRounded;
+            image.type = Image.Type.Sliced;
+        }
+
         private static Sprite rounded;
         public static void Round(Image image)
         {

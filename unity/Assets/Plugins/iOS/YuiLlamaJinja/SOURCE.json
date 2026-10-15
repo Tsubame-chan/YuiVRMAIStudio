@@ -1,0 +1,111 @@
+{
+  "repository": "https://github.com/ggml-org/llama.cpp",
+  "revision": "14310190cd0a0c831fe949ac8cbedd8abdc90695",
+  "tag": "b11617",
+  "license": "MIT",
+  "files": [
+    {
+      "source": "common/jinja/lexer.cpp",
+      "destination": "jinja/lexer.cpp",
+      "sha256": "3d6774bc2dac477e10ddbee69eff403df36f5925c8512ccf8a249bde5c26dbd7",
+      "local_sha256": "161b9a4c06a66942a70a34451bcb36c837ce5a9fe476e9981a02bd69c55d4aa4"
+    },
+    {
+      "source": "common/jinja/lexer.h",
+      "destination": "jinja/yui-jinja-lexer.h",
+      "sha256": "93aecd72cc952fab08f657aa2a70e9f58421672b19d3179f8bdf555e683a1cc7",
+      "local_sha256": "ff096771776ae31542b64c3dd674d87647d3aa5e5ac69a277dd2b3c6f60495c8"
+    },
+    {
+      "source": "common/jinja/parser.cpp",
+      "destination": "jinja/parser.cpp",
+      "sha256": "5a1da297892cf62e9e412c954e0a9e74401d0df13c7acc113887b6d081e8a62d",
+      "local_sha256": "938239a4249c29e2b78007d639b7d3a150222e59e15b09ee12dfa4f56e46c19c"
+    },
+    {
+      "source": "common/jinja/parser.h",
+      "destination": "jinja/yui-jinja-parser.h",
+      "sha256": "6225eb759da910f3dd7753aed71c6938131cfa04c609d744e6f1390396422316",
+      "local_sha256": "a4ce4d8b16ce6e84bc8823a5b97db7d68b2185abe7897ddcbe3f19f61861c387"
+    },
+    {
+      "source": "common/jinja/runtime.cpp",
+      "destination": "jinja/runtime.cpp",
+      "sha256": "11528b19524c91a85ac2b59a020e0de42a8580d6fcdfba37d0e3c9169b5edb91",
+      "local_sha256": "a20584a07eaf42608fd826e11561200242f99f7b6428a8956958336ac7fea229"
+    },
+    {
+      "source": "common/jinja/runtime.h",
+      "destination": "jinja/yui-jinja-runtime.h",
+      "sha256": "6aabcfb491341cb2ab3540c83123eb98d55be3fc41c297be566d25b5aa6e7b1d",
+      "local_sha256": "7397ccb5c9984dd0676470e321971628b4cf51970a9df77fef3952d57d2e6d5c"
+    },
+    {
+      "source": "common/jinja/string.cpp",
+      "destination": "jinja/string.cpp",
+      "sha256": "6b1b13dea3f94c4d542c15250f793abd638839733fd96a9da6704bfdab662e86",
+      "local_sha256": "e029824075895d5498380d322a189a11364bbbd10fc8693e2db47fe4b96266f5"
+    },
+    {
+      "source": "common/jinja/string.h",
+      "destination": "jinja/yui-jinja-string.h",
+      "sha256": "d32ad2a319398b8dbc1cc43b39dd10ab2eb0ce2eae9d0eaf3c2162777dd615dc",
+      "local_sha256": "e4e829f8d96653bfb3545e2dfd1d56e970241b3f4a41675290a4885015ee6936"
+    },
+    {
+      "source": "common/jinja/value.cpp",
+      "destination": "jinja/value.cpp",
+      "sha256": "14d98a60a2fcf71f84cac250ca6885187c940ec815859f7c398ca48f857e2d63",
+      "local_sha256": "c43f4c490c3bbb53c860500c528dd0c0700ac53524ecdb9363dd47a425c37937"
+    },
+    {
+      "source": "common/jinja/value.h",
+      "destination": "jinja/yui-jinja-value.h",
+      "sha256": "6fae65f5eb4b1c07bf2e4a900799982fd40bba8d9db8333aba564463fca553b5",
+      "local_sha256": "792cad94f13d945d2f5347c0c7ea09b3bd2514882f2aecd1df2a2e757d4119f9"
+    },
+    {
+      "source": "common/jinja/utils.h",
+      "destination": "jinja/yui-jinja-utils.h",
+      "sha256": "61ae8bc57a7a551bdfb294a23a0ef8b5ba8e3cf4d695389f0f0797e2d7689781",
+      "local_sha256": "61ae8bc57a7a551bdfb294a23a0ef8b5ba8e3cf4d695389f0f0797e2d7689781"
+    },
+    {
+      "source": "common/json.cpp",
+      "destination": "json.cpp",
+      "sha256": "d8c556445cef8e7c93b0857f6ca7ae7ebd8295f169403ac66641b72f6b0598f2",
+      "local_sha256": "ceb57ef8c07229e4d407931a117959a44266b9e5863ebabc07a649527a83c5a8"
+    },
+    {
+      "source": "common/json.h",
+      "destination": "yui-jinja-json.h",
+      "sha256": "a352f31307f1be2bdb34c027b876f42a1c5d1ea775cc8e4f11d703b16c40d22f",
+      "local_sha256": "a352f31307f1be2bdb34c027b876f42a1c5d1ea775cc8e4f11d703b16c40d22f"
+    },
+    {
+      "source": "vendor/nlohmann/json.hpp",
+      "destination": "nlohmann/json.hpp",
+      "sha256": "08f19bbcc66ff3082f5caf58867b1232987dba98d82e2b29d870722fce42776b",
+      "local_sha256": "08f19bbcc66ff3082f5caf58867b1232987dba98d82e2b29d870722fce42776b"
+    },
+    {
+      "source": "LICENSE",
+      "destination": "LICENSE",
+      "sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d",
+      "local_sha256": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+    },
+    {
+      "source": "common/unicode.h",
+      "destination": "yui-jinja-unicode.h",
+      "sha256": "219b9257ac567a3e6bcf0f552c9a9ddc01d46a15eb4d2829ae5e069e643f0ec5",
+      "local_sha256": "219b9257ac567a3e6bcf0f552c9a9ddc01d46a15eb4d2829ae5e069e643f0ec5"
+    },
+    {
+      "source": "common/unicode.cpp",
+      "destination": "unicode.cpp",
+      "sha256": "191c00abab788e59e83e29fb877047fcbac1f4d6088c5e9962d38ac2e694686c",
+      "local_sha256": "d0d8a651c35dc4ee79faea4d30216d9207fc0a23d941b090211c39f92f7b2f14"
+    }
+  ],
+  "local_patch": "runtime context on_step hook and inheritance; AST evaluation checks cancellation/deadline and operation budget. Upstream hashes retained; local hashes recorded below. Header filenames/includes prefixed yui-jinja- to avoid shadowing OS C headers in Unity recursive header search paths."
+}

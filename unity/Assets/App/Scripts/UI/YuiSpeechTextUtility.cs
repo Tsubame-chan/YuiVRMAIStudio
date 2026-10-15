@@ -61,7 +61,7 @@ namespace YuiPhysicalAI.UI
             return Regex.Replace(cleaned, @"[ \t]{2,}", " ").Trim();
         }
 
-        public static string CleanSpeechText(string text)
+        public static string CleanSpeechText(string text,string languageCode="ja")
         {
             if (string.IsNullOrWhiteSpace(text))
             {
@@ -92,7 +92,7 @@ namespace YuiPhysicalAI.UI
             cleaned = Regex.Replace(cleaned, @"^[\s\-・*]+", "", RegexOptions.Multiline);
             cleaned = Regex.Replace(cleaned, @"[【】「」『』（）()]", " ");
             cleaned = Regex.Replace(cleaned, @"\s+", " ");
-            cleaned = NormalizeCharacterNameForSpeech(cleaned);
+            if(!YuiPhysicalAI.LocalAI.YuiSpeechLanguage.IsEnglish(languageCode))cleaned = NormalizeCharacterNameForSpeech(cleaned);
             return cleaned.Trim();
         }
 

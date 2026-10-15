@@ -40,6 +40,7 @@ namespace YuiPhysicalAI.UI
         private async System.Threading.Tasks.Task SendMessageAsync(string message)
         {
             if (isSending || deviceSyncBusy) return;
+            if (ModelImportBlocksComposer()) return;
             if (YuiChatRequestModes.IsWork(chatInteractionMode) && HasCompanionWorkTrialConfig())
             {
                 await ChooseCompanionWorkDestinationAsync(message);
@@ -155,7 +156,7 @@ namespace YuiPhysicalAI.UI
             catch (Exception ex)
             {
                 ClearPendingLine();
-                SetStatus(responseReceived ? "Voice unavailable" : IsLocalAiConversationMode() ? "Local AI unavailable" : "Error");
+                SetStatus(responseReceived ? "Voice unavailable" : ex.Message.Contains("repetitive_response") ? YuiSimpleDialog.L("反復を検出して停止しました","Repetition detected · Stopped") : IsLocalAiConversationMode() ? "Local AI unavailable" : "Error");
                 var errorMessage = ex is YuiBackendException backendException
                     ? backendException.UserMessage
                     : ex.Message;

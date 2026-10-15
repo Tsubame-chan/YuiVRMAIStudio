@@ -18,6 +18,13 @@ namespace YuiPhysicalAI.UI
         private YuiAiRuntimeRouter aiRuntimeRouter;
         private YuiLocalAiService localAiService;
         private bool localAiUnavailableWarningShown;
+        private bool ModelImportBlocksComposer() {
+            if(!YuiLocalModelMenu.ImportBusy)return false;
+            SetStatus(YuiSimpleDialog.L("モデルの確認が終わるまでお待ちください。バナーから中止できます。","Wait for model verification, or cancel it from the banner."));
+            return true;
+        }
+        private bool pendingLocalAiAssetRefresh;
+        private void ApplyPendingLocalAiAssetRefresh() { if(pendingLocalAiAssetRefresh && CanSwitchLocalModel)RefreshLocalAiRuntimeAfterAssetInstall(); }
         private HealthResponse routingBackendHealth;
         private string routingBackendUrl;
         private float routingBackendCheckedAt = -999f;
@@ -28,7 +35,7 @@ namespace YuiPhysicalAI.UI
             YuiLocalModelMenu.Show(this);
         }
 
-        public bool CanSwitchLocalModel => !isSending && !HasStoppableComposerOperation;
+        public bool CanSwitchLocalModel => !isSending && !HasStoppableComposerOperation && !YuiLocalModelMenu.ImportBusy && !YuiLocalModelExecutionGate.Busy;
 
         public void RequestOptionalTtsAssetDownload()
         {
@@ -38,6 +45,8 @@ namespace YuiPhysicalAI.UI
 
         public void RefreshLocalAiRuntimeAfterAssetInstall()
         {
+            if(!CanSwitchLocalModel){pendingLocalAiAssetRefresh=true;return;}
+            pendingLocalAiAssetRefresh=false;
             localVoicevoxUnavailable = false;
             ConfigureAiRuntimeRouter();
             localAiUnavailableWarningShown = false;

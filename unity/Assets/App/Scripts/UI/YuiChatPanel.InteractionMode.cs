@@ -145,7 +145,7 @@ namespace YuiPhysicalAI.UI
             }
             if (sendButtonText != null)
             {
-                YuiUiLocalization.Set(sendButtonText,"Send");
+                YuiUiLocalization.Set(sendButtonText,isRecording ? (IsRealtimeConversationMode() ? "Finish" : "Send") : HasStoppableComposerOperation ? "Stop" : isSending ? "..." : "Send");
             }
 
             if (inputField?.placeholder is Text placeholder)

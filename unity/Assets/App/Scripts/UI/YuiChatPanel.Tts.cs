@@ -126,7 +126,7 @@ namespace YuiPhysicalAI.UI
                 return;
             }
 
-            var speechText = YuiSpeechTextUtility.CleanSpeechText(speechSource);
+            var speechText = YuiSpeechTextUtility.CleanSpeechText(speechSource,YuiUiLocalization.Language);
             if (string.IsNullOrWhiteSpace(speechText))
             {
                 return;

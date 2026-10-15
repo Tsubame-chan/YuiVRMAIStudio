@@ -11,6 +11,7 @@ namespace YuiPhysicalAI.LocalAI
         public float Temperature = .65f, TopP = .85f;
         private static string Key(string id,bool work) => "yui.local-model.options."+id+(work?".work":".talk");
         public static YuiLocalModelOptions Defaults(YuiLocalAiModelPack pack,bool work) => new YuiLocalModelOptions {
+            ContextTokens=pack.SourceKind=="local-file"?4096:8192,
             OutputTokens=work?pack.WorkOutputTokenBudget:pack.TalkOutputTokenBudget,
             ThinkingTokens=work?pack.WorkThinkingTokenBudget:pack.ThinkingTokenBudget,
             Temperature=work?.45f:.65f

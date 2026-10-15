@@ -54,6 +54,11 @@ namespace YuiPhysicalAI.UI
             var badge=backendGroup.transform.Find("Status").GetComponent<Text>();
             badge.color=state=="degraded"?new Color32(240,195,135,255):backendOnline?YuiUiTheme.Accent:YuiUiTheme.Muted;
             ConnectionNote("BackendPurpose", "Backend connects to AI and voice services set up on a PC or server, including more natural-sounding speech. On-device AI, VOICEVOX and direct OpenAI access do not need it.", ref top);
+            var getBackend=modernContent.Find("GetBackend")?.GetComponent<Button>();
+            var backendCaption=YuiSimpleDialog.L("Backendの入手・接続方法（GitHub）", "Get and connect Backend (GitHub)");
+            if(getBackend==null)getBackend=HelpButton(modernContent,"GetBackend",backendCaption,()=>{Hide();YuiSettingsOverlay.ShowBackendAcquisitionHelp(true);});
+            YuiUiLocalization.Set(getBackend.GetComponentInChildren<Text>(),backendCaption);
+            getBackend.gameObject.SetActive(true);RowRect((RectTransform)getBackend.transform,top,68);top+=84;
             if (Application.isMobilePlatform)
                 ConnectionNote("MobileBackendAddress", YuiSimpleDialog.L(
                     "Backendを使う場合は、設定のBackend URLへPCのVPNアドレス（http://PCのアドレス:8000）を入力してください。127.0.0.1はこの端末自身を指すため、PCには接続できません。PCとこの端末で同じVPNに接続してください。",
@@ -87,9 +92,10 @@ namespace YuiPhysicalAI.UI
             ConnectionNote("ConnectionLegend","Installed = local data is present. Configured = settings exist; API access and credit are not verified here.",ref top);
             connectionsTab.navigation=new Navigation {mode=Navigation.Mode.Explicit,selectOnRight=guideTab,selectOnUp=closeButton,selectOnDown=deviceGroup};
             deviceGroup.navigation=new Navigation {mode=Navigation.Mode.Explicit,selectOnUp=connectionsTab,selectOnDown=backendGroup};
-            backendGroup.navigation=new Navigation {mode=Navigation.Mode.Explicit,selectOnUp=deviceGroup,
+            backendGroup.navigation=new Navigation {mode=Navigation.Mode.Explicit,selectOnUp=deviceGroup,selectOnDown=getBackend};
+            getBackend.navigation=new Navigation {mode=Navigation.Mode.Explicit,selectOnUp=backendGroup,
                 selectOnDown=allServicesButton!=null && allServicesButton.gameObject.activeSelf?allServicesButton:connectionsTab};
-            if(allServicesButton!=null) allServicesButton.navigation=new Navigation {mode=Navigation.Mode.Explicit,selectOnUp=backendGroup,selectOnDown=connectionsTab};
+            if(allServicesButton!=null) allServicesButton.navigation=new Navigation {mode=Navigation.Mode.Explicit,selectOnUp=getBackend,selectOnDown=connectionsTab};
         }
 
         // Unused default endpoint URLs do not prove installation. Keep selected

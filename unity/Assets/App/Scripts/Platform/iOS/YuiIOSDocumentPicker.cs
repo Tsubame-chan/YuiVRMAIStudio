@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using System.Threading;
 using UnityEngine;
 
 namespace YuiPhysicalAI.Platform
@@ -14,6 +15,17 @@ namespace YuiPhysicalAI.Platform
 
         private static TaskCompletionSource<YuiFilePicker.Result> pending;
         private static YuiIOSDocumentPicker bridge;
+
+        public static async Task<YuiFilePicker.Result> OpenModelAsync(CancellationToken token, IProgress<float> progress) {
+            var task=OpenAsync("model");
+#if UNITY_IOS && !UNITY_EDITOR
+            using var cancel=token.Register(YuiIOSDocumentPicker_CancelModel);
+            while(!task.IsCompleted) { progress?.Report(YuiIOSDocumentPicker_ModelProgress()); await Task.Delay(100); }
+#endif
+            var result=await task;
+            if(token.IsCancellationRequested){result.Dispose();token.ThrowIfCancellationRequested();}
+            return result;
+        }
 
         public static Task<YuiFilePicker.Result> OpenImageAsync()
         {
@@ -97,6 +109,8 @@ namespace YuiPhysicalAI.Platform
         }
 
 #if UNITY_IOS && !UNITY_EDITOR
+        [DllImport("__Internal")] private static extern void YuiIOSDocumentPicker_CancelModel();
+        [DllImport("__Internal")] private static extern float YuiIOSDocumentPicker_ModelProgress();
         [DllImport("__Internal")]
         private static extern void YuiIOSDocumentPicker_Open(string mode, string callbackObjectName);
 #endif

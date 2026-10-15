@@ -42,12 +42,12 @@ namespace YuiPhysicalAI.UI
         {
             if (sendButton != null)
             {
-                sendButton.interactable = interactable;
+                sendButton.interactable = interactable || HasStoppableComposerOperation;
             }
 
             if (sendButtonText != null)
             {
-                YuiUiLocalization.Set(sendButtonText,interactable ? "Send" : "...");
+                YuiUiLocalization.Set(sendButtonText,isRecording ? (IsRealtimeConversationMode() ? "Finish" : "Send") : HasStoppableComposerOperation ? "Stop" : interactable ? "Send" : "...");
             }
 
             if (recordButton != null)

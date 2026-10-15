@@ -125,7 +125,17 @@ namespace YuiPhysicalAI.UI
         {
             UpdateMicrophoneMonitor();
 #if UNITY_STANDALONE || UNITY_EDITOR
+            if(localModelSettingsOpen){YuiLocalModelMenu.HandleDesktopKeys(chatPanel);return;}
+#else
+            if(localModelSettingsOpen)return;
+#endif
+#if UNITY_STANDALONE || UNITY_EDITOR
             if (chatPanel != null && chatPanel.HasSavedDataPanel) return;
+            if((Input.GetKey(KeyCode.LeftCommand)||Input.GetKey(KeyCode.RightCommand)||Input.GetKey(KeyCode.LeftControl)||Input.GetKey(KeyCode.RightControl))
+                && (Input.GetKey(KeyCode.LeftShift)||Input.GetKey(KeyCode.RightShift)) && Input.GetKeyDown(KeyCode.M)) {
+                if(settingsRoot!=null&&!settingsRoot.activeSelf)Show();
+                OpenLocalModelSettings();return;
+            }
             if (settingsRoot != null && settingsRoot.activeSelf && Input.GetKeyDown(KeyCode.Tab))
                 YuiControlAffordance.MoveSettingsFocus(settingsRoot.transform,Input.GetKey(KeyCode.LeftShift)||Input.GetKey(KeyCode.RightShift));
             if ((Input.GetKey(KeyCode.LeftCommand) || Input.GetKey(KeyCode.RightCommand)
@@ -249,6 +259,7 @@ namespace YuiPhysicalAI.UI
 
         public async void Show()
         {
+            if(localModelSettingsOpen)return;
             var generation = ++settingsOpenGeneration;
             if (settingsRoot != null)
             {

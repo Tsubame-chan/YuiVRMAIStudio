@@ -24,8 +24,20 @@ namespace YuiPhysicalAI.UI
         private Dropdown advancedModeDropdown;
         private Dropdown languageDropdown;
         private bool renderingSettings;
-        private static Sprite roundedSettingsSprite;
 
+        private bool localModelSettingsOpen;
+        private void OpenLocalModelSettings()
+        {
+            if(localModelSettingsOpen)return;localModelSettingsOpen=true;
+            CloseSettingsHelp();StopMicrophoneMonitor();settingsOpenGeneration++;
+            if(settingsRoot!=null)settingsRoot.SetActive(false);
+            YuiLocalModelMenu.Open(chatPanel,()=>{
+                if(this==null)return;localModelSettingsOpen=false;
+                if(settingsRoot==null)return;
+                settingsRoot.SetActive(true);settingsRoot.transform.SetAsLastSibling();
+                ApplyResponsiveOverlayLayout();
+            });
+        }
         private void SelectSettingsPage(int page)
         {
             settingsPage = page;
@@ -93,9 +105,13 @@ namespace YuiPhysicalAI.UI
                         YuiControlAffordance.SelectionMark(button,ConversationModeValue() == mode);
                     }
                     var snapshot = chatPanel != null ? chatPanel.CurrentCapabilitySnapshot() : null;
-                    Note(content, snapshot?.Conversation(ConversationModeValue()).Detail ?? "Choose a connection to get started.", ref row);
-                    var modelLabel = YuiSimpleDialog.L("端末内AI · 2B / 4Bを選ぶ", "On-device AI · Choose 2B / 4B");
-                    ModernButton(content, "LocalModelMenu", modelLabel, () => YuiLocalModelMenu.Show(chatPanel));
+                    var capability=snapshot?.Conversation(ConversationModeValue());
+                    var detail=capability?.Detail ?? "Choose a connection to get started.";
+                    if(ConversationModeValue()==YuiConversationModes.LocalAi && capability?.State==YuiCapabilityState.Unavailable && YuiPhysicalAI.LocalAI.YuiLlamaRuntime.PlatformSupported)
+                        detail=YuiSimpleDialog.L("端末内モデルは、下の画面で選択・追加できます。","Choose or add an on-device model below.");
+                    Note(content,detail,ref row);
+                    var modelLabel = YuiSimpleDialog.L("端末内AI · モデルを選ぶ・追加する", "On-device AI · Choose or add model");
+                    ModernButton(content, "LocalModelMenu", modelLabel, OpenLocalModelSettings);
                     Full(content, "LocalModelMenu", modelLabel, ref row);
                     var policyLabel=YuiSimpleDialog.L("回答の方針 · API/端末内AI共通", "Response style · API and on-device AI");
                     ModernButton(content,"ResponsePolicy",policyLabel,()=> {
@@ -197,11 +213,11 @@ namespace YuiPhysicalAI.UI
                 else if (settingsPage == 2)
                 {
                     Heading(content, "Your character", ref row);
-                    ModernButton(content, "CharacterLibraryButton", "My characters", () => { ApplyFieldsToRuntime(false); chatPanel?.OpenCharacterLibrary(); });
+                    ModernButton(content, "CharacterLibraryButton", "My characters", () => { if(ApplyFieldsToRuntime(false))chatPanel?.OpenCharacterLibrary(); });
                     Full(content, "CharacterLibraryButton", "My characters", ref row);
                     Note(content, YuiSimpleDialog.L("キャラクターを選ぶと、その場で切り替わります。読み込み中は表示が出ます。", "Selecting a character switches it immediately. A loading indicator appears while it loads."), ref row);
                     Full(content, "CustomVrmImportButton", "Import avatar", ref row);
-                    ModernButton(content, "AvatarGuideButton", "Avatar guide", () => { ApplyFieldsToRuntime(false); chatPanel?.OpenAvatarGuide(); });
+                    ModernButton(content, "AvatarGuideButton", "Avatar guide", () => { if(ApplyFieldsToRuntime(false))chatPanel?.OpenAvatarGuide(); });
                     Full(content, "AvatarGuideButton", "Avatar guide", ref row);
                     if (YuiAvatarSlots.IsCustomVrm(chatPanel?.AvatarSlot))
                         Row(content, "CustomVrmNameLabel", "Appearance name", "CustomVrmNameInput", ref row);
@@ -341,30 +357,7 @@ namespace YuiPhysicalAI.UI
                 selectOnLeft = applyButton, selectOnDown = tab, selectOnUp = tab };
         }
 
-        private static void RoundSurface(Image image)
-        {
-            if (image == null) return;
-            if (roundedSettingsSprite == null)
-            {
-                // Editor built-in UI sprites are not available in every Player.
-                const int size = 64; const float radius = 14f;
-                var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
-                texture.name = "Settings rounded surface"; texture.hideFlags = HideFlags.HideAndDontSave;
-                texture.wrapMode = TextureWrapMode.Clamp;
-                var pixels = new Color[size * size];
-                for (var y = 0; y < size; y++) for (var x = 0; x < size; x++)
-                {
-                    var dx = Mathf.Max(radius - x - .5f, x + .5f - (size - radius), 0);
-                    var dy = Mathf.Max(radius - y - .5f, y + .5f - (size - radius), 0);
-                    pixels[y * size + x] = new Color(1, 1, 1, Mathf.Clamp01(radius - Mathf.Sqrt(dx * dx + dy * dy)));
-                }
-                texture.SetPixels(pixels); texture.Apply(false, true);
-                roundedSettingsSprite = Sprite.Create(texture, new Rect(0,0,size,size), new Vector2(.5f,.5f),100,0,SpriteMeshType.FullRect,new Vector4(radius,radius,radius,radius));
-                roundedSettingsSprite.hideFlags = HideFlags.HideAndDontSave;
-            }
-            image.sprite = roundedSettingsSprite;
-            image.type = Image.Type.Sliced;
-        }
+        private static void RoundSurface(Image image) => YuiUiTheme.RoundSettings(image);
 
         private static void Place(Transform target, float top, float height)
         { if (target == null) return; target.gameObject.SetActive(true); SetTopRectRuntime(target, 24, top, 24, height); }
