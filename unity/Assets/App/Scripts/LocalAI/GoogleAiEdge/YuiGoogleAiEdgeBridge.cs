@@ -20,6 +20,16 @@ namespace YuiPhysicalAI.LocalAI
         [DllImport("__Internal")] private static extern void YuiGoogleAiEdgeBridge_Forget(string requestId);
 #endif
 
+        public static void ReleaseCachedEngine()
+        {
+#if UNITY_IOS && !UNITY_EDITOR
+            YuiGoogleAiEdgeBridge_Release();
+#endif
+        }
+#if UNITY_IOS && !UNITY_EDITOR
+        [DllImport("__Internal")] private static extern void YuiGoogleAiEdgeBridge_Release();
+#endif
+
         public static bool IsSupported
         {
             get

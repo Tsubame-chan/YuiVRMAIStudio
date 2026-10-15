@@ -20,6 +20,7 @@ namespace YuiPhysicalAI.UI
     {
         private void Update()
         {
+            ApplyPendingLocalAiAssetRefresh();
 #if UNITY_STANDALONE || UNITY_EDITOR
             if (Input.GetKeyDown(KeyCode.Escape))
             {

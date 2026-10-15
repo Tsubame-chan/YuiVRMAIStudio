@@ -37,7 +37,7 @@
 | Windows | [Windows版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.5-beta.3/YuiVRMAIStudio_WindowsPublicBeta_v0.2.5-beta.3_windows.zip) |
 | iPhone / iPad | iOS 26以降。[App Store](https://apps.apple.com/jp/app/id6815341780)（日本向け無料版） |
 
-iPhone / iPad版 **0.2.5** はApp Storeで公開中です。デスクトップ版は **v0.2.5-beta.3** です。iOS **0.2.6 (20)** は2026-10-11に審査提出済みで、公開待ちです。Backendの管理画面・保存した声・端末同期が使えます。[Backendの使い方](docs/BACKEND_CONSOLE.md)。ZIPを展開して起動し、初回の案内に沿って必要データを取得してください。約2.5GBの通信と展開用の空き容量が必要です。Wi-Fiをおすすめします。Mac版の署名・公証は未整備です。詳しい起動手順は [Mac](docs/MAC_PUBLIC_BETA.md) / [Windows](docs/SETUP_GUIDE.md)へ。
+iPhone / iPad版 **0.2.6 (20)** はApp Storeで公開中です。デスクトップ版は **v0.2.5-beta.3** です。Backendの管理画面・保存した声・端末同期が使えます。[Backendの使い方](docs/BACKEND_CONSOLE.md)。ZIPを展開して起動し、初回の案内に沿って必要データを取得してください。約2.5GBの通信と展開用の空き容量が必要です。Wi-Fiをおすすめします。Mac版の署名・公証は未整備です。詳しい起動手順は [Mac](docs/MAC_PUBLIC_BETA.md) / [Windows](docs/SETUP_GUIDE.md)へ。
 
 **GitHubの「Code → Download ZIP」はソースコードです。** アプリを使う方は上のリンクからダウンロードしてください。
 
@@ -52,6 +52,16 @@ AIは、**オフラインで使える端末内AI** と **OpenAI API** を選べ�
 標準の声は日本語VOICEVOXの5声です。Mac・iOS版0.2.5以降では設定から、日本語Irodoriの3声（約1.96GB）と英語Kokoroの6声（約67.4MB）を任意に追加できます。以前のiOS 0.2.4・デスクトップv0.2.4-beta.2にはこの追加音声機能は含まれません。[音声データの取得](docs/LOCAL_AI_ASSETS.md)。Windows NVIDIAではBackend ConsoleからV4.1 INT8を追加できます。[Backendの追加取得](docs/BACKEND_ASSET_DOWNLOADS.md)。PCのバックエンドに接続する拡張機能については[ヘルプ](docs/HELP.md)、Backendの操作は[コンソール案内](docs/BACKEND_CONSOLE.md)、追加エンジンの導入は[音声導入ガイド](docs/BACKEND_TTS_GUIDE.md)を参照してください。
 
 公開ソースには、音声処理の取消・Backend起動待機・音声後処理の改善と配布番号の共通化も反映しています。既存のダウンロード版には未搭載で、次回アップデート向けです。[修正内容と検証範囲](docs/SOURCE_REVIEW_20261011.md)。
+
+## 次の更新に向けた追加モデル機能（未配布）
+
+設定 → AI →「端末内AI・モデルを選ぶ・追加する」から、互換モデルを追加して会話できます。Mac/iOSのGGUFはPCやBackend接続を必要としません。モデル選択・追加・詳細設定は3つのタブに分かれ、標準Gemmaへ戻せます。
+
+- Mac/iOS: 単一GGUF、互換LiteRT-LMを取り込み。Windows候補は互換LiteRT-LMのみで、GGUFエンジンは未同梱です。Android対応は今後の予定です。
+- Hugging Faceからは対応する`.gguf` / `.litertlm`を取得してください。生の`.safetensors`、分割GGUF、別添の画像・音声投影器には対応しません。
+- 追加モデルは実験的な選択肢です。大きいモデルは遅延・停止・アプリ終了の可能性があります。読み込み成功だけで互換とせず、取り込み時に入力への応答を検査します。
+
+[使い方・実行環境の制限](docs/LOCAL_MODEL_IMPORT.md) / [Backend入手・接続](docs/HELP.md)。既存の公開アプリに搭載済みという意味ではありません。
 
 ## デスクトップ v0.2.5-beta.3の更新内容
 

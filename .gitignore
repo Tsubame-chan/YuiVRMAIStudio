@@ -48,6 +48,13 @@ tools/tts/aivis-models/**/*.aivmx
 downloads/*.unitypackage
 scripts/audit_private_patterns.txt
 scripts/publication_guard.local.txt
+tmp_kikyo_pkg/
+public/
 installer/windows/output/
 
 backend/data/voice-library.json
+
+# Pinned Apple llama.cpp SDK is restored by prepare_llama_runtime_macos.py.
+tools/llama-runtime/apple/
+tools/llama-runtime/unpacked/
+tools/llama-runtime/llama-*-xcframework.zip

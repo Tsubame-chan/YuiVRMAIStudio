@@ -45,7 +45,7 @@ extern "C" int YuiMacFilePicker_Open(const char *mode, const char *title) {
     NSString *kind = [NSString stringWithUTF8String:mode ?: ""];
     yuiPanel.allowedFileTypes = [kind isEqualToString:@"image"]
         ? @[@"png", @"jpg", @"jpeg", @"webp", @"heic", @"heif"]
-        : [kind isEqualToString:@"vrm"] ? @[@"vrm"] : @[@"vrm", @"zip"];
+        : [kind isEqualToString:@"model"] ? @[@"gguf", @"litertlm"] : [kind isEqualToString:@"vrm"] ? @[@"vrm"] : @[@"vrm", @"zip"];
     yuiPanel.allowsOtherFileTypes = NO;
     void (^finished)(NSModalResponse) = ^(NSModalResponse response) {
         if (response == NSModalResponseOK && yuiPanel.URL.isFileURL) {

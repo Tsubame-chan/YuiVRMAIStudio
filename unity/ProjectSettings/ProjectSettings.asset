@@ -13,7 +13,7 @@ PlayerSettings:
   useOnDemandResources: 0
   accelerometerFrequency: 60
   companyName: Yui VRM AI Studio
-  productName: Yui Voice Pack Validation
+  productName: Yui VRM AI Studio
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -147,7 +147,7 @@ PlayerSettings:
   loadStoreDebugModeEnabled: 0
   visionOSBundleVersion: 1.0
   tvOSBundleVersion: 1.0
-  bundleVersion: 0.1.0-alpha.1
+  bundleVersion: 0.2.7
   preloadedAssets: []
   metroInputSource: 0
   wsaTransparentSwapchain: 0
@@ -172,11 +172,11 @@ PlayerSettings:
   applicationIdentifier:
     Android: jp.tsubamechan.yuivrm.public
     Standalone: jp.tsubamechan.yuivrm.voicepack-validation
-    iPhone: jp.tsubamechan.yuivrm.voicepack-validation
+    iPhone: jp.tsubamechan.yuivrm.public
   buildNumber:
     Standalone: 0
     VisionOS: 0
-    iPhone: 1
+    iPhone: 21
     tvOS: 0
   overrideDefaultApplicationIdentifier: 1
   AndroidBundleVersionCode: 1
@@ -659,11 +659,9 @@ PlayerSettings:
   enableInternalProfiler: 0
   logObjCUncaughtExceptions: 1
   enableCrashReportAPI: 0
-  cameraUsageDescription: Yui VRM AI Studio uses the camera only when you ask Yui
-    to look at the current scene.
+  cameraUsageDescription: "\u30AB\u30E1\u30E9\u3067\u9078\u3093\u3060\u666F\u8272\u3092\u30AD\u30E3\u30E9\u30AF\u30BF\u30FC\u306B\u898B\u305B\u307E\u3059\u3002"
   locationUsageDescription: 
-  microphoneUsageDescription: Yui VRM AI Studio uses the microphone to transcribe
-    your voice when you press Rec.
+  microphoneUsageDescription: "\u30AD\u30E3\u30E9\u30AF\u30BF\u30FC\u3068\u8A71\u3059\u305F\u3081\u306B\u30DE\u30A4\u30AF\u3092\u4F7F\u3044\u307E\u3059\u3002"
   bluetoothUsageDescription: 
   macOSTargetOSVersion: 12.0
   switchNMETAOverride: 
@@ -922,7 +920,7 @@ PlayerSettings:
   scriptingDefineSymbols:
     Android: YUI_PROFILE_PUBLIC
     Standalone: YUI_PROFILE_PUBLIC
-    iPhone: YUI_PROFILE_PUBLIC;YUI_VOICE_PACK_VALIDATION
+    iPhone: YUI_VOICE_PACK_VALIDATION;YUI_PROFILE_PUBLIC
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:

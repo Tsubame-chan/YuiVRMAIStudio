@@ -27,6 +27,7 @@ namespace YuiPhysicalAI.Tests.Editor
                 YuiUiLocalization.SetLanguage("en");Render();
                 var content=panel.transform.Find("HelpScroll/Viewport/Content");
                 var originalCount=content.childCount;
+                Assert.That(content.Find("BodyLocalImportGuide").GetComponent<Text>().text,Does.Contain(".gguf").And.Contain(".litertlm").And.Contain(".safetensors"));
                 for(var i=0;i<4;i++)
                 {
                     YuiUiLocalization.SetLanguage(i%2==0?"ja":"en");Render();
@@ -36,6 +37,34 @@ namespace YuiPhysicalAI.Tests.Editor
                 }
             }
             finally {Object.DestroyImmediate(root);Object.DestroyImmediate(host);YuiUiLocalization.SetLanguage(locale);}
+        }
+
+        [Test]
+        public void BackendDownloadTargetsThisBuildsReleaseRatherThanGithubLatest()
+        {
+            var url=(string)typeof(YuiSettingsOverlay).GetMethod("BackendReleaseUrl",BindingFlags.Static|BindingFlags.NonPublic).Invoke(null,null);
+            Assert.That(url,Is.EqualTo("https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/tag/"+YuiPhysicalAI.Editor.YuiReleaseVersionMetadata.Read("desktop_tag")));
+        }
+
+        [TestCase("ja")]
+        [TestCase("en")]
+        public void BackendAcquisitionHasFixedCloseAndPlatformGuides(string language)
+        {
+            var locale=YuiUiLocalization.Language;
+            YuiSimpleDialog dialog=null;
+            try
+            {
+                YuiUiLocalization.SetLanguage(language);
+                typeof(YuiSettingsOverlay).GetMethod("ShowBackendAcquisitionHelp",BindingFlags.Static|BindingFlags.NonPublic).Invoke(null,new object[]{true});
+                dialog=Object.FindFirstObjectByType<YuiSimpleDialog>();
+                Assert.IsNotNull(dialog);
+                Assert.IsNotNull(dialog.Heading.transform.parent.Find("Close").GetComponent<Button>(),"Long instructions need a close control outside the scrolling body.");
+                Assert.That(dialog.Body.text,Does.Contain("Start_Yui_Backend.command").And.Contain("Start_Yui_Backend.bat").And.Contain("127.0.0.1"));
+                var labels=System.Linq.Enumerable.Select(dialog.GetComponentsInChildren<Button>(),b=>b.GetComponentInChildren<Text>()?.text??"");
+                Assert.IsTrue(System.Linq.Enumerable.Any(labels,t=>t.Contains("Mac")&&!t.Contains("Windows")));
+                Assert.IsTrue(System.Linq.Enumerable.Any(labels,t=>t.Contains("Windows")&&!t.Contains("Mac")));
+            }
+            finally {if(dialog!=null)Object.DestroyImmediate(dialog.gameObject);YuiUiLocalization.SetLanguage(locale);}
         }
 
         [Test]
@@ -92,6 +121,9 @@ namespace YuiPhysicalAI.Tests.Editor
                 }});
                 Render();var content=(RectTransform)typeof(YuiHelpOverlay).GetField("modernContent",flags).GetValue(help);
                 Assert.IsNull(content.Find("StatusDatabase"));
+                var acquisition=content.Find("GetBackend").GetComponent<Button>();
+                Assert.IsTrue(acquisition.gameObject.activeSelf,"Backend acquisition must be discoverable without expanding connection diagnostics.");
+                Assert.That(content.Find("BackendGroup").GetComponent<Button>().navigation.selectOnDown,Is.EqualTo(acquisition));
                 content.Find("BackendGroup").GetComponent<Button>().onClick.Invoke();
                 Assert.IsTrue(content.Find("StatusDatabase").gameObject.activeSelf);
                 Assert.IsNull(content.Find("StatusGemini"));

@@ -36,6 +36,7 @@ namespace YuiPhysicalAI.UI
             string nextMicrophoneDevice = null,
             string nextLookCameraDevice = null)
         {
+            if(!CanSwitchLocalModel){SetStatus("処理を停止してから接続・音声設定を変更してください。");return;}
             if (nextBackendUrl != null && (Application.isMobilePlatform || !string.IsNullOrWhiteSpace(nextBackendUrl)))
             {
                 if (!string.Equals(backendUrl, nextBackendUrl.Trim(), StringComparison.Ordinal))
@@ -220,6 +221,7 @@ namespace YuiPhysicalAI.UI
 
         public void SetDirectOpenAiSettings(string apiKey, string model)
         {
+            if(!CanSwitchLocalModel){SetStatus("処理を停止してからAPI設定を変更してください。");return;}
             openAiApiKey = string.IsNullOrWhiteSpace(apiKey) ? string.Empty : apiKey.Trim();
             openAiModel = YuiDirectOpenAiClient.NormalizeModel(model);
             directOpenAiClient = null;
@@ -233,6 +235,7 @@ namespace YuiPhysicalAI.UI
 
         public void SetAutoAiFallbackEnabled(bool enabled)
         {
+            if(!CanSwitchLocalModel){SetStatus("処理を停止してから接続設定を変更してください。");return;}
             autoAiFallbackEnabled = enabled;
             PlayerPrefs.SetInt(AutoAiFallbackEnabledKey, enabled ? 1 : 0);
             PlayerPrefs.Save();

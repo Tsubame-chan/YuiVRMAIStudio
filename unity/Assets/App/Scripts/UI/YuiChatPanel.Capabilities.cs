@@ -100,12 +100,9 @@ namespace YuiPhysicalAI.UI
 
         private bool LocalChatRuntimeAvailable()
         {
-            if (!YuiGoogleAiEdgeBridge.IsSupported) return false;
             var registry = YuiLocalAiModelRegistry.FromStreamingAssetsOrDefault();
-            return YuiLocalAiRuntimeFactory.HasOnDeviceEmbeddedPack(
-                registry,
-                YuiLocalAiCapability.Chat,
-                RuntimeAssetAvailableForLocalChat);
+            return YuiLocalAiRuntimeFactory.HasAvailableChat(registry,YuiLocalModelSelection.SelectedId,
+                YuiGoogleAiEdgeBridge.IsSupported,YuiLlamaRuntime.PlatformSupported,RuntimeAssetAvailableForLocalChat);
         }
 
         private static bool RuntimeAssetAvailableForLocalChat(YuiLocalAiModelPack pack)

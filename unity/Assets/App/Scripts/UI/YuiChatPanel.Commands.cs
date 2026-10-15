@@ -22,6 +22,7 @@ namespace YuiPhysicalAI.UI
         {
             if (isRecording) { _ = StopRecordingAndSendAsync(); return; }
             if (HasStoppableComposerOperation) { StopComposerOperation(); return; }
+            if (ModelImportBlocksComposer()) return;
             if (inputField == null || isSending)
             {
                 return;

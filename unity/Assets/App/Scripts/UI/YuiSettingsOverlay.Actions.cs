@@ -11,15 +11,20 @@ namespace YuiPhysicalAI.UI
             if (applyButton != null) applyButton.interactable = false;
             try
             {
-                ApplyFieldsToRuntime(true);
+                if(!ApplyFieldsToRuntime(true))return;
                 RefreshFields();
                 Hide();
             }
             finally { if (applyButton != null) applyButton.interactable = true; }
         }
 
-        private void ApplyFieldsToRuntime(bool applyDisplaySettings)
+        private bool ApplyFieldsToRuntime(bool applyDisplaySettings)
         {
+            if(chatPanel!=null && !chatPanel.CanSwitchLocalModel) {
+                var notice=YuiSimpleDialog.Create(YuiSimpleDialog.L("処理中","Operation in progress"),YuiSimpleDialog.L("会話・音声・モデル処理が終わってから設定を保存できます。入力した変更はこの画面に保持します。","Save settings after the conversation, audio or model operation finishes. Your edits remain in this screen."));
+                notice.AddButton(YuiSimpleDialog.L("閉じる","Close"),notice.Close);notice.AddCloseButton(notice.Close);notice.FitToContent(440);
+                return false;
+            }
             var backendUrl = backendUrlInput != null ? backendUrlInput.text : null;
             var speakerId = chatPanel != null ? chatPanel.SpeakerId : 14;
             if (speakerDropdown != null)
@@ -73,6 +78,7 @@ namespace YuiPhysicalAI.UI
             {
                 windowResolutionController.SetPreset(resolutionDropdown.value);
             }
+            return true;
         }
 
         private static string TtsModeForConversationMode(string conversationMode, string selectedTtsMode)
@@ -97,7 +103,7 @@ namespace YuiPhysicalAI.UI
                 return;
             }
 
-            ApplyFieldsToRuntime(false);
+            if(!ApplyFieldsToRuntime(false))return;
             if (chatPanel != null)
             {
                 isPreviewingVoice = true;
@@ -108,14 +114,14 @@ namespace YuiPhysicalAI.UI
 
         private void TestMicrophone()
         {
-            ApplyFieldsToRuntime(false);
+            if(!ApplyFieldsToRuntime(false))return;
             StartMicrophoneMonitor();
         }
 
         private async void ImportCustomVrm()
         {
             if (chatPanel == null) return;
-            ApplyFieldsToRuntime(false);
+            if(!ApplyFieldsToRuntime(false))return;
             await chatPanel.ImportAvatarAsync();
             RefreshCharacterSelection();
         }

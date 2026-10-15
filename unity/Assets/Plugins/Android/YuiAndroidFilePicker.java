@@ -8,6 +8,10 @@ public final class YuiAndroidFilePicker {
     private YuiAndroidFilePicker() {
     }
 
+    public static long availableBytes(String path) {
+        return new android.os.StatFs(path).getAvailableBytes();
+    }
+
     public static void open(String mode, String callbackObjectName) {
         Activity activity = UnityPlayer.currentActivity;
         if (activity == null) {

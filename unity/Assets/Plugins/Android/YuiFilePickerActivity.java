@@ -47,7 +47,7 @@ public final class YuiFilePickerActivity extends Activity {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        if ("vrm".equals(mode) || "avatar".equals(mode)) {
+        if ("model".equals(mode) || "vrm".equals(mode) || "avatar".equals(mode)) {
             intent.setType("*/*");
             // Providers disagree on the MIME type of .vrm. Validate the filename after selection.
 
@@ -88,21 +88,22 @@ public final class YuiFilePickerActivity extends Activity {
     }
 
     private String copyToAppStorage(Uri uri, String mode) throws Exception {
+        boolean modelMode = "model".equals(mode);
         boolean avatarMode = "avatar".equals(mode);
-        boolean documentMode = "vrm".equals(mode) || avatarMode;
+        boolean documentMode = modelMode || "vrm".equals(mode) || avatarMode;
         File root = new File(getCacheDir(), "YuiPickedFiles/" + (documentMode ? "Avatar/" : "Image/") + UUID.randomUUID());
         if (!root.isDirectory() && !root.mkdirs()) {
             throw new IllegalStateException("Failed to create directory: " + root.getAbsolutePath());
         }
 
         String extension = extensionFor(uri, mode);
-        String allowed = documentMode ? (avatarMode ? ",vrm,zip," : ",vrm,") : ",png,jpg,jpeg,webp,heic,heif,";
+        String allowed = modelMode ? ",gguf,litertlm," : documentMode ? (avatarMode ? ",vrm,zip," : ",vrm,") : ",png,jpg,jpeg,webp,heic,heif,";
         if (!allowed.contains("," + extension + ","))
             throw new IllegalArgumentException(documentMode ? "Choose a VRM or a ZIP exported by Yui Avatar Bridge." : "Choose a PNG, JPEG, WebP or HEIF image.");
         String name = displayNameFor(uri).replaceAll("[/\\\\\\p{Cntrl}]", "_");
         if (name.isEmpty() || extensionFromName(name).isEmpty()) name = "selected." + extension;
         File target = new File(root, name);
-        long total = 0, limit = (documentMode ? 512L : 64L) * 1024 * 1024;
+        long total = 0, limit = modelMode ? 32L*1024*1024*1024 : (documentMode ? 512L : 64L) * 1024 * 1024;
         try (InputStream input = getContentResolver().openInputStream(uri);
              FileOutputStream output = new FileOutputStream(target, false)) {
             if (input == null) {
@@ -113,7 +114,7 @@ public final class YuiFilePickerActivity extends Activity {
             while ((read = input.read(buffer)) >= 0) {
                 if (read > 0) {
                     total += read;
-                    if (total > limit) throw new IllegalArgumentException(documentMode ? "Choose an avatar file smaller than 512 MB." : "Choose an image smaller than 64 MB.");
+                    if (total > limit) throw new IllegalArgumentException(modelMode ? "Choose a model smaller than 32 GiB." : documentMode ? "Choose an avatar file smaller than 512 MB." : "Choose an image smaller than 64 MB.");
                     output.write(buffer, 0, read);
                 }
             }

@@ -76,6 +76,15 @@ namespace YuiPhysicalAI.LocalAI
         [JsonProperty("work_output_token_budget")]
         public int WorkOutputTokenBudget { get; set; } = 2304;
 
+        [JsonProperty("source_kind")]
+        public string SourceKind { get; set; } = "download";
+
+        [JsonProperty("file_bytes")]
+        public long FileBytes { get; set; }
+
+        [JsonProperty("verified_runtime")]
+        public string VerifiedRuntime { get; set; }
+
         [JsonProperty("download_url")]
         public string DownloadUrl { get; set; }
 

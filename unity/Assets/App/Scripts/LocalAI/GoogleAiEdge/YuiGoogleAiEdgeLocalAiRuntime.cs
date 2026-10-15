@@ -152,6 +152,7 @@ namespace YuiPhysicalAI.LocalAI
                 var response = await Task.Run(
                     () =>
                     {
+                        using var engineLease = YuiLocalModelExecutionGate.Enter(cancellationToken);
                         cancellationToken.ThrowIfCancellationRequested();
                         var chatRequest = request as YuiLocalAiChatRequest;
                         var inferenceTimer=System.Diagnostics.Stopwatch.StartNew();
@@ -247,7 +248,11 @@ namespace YuiPhysicalAI.LocalAI
         {
             var candidates = registry.EnabledFor(capability).Where(IsGoogleAiEdgePack);
             var selected = YuiLocalModelSelection.SelectedId;
-            if (capability == YuiLocalAiCapability.Chat) return YuiLocalModelSelection.Order(candidates, selected);
+            if (capability == YuiLocalAiCapability.Chat) {
+                var choice = registry.Packs.FirstOrDefault(p => p.Id == selected);
+                if (choice?.SourceKind == "local-file") return candidates.Where(p => p.Id == selected);
+                return YuiLocalModelSelection.Order(candidates, selected);
+            }
             var selectedPack = registry.Packs.FirstOrDefault(pack => pack.Id == selected);
             return selectedPack == null ? candidates : candidates.OrderBy(pack =>
                 pack.RuntimeModelRef == selectedPack.RuntimeModelRef ? 0 : 1).ThenBy(pack => pack.Priority);

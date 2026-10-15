@@ -29,6 +29,14 @@ namespace YuiPhysicalAI.Tests.Editor
             Assert.That(YuiLocalAiPromptBuilder.BuildCompactSystemInstruction(request), Does.Not.Contain("Reply in natural Japanese"));
             Assert.That(YuiLocalAiPromptBuilder.BuildSystemInstruction(new YuiLocalAiChatRequest()), Does.Contain("日本語"));
         }
+        [TestCase("en")][TestCase("en-US")]
+        public void EnglishSpeechCleaningDoesNotInjectJapaneseName(string language)
+        {
+            var cleaned=YuiPhysicalAI.UI.YuiSpeechTextUtility.CleanSpeechText("Hello, I am **Yui**.",language);
+            Assert.That(cleaned,Is.EqualTo("Hello, I am Yui."));
+        }
+        [Test] public void JapaneseSpeechKeepsJapaneseNamePronunciation()
+            => Assert.That(YuiPhysicalAI.UI.YuiSpeechTextUtility.CleanSpeechText("Yuiです。","ja"),Is.EqualTo("ユイです。"));
         [TestCase("ja", "ja-JP")][TestCase("en", "en-US")]
         public void RecognitionUsesSelectedLocale(string input, string expected) => Assert.AreEqual(expected, YuiSpeechLanguage.Locale(input));
         [TestCase("2026", "two thousand twenty six")][TestCase("007", "zero zero seven")]
@@ -58,6 +66,7 @@ namespace YuiPhysicalAI.Tests.Editor
             Assert.That(g2p.Phonemes("I have 42 cats."), Does.Contain("fˈɔɹɾi"));
             Assert.That(g2p.Phonemes("2.5%"), Does.Contain("pˈYnt"));
             Assert.That(g2p.Phonemes("Yui"), Is.EqualTo("jˈui"));
+            Assert.DoesNotThrow(()=>g2p.Phonemes(YuiPhysicalAI.UI.YuiSpeechTextUtility.CleanSpeechText("Hello, I am Yui.","en")));
             var chunks = g2p.Tokenize(string.Join(" ", Enumerable.Repeat("Hello, I am Yui. It is lovely to talk with you!", 15))).ToArray();
             Assert.That(chunks.Length, Is.GreaterThan(1));
             Assert.IsTrue(chunks.All(c => c.Length <= 242 && c[0] == 0 && c[c.Length - 1] == 0));

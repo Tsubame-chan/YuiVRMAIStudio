@@ -52,6 +52,7 @@ namespace YuiPhysicalAI.UI
 
         private async Task StartRecordingAsync()
         {
+            if (ModelImportBlocksComposer()) return;
             if (runtimeVrmImporter != null && runtimeVrmImporter.IsImporting)
             { SetStatus("アバターの読み込みが終わってから録音してください。"); return; }
             if (IsRealtimeConversationMode())

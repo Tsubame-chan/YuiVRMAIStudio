@@ -21,6 +21,7 @@ namespace YuiPhysicalAI.Editor
         private static void BuildIOSCandidate()
         {
             RequireSceneLifecycleEditor(Application.unityVersion);
+            YuiReleaseVersionMetadata.SyncRuntimeMetadata();
             var output = Environment.GetEnvironmentVariable("YUI_IOS_BUILD_DIRECTORY");
             if (string.IsNullOrWhiteSpace(output) || !Path.IsPathRooted(output)) throw new InvalidOperationException("Set YUI_IOS_BUILD_DIRECTORY to a fresh absolute candidate directory.");
             var rebuilding = Environment.GetEnvironmentVariable("YUI_IOS_REBUILD") == "1"
@@ -93,6 +94,7 @@ namespace YuiPhysicalAI.Editor
             }
 
             RequireSceneLifecycleEditor(Application.unityVersion);
+            YuiReleaseVersionMetadata.SyncRuntimeMetadata();
 
             var plistPath = Path.Combine(pathToBuiltProject, "Info.plist");
             if (!File.Exists(plistPath))

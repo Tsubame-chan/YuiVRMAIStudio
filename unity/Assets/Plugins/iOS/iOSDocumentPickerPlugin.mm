@@ -1,4 +1,8 @@
 #import <Foundation/Foundation.h>
+#include <atomic>
+#include <fstream>
+#include <vector>
+#include <cstring>
 #import <PhotosUI/PhotosUI.h>
 #import <ImageIO/ImageIO.h>
 #import <UIKit/UIKit.h>
@@ -25,6 +29,8 @@ static NSString *const YuiDocumentPickerErrorPrefix = @"__YUI_ERROR__:";
 @end
 
 static YuiIOSPickerSession *YuiIOSActivePickerSession;
+static std::atomic<bool> YuiModelCopyCancelled(false);
+static std::atomic<float> YuiModelCopyProgress(-1.f);
 
 static void YuiDocumentPickerSend(NSString *objectName, NSString *message)
 {
@@ -75,7 +81,7 @@ static void YuiPresentPicker(UIViewController *picker, YuiIOSPickerSession *sess
 static NSString *YuiDocumentPickerTargetRoot(NSString *mode)
 {
     return [[NSTemporaryDirectory() stringByAppendingPathComponent:@"YuiPickedFiles"]
-        stringByAppendingPathComponent:[mode isEqualToString:@"image"] ? @"Image" : @"Avatar"];
+        stringByAppendingPathComponent:[mode isEqualToString:@"model"] ? @"Model" : [mode isEqualToString:@"image"] ? @"Image" : @"Avatar"];
 
 }
 
@@ -101,6 +107,38 @@ static NSString *YuiDocumentPickerCopyURL(NSURL *url, NSString *mode, NSError **
         [fileManager removeItemAtPath:target error:nil];
         return nil;
     }
+    return target;
+}
+
+static NSString *YuiDocumentPickerCopyModel(NSURL *url, NSError **error) {
+    NSString *ext = url.pathExtension.lowercaseString;
+    NSNumber *bytes = nil; [url getResourceValue:&bytes forKey:NSURLFileSizeKey error:error];
+    unsigned long long length = bytes.unsignedLongLongValue;
+    NSDictionary *storage = [NSFileManager.defaultManager attributesOfFileSystemForPath:NSTemporaryDirectory() error:error];
+    NSString *problem = nil;
+    if (![ext isEqualToString:@"gguf"] && ![ext isEqualToString:@"litertlm"]) problem = @"Choose a GGUF or LiteRT-LM model file.";
+    else if (length < 32 || length > 32ULL*1024*1024*1024) problem = @"The model file is truncated or exceeds 32 GiB.";
+    else if ([storage[NSFileSystemFreeSize] unsignedLongLongValue] < length + 512ULL*1024*1024) problem = @"Not enough free storage to copy this model.";
+    if (problem) { if(error)*error=[NSError errorWithDomain:@"YuiModelImport" code:1 userInfo:@{NSLocalizedDescriptionKey:problem}];return nil; }
+    NSString *folder = [YuiDocumentPickerTargetRoot(@"model") stringByAppendingPathComponent:NSUUID.UUID.UUIDString];
+    [NSFileManager.defaultManager createDirectoryAtPath:folder withIntermediateDirectories:YES attributes:nil error:error];
+    NSString *target = [folder stringByAppendingPathComponent:url.lastPathComponent];
+    std::ifstream input(url.path.UTF8String,std::ios::binary); std::ofstream output(target.UTF8String,std::ios::binary);
+    char header[8];input.read(header,8);
+    bool valid = input.gcount()==8 && ([ext isEqualToString:@"gguf"] ? memcmp(header,"GGUF",4)==0 && header[4]==3 && header[5]==0 && header[6]==0 && header[7]==0 : memcmp(header,"LITERTLM",8)==0);
+    if (!valid) problem = @"This file is not a supported model. Renaming does not convert it.";
+    else {
+        input.seekg(0);std::vector<char> buffer(1024*1024);unsigned long long copied=0;YuiModelCopyProgress=0;
+        while(input && output && !YuiModelCopyCancelled) {
+            input.read(buffer.data(),buffer.size());auto count=input.gcount();if(count<=0)break;copied+=count;
+            if(copied>length){problem=@"The selected model changed during import.";break;}
+            output.write(buffer.data(),count);YuiModelCopyProgress=(float)((double)copied/length);
+        }
+        if(YuiModelCopyCancelled) problem=YuiDocumentPickerCancelled;
+        else if(!output || copied!=length) problem=@"Could not copy the full model. Check free storage and the file provider.";
+    }
+    output.close();input.close();
+    if(problem){[NSFileManager.defaultManager removeItemAtPath:folder error:nil];if(error)*error=[NSError errorWithDomain:@"YuiModelImport" code:1 userInfo:@{NSLocalizedDescriptionKey:problem}];return nil;}
     return target;
 }
 
@@ -174,12 +212,13 @@ static NSString *YuiDocumentPickerCopyImageURL(NSURL *url, NSError **error)
         [coordinator coordinateReadingItemAtURL:url options:0 error:&coordinationError byAccessor:^(NSURL *readingURL) {
             NSNumber *size = nil;
             [readingURL getResourceValue:&size forKey:NSURLFileSizeKey error:nil];
-            if (size.unsignedLongLongValue > 512ULL * 1024 * 1024) {
+            if ([mode isEqualToString:@"model"]) { path = YuiDocumentPickerCopyModel(readingURL, &copyError); }
+            else if (size.unsignedLongLongValue > 512ULL * 1024 * 1024) {
                 copyError = [NSError errorWithDomain:@"YuiFilePicker" code:1 userInfo:@{NSLocalizedDescriptionKey:@"Choose an avatar file smaller than 512 MB."}];
             } else path = YuiDocumentPickerCopyURL(readingURL, mode, &copyError);
         }];
         if (scoped) [url stopAccessingSecurityScopedResource];
-        NSString *message = path.length > 0 ? path : [YuiDocumentPickerErrorPrefix stringByAppendingString:copyError.localizedDescription ?: coordinationError.localizedDescription ?: @"Could not read the selected file. Please select it again."];
+        NSString *message = YuiModelCopyCancelled && [mode isEqualToString:@"model"] ? YuiDocumentPickerCancelled : path.length > 0 ? path : [YuiDocumentPickerErrorPrefix stringByAppendingString:copyError.localizedDescription ?: coordinationError.localizedDescription ?: @"Could not read the selected file. Please select it again."];
         dispatch_async(dispatch_get_main_queue(), ^{
             [self finish:message];
         });
@@ -281,7 +320,9 @@ static void YuiDocumentPicker_OpenDocument(NSString *mode, NSString *objectName)
         }
 
         NSArray<UTType *> *types = nil;
-        if ([mode isEqualToString:@"vrm"])
+        if ([mode isEqualToString:@"model"])
+        { types = @[UTTypeData]; YuiModelCopyCancelled = false; YuiModelCopyProgress = -1; }
+        else if ([mode isEqualToString:@"vrm"])
         {
             UTType *vrmType = [UTType typeWithFilenameExtension:@"vrm"];
             types = vrmType != nil ? @[vrmType, UTTypeData] : @[UTTypeData];
@@ -305,7 +346,7 @@ static void YuiDocumentPicker_OpenDocument(NSString *mode, NSString *objectName)
         delegate.callbackObjectName = objectName;
         delegate.mode = mode;
 
-        UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:types asCopy:YES];
+        UIDocumentPickerViewController *picker = [[UIDocumentPickerViewController alloc] initForOpeningContentTypes:types asCopy:![mode isEqualToString:@"model"]];
         picker.delegate = delegate;
         picker.allowsMultipleSelection = NO;
 
@@ -327,4 +368,24 @@ extern "C" void YuiIOSDocumentPicker_Open(const char *modeChars, const char *cal
     }
 
     YuiDocumentPicker_OpenDocument(mode, objectName);
+}
+
+extern "C" float YuiIOSDocumentPicker_ModelProgress(void) { return YuiModelCopyProgress; }
+extern "C" int64_t YuiIOSModelFreeBytes(const char *path) {
+    @autoreleasepool {
+        if (!path) return -1;
+        NSError *error=nil;
+        NSDictionary *attributes=[[NSFileManager defaultManager] attributesOfFileSystemForPath:[NSString stringWithUTF8String:path] error:&error];
+        NSNumber *bytes=attributes[NSFileSystemFreeSize];
+        return error || !bytes ? -1 : bytes.longLongValue;
+    }
+}
+extern "C" void YuiIOSDocumentPicker_CancelModel(void) {
+    YuiModelCopyCancelled = true;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        YuiIOSPickerSession *session=YuiIOSActivePickerSession;
+        if ([session isKindOfClass:YuiIOSDocumentPickerDelegate.class] && [((YuiIOSDocumentPickerDelegate*)session).mode isEqualToString:@"model"] && !session.processing) {
+            [UnityGetGLViewController() dismissViewControllerAnimated:YES completion:nil];[session finish:YuiDocumentPickerCancelled];
+        }
+    });
 }

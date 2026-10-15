@@ -23,7 +23,7 @@ internal static class YuiFilePickerHelper
 
         using (var dialog = new OpenFileDialog())
         {
-            dialog.Title = mode == "avatar"
+            dialog.Title = mode == "model" ? "Choose model file" : mode == "avatar"
                 ? "Open VRM or Unity Avatar Package ZIP"
                 : mode == "vrm" ? "Open Custom VRM"
                 : "Analyze image with Yui Vision";
@@ -31,7 +31,7 @@ internal static class YuiFilePickerHelper
             dialog.CheckPathExists = true;
             dialog.Multiselect = false;
             dialog.RestoreDirectory = true;
-            dialog.Filter = mode == "avatar"
+            dialog.Filter = mode == "model" ? "LLM files (*.gguf;*.litertlm)|*.gguf;*.litertlm" : mode == "avatar"
                 ? "Avatar files (*.vrm;*.zip)|*.vrm;*.zip|VRM files (*.vrm)|*.vrm|Unity Avatar Package ZIP (*.zip)|*.zip|All files (*.*)|*.*"
                 : mode == "vrm" ? "VRM files (*.vrm)|*.vrm|All files (*.*)|*.*"
                 : "Images (*.png;*.jpg;*.jpeg)|*.png;*.jpg;*.jpeg";
