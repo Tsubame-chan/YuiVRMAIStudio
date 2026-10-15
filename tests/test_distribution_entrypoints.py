@@ -1,5 +1,7 @@
 """Exercise the checked-in distribution entrypoints with isolated sample assets."""
 import os
+import importlib.util
+import stat
 from pathlib import Path
 import re
 import shlex
@@ -11,6 +13,13 @@ import unittest
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def load_script(name):
+    spec = importlib.util.spec_from_file_location("release_audit", ROOT / "scripts" / name)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 class DistributionEntrypointTests(unittest.TestCase):
@@ -66,6 +75,40 @@ class DistributionEntrypointTests(unittest.TestCase):
                 for required in ("metan_zundamon_0.vvm", "kyushu_sora_2.vvm", "sayo_15.vvm", "VOICEVOX_VVM_TERMS.txt"):
                     self.assertTrue(any(name.endswith("/" + required) for name in names))
                 self.assertFalse(any("private" in name or "E4B" in name for name in names))
+
+
+class BackendArchiveAuditTests(unittest.TestCase):
+    def test_rejects_python_alias_that_safe_extraction_would_turn_into_text(self):
+        audit = load_script("audit_distribution_release.py")
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "backend.zip"
+            entry = zipfile.ZipInfo("backend/.venv/bin/python")
+            entry.create_system = 3
+            entry.external_attr = (stat.S_IFLNK | 0o777) << 16
+            with zipfile.ZipFile(path, "w") as archive:
+                archive.writestr(entry, "python3")
+            self.assertEqual([entry.filename], audit.incompatible_backend_zip_entries(path))
+
+    def test_accepts_dereferenced_python_alias(self):
+        audit = load_script("audit_distribution_release.py")
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "backend.zip"
+            with zipfile.ZipFile(path, "w") as archive:
+                archive.writestr("backend/.venv/bin/python", b"\xcf\xfa\xed\xfe" + b"synthetic executable")
+            self.assertEqual([], audit.incompatible_backend_zip_entries(path))
+
+    def test_backend_link_rule_does_not_target_signed_mac_app_archives(self):
+        audit = load_script("audit_distribution_release.py")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            releases = root / "releases" / "sample"
+            releases.mkdir(parents=True)
+            backend = releases / "YuiVRMAIStudio_BackendBundle_v1.2.3_macos-r1.zip"
+            app = releases / "YuiVRMAIStudio_MacOSPublicBeta_v1.2.3_macos.zip"
+            backend.touch()
+            app.touch()
+            self.assertEqual([backend], audit.backend_archives(root, "v1.2.3"))
+            self.assertEqual([], audit.backend_archives(root, "v1.2.4"))
 
 
 if __name__ == "__main__":

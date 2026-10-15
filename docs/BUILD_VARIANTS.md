@@ -11,3 +11,5 @@ Required checks are documented in [Public Player asset validation](PUBLIC_PLAYER
 No personal assets, machine-specific network defaults, API keys or private operational documents belong in a public repository or distribution. Changing source does not update an already published binary.
 
 Apple source builds require the pinned native GGUF SDK preparation described in [platform runtime integration](../tools/llama-runtime/README.md#build-prerequisites-on-apple-hosts). The generated SDK is not stored in Git.
+
+Backend ZIPs consumed by the in-app byte-copy extractor must contain regular files, including Python executable aliases. Use the Backend packaging script's normal ZIP mode, which dereferences links. The distribution audit checks matching BackendBundle archives under releases/ or builds/ for the selected release. macOS app ZIPs use a separate extraction path and must preserve their framework links.

@@ -10,6 +10,8 @@ In Settings, open **On-device AI · Choose or add model**, open the **Add** tab,
 
 Model weights are imported after installation and are not added to the app's distributed bundle. The original file remains in its location. Import uses a streaming copy and SHA-256 checksum, requires spare storage, and can be cancelled. iCloud files may first need to download. Large models may generate slowly, stop, or cause the app to close. Mobile builds suggest starting with a small quantized model; the UI does not display device specifications, benchmark scores, or a universal parameter-size recommendation.
 
+The importer currently accepts files up to **32 GiB** and reserves **512 MiB** of spare storage. This is a file/import limit, not a device-memory recommendation. Keep room for the app's model copy as well as the original Files-provider download; LiteRT-LM may also need an additional copy for its runtime cache.
+
 Changing the chat model keeps the character, memory, voice configuration, and standard speech recognition. Select the standard model to return to it. To remove an imported model, first select another model, then open its details and remove the app's copy. Standard files and the original selected file are kept.
 
 Desktop v0.2.6-beta.1 includes the feature with the platform limits above. iOS 0.2.7 is being prepared; published iOS 0.2.6 does not include it. Device acceptance is recorded separately.

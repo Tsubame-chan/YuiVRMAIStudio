@@ -8,6 +8,7 @@ import json
 import hashlib
 import os
 import re
+import stat
 import sys
 import zipfile
 from pathlib import Path
@@ -314,6 +315,23 @@ def forbidden_zip_entries(path: Path) -> list[str]:
         return ["<invalid zip archive>"]
 
 
+def incompatible_backend_zip_entries(path: Path) -> list[str]:
+    # The in-app safe extractor writes entry bytes; it does not recreate Unix
+    # links. Backend Python aliases must therefore contain their actual binaries.
+    # macOS app ZIPs have a different extraction path and retain framework links.
+    try:
+        with zipfile.ZipFile(path) as archive:
+            return [entry.filename for entry in archive.infolist()
+                    if stat.S_ISLNK(entry.external_attr >> 16)]
+    except zipfile.BadZipFile:
+        return ["<invalid zip archive>"]
+
+
+def backend_archives(root: Path, release_version: str) -> list[Path]:
+    name = f"YuiVRMAIStudio_BackendBundle_{release_version}_*.zip"
+    return sorted(set(root.glob(f"releases/**/{name}")) | set(root.glob(f"builds/{name}")))
+
+
 def audit(root: Path, require_builds: bool, platform: str = "windows", release_version: str = DEFAULT_RELEASE_VERSION) -> int:
     failures = 0
     reported_blockers: set[str] = set()
@@ -372,6 +390,13 @@ def audit(root: Path, require_builds: bool, platform: str = "windows", release_v
         if not path.exists():
             print(f"MISSING: {relative} - {reason}")
             failures += 1
+
+    for path in backend_archives(root, release_version):
+        bad_entries = incompatible_backend_zip_entries(path)
+        if bad_entries:
+            report_blocker(display(path, root),
+                           "Backend ZIP must contain regular files for the in-app extractor: "
+                           + ", ".join(bad_entries[:5]))
 
     if require_builds:
         required_build_paths, required_build_archives = required_build_sets(platform, release_version)
