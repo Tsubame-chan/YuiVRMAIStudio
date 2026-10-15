@@ -12,7 +12,7 @@ Model weights are imported after installation and are not added to the app's dis
 
 Changing the chat model keeps the character, memory, voice configuration, and standard speech recognition. Select the standard model to return to it. To remove an imported model, first select another model, then open its details and remove the app's copy. Standard files and the original selected file are kept.
 
-This is a source implementation under development, not a statement that an existing published app already includes the feature. Device acceptance and release status are recorded separately.
+Desktop v0.2.6-beta.1 includes the feature with the platform limits above. iOS 0.2.7 is being prepared; published iOS 0.2.6 does not include it. Device acceptance is recorded separately.
 
 The popup has **Models**, **Add**, and **Settings** tabs. Model rows show selection separately from actions; only the list scrolls. Closing returns to the existing settings draft. Model settings retain unsaved edits across tabs, separately for each model and Talk/Work; closing the model panel discards unsaved edits. On desktop, Cmd/Ctrl+Shift+M opens the panel, Cmd/Ctrl+1–3 changes tabs, Cmd/Ctrl+O opens the picker, and Cmd/Ctrl+S invokes the primary action.
 

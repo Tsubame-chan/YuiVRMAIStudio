@@ -33,11 +33,11 @@ The images show the real app with the included Unity-chan. Captions are Japanese
 
 | Your device | Download |
 | --- | --- |
-| Mac | [macOS app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.5-beta.3/YuiVRMAIStudio_MacOSPublicBeta_v0.2.5-beta.3_macos.zip) (Apple Silicon runtime) |
-| Windows | [Windows app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.5-beta.3/YuiVRMAIStudio_WindowsPublicBeta_v0.2.5-beta.3_windows.zip) |
+| Mac | [macOS app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.6-beta.1/YuiVRMAIStudio_MacOSPublicBeta_v0.2.6-beta.1_macos.zip) (Apple Silicon runtime) |
+| Windows | [Windows app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.6-beta.1/YuiVRMAIStudio_WindowsPublicBeta_v0.2.6-beta.1_windows.zip) |
 | iPhone / iPad | iOS 26+. [App Store](https://apps.apple.com/jp/app/id6815341780): free Japan release |
 
-iOS **0.2.6 (20)** is public on the App Store. The desktop version is **v0.2.5-beta.3**. It includes the Backend Console, saved voices and paired character sync. See [Backend setup](docs/BACKEND_CONSOLE.md). Extract the ZIP, open the app and follow the first-run data notice. Allow approximately 2.5GB of downloads plus room for extraction; Wi-Fi is recommended. Mac signing/notarization is not yet provided. Setup: [Mac](docs/MAC_PUBLIC_BETA.en.md) / [Windows](docs/SETUP_GUIDE.md).
+iOS **0.2.6 (20)** is public on the App Store. The desktop version is **v0.2.6-beta.1**. It includes the Backend Console, saved voices and paired character sync. See [Backend setup](docs/BACKEND_CONSOLE.md). Extract the ZIP, open the app and follow the first-run data notice. Allow approximately 2.5GB of downloads plus room for extraction; Wi-Fi is recommended. Mac signing/notarization is not yet provided. Setup: [Mac](docs/MAC_PUBLIC_BETA.en.md) / [Windows](docs/SETUP_GUIDE.md).
 
 **GitHub's “Code → Download ZIP” is source code.** To use the app, choose a download above.
 
@@ -51,9 +51,9 @@ Choose **offline, on-device AI** or **OpenAI API**. The lightweight E2B model is
 
 Standard speech uses five Japanese VOICEVOX voices. Mac/iOS version 0.2.5 and later offer optional downloads in settings: three Japanese Irodori voices (about 1.96GB) and six English Kokoro voices (about 67.4MB). These additional voices are not included in the older iOS 0.2.4 or desktop v0.2.4-beta.2 apps. Windows NVIDIA users can add V4.1 INT8 through the [Backend Console](docs/BACKEND_ASSET_DOWNLOADS.md#english). See [Voice downloads](docs/LOCAL_AI_ASSETS.md), [Help](docs/HELP.md), [Backend Console](docs/BACKEND_CONSOLE.md) and the [Backend TTS installation guide (Japanese)](docs/BACKEND_TTS_GUIDE.md).
 
-The source also includes improvements to speech cancellation, Backend startup waits and audio postprocessing, plus shared release metadata. These changes target the next update and are not included in the existing downloads. See [fixes and validation scope](docs/SOURCE_REVIEW_20261011.md).
+The source also includes improvements to speech cancellation, Backend startup waits and audio postprocessing, plus shared release metadata. These changes are included in desktop v0.2.6-beta.1 and target the next iOS update. See [fixes and validation scope](docs/SOURCE_REVIEW_20261011.md).
 
-## Additional models in the next update (not yet distributed)
+## Desktop v0.2.6-beta.1: additional models
 
 Settings → AI → **On-device AI · Choose or add model** provides Models, Add and Settings tabs. Compatible models run locally and can be switched back to standard Gemma. No PC or Backend is required for the Mac/iOS GGUF path.
 
@@ -61,7 +61,7 @@ Settings → AI → **On-device AI · Choose or add model** provides Models, Add
 - From Hugging Face, download an appropriate `.gguf` or `.litertlm`. Bare `.safetensors`, split GGUF and separate vision/audio projectors are unsupported.
 - Additional models are experimental. Large models may be slow, stop or close the app. Import checks that a reply follows the input; this does not guarantee quality or universal compatibility.
 
-See [instructions and runtime limits](docs/LOCAL_MODEL_IMPORT.md) and [Backend acquisition](docs/HELP.md). Existing published downloads do not yet contain this feature.
+See [instructions and runtime limits](docs/LOCAL_MODEL_IMPORT.md) and [Backend acquisition](docs/HELP.md). This feature is available in desktop v0.2.6-beta.1. iOS 0.2.7 is being prepared; the published iOS 0.2.6 does not include it.
 
 ## Desktop v0.2.5-beta.3 changes
 
