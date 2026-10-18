@@ -16,11 +16,11 @@ iOS版は標準のAI・音声データを同梱しています。Mac・Windows�
 | 九州そら | 16 |
 | 小夜/SAYO | 46 |
 
-Mac・iOS版0.2.5以降では、設定の音声エンジン欄から追加音声を任意に取得できます。日本語Irodoriは3声・約1.96GB、英語KokoroはBella、Nova、Nicole、Heart、Puck、Michaelの6声・約67.4MB（展開後約101.6MB）です。通信と空き容量を確認し、取得を実行してください。進捗バナーから取消・再試行ができ、取得中も別の画面を使えます。会話・音声生成は取得後に端末内で動作します。
+Mac・iOSでは、設定の音声エンジン欄から追加音声を任意に取得できます。日本語Irodoriは3声・約1.96GB、英語KokoroはBella、Nova、Nicole、Heart、Puck、Michaelの6声・約67.4MB（展開後約101.6MB）です。通信と空き容量を確認し、取得を実行してください。進捗バナーから取消・再試行ができ、取得中も別の画面を使えます。会話・音声生成は取得後に端末内で動作します。
 
-日本語の標準VOICEVOXはそのまま利用できます。追加音声は初期アプリに同梱せず、英語の初回案内でも取得を後回しにできます。Irodoriは固定バージョンのHugging Faceモデル、KokoroはGitHubの音声パックを取得し、ファイルのハッシュを検査します。旧iOS 0.2.4・デスクトップv0.2.4-beta.2ではこの追加音声機能を使えません。Windows・Androidの端末内Irodoriには未対応です。
+日本語の標準VOICEVOXはそのまま利用できます。追加音声は初期アプリに同梱せず、英語の初回案内でも取得を後回しにできます。Irodoriは固定バージョンのHugging Faceモデル、KokoroはGitHubの音声パックを取得し、ファイルのハッシュを検査します。Windows・Androidの端末内Irodoriには未対応です。
 
-PC Backendの追加音声は別の導入経路です。Desktop v0.2.5-beta.3は[Consoleからバックグラウンド取得](BACKEND_ASSET_DOWNLOADS.md)できます。[Backend音声の導入](BACKEND_TTS_GUIDE.md)。
+PC Backendの追加音声は別の導入経路です。[現在のBackend](DOWNLOADS.md)は[Consoleからバックグラウンド取得](BACKEND_ASSET_DOWNLOADS.md)できます。[Backend音声の導入](BACKEND_TTS_GUIDE.md)。
 
 ## 取得できないとき
 
@@ -30,6 +30,6 @@ PC Backendの追加音声は別の導入経路です。Desktop v0.2.5-beta.3は[
 
 Releaseにある `.part-*` は大きなデータを分割したファイルです。通常はアプリが結合・検査するため、手動で展開する必要はありません。`.sha256` はダウンロードしたファイルの破損を確認するためのチェックサムです。GitHubのCode ZIPにはモデル・音声データも実行アプリも入っていません。
 
-English: desktop setup downloads about 2.5GB of required AI/voice data; allow additional space for extraction. iOS includes standard data. E4B is optional on Mac, Windows and iOS. Mac/iOS 0.2.5 and later offer three Japanese Irodori voices (about 1.96GB, from a pinned Hugging Face model) and six English Kokoro voices (about 67.4MB ZIP / 101.6MB installed, from GitHub): Bella, Nova, Nicole, Heart, Puck and Michael. Downloads are optional, verified by file hashes, and can be cancelled or retried from the progress banner while other screens remain usable. English first-run setup allows postponing the download. Standard Japanese VOICEVOX remains available. These features are not included in iOS 0.2.4 or desktop v0.2.4-beta.2 apps. On-device Irodori is not supported on Windows/Android. Use the app to download and verify data rather than extracting Release parts manually. Retry after checking connectivity and free space, and keep app/data versions together.
+English: desktop setup downloads about 2.5GB of required AI/voice data; allow additional space for extraction. iOS includes standard data. E4B is optional on Mac, Windows and iOS. Mac/iOS offer three Japanese Irodori voices (about 1.96GB, from a pinned Hugging Face model) and six English Kokoro voices (about 67.4MB ZIP / 101.6MB installed, from GitHub): Bella, Nova, Nicole, Heart, Puck and Michael. Downloads are optional, verified by file hashes, and can be cancelled or retried from the progress banner while other screens remain usable. English first-run setup allows postponing the download. Standard Japanese VOICEVOX remains available. On-device Irodori is not supported on Windows/Android. Use the app to download and verify data rather than extracting Release parts manually. Retry after checking connectivity and free space, and keep app/data versions together.
 
 WindowsではCore ML版を使わず、ConsoleからV4.1 INT8をBackendへ取得します。手動導入用の固定追加ZIPも利用できます。導入条件と実機未確認の範囲は[Windows Irodoriガイド](IRODORI_TTS_WINDOWS_NVIDIA.md)を参照してください。

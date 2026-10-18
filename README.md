@@ -37,7 +37,7 @@
 | Windows | [Windows版 ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.6-beta.1/YuiVRMAIStudio_WindowsPublicBeta_v0.2.6-beta.1_windows.zip) |
 | iPhone / iPad | iOS 26以降。[App Store](https://apps.apple.com/jp/app/id6815341780)（日本向け無料版） |
 
-iPhone / iPad版 **0.2.6 (20)** はApp Storeで公開中です。デスクトップ版は **v0.2.6-beta.1** です。Backendの管理画面・保存した声・端末同期が使えます。[Backendの使い方](docs/BACKEND_CONSOLE.md)。ZIPを展開して起動し、初回の案内に沿って必要データを取得してください。約2.5GBの通信と展開用の空き容量が必要です。Wi-Fiをおすすめします。Mac版の署名・公証は未整備です。詳しい起動手順は [Mac](docs/MAC_PUBLIC_BETA.md) / [Windows](docs/SETUP_GUIDE.md)へ。
+[Release一覧・Backend ZIP・チェックサム](docs/DOWNLOADS.md)。ZIPを展開して起動し、初回の案内に沿って必要データを取得してください。約2.5GBの通信と展開用の空き容量が必要です。Mac版はDeveloper ID署名・公証に未対応です。起動手順は[Mac](docs/MAC_PUBLIC_BETA.md) / [Windows](docs/SETUP_GUIDE.md)へ。
 
 **GitHubの「Code → Download ZIP」はソースコードです。** アプリを使う方は上のリンクからダウンロードしてください。
 
@@ -49,44 +49,19 @@ iPhone / iPad版 **0.2.6 (20)** はApp Storeで公開中です。デスクトッ
 
 AIは、**オフラインで使える端末内AI** と **OpenAI API** を選べます。端末内AIは軽量なE2Bが標準。Mac・Windows・iOSでは、より高品質なE4Bを設定から追加できますが、待ち時間や端末の負荷が増えます。高品質な会話にはOpenAI APIをおすすめします。**APIキーとAPI利用料金が必要**で、ChatGPTの契約とは別です。
 
-標準の声は日本語VOICEVOXの5声です。Mac・iOS版0.2.5以降では設定から、日本語Irodoriの3声（約1.96GB）と英語Kokoroの6声（約67.4MB）を任意に追加できます。以前のiOS 0.2.4・デスクトップv0.2.4-beta.2にはこの追加音声機能は含まれません。[音声データの取得](docs/LOCAL_AI_ASSETS.md)。Windows NVIDIAではBackend ConsoleからV4.1 INT8を追加できます。[Backendの追加取得](docs/BACKEND_ASSET_DOWNLOADS.md)。PCのバックエンドに接続する拡張機能については[ヘルプ](docs/HELP.md)、Backendの操作は[コンソール案内](docs/BACKEND_CONSOLE.md)、追加エンジンの導入は[音声導入ガイド](docs/BACKEND_TTS_GUIDE.md)を参照してください。
+標準の声は日本語VOICEVOXの5声です。Mac・iOSでは、日本語Irodoriの3声と英語Kokoroの6声を設定から追加できます。[音声データの取得](docs/LOCAL_AI_ASSETS.md)。Windows NVIDIAでは[Backend ConsoleからIrodoriを追加](docs/BACKEND_ASSET_DOWNLOADS.md)できます。Backendの管理画面・保存した声・端末同期は[コンソール案内](docs/BACKEND_CONSOLE.md)、追加エンジンの導入は[音声導入ガイド](docs/BACKEND_TTS_GUIDE.md)を参照してください。
 
-公開ソースには、音声処理の取消・Backend起動待機・音声後処理の改善と配布番号の共通化も反映しています。デスクトップv0.2.6-beta.1に搭載し、iOSは次回アップデート向けです。[修正内容と検証範囲](docs/SOURCE_REVIEW_20261011.md)。
+## 追加モデルを使う
 
-## デスクトップ v0.2.6-beta.1：追加モデル
+設定 → AI →「端末内AI・モデルを選ぶ・追加する」から、互換モデルを追加して会話できます。対応する端末内で実行し、Backendや別のモデルサーバーは不要です。モデル選択・追加・詳細設定は3つのタブに分かれ、標準Gemmaへ戻せます。
 
-設定 → AI →「端末内AI・モデルを選ぶ・追加する」から、互換モデルを追加して会話できます。Mac/iOSのGGUFはPCやBackend接続を必要としません。モデル選択・追加・詳細設定は3つのタブに分かれ、標準Gemmaへ戻せます。
-
-- Mac/iOS: 単一GGUF、互換LiteRT-LMを取り込み。Windows候補は互換LiteRT-LMのみで、GGUFエンジンは未同梱です。Android対応は今後の予定です。
+- Mac: 単一GGUF・互換LiteRT-LM。Windows: 互換LiteRT-LM（GGUFエンジンは未同梱）。iOSは開発版のみで、公開版には未搭載です。Android対応は今後の予定です。
 - Hugging Faceからは対応する`.gguf` / `.litertlm`を取得してください。生の`.safetensors`、分割GGUF、別添の画像・音声投影器には対応しません。
 - 追加モデルは実験的な選択肢です。大きいモデルは遅延・停止・アプリ終了の可能性があります。読み込み成功だけで互換とせず、取り込み時に入力への応答を検査します。
 
-[使い方・実行環境の制限](docs/LOCAL_MODEL_IMPORT.md) / [Backend入手・接続](docs/HELP.md)。デスクトップv0.2.6-beta.1で利用できます。iOS0.2.7は準備中で、公開中のiOS0.2.6には未搭載です。
+[使い方・実行環境の制限](docs/LOCAL_MODEL_IMPORT.md) / [Backend入手・接続](docs/HELP.md)。デスクトップで利用できます。iOSの公開版と開発版の違いは[端末ごとの対応](docs/RUNTIME_SUPPORT.md)を参照してください。
 
-## デスクトップ v0.2.5-beta.3の更新内容
-
-- Backend ConsoleからIrodori V4.1をバックグラウンド取得・準備。進捗、中止、再試行を表示します。
-- ダウンロード中は百分率を表示し、設定ダイアログの余白と声名の表示を改善しました。
-- Backend更新時にPython環境を丸ごと置き換え、古いパッケージ情報の残留を防止。失敗時は旧環境へ戻し、設定・DB・モデルを保持します。
-
-[追加音声の取得](docs/BACKEND_ASSET_DOWNLOADS.md) / [Backend更新手順](docs/BACKEND_UPDATE.md)。Windowsの新しい自動取得は実機での追加確認を継続中です。
-
-## デスクトップ v0.2.5-beta.2の更新内容
-
-- Windowsの端末内音声認識を安定化し、ローカル録音を30秒へ統一。会話は引き続きGPUを使用。
-- Windowsで任意のE4Bを選択可能にし、Irodori V4.1の導入・初回生成待機・保存した声の互換性を改善。
-- 外部LLMの空応答・思考だけの応答処理と、他のPython環境設定による起動失敗を修正。
-- BackendのCSV集計を通常ナビから外し、実験画面と保存済み成果物は保持。
-
-Windowsでの以前の実機検証を基に修正し、新版のWindows/Macビルドと自動テストを確認しています。新版のWindows実機受入は未完了です。[検証範囲](docs/WINDOWS_CROSS_PLATFORM_REVIEW_20261011.md)。既存利用者はアプリに加えBackendも更新してください。[Windows更新](docs/SETUP_GUIDE.md#既存backendを更新する) / [Mac更新](docs/MAC_PUBLIC_BETA.md#既存backendを更新する)。任意LLMの自由取り込みは今後の構想で、今回の版には未搭載です。[今後の方針](docs/LOCAL_LLM_EXTENSION_NOTES.md)。
-
-## 0.2.5の更新内容
-
-- 日本語Irodoriの3声と英語Kokoroの6声を任意に追加。Irodoriの初期声は「明るく元気な女性」です。
-- 設定・説明画面のスクロールバーを細く統一し、モデル詳細を1つのスクロールで操作できるように改善。
-- Mac BackendのIrodoriをV4.1へ更新し、同じ3声のプリセットを追加。
-
-iOS 0.2.5はApp Store公開済みです。今回のデスクトップ修正はiOS公開版には含まれません。Irodori V4.1のNVIDIA向け追加モデルは [導入手順](docs/IRODORI_TTS_WINDOWS_NVIDIA.md) を参照してください。
+更新内容は[Release notes](docs/DOWNLOADS.md#更新履歴--release-notes)、既存Backendの移行は[更新手順](docs/BACKEND_UPDATE.md)を参照してください。
 
 ## 記憶とプライバシー
 

@@ -1,6 +1,6 @@
 # Backendの追加音声を取得する
 
-Desktop v0.2.5-beta.3から利用できます。旧v0.2.5-beta.2では、Windowsの[Irodori追加ZIP](IRODORI_TTS_WINDOWS_NVIDIA.md)を手動導入します。
+[現在のBackend](DOWNLOADS.md)で利用できます。Consoleに取得操作がない場合はBackendを更新するか、Windowsの[手動導入](IRODORI_TTS_WINDOWS_NVIDIA.md)を利用します。
 
 対応版のBackendを起動し、同じPCでConsoleの「AIと音声 → 読み上げ → Irodoriの音声を追加」を開きます。開始前にモデルの取得容量と必要な空き容量を確認し、「取得する」を選んでください。GitHubやHugging Faceを手動で開く必要はありません。
 
@@ -25,7 +25,7 @@ Desktop v0.2.5-beta.3から利用できます。旧v0.2.5-beta.2では、Windows
 
 ## English
 
-Desktop v0.2.5-beta.3 supports background Irodori acquisition from Backend Console → AI and speech → Read-aloud → Add Irodori voices. Review the download size and required disk space before starting. Progress is shown as a percentage; verification, dependency installation and voice preparation are separate phases. You can use other screens while downloading. Open the bottom banner for details, cancellation or retry. Connected compatible apps display Backend progress; manage cancellation and retry in the Console on that PC.
+The [current Backend](DOWNLOADS.md) supports background Irodori acquisition from Backend Console → AI and speech → Read-aloud → Add Irodori voices. Review the download size and required disk space before starting. Progress is shown as a percentage; verification, dependency installation and voice preparation are separate phases. You can use other screens while downloading. Open the bottom banner for details, cancellation or retry. Connected compatible apps display Backend progress; manage cancellation and retry in the Console on that PC.
 
 Apple Silicon Mac uses V4.1 Small MLX 8bit (about 1.39 GB), a separate Python 3.12 environment and mlx-audio 0.5.8; allow about 5 GiB free. Windows NVIDIA uses V4.1 Small INT8 (about 1.21 GB archive), a separate Python 3.11 environment, Git for Windows and a CUDA 12.8-compatible driver; allow about 10 GiB free. This Windows option does not support CPU/AMD GPUs. Its fixed package is reused from v0.2.5-beta.2; native Windows acceptance of the new automatic installer remains pending.
 

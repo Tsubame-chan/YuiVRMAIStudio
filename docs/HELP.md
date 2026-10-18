@@ -1,12 +1,12 @@
 # はじめに・よくある質問 / Help & FAQ
 
-[README 日本語](../README.md) · [README English](../README.en.md) · [ダウンロード / Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases) · [不具合報告 / Issues](https://github.com/Tsubame-chan/YuiVRMAIStudio/issues)
+[README 日本語](../README.md) · [README English](../README.en.md) · [ダウンロード / Downloads](DOWNLOADS.md) · [不具合報告 / Issues](https://github.com/Tsubame-chan/YuiVRMAIStudio/issues)
 
 ## 日本語
 
 **どれをダウンロードすればいい？**
 
-MacはMacOSPublicBeta、WindowsはWindowsPublicBetaのアプリZIPです。Code ZIPはソースで、そのまま起動できません。[Mac導入](MAC_PUBLIC_BETA.md) / [Windows導入](SETUP_GUIDE.md)。
+[配布一覧](DOWNLOADS.md)から、MacはMacOSPublicBeta、WindowsはWindowsPublicBetaのアプリZIPを選びます。Code ZIPはソースで、そのまま起動できません。[Mac導入](MAC_PUBLIC_BETA.md) / [Windows導入](SETUP_GUIDE.md)。
 
 **iPhone版は？**
 
@@ -22,11 +22,11 @@ iOS 26以降。日本向け無料版を[App Store](https://apps.apple.com/jp/app
 
 **自分でダウンロードしたAIモデルを使える？**
 
-追加モデル対応版では、設定 → AI → 端末内AI → 追加から、単一GGUF（.gguf）または互換LiteRT-LM（.litertlm）の文章モデルを取り込み、モデル一覧から選択します。PCやBackendは不要です。生のsafetensors、分割GGUF、画像・音声用追加ファイルは直接使えません。形式だけで互換性や品質を保証できず、大きいモデルは停止・クラッシュする可能性があります。標準Gemmaとは別の実験用機能です。対応OS・実行エンジンの条件と配布状況は[追加モデルの案内](LOCAL_MODEL_IMPORT.md)を確認してください。アプリ内ヘルプにも日英の常設案内があります。
+Macでは単一GGUF（.gguf）と互換LiteRT-LM（.litertlm）、Windowsでは互換LiteRT-LMの文章モデルを取り込めます。設定 → AI → 端末内AI → 追加から取り込み、モデル一覧で選びます。Backendや別のモデルサーバーは不要です。iOSは開発版のみで、公開版には未搭載です。生のsafetensors、分割GGUF、画像・音声用追加ファイルは直接使えません。互換性や品質はモデルと実行環境によります。[対応形式と制限](LOCAL_MODEL_IMPORT.md)を確認してください。
 
 **Backendはどこから入手する？**
 
-[GitHub Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases)からPC版のアプリZIPを入手し、初回準備後にYuiBackend内のStart_Yui_Backend.command（Mac）／Start_Yui_Backend.bat（Windows）で起動します。Code ZIPはソースです。スマートフォンから使う場合はPCと同じTailscaleへ接続し、設定にPCの接続先を入力します。端末内AI・端末内音声・OpenAIへの直接接続だけなら不要です。[Mac手順](MAC_PUBLIC_BETA.md) / [Windows手順](SETUP_GUIDE.md)。対応版ではヘルプの接続状況と設定の「？」からも入手・接続方法を開けます。
+[配布一覧](DOWNLOADS.md)からPC版のアプリZIPを入手し、初回準備後にYuiBackend内のStart_Yui_Backend.command（Mac）／Start_Yui_Backend.bat（Windows）で起動します。Code ZIPはソースです。スマートフォンから使う場合はPCと同じTailscaleへ接続し、設定にPCの接続先を入力します。端末内AI・端末内音声・OpenAIへの直接接続だけなら不要です。[Mac手順](MAC_PUBLIC_BETA.md) / [Windows手順](SETUP_GUIDE.md)。対応版ではヘルプの接続状況と設定の「？」からも入手・接続方法を開けます。
 
 **性格はどこで変える？**
 
@@ -42,7 +42,7 @@ iOS 26以降。日本向け無料版を[App Store](https://apps.apple.com/jp/app
 
 **音声が出ない／英語で話さない。**
 
-音声エンジン、ミュート、端末音量、選択した声のデータを確認してください。標準は日本語VOICEVOXの5声です。Mac・iOS版0.2.5以降は設定から英語Kokoroの6声を任意取得できます。日本語Irodoriの3声も任意取得です。Backend音声はBackendと対象エンジンの設定も必要です。
+音声エンジン、ミュート、端末音量、選択した声のデータを確認してください。標準は日本語VOICEVOXの5声です。Mac・iOSは設定から英語Kokoroの6声を任意取得できます。日本語Irodoriの3声も任意取得です。Backend音声はBackendと対象エンジンの設定も必要です。
 
 **モデル・データの取得に失敗した。**
 
@@ -58,16 +58,16 @@ iOS 26以降。日本向け無料版を[App Store](https://apps.apple.com/jp/app
 
 ## English
 
-- Builds supporting additional models offer Settings → AI → On-device AI → Add for single-file `.gguf` and compatible `.litertlm` text/chat models. Select the imported model in Models. No PC or Backend is required. Raw safetensors, split GGUF and separate vision/audio files are unsupported. Compatibility, speed and quality depend on the model, runtime and OS; large models may stop or crash. See [supported formats and release status](LOCAL_MODEL_IMPORT.md). The app also includes permanent instructions in Help.
-- Get Backend through the desktop app ZIP in [GitHub Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases), complete first-run setup, then start `Start_Yui_Backend.command` (Mac) or `Start_Yui_Backend.bat` (Windows) inside YuiBackend. The Code ZIP is source. For a phone connection, join both devices to Tailscale and enter the PC address in Settings. Backend is optional for on-device AI/voices and direct OpenAI access. Help → Connections and the Settings question-mark button provide acquisition and connection instructions in supporting builds.
+- Mac imports single-file GGUF and compatible LiteRT-LM chat models; Windows imports compatible LiteRT-LM. Use Settings → AI → On-device AI → Add, then select the imported model in Models. No Backend or separate model server is required. iOS import is development-only, not included in the published app. See [supported formats and limitations](LOCAL_MODEL_IMPORT.md).
+- Get Backend through the desktop app ZIP in [downloads](DOWNLOADS.md), complete first-run setup, then start `Start_Yui_Backend.command` (Mac) or `Start_Yui_Backend.bat` (Windows) inside YuiBackend. The Code ZIP is source. For a phone connection, join both devices to Tailscale and enter the PC address in Settings. Backend is optional for on-device AI/voices and direct OpenAI access. Help → Connections and the Settings question-mark button provide acquisition and connection instructions in supporting builds.
 
-- Download the **MacOSPublicBeta** or **WindowsPublicBeta** app ZIP from [Releases](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases). The Code ZIP is source only. See the [Mac guide](MAC_PUBLIC_BETA.en.md).
+- Download the **MacOSPublicBeta** or **WindowsPublicBeta** app ZIP from [downloads](DOWNLOADS.md). The Code ZIP is source only. See the [Mac guide](MAC_PUBLIC_BETA.en.md).
 - The free Japan iOS release requires iOS 26 and is available on the [App Store](https://apps.apple.com/jp/app/id6815341780).
 - Desktop first-run setup downloads approximately 2.5GB of AI/voice data plus its OS runtime after confirmation. Leave extra room for extraction. iOS includes standard E2B and speech data; E4B is optional. Mac, Windows and iOS offer optional E4B.
 - E2B favors lighter offline use; E4B improves quality at the cost of latency, memory and storage. OpenAI API is recommended for higher-quality chat and requires an API key and API charges, separately from a ChatGPT subscription.
 - Character settings accept written personality/tone instructions. Common and model-specific instructions also apply. Local advanced settings control context/output/thinking budgets and sampling per Talk/Work mode; defaults are a good starting point.
 - Import your own **VRM**, not a purchase ZIP, prefab, FBX or unitypackage. Export from your configured Unity project first. Appearance changes keep the character's personality and memory. See [avatar import](AVATAR_IMPORT.en.md).
 - Character memory persists across restart/local/API switching. History and long-term memory are separate. Secret mode reads existing memory without recording new chat; it does not prevent API transmission. See [memory](CONVERSATION_IDENTITY.md) and [privacy](PRIVACY.md).
-- Default speech is Japanese VOICEVOX, with five standard voices. Mac/iOS 0.2.5 and later offer optional English Kokoro and Japanese Irodori downloads in Settings. Windows NVIDIA users can add Irodori to their Backend through the [Console](BACKEND_ASSET_DOWNLOADS.md#english). Check engine, mute, volume and installed voice data if speech fails.
+- Default speech is Japanese VOICEVOX, with five standard voices. Mac/iOS offer optional English Kokoro and Japanese Irodori downloads in Settings. Windows NVIDIA users can add Irodori to their Backend through the [Console](BACKEND_ASSET_DOWNLOADS.md#english). Check engine, mute, volume and installed voice data if speech fails.
 - Retry downloads after checking connectivity/free space. Do not mix manifests/data from older releases. If still failing, report app version, OS, model, full error and steps via [Issues](https://github.com/Tsubame-chan/YuiVRMAIStudio/issues). Remove API keys, private conversations and private avatars.
 - Replay the illustrated tutorial from Help. Support status and experimental integrations are listed in [runtime support](RUNTIME_SUPPORT.md).
