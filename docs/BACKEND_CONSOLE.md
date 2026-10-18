@@ -1,6 +1,6 @@
 # Backend Consoleの使い方
 
-v0.2.5-beta.3では、[ConsoleからIrodoriをバックグラウンド取得](BACKEND_ASSET_DOWNLOADS.md)できます。旧v0.2.5-beta.2の手動導入手順も引き続き参照できます。
+[現在のBackend](DOWNLOADS.md)は、[ConsoleからIrodoriをバックグラウンド取得](BACKEND_ASSET_DOWNLOADS.md)できます。手動導入は[Windows向けの代替手順](IRODORI_TTS_WINDOWS_NVIDIA.md)を参照してください。
 
 Backendで使うAI・音声、接続先、記憶・履歴を管理する画面です。
 
@@ -54,7 +54,7 @@ APIキーは設定済みかどうかを表示し、値は再表示しません�
 
 ## PCでも同じキャラクターと話す
 
-この項目とCSV集計は新しいBackendの機能です。配布済みデスクトップ版v0.2.4-beta.2に付属するBackendにはありません。該当する項目が表示されない場合は、新しいBackendが必要です。アプリを更新するだけでは、設置済みのBackendは置き換わりません。公開済みv0.2.5-beta.3のBackend Bundleを[更新手順](BACKEND_UPDATE.md)に沿って導入してください。[Mac](MAC_PUBLIC_BETA.md#backendを使う場合) / [Windows](SETUP_GUIDE.md#backendを使う場合)の案内も参照できます。既存Backendを更新・移行する前に、`.env` と `backend/data` を非公開の場所へバックアップしてください。
+この項目とCSV集計は新しいBackendの機能です。該当する項目が表示されない場合は、新しいBackendが必要です。アプリを更新するだけでは、設置済みのBackendは置き換わりません。[現在のBackend Bundle](DOWNLOADS.md)を[更新手順](BACKEND_UPDATE.md)に沿って導入してください。[Mac](MAC_PUBLIC_BETA.md#backendを使う場合) / [Windows](SETUP_GUIDE.md#backendを使う場合)の案内も参照できます。既存Backendを更新・移行する前に、`.env` と `backend/data` を非公開の場所へバックアップしてください。
 
 1. アプリからキャラクターを共有します。
 2. Consoleの「接続と設定 → 端末と同期」で「端末と共有する会話・記憶」からそのキャラクターを選びます。

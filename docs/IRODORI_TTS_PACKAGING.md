@@ -2,7 +2,7 @@
 
 VOICEVOX remains the standard voice. The current optional Backend models are **Irodori V4.1 Small MLX 8bit on Apple Silicon** and **V4.1 Small INT8 on Windows NVIDIA**. Mobile CoreML data is a separate runtime format.
 
-Desktop v0.2.5-beta.3 includes [background acquisition in the Backend Console](BACKEND_ASSET_DOWNLOADS.md). Older Desktop v0.2.5-beta.2 uses the [manual Windows package](IRODORI_TTS_WINDOWS_NVIDIA.md). For an existing external TTS server, see [Backend TTS setup](BACKEND_TTS_GUIDE.md).
+The [current Backend](DOWNLOADS.md) includes [background acquisition in the Console](BACKEND_ASSET_DOWNLOADS.md). A [manual Windows package](IRODORI_TTS_WINDOWS_NVIDIA.md) is also available. For an existing external TTS server, see [Backend TTS setup](BACKEND_TTS_GUIDE.md).
 
 ## Acquisition and ownership
 

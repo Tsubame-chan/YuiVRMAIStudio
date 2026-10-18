@@ -1,5 +1,7 @@
 # Windows動作確認・修正記録
 
+> 過去の検証記録です。記載の版・成否・未確認事項は検証当時のものです。現在の[配布ファイル](DOWNLOADS.md)と[機能対応](RUNTIME_SUPPORT.md)は別途確認してください。
+
 対象：2026-10-10〜11、Desktop v0.2.5-beta.1とGitHubのソース。Windows、RTX 5070 Ti、ドライバー32.0.16.1714、LiteRT-LM 0.17.0。特定の1台での実機確認と自動テストであり、Windows全機種・全設定を通した保証ではない。
 
 修正ブランチ：`fix/windows-stt-cpu-decoding`。[PR #42](https://github.com/Tsubame-chan/YuiVRMAIStudio/pull/42)。mainは保護されているためPR経由。push、マージ、新しい配布バイナリの発行は別の状態として扱う。

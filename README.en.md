@@ -37,7 +37,7 @@ The images show the real app with the included Unity-chan. Captions are Japanese
 | Windows | [Windows app ZIP](https://github.com/Tsubame-chan/YuiVRMAIStudio/releases/download/v0.2.6-beta.1/YuiVRMAIStudio_WindowsPublicBeta_v0.2.6-beta.1_windows.zip) |
 | iPhone / iPad | iOS 26+. [App Store](https://apps.apple.com/jp/app/id6815341780): free Japan release |
 
-iOS **0.2.6 (20)** is public on the App Store. The desktop version is **v0.2.6-beta.1**. It includes the Backend Console, saved voices and paired character sync. See [Backend setup](docs/BACKEND_CONSOLE.md). Extract the ZIP, open the app and follow the first-run data notice. Allow approximately 2.5GB of downloads plus room for extraction; Wi-Fi is recommended. Mac signing/notarization is not yet provided. Setup: [Mac](docs/MAC_PUBLIC_BETA.en.md) / [Windows](docs/SETUP_GUIDE.md).
+[Release list, Backend ZIPs and checksums](docs/DOWNLOADS.md). Extract the ZIP, open the app and follow first-run setup. Allow approximately 2.5GB of downloads plus room for extraction. Developer ID signing/notarization is not provided for Mac. Setup: [Mac](docs/MAC_PUBLIC_BETA.en.md) / [Windows](docs/SETUP_GUIDE.md).
 
 **GitHub's “Code → Download ZIP” is source code.** To use the app, choose a download above.
 
@@ -49,44 +49,19 @@ iOS **0.2.6 (20)** is public on the App Store. The desktop version is **v0.2.6-b
 
 Choose **offline, on-device AI** or **OpenAI API**. The lightweight E2B model is standard; Mac, Windows and iOS offer optional E4B for better responses at the cost of longer waits and higher device load. OpenAI API is recommended for higher-quality conversation. **An API key and API charges are required**, separately from a ChatGPT subscription.
 
-Standard speech uses five Japanese VOICEVOX voices. Mac/iOS version 0.2.5 and later offer optional downloads in settings: three Japanese Irodori voices (about 1.96GB) and six English Kokoro voices (about 67.4MB). These additional voices are not included in the older iOS 0.2.4 or desktop v0.2.4-beta.2 apps. Windows NVIDIA users can add V4.1 INT8 through the [Backend Console](docs/BACKEND_ASSET_DOWNLOADS.md#english). See [Voice downloads](docs/LOCAL_AI_ASSETS.md), [Help](docs/HELP.md), [Backend Console](docs/BACKEND_CONSOLE.md) and the [Backend TTS installation guide (Japanese)](docs/BACKEND_TTS_GUIDE.md).
+Standard speech uses five Japanese VOICEVOX voices. Mac/iOS offer optional Japanese Irodori and English Kokoro downloads in Settings. See [voice downloads](docs/LOCAL_AI_ASSETS.md). Windows NVIDIA users can add Irodori through the [Backend Console](docs/BACKEND_ASSET_DOWNLOADS.md#english). For saved voices, paired sync and extra engines, see [Backend Console](docs/BACKEND_CONSOLE.md) and [TTS setup](docs/BACKEND_TTS_GUIDE.md).
 
-The source also includes improvements to speech cancellation, Backend startup waits and audio postprocessing, plus shared release metadata. These changes are included in desktop v0.2.6-beta.1 and target the next iOS update. See [fixes and validation scope](docs/SOURCE_REVIEW_20261011.md).
+## Additional models
 
-## Desktop v0.2.6-beta.1: additional models
+Settings → AI → **On-device AI · Choose or add model** provides Models, Add and Settings tabs. Compatible models run on the supported device, without a Backend or separate model server. You can switch back to standard Gemma.
 
-Settings → AI → **On-device AI · Choose or add model** provides Models, Add and Settings tabs. Compatible models run locally and can be switched back to standard Gemma. No PC or Backend is required for the Mac/iOS GGUF path.
-
-- Mac/iOS candidates accept single GGUF and compatible LiteRT-LM files. The Windows candidate accepts compatible LiteRT-LM; its GGUF runtime is not bundled. Android support is future work.
+- Mac imports single GGUF and compatible LiteRT-LM files. Windows imports compatible LiteRT-LM; its GGUF runtime is not bundled. iOS model import is development-only and is not included in the published app. Android support is future work.
 - From Hugging Face, download an appropriate `.gguf` or `.litertlm`. Bare `.safetensors`, split GGUF and separate vision/audio projectors are unsupported.
 - Additional models are experimental. Large models may be slow, stop or close the app. Import checks that a reply follows the input; this does not guarantee quality or universal compatibility.
 
-See [instructions and runtime limits](docs/LOCAL_MODEL_IMPORT.md) and [Backend acquisition](docs/HELP.md). This feature is available in desktop v0.2.6-beta.1. iOS 0.2.7 is being prepared; the published iOS 0.2.6 does not include it.
+See [instructions and runtime limits](docs/LOCAL_MODEL_IMPORT.md) and [Backend acquisition](docs/HELP.md). Available on desktop. See [device compatibility](docs/RUNTIME_SUPPORT.md) for released versus development-only iOS features.
 
-## Desktop v0.2.5-beta.3 changes
-
-- Download and prepare optional Irodori V4.1 voices in the background from Backend Console, with progress, cancellation and retry.
-- Percentage-based download progress, balanced dialog spacing and clearer saved voice names.
-- Replace the entire bundled Python environment during Backend updates, restoring it on failure while preserving settings, databases and models.
-
-See [voice downloads](docs/BACKEND_ASSET_DOWNLOADS.md#english) and [safe Backend updates](docs/BACKEND_UPDATE.md). Native acceptance of the new Windows acquisition flow is ongoing.
-
-## Desktop v0.2.5-beta.2 changes
-
-- Stabilized Windows on-device transcription and aligned local recording with the 30-second limit; chat retains GPU execution.
-- Enabled optional E4B on Windows and improved Irodori V4.1 installation, initial synthesis waits and saved-voice compatibility.
-- Fixed empty/reasoning-only external LLM replies and inherited Python environment settings that could prevent startup.
-- Removed experimental CSV work from the main Console navigation while retaining its existing page and saved outputs.
-
-The fixes use prior Windows device results, with new Windows/Mac builds and automated tests. Native acceptance of the new Windows build remains pending. See [validation scope](docs/WINDOWS_CROSS_PLATFORM_REVIEW_20261011.md). Existing users must update the Backend as well as the app: [Windows](docs/SETUP_GUIDE.md#既存backendを更新する) / [Mac](docs/MAC_PUBLIC_BETA.en.md#update-an-existing-backend). Arbitrary model import is a future direction, not included in this release. See [planning notes](docs/LOCAL_LLM_EXTENSION_NOTES.md).
-
-## Changes in 0.2.5
-
-- Optional downloads for three Japanese Irodori voices and six English Kokoro voices. Irodori starts with Bright and cheerful.
-- Consistently thin scrollbars and a single scrolling area in model details.
-- Irodori V4.1 and the same three voice presets in the Mac Backend.
-
-iOS 0.2.5 is available on the App Store. These new desktop fixes are not included in the released iOS app. See the [optional Irodori V4.1 NVIDIA package](docs/IRODORI_TTS_WINDOWS_NVIDIA.md).
+See [release notes](docs/DOWNLOADS.md#更新履歴--release-notes) for changes and [Backend updates](docs/BACKEND_UPDATE.md) for migration.
 
 ## Memory and privacy
 
